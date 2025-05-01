@@ -16,8 +16,12 @@
   "types": "dist/reporter/playwright-pulse-reporter.d.ts",
   "files": [
     "dist/reporter",
-    "src/reporter"
+    "src/reporter",
+    "scripts/generate-static-report.mjs"
   ],
+  "bin": {
+    "generate-pulse-report": "./scripts/generate-static-report.mjs"
+  },
   "scripts": {
     "dev": "next dev --turbopack -p 9002",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
@@ -28,7 +32,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build:reporter"
+    "prepublishOnly": "npm run build:reporter",
+    "report:static": "node ./scripts/generate-static-report.mjs"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.6.2",
