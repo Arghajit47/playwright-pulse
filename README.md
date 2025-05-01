@@ -1,19 +1,21 @@
 
 # Playwright Pulse Reporter & Dashboard
 
-This project provides both a custom Playwright reporter and a Next.js web dashboard to visualize your Playwright test results.
+This project provides both a custom Playwright reporter and a Next.js web dashboard to visualize your Playwright test results, now with support for **Playwright sharding**.
 
 ## How it Works
 
-1.  **Reporter (`playwright-pulse-reporter.ts`):** A custom reporter that collects detailed results during your Playwright test run.
-2.  **JSON Output:** On completion (`onEnd`), the reporter writes all collected data into a `playwright-pulse-report.json` file in your project's specified output directory (defaults to the root).
-3.  **Next.js Dashboard (This App):** A web application built with Next.js that reads the `playwright-pulse-report.json` file and presents the test results in a user-friendly dashboard interface.
+1.  **Reporter (`playwright-pulse-reporter.ts`):**
+    *   A custom reporter that collects detailed results during your Playwright test run.
+    *   **Sharding Support:** If tests are sharded, each shard process writes its results to a temporary file (`.pulse-shard-results-*.json`). The main reporter process then merges these files upon completion.
+2.  **JSON Output:** On completion (`onEnd`), the reporter writes all collected (and potentially merged) data into a single `playwright-pulse-report.json` file in your project's specified output directory (defaults to the project root).
+3.  **Next.js Dashboard (This App):** A web application built with Next.js that reads the final `playwright-pulse-report.json` file and presents the test results in a user-friendly dashboard interface.
 
 ## Setup
 
-### 1. Install the Reporter
+### 1. Install the Reporter Package
 
-In your Playwright project (the one containing your tests), install this package:
+In your main Playwright project (the one containing your tests), install this reporter package:
 
 ```bash
 npm install playwright-pulse-reporter --save-dev
@@ -30,62 +32,90 @@ In your `playwright.config.ts` (or `.js`) file, add the custom reporter to the `
 ```typescript
 // playwright.config.ts
 import { defineConfig, devices } from '@playwright/test';
+import * as path from 'path';
+
+// Optional: Define where the final report JSON should go
+const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report-output'); // Example: a directory in your project root
 
 export default defineConfig({
-  // ... other configurations
+  // ... other configurations like projects, testDir, etc.
+
+  // Define the output directory for Playwright's own artifacts (traces, screenshots)
+  // This is separate from the Pulse reporter's output directory.
+  outputDir: './test-results/',
+
   reporter: [
     ['list'], // Keep other reporters like 'list' or 'html' if desired
+
+    // Add the Playwright Pulse Reporter
     ['playwright-pulse-reporter', {
-        // Optional: Specify output file name and directory
+        // Optional: Specify the output file name (defaults to 'playwright-pulse-report.json')
         // outputFile: 'my-custom-report-name.json',
-        // outputDir: './test-results/pulse-reports' // Relative to project root
+
+        // Optional: Specify the directory for the final JSON report
+        // It's recommended to use an absolute path or one relative to the config file.
+        // Defaults to process.cwd() if not specified.
+        outputDir: PULSE_REPORT_DIR
     }]
   ],
+
+  // Enable sharding if needed
+  // fullyParallel: true, // Often used with sharding
+  // workers: process.env.CI ? 4 : undefined, // Example worker count
+
   // ... other configurations
 });
 ```
 
+**Explanation:**
+
+*   `outputDir` in the main `defineConfig`: This is where Playwright stores its own artifacts like traces and screenshots.
+*   `outputDir` inside the `playwright-pulse-reporter` options: This specifically tells *our reporter* where to save the final `playwright-pulse-report.json`. Using a dedicated directory like `pulse-report-output` is recommended.
+
 ### 3. Run Your Tests
 
-Execute your Playwright tests as usual:
+Execute your Playwright tests as usual. This command works whether you use sharding or not:
 
 ```bash
 npx playwright test
+# or specific configurations like:
+# npx playwright test --project=chromium --shard=1/3
 ```
 
-This will run your tests and, upon completion, the `playwright-pulse-reporter` will generate the `playwright-pulse-report.json` file (or your custom configured path).
+The `playwright-pulse-reporter` will automatically handle sharding if Playwright is configured to use it. Upon completion, the final `playwright-pulse-report.json` will be generated in the directory you specified (e.g., `pulse-report-output`).
 
 ### 4. View the Dashboard
 
-Now, you need to run the Next.js dashboard application *from the directory where this project (playwright-pulse-reporter) is located*.
+This dashboard application needs to read the `playwright-pulse-report.json` file generated in the previous step.
 
-First, ensure dependencies are installed:
+**Steps:**
+
+1.  **Navigate to this Dashboard Project:**
+    ```bash
+    cd path/to/playwright-pulse-reporter # The directory containing THIS dashboard code
+    ```
+2.  **Install Dependencies:**
+    ```bash
+    npm install
+    # or yarn install or pnpm install
+    ```
+3.  **Copy the Report File:** Copy the `playwright-pulse-report.json` file generated by your tests (e.g., from your main project's `pulse-report-output` directory) into the **root directory** of *this dashboard project*.
+    ```bash
+    # Example: Copying from your main project to the dashboard project directory
+    cp ../my-playwright-project/pulse-report-output/playwright-pulse-report.json ./
+    ```
+4.  **Start the Dashboard:**
+    ```bash
+    npm run dev
+    # or yarn dev or pnpm dev
+    ```
+
+This will start the Next.js dashboard (usually on `http://localhost:9002`). It will read the `playwright-pulse-report.json` file you placed in its root.
+
+**Alternatively, build and start for production:**
 
 ```bash
-# Navigate to the playwright-pulse-reporter directory
-cd path/to/playwright-pulse-reporter
-
-npm install
-# or yarn install or pnpm install
-```
-
-Then, start the development server:
-
-```bash
-npm run dev
-# or yarn dev or pnpm dev
-```
-
-This will start the Next.js dashboard application (usually on `http://localhost:9002`).
-
-**Important:** The Next.js dashboard reads the `playwright-pulse-report.json` file from its *own* root directory.
-
-*   **If you installed the reporter via npm:** You might need to copy the generated `playwright-pulse-report.json` from your main Playwright project's output directory into the root of the `node_modules/playwright-pulse-reporter` directory before running `npm run dev` there.
-*   **If you cloned this repository directly:** Run `npm run dev` within the cloned directory. Ensure the `playwright-pulse-report.json` generated by your tests is placed in the root of this cloned directory.
-
-Alternatively, build and start the production server:
-
-```bash
+# Ensure the report JSON is in the root first
 npm run build
 npm run start
 ```
@@ -103,19 +133,20 @@ To work on the reporter or the dashboard itself:
     ```bash
     npm install
     ```
-3.  **Build the reporter:**
+3.  **Build the reporter:** (Needed if you make changes to the reporter code)
     ```bash
     npm run build:reporter
     ```
 4.  **Run the dashboard in development mode:**
     ```bash
+    # Make sure a sample playwright-pulse-report.json exists in the root
     npm run dev
     ```
-    *(You'll need a sample `playwright-pulse-report.json` in the root for the dashboard to display data).*
 
 ## Key Files
 
-*   `src/reporter/playwright-pulse-reporter.ts`: The core Playwright reporter logic.
-*   `src/lib/data.ts`: Data fetching logic for the Next.js app (reads the JSON file).
+*   `src/reporter/playwright-pulse-reporter.ts`: The core Playwright reporter logic (handles sharding).
+*   `src/lib/data-reader.ts`: Server-side logic for reading the JSON report file.
+*   `src/lib/data.ts`: Data fetching functions used by the Next.js dashboard components.
 *   `src/app/`: Contains the Next.js dashboard pages and components.
-*   `playwright-pulse-report.json`: (Generated by the reporter in your test project) The data source for the dashboard.
+*   `playwright-pulse-report.json`: (Generated by the reporter in your specified output directory) The data source for the dashboard, needs to be copied to the dashboard's root.
