@@ -3,78 +3,111 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), sans-serif; /* Use --font-sans CSS variable */
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    /* Playwright Pulse Theme */
+    /* Primary: Slate Blue (#708090) ~ HSL(210, 13%, 50%) */
+    /* Secondary: Light Gray (#D3D3D3) ~ HSL(0, 0%, 83%) */
+    /* Accent: Teal (#008080) ~ HSL(180, 100%, 25%) */
+
+    --background: 0 0% 100%; /* Light background */
+    --foreground: 210 10% 23%; /* Darker foreground for contrast */
+
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 210 10% 23%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --popover-foreground: 210 10% 23%;
+
+    --primary: 210 13% 50%; /* Slate Blue */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+
+    --secondary: 0 0% 95%; /* Lighter Gray for secondary elements */
+    --secondary-foreground: 210 10% 23%; /* Dark text on secondary */
+
+    --muted: 0 0% 90%; /* Slightly darker gray for muted elements */
+    --muted-foreground: 210 8% 45%;
+
+    --accent: 180 100% 25%; /* Teal */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 88%; /* Adjusted border */
+    --input: 0 0% 88%;
+    --ring: 180 100% 30%; /* Teal for focus rings */
+
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+
+    /* Chart Colors (Consider adjusting for better contrast/meaning) */
+    --chart-1: 180 100% 25%; /* Teal */
+    --chart-2: 0 84% 60%; /* Destructive/Red */
+    --chart-3: 39 90% 55%; /* Orange/Yellow for Skipped/Warning */
+    --chart-4: 210 13% 50%; /* Slate Blue */
+    --chart-5: 210 13% 70%; /* Lighter Slate Blue */
+
+    /* Sidebar Specific Theme */
+    --sidebar-background: 210 10% 23%; /* Dark background for sidebar */
+    --sidebar-foreground: 0 0% 95%; /* Light text */
+    --sidebar-primary: 180 100% 25%; /* Teal for primary actions/active state */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 210 10% 30%; /* Slightly lighter background for hover/accent */
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 10% 35%;
+    --sidebar-ring: 180 100% 30%;
+  }
+
+  .dark {
+    /* Define dark theme variables if needed later */
+    /* For now, focusing on the light theme */
+    --background: 210 10% 10%;
+    --foreground: 0 0% 98%;
+
+    --card: 210 10% 15%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 210 10% 10%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 210 13% 60%; /* Lighter Slate Blue */
+    --primary-foreground: 210 10% 5%;
+
+    --secondary: 210 10% 20%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 210 10% 25%;
+    --muted-foreground: 210 8% 65%;
+
+    --accent: 180 100% 35%; /* Lighter Teal */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 210 10% 25%;
+    --input: 210 10% 25%;
+    --ring: 180 100% 40%;
+
+    /* Chart Colors */
+    --chart-1: 180 100% 35%;
+    --chart-2: 0 70% 50%;
+    --chart-3: 39 80% 60%;
+    --chart-4: 210 13% 60%;
+    --chart-5: 210 13% 40%;
+
+    /* Sidebar Dark Theme */
+    --sidebar-background: 210 10% 15%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 180 100% 35%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 10% 25%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 210 10% 30%;
+    --sidebar-ring: 180 100% 40%;
   }
 }
 
@@ -83,6 +116,14 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-secondary text-foreground; /* Use secondary as base background */
+    min-height: 100vh;
+  }
+}
+
+/* Add subtle transition */
+@layer components {
+  .transition-default {
+    @apply transition-colors duration-200 ease-in-out;
   }
 }
