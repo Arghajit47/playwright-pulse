@@ -3,6 +3,7 @@
   "extends": "./tsconfig.json", // Inherit base config
   "compilerOptions": {
     "module": "CommonJS", // Reporter needs CommonJS for Node environment
+    "moduleResolution": "node", // Override moduleResolution for CommonJS compatibility
     "outDir": "dist/reporter", // Output directory for the reporter JS
     "declaration": true, // Generate .d.ts files
     "declarationDir": "dist/reporter",
@@ -10,21 +11,26 @@
     "noEmit": false, // Ensure files are emitted
     "isolatedModules": false, // Not needed for library build
     "jsx": "react", // Or preserve, depending on needs, but likely 'react' for CommonJS
-     "paths": { // Adjust paths for reporter context if needed
-         "@/*": ["./src/*"]
-     },
-      "target": "ES2016", // Target Node.js compatible version
-      "skipLibCheck": true // Speed up build
+    "paths": {
+      // Adjust paths for reporter context if needed
+      "@/*": ["./src/*"]
+    },
+    "target": "ES2016", // Target Node.js compatible version
+    "skipLibCheck": true // Speed up build
   },
-  "include": ["src/reporter/**/*.ts", "src/types/**/*.ts"], // Only include reporter and types
+  "include": [
+    "src/reporter/**/*.ts",
+    "src/types/**/*.ts",
+    "src/lib/report-types.ts"
+  ], // Only include reporter, types and report-types
   "exclude": [
-      "node_modules",
-      "dist",
-      ".next",
-      "src/app", // Exclude Next.js app code
-      "src/components", // Exclude React components
-      "src/lib", // Exclude app-specific libs (unless needed by reporter)
-      "src/ai", // Exclude AI code
-      "src/hooks" // Exclude hooks
-   ]
+    "node_modules",
+    "dist",
+    ".next",
+    "src/app", // Exclude Next.js app code
+    "src/components", // Exclude React components
+    "src/lib", // Exclude app-specific libs (keep report-types.ts)
+    "src/ai", // Exclude AI code
+    "src/hooks" // Exclude hooks
+  ]
 }

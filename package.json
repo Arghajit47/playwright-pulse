@@ -1,6 +1,7 @@
 
 {
   "name": "playwright-pulse-reporter",
+  "author": "Arghajit Singha",
   "version": "0.2.0",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
@@ -11,7 +12,7 @@
     "reporting",
     "nextjs"
   ],
-  "private": false,
+  "private": true,
   "main": "dist/reporter/playwright-pulse-reporter.js",
   "types": "dist/reporter/playwright-pulse-reporter.d.ts",
   "files": [
