@@ -1,7 +1,7 @@
 {
   "name": "playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",

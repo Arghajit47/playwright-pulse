@@ -1,62 +1,193 @@
 #!/usr/bin/env node
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
 
-// Determine the project root based on script location
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-// Assume the script is in 'scripts/' directory, go up one level for project root
-const projectRoot = path.resolve(__dirname, '..');
+import * as fs from "fs/promises";
+import * as path from "path";
+import { format } from "date-fns"; // For formatting dates
 
-const defaultReportDir = "pulse-report-output";
-const defaultJsonFile = "playwright-pulse-report.json";
-const defaultHtmlFile = "playwright-pulse-static-report.html";
+/**
+ * @typedef {import('../src/types').TestStatus} TestStatus
+ * @typedef {import('../src/types').TestRun} TestRun
+ * @typedef {import('../src/types').TestResult} TestResult
+ * @typedef {import('../src/lib/report-types').PlaywrightPulseReport} PlaywrightPulseReport
+ */
 
-async function generateStaticReport() {
-  const reportDir = path.resolve(projectRoot, defaultReportDir);
-  const jsonFilePath = path.join(reportDir, defaultJsonFile);
-  const htmlFilePath = path.join(reportDir, defaultHtmlFile);
+// Configuration
+const REPORT_DIR_NAME = "pulse-report-output";
+const JSON_FILE_NAME = "playwright-pulse-report.json";
+const HTML_FILE_NAME = "playwright-pulse-static-report.html";
 
-  console.log(`Reading report data from: ${jsonFilePath}`);
+// Get the current working directory where the command is executed
+const CWD = process.cwd();
+const reportDirPath = path.resolve(CWD, REPORT_DIR_NAME);
+const reportJsonPath = path.resolve(reportDirPath, JSON_FILE_NAME);
+const reportHtmlPath = path.resolve(reportDirPath, HTML_FILE_NAME);
 
-  let reportData;
-  try {
-    const fileContent = await fs.readFile(jsonFilePath, "utf-8");
-    // Basic JSON parsing (dates will be strings, handled in HTML generation)
-    reportData = JSON.parse(fileContent);
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      console.error(`Error: Report JSON file not found at ${jsonFilePath}.`);
-      console.error(
-        "Ensure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated."
-      );
-    } else {
-      console.error(
-        `Error reading or parsing report JSON file: ${error.message}`
-      );
-    }
-    process.exit(1);
+// Helper function to generate CSS for status colors
+const getStatusColor = (status) => {
+  switch (status) {
+    case "passed":
+      return "#10B981"; // Emerald-500
+    case "failed":
+      return "#EF4444"; // Red-500
+    case "skipped":
+      return "#F59E0B"; // Amber-500
+    default:
+      return "#6B7280"; // Gray-500
   }
+};
 
-  console.log("Generating static HTML report...");
+const getStatusIcon = (status) => {
+  switch (status) {
+    case "passed":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${getStatusColor(
+        status
+      )};"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+    case "failed":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${getStatusColor(
+        status
+      )};"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+    case "skipped":
+      return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${getStatusColor(
+        status
+      )};"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>`;
+    default:
+      return "";
+  }
+};
 
-  const { run, results } = reportData;
+const formatDuration = (ms) => {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+};
 
-  // Helper function to format duration
-  const formatDuration = (ms) => (ms / 1000).toFixed(2) + "s";
+/**
+ * Generate the HTML content for the static report.
+ * @param {PlaywrightPulseReport} data - The parsed report data.
+ * @returns {string} - The HTML content.
+ */
+const generateHtmlContent = (data) => {
+  const { run, results, metadata } = data;
 
-  // Helper function to format date strings (assuming ISO format)
-  const formatDate = (dateString) => {
-    try {
-      return new Date(dateString).toLocaleString();
-    } catch (e) {
-      return dateString || "N/A"; // Fallback
-    }
-  };
+  // --- Summary Section ---
+  const summaryHtml = run
+    ? `
+    <div class="summary-grid">
+      <div class="summary-card">
+        <h3>Total Tests</h3>
+        <p>${run.totalTests}</p>
+      </div>
+      <div class="summary-card">
+        <h3 style="color: ${getStatusColor("passed")};">Passed</h3>
+        <p>${run.passed}</p>
+      </div>
+      <div class="summary-card">
+        <h3 style="color: ${getStatusColor("failed")};">Failed</h3>
+        <p>${run.failed}</p>
+      </div>
+      <div class="summary-card">
+        <h3 style="color: ${getStatusColor("skipped")};">Skipped</h3>
+        <p>${run.skipped}</p>
+      </div>
+      <div class="summary-card">
+        <h3>Duration</h3>
+        <p>${formatDuration(run.duration)}</p>
+      </div>
+    </div>
+    <p class="run-info">Run ID: ${run.id} | Timestamp: ${format(
+        new Date(run.timestamp),
+        "PP pp"
+      )}</p>
+  `
+    : "<p>No run information available.</p>";
 
-  // --- Generate HTML Content ---
-  const htmlContent = `
+  // --- Results Section ---
+  const resultsHtml =
+    results.length > 0
+      ? results
+          .map(
+            (result, index) => `
+    <div class="result-item" data-status="${
+      result.status
+    }" onclick="toggleDetails('details-${index}')">
+      <div class="result-header">
+        <span class="status-icon" style="color: ${getStatusColor(
+          result.status
+        )};">${getStatusIcon(result.status)}</span>
+        <span class="test-name">${result.name}</span>
+        <span class="duration">${formatDuration(result.duration)}</span>
+        <span class="status-text">${result.status}</span>
+      </div>
+      <div id="details-${index}" class="result-details" style="display: none;">
+        ${
+          result.suiteName
+            ? `<p><strong>Suite:</strong> ${result.suiteName}</p>`
+            : ""
+        }
+        <p><strong>Started:</strong> ${format(
+          new Date(result.startTime),
+          "pp"
+        )}</p>
+        <p><strong>Ended:</strong> ${format(new Date(result.endTime), "pp")}</p>
+        ${
+          result.retries > 0
+            ? `<p><strong>Retries:</strong> ${result.retries}</p>`
+            : ""
+        }
+        ${
+          result.errorMessage
+            ? `<p><strong>Error:</strong> <pre>${result.errorMessage}</pre></p>`
+            : ""
+        }
+        ${
+          result.stackTrace
+            ? `<p><strong>Stack Trace:</strong> <pre>${result.stackTrace}</pre></p>`
+            : ""
+        }
+        ${
+          result.steps && result.steps.length > 0
+            ? `
+            <h4>Steps:</h4>
+            <ul class="steps-list">
+                ${result.steps
+                  .map(
+                    (step) => `
+                    <li data-status="${step.status}">
+                        <span class="status-icon" style="color: ${getStatusColor(
+                          step.status
+                        )};">${getStatusIcon(step.status)}</span>
+                        ${step.title} (${formatDuration(step.duration)})
+                        ${
+                          step.errorMessage
+                            ? `<pre class="step-error">${step.errorMessage}</pre>`
+                            : ""
+                        }
+                    </li>
+                `
+                  )
+                  .join("")}
+            </ul>
+        `
+            : ""
+        }
+        ${
+          result.screenshot
+            ? `<p><strong>Screenshot:</strong> <a href="${result.screenshot}" target="_blank">View</a></p>`
+            : ""
+        }
+        ${
+          result.video
+            ? `<p><strong>Video:</strong> <a href="${result.video}" target="_blank">View</a></p>`
+            : ""
+        }
+      </div>
+    </div>
+  `
+          )
+          .join("")
+      : "<p>No test results found.</p>";
+
+  // --- Full HTML ---
+  return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,282 +195,162 @@ async function generateStaticReport() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playwright Pulse - Static Report</title>
     <style>
-        /* Reset and Base Styles */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        html { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        body { background-color: #f8f9fa; color: #343a40; padding: 2rem; }
-        h1, h2, h3, h4, h5, h6 { font-weight: 600; margin-bottom: 0.75rem; }
-        a { color: #007bff; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        pre { background-color: #e9ecef; padding: 1rem; border-radius: 0.3rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; margin-top: 0.5rem; margin-bottom: 1rem; white-space: pre-wrap; word-wrap: break-word; }
-        code { font-family: monospace; }
-
-        /* Layout */
-        .container { max-width: 1200px; margin: 0 auto; }
-        .grid { display: grid; gap: 1.5rem; }
-        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-        .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-        .space-y-6 > * + * { margin-top: 1.5rem; }
-
-        /* Card Component */
-        .card { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; }
-        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; }
-        .card-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
-        .card-description { color: #6c757d; font-size: 0.875rem; }
-        .card-content { padding: 1.5rem; flex-grow: 1; }
-        .card-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; background-color: #f8f9fa; color: #6c757d; font-size: 0.875rem; }
-
-        /* Badge Component */
-        .badge { display: inline-flex; align-items: center; padding: 0.25em 0.6em; font-size: 0.75rem; font-weight: 600; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; border: 1px solid transparent; }
-        .badge-passed { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-        .badge-failed { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-        .badge-skipped { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
-        .badge svg { width: 0.75em; height: 0.75em; margin-right: 0.25em; }
-
-        /* Text Colors */
-        .text-green-600 { color: #28a745; }
-        .text-red-600 { color: #dc3545; }
-        .text-yellow-600 { color: #ffc107; }
-        .text-muted-foreground { color: #6c757d; }
-        .text-destructive { color: #dc3545; }
-
-        /* Icons (Inline SVG for simplicity) */
-        .icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.125em; fill: currentColor; }
-        .icon-list-checks { /* SVG Placeholder */}
-        .icon-check-circle { /* SVG Placeholder */}
-        .icon-x-circle { /* SVG Placeholder */}
-        .icon-skip-forward { /* SVG Placeholder */}
-        .icon-clock { /* SVG Placeholder */}
-        .icon-alert-triangle { /* SVG Placeholder */}
-        .icon-code { /* SVG Placeholder */}
-
-         /* Chart Placeholders */
-        .chart-placeholder { min-height: 200px; display: flex; align-items: center; justify-content: center; background-color: #e9ecef; border-radius: 0.3rem; color: #6c757d; font-style: italic; }
-        .chart-legend { list-style: none; padding: 0; display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; font-size: 0.875rem; }
-        .chart-legend li { display: flex; align-items: center; gap: 0.5rem; }
-        .legend-color-box { width: 12px; height: 12px; border-radius: 2px; }
-
-         /* Test Result Item */
-        .test-result-item { border-bottom: 1px solid #e9ecef; padding: 1rem; transition: background-color 0.2s ease-in-out; }
-        .test-result-item:last-child { border-bottom: none; }
-        .test-result-item:hover { background-color: #f8f9fa; }
-        .test-result-item .status-duration { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
-        .test-result-item .title { font-weight: 500; color: #007bff; margin-bottom: 0.25rem; display: block;}
-        .test-result-item .suite { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.5rem;}
-        .test-result-item .error { font-size: 0.8rem; color: #dc3545; margin-top: 0.5rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-        .test-result-item .time { font-size: 0.75rem; color: #6c757d; text-align: right; margin-top: 0.5rem; }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-          body { padding: 1rem; }
-          .grid-cols-5, .grid-cols-4, .grid-cols-3, .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        }
-
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 20px; background-color: #f9fafb; color: #1f2937; }
+        .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
+        h2 { color: #374151; margin-top: 30px; margin-bottom: 15px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px; }
+        .summary-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; text-align: center; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .summary-card h3 { margin: 0 0 5px 0; font-size: 0.9em; color: #6b7280; }
+        .summary-card p { margin: 0; font-size: 1.5em; font-weight: 600; color: #111827; }
+        .run-info { font-size: 0.85em; color: #6b7280; text-align: center; margin-bottom: 25px; }
+        .result-item { border: 1px solid #e5e7eb; border-left-width: 4px; border-radius: 4px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; overflow: hidden; }
+        .result-item:hover { background-color: #f3f4f6; }
+        .result-item[data-status="passed"] { border-left-color: ${getStatusColor(
+          "passed"
+        )}; }
+        .result-item[data-status="failed"] { border-left-color: ${getStatusColor(
+          "failed"
+        )}; }
+        .result-item[data-status="skipped"] { border-left-color: ${getStatusColor(
+          "skipped"
+        )}; }
+        .result-header { display: flex; align-items: center; padding: 10px 15px; gap: 10px; font-weight: 500; }
+        .status-icon { display: inline-flex; align-items: center; }
+        .test-name { flex-grow: 1; }
+        .duration { font-size: 0.9em; color: #6b7280; margin-left: auto; padding-left: 10px; }
+        .status-text { font-size: 0.9em; font-weight: 600; text-transform: capitalize; min-width: 60px; text-align: right; }
+        .result-item[data-status="passed"] .status-text { color: ${getStatusColor(
+          "passed"
+        )}; }
+        .result-item[data-status="failed"] .status-text { color: ${getStatusColor(
+          "failed"
+        )}; }
+        .result-item[data-status="skipped"] .status-text { color: ${getStatusColor(
+          "skipped"
+        )}; }
+        .result-details { padding: 10px 15px 15px 30px; border-top: 1px solid #e5e7eb; background-color: #fafafa; font-size: 0.9em; }
+        .result-details p { margin: 5px 0; }
+        .result-details h4 { margin-top: 15px; margin-bottom: 5px; font-weight: 600; }
+        .result-details pre { background-color: #e5e7eb; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-size: 0.85em; margin-top: 3px; max-height: 200px; overflow-y: auto; }
+        .steps-list { list-style: none; padding-left: 0; margin-top: 5px; }
+        .steps-list li { padding: 4px 0 4px 10px; border-left: 2px solid #d1d5db; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .steps-list li[data-status="passed"] { border-left-color: ${getStatusColor(
+          "passed"
+        )}; }
+        .steps-list li[data-status="failed"] { border-left-color: ${getStatusColor(
+          "failed"
+        )}; }
+        .steps-list li[data-status="skipped"] { border-left-color: ${getStatusColor(
+          "skipped"
+        )}; }
+        .step-error { background-color: #fee2e2; color: #991b1b; padding: 5px; border-radius: 3px; margin-top: 5px; }
+        footer { margin-top: 30px; text-align: center; font-size: 0.8em; color: #9ca3af; }
     </style>
 </head>
 <body>
-    <div class="container space-y-6">
-        <header>
-            <h1>Playwright Pulse Report</h1>
-            ${
-              run
-                ? `<p class="text-muted-foreground">Generated: ${formatDate(
-                    reportData.metadata?.generatedAt
-                  )} | Run ID: ${run.id} | Run Timestamp: ${formatDate(
-                    run.timestamp
-                  )}</p>`
-                : '<p class="text-muted-foreground">No run data available.</p>'
+    <div class="container">
+        <h1>Playwright Pulse Report</h1>
+
+        <h2>Run Summary</h2>
+        ${summaryHtml}
+
+        <h2>Test Results (${results.length})</h2>
+        <div class="results-list">
+            ${resultsHtml}
+        </div>
+
+        <footer>
+            Generated by Playwright Pulse Reporter on ${format(
+              new Date(),
+              "PP pp"
+            )}<br>
+            Report data generated at: ${
+              metadata.generatedAt
+                ? format(new Date(metadata.generatedAt), "PP pp")
+                : "N/A"
             }
-        </header>
-
-        <!-- Summary Metrics -->
-        ${
-          run
-            ? `
-        <h2>Summary</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
-            <div class="card">
-                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Total Tests</h4></div>
-                <div class="card-content"><div class="text-2xl font-bold">${
-                  run.totalTests
-                }</div></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Passed</h4></div>
-                <div class="card-content"><div class="text-2xl font-bold text-green-600">${
-                  run.passed
-                }</div></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Failed</h4></div>
-                <div class="card-content"><div class="text-2xl font-bold text-red-600">${
-                  run.failed
-                }</div></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Skipped</h4></div>
-                <div class="card-content"><div class="text-2xl font-bold text-yellow-600">${
-                  run.skipped
-                }</div></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Duration</h4></div>
-                <div class="card-content"><div class="text-2xl font-bold">${formatDuration(
-                  run.duration
-                )}</div></div>
-            </div>
-        </div>
-        `
-            : ""
-        }
-
-        <!-- Charts -->
-        <div class="grid grid-cols-1 md:grid-cols-2">
-            <!-- Test Status Pie Chart Placeholder -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Test Status Distribution</h3>
-                    <p class="card-description">Latest Run Summary</p>
-                </div>
-                <div class="card-content">
-                    ${
-                      run && run.totalTests > 0
-                        ? `
-                    <div class="chart-placeholder" style="padding: 1rem; text-align: center;">
-                        <p><strong>Total Tests:</strong> ${run.totalTests}</p>
-                        <ul class="chart-legend">
-                            <li><span class="legend-color-box" style="background-color: #d4edda;"></span>Passed: ${
-                              run.passed
-                            } (${((run.passed / run.totalTests) * 100).toFixed(
-                            1
-                          )}%)</li>
-                            <li><span class="legend-color-box" style="background-color: #f8d7da;"></span>Failed: ${
-                              run.failed
-                            } (${((run.failed / run.totalTests) * 100).toFixed(
-                            1
-                          )}%)</li>
-                            <li><span class="legend-color-box" style="background-color: #fff3cd;"></span>Skipped: ${
-                              run.skipped
-                            } (${((run.skipped / run.totalTests) * 100).toFixed(
-                            1
-                          )}%)</li>
-                        </ul>
-                        <p style="font-size: 0.8rem; margin-top: 1rem;">(Actual chart rendering requires JavaScript or server-side generation)</p>
-                    </div>
-                    `
-                        : `<p class="text-muted-foreground chart-placeholder">No data to display chart.</p>`
-                    }
-                </div>
-            </div>
-
-            <!-- Trends Area Chart Placeholder -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Test Result Trends</h3>
-                     <p class="card-description">Trends over time (placeholder)</p>
-                </div>
-                 <div class="card-content">
-                     <div class="chart-placeholder">Trend chart placeholder</div>
-                 </div>
-            </div>
-        </div>
-
-        <!-- Test Results -->
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Test Results</h2>
-                 <p class="card-description">Details for each test case.</p>
-            </div>
-            <div class="card-content" style="padding: 0;"> <!-- Remove padding for list items -->
-                 ${
-                   results.length > 0
-                     ? results
-                         .map(
-                           (test) => `
-                    <div class="test-result-item">
-                        <div class="status-duration">
-                            <span class="badge badge-${test.status}">${
-                             test.status.charAt(0).toUpperCase() +
-                             test.status.slice(1)
-                           }</span>
-                            <span class="text-xs text-muted-foreground">Duration: ${formatDuration(
-                              test.duration
-                            )}</span>
-                        </div>
-                         <a href="#test-${test.id}" class="title">${
-                             test.name
-                           }</a>
-                         ${
-                           test.suiteName
-                             ? `<div class="suite">Suite: ${test.suiteName}</div>`
-                             : ""
-                         }
-                        ${
-                          test.status === "failed" && test.errorMessage
-                            ? `<div class="error">${test.errorMessage}</div>`
-                            : ""
-                        }
-                        <div class="time">Finished: ${formatDate(
-                          test.endTime
-                        )}</div>
-                        <!-- Simple anchor link for potential detail expansion later -->
-                        <div id="test-${
-                          test.id
-                        }" style="margin-top: 1rem; display: none;"> <!-- Hidden details area -->
-                             <h4>Steps & Details (Placeholder)</h4>
-                             ${
-                               test.errorMessage
-                                 ? `<p><strong>Error:</strong> ${test.errorMessage}</p>`
-                                 : ""
-                             }
-                             ${
-                               test.stackTrace
-                                 ? `<p><strong>Stack Trace:</strong></p><pre><code>${test.stackTrace}</code></pre>`
-                                 : ""
-                             }
-                         </div>
-                     </div>
-                 `
-                         )
-                         .join("")
-                     : '<p class="text-muted-foreground" style="padding: 1.5rem;">No test results found.</p>'
-                 }
-            </div>
-        </div>
-
+        </footer>
     </div>
-     <script>
-         // Basic script to toggle test details (optional enhancement)
-         document.querySelectorAll('.test-result-item .title').forEach(titleLink => {
-             titleLink.addEventListener('click', (event) => {
-                 event.preventDefault();
-                 const detailId = titleLink.getAttribute('href').substring(1);
-                 const detailElement = document.getElementById(detailId);
-                 if (detailElement) {
-                     detailElement.style.display = detailElement.style.display === 'none' ? 'block' : 'none';
-                 }
-             });
-         });
-     </script>
+
+    <script>
+        function toggleDetails(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = element.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+    </script>
 </body>
 </html>
-    `;
+  `;
+};
+
+/**
+ * Main function to generate the static report.
+ */
+const generateReport = async () => {
+  console.log(`Reading report data from: ${reportJsonPath}`);
+  let reportData;
 
   try {
-    await fs.mkdir(reportDir, { recursive: true }); // Ensure directory exists
-    await fs.writeFile(htmlFilePath, htmlContent);
+    const fileContent = await fs.readFile(reportJsonPath, "utf-8");
+
+    // --- Date Reviver for JSON ---
+    const reviveDates = (key, value) => {
+      const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+      if (typeof value === "string" && isoDateRegex.test(value)) {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+      return value;
+    };
+
+    reportData = JSON.parse(fileContent, reviveDates);
+
+    // Basic Validation
+    if (!reportData || typeof reportData !== "object") {
+      throw new Error("Report data is not a valid object.");
+    }
+    if (!reportData.metadata) {
+      throw new Error("Report metadata is missing.");
+    }
+    if (!Array.isArray(reportData.results)) {
+      reportData.results = []; // Ensure results is an array even if missing/null
+    }
+    // Ensure run is either null or an object
+    if (reportData.run !== null && typeof reportData.run !== "object") {
+      console.warn("Warning: Invalid 'run' data found, treating as null.");
+      reportData.run = null;
+    }
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      console.error(`Error: Report JSON file not found at ${reportJsonPath}.`);
+      console.error(
+        "Ensure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated."
+      );
+    } else {
+      console.error(
+        `Error reading or parsing JSON report file: ${error.message}`
+      );
+    }
+    process.exit(1); // Exit with error code
+  }
+
+  try {
+    const htmlContent = generateHtmlContent(reportData);
+    await fs.mkdir(reportDirPath, { recursive: true }); // Ensure directory exists
+    await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
-      `Static HTML report successfully generated at: ${htmlFilePath}`
+      `Static HTML report generated successfully at: ${reportHtmlPath}`
     );
   } catch (error) {
-    console.error(`Error writing static HTML report: ${error.message}`);
+    console.error(`Error generating or writing HTML report: ${error.message}`);
     process.exit(1);
   }
-}
+};
 
-generateStaticReport();
-
-    
+// Execute the report generation
+generateReport();
