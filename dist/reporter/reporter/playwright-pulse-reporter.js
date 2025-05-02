@@ -62,9 +62,11 @@ class PlaywrightPulseReporter {
         this.shardIndex = undefined;
         this.baseOutputFile = (_a = options.outputFile) !== null && _a !== void 0 ? _a : this.baseOutputFile;
         // Resolve outputDir relative to playwright config directory or cwd if not specified
-        this.outputDir = options.outputDir
+        // Ensure options.outputDir exists before trying to resolve
+        const baseDir = options.outputDir
             ? path.resolve(options.outputDir)
-            : path.resolve(process.cwd());
+            : process.cwd();
+        this.outputDir = baseDir;
         console.log(`PlaywrightPulseReporter: Output dir configured to ${this.outputDir}`);
     }
     printsToStdio() {
@@ -82,6 +84,13 @@ class PlaywrightPulseReporter {
         if (process.env.PLAYWRIGHT_SHARD_INDEX !== undefined) {
             this.shardIndex = parseInt(process.env.PLAYWRIGHT_SHARD_INDEX, 10);
         }
+        // Resolve outputDir relative to playwright config directory if possible, otherwise use cwd
+        // This needs the config object, so it's done in onBegin
+        const configDir = this.config.rootDir; // Playwright config directory
+        this.outputDir = this.outputDir
+            ? path.resolve(configDir, this.outputDir)
+            : path.resolve(configDir, "pulse-report-output"); // Default to 'pulse-report-output' relative to config
+        console.log(`PlaywrightPulseReporter: Final Output dir resolved to ${this.outputDir}`);
         if (this.shardIndex === undefined) {
             // Main process
             console.log(`PlaywrightPulseReporter: Starting test run with ${suite.allTests().length} tests${this.isSharded ? ` across ${totalShards} shards` : ""}.`);
@@ -111,7 +120,9 @@ class PlaywrightPulseReporter {
         const endTime = new Date(startTime.getTime() + Math.max(0, duration));
         return {
             // Create a somewhat unique ID combining title and timing details
-            id: `${step.title}-${startTime.toISOString()}-${duration}`,
+            id: `${step.title}-${startTime.toISOString()}-${duration}-${Math.random()
+                .toString(16)
+                .slice(2)}`, // Add random suffix for uniqueness
             title: step.title,
             status: inherentStatus,
             duration: duration,
@@ -159,7 +170,10 @@ class PlaywrightPulseReporter {
             console.warn(`Pulse Reporter: Could not extract code snippet for ${test.title}`, e);
         }
         const pulseResult = {
-            id: test.id,
+            id: test.id ||
+                `${test.title}-${startTime.toISOString()}-${Math.random()
+                    .toString(16)
+                    .slice(2)}`, // Fallback ID if test.id is missing
             runId: "TBD", // Placeholder, will be set by main process later
             name: test.titlePath().join(" > "), // Use full title path
             suiteName: test.parent.title,
@@ -221,7 +235,15 @@ class PlaywrightPulseReporter {
                     // console.log(`Pulse Reporter: Merged ${shardResults.length} results from shard ${i}`);
                 }
                 catch (error) {
-                    console.warn(`Pulse Reporter: Could not read or parse results from shard ${i} (${tempFilePath}). Error: ${error}`);
+                    if (error &&
+                        typeof error === "object" &&
+                        "code" in error &&
+                        error.code === "ENOENT") {
+                        console.warn(`Pulse Reporter: Shard results file not found: ${tempFilePath}. This might happen if a shard had no tests or failed early.`);
+                    }
+                    else {
+                        console.warn(`Pulse Reporter: Could not read or parse results from shard ${i} (${tempFilePath}). Error: ${error}`);
+                    }
                 }
             }
             console.log(`Pulse Reporter: Merged a total of ${allResults.length} results from ${totalShards} shards.`);
@@ -241,6 +263,7 @@ class PlaywrightPulseReporter {
         return __awaiter(this, void 0, void 0, function* () {
             // Runs *only* in the main process after merging or on error
             try {
+                yield this._ensureDirExists(this.outputDir); // Ensure dir exists before reading
                 const files = yield fs.readdir(this.outputDir);
                 const tempFiles = files.filter((f) => f.startsWith(TEMP_SHARD_FILE_PREFIX));
                 if (tempFiles.length > 0) {
@@ -270,6 +293,7 @@ class PlaywrightPulseReporter {
                     typeof error === "object" &&
                     "code" in error &&
                     error.code !== "EEXIST") {
+                    console.error(`Pulse Reporter: Failed to ensure directory exists: ${dirPath}`, error); // Log error if mkdir fails unexpectedly
                     throw error; // Re-throw other errors
                 }
             }
@@ -289,7 +313,9 @@ class PlaywrightPulseReporter {
             const duration = runEndTime - this.runStartTime;
             // The main process result.status might not be accurate with sharding, recalculate later
             // const runStatus = convertStatus(result.status);
-            const runId = `run-${this.runStartTime}`; // Consistent run ID
+            const runId = `run-${this.runStartTime}-${Math.random()
+                .toString(16)
+                .slice(2)}`; // Add randomness to run ID for uniqueness
             // Initial run data (counts will be recalculated after merging)
             const runData = {
                 id: runId,
@@ -348,4 +374,5 @@ class PlaywrightPulseReporter {
         });
     }
 }
-exports.default = PlaywrightPulseReporter;
+// Use CommonJS export for compatibility
+module.exports = PlaywrightPulseReporter;
