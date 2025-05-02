@@ -5,6 +5,8 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private results;
     private runStartTime;
     private outputDir;
+    private playwrightOutputDir;
+    private attachmentsDir;
     private baseOutputFile;
     private isSharded;
     private shardIndex;
@@ -15,8 +17,9 @@ export declare class PlaywrightPulseReporter implements Reporter {
     printsToStdio(): boolean;
     onBegin(config: FullConfig, suite: Suite): void;
     onTestBegin(test: TestCase): void;
+    private saveAttachment;
     private processStep;
-    onTestEnd(test: TestCase, result: PwTestResult): void;
+    onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;
     onError(error: any): void;
     private _writeShardResults;
     private _mergeShardResults;

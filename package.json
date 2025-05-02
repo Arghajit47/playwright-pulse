@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.12-beta.0",
+  "version": "0.2.12-beta.1",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -85,7 +85,6 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@playwright/test": "^1.45.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

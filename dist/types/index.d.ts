@@ -9,7 +9,7 @@ export interface TestStep {
     endTime: Date;
     errorMessage?: string;
     screenshot?: string;
-    videoTimestamp?: number;
+    steps?: TestStep[];
 }
 export interface TestResult {
     id: string;
@@ -25,6 +25,7 @@ export interface TestResult {
     codeSnippet?: string;
     screenshot?: string;
     video?: string;
+    attachments?: Record<string, string>;
     tags?: string[];
     suiteName?: string;
     runId: string;

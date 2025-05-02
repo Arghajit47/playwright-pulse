@@ -1,32 +1,43 @@
 #!/usr/bin/env node
-import fs from "fs/promises";
-import path from "path";
+// scripts/generate-static-report.mjs
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 
-// --- Configuration ---
-const DEFAULT_PULSE_REPORT_DIR = "pulse-report-output";
-const REPORT_JSON_FILE = "playwright-pulse-report.json";
-const STATIC_HTML_FILE = "playwright-pulse-static-report.html";
-const DEFAULT_PLAYWRIGHT_OUTPUT_DIR_NAME = "test-results"; // Default if not found in JSON
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // --- Helper Functions ---
 
-// Function to format duration in milliseconds to a readable string (e.g., 1.23s)
-function formatDuration(ms) {
-  if (typeof ms !== "number" || ms < 0) return "N/A";
+// Basic HTML sanitizer to prevent XSS and template literal issues
+const sanitizeHTML = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/`/g, '&#96;'); // Escape backticks specifically for template literals
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  try {
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? "Invalid Date" : date.toLocaleString();
+  } catch (e) {
+    return "Invalid Date";
+  }
+};
+
+const formatDuration = (ms) => {
+  if (ms === null || ms === undefined || isNaN(ms)) return "N/A";
+  if (ms < 0) ms = 0;
   return (ms / 1000).toFixed(2) + "s";
-}
+};
 
-// Function to format date objects to a readable string
-function formatDate(date) {
-  if (!date) return "N/A";
-  // Check if it's already a Date object or needs parsing
-  const d = date instanceof Date ? date : new Date(date);
-  if (isNaN(d.getTime())) return "N/A"; // Invalid date
-  return d.toLocaleString(); // Adjust format as needed
-}
-
-// Function to get status color class
-function getStatusClass(status) {
+const getStatusClass = (status) => {
   switch (status) {
     case "passed":
       return "status-passed";
@@ -37,152 +48,303 @@ function getStatusClass(status) {
     default:
       return "status-unknown";
   }
-}
+};
 
-// Function to encode image path to base64 data URI
-async function encodeImageToBase64(filePath) {
-  if (!filePath) return null;
-  try {
-    const absolutePath = path.resolve(filePath); // Ensure absolute path
-    const imageBuffer = await fs.readFile(absolutePath);
-    const base64Image = imageBuffer.toString("base64");
-    const mimeType = path.extname(filePath).slice(1); // Get extension without dot
-    // Handle common image types; default to png if unknown
-    const validMimeType = ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(
-      mimeType
+const getStatusIcon = (status) => {
+  switch (status) {
+    case "passed":
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m-2 15l-5-5l1.41-1.41L10 16.17l7.59-7.59L19 10z"/></svg>'; // Check Circle
+    case "failed":
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2m5 13.59L15.59 17L12 13.41L8.41 17L7 15.59L10.59 12L7 8.41L8.41 7L12 10.59L15.59 7L17 8.41L13.41 12z"/></svg>'; // X Circle
+    case "skipped":
+      return '<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><path fill="currentColor" d="M6 18V6h2v12zm4 0l9-6l-9-6z"/></svg>'; // Skip Forward
+    default:
+      return "❓";
+  }
+};
+
+const getStatusColor = (status) => {
+  switch (status) {
+    case "passed":
+      return "#22c55e"; // green-500
+    case "failed":
+      return "#ef4444"; // red-500
+    case "skipped":
+      return "#eab308"; // yellow-500
+    default:
+      return "#6b7280"; // gray-500
+  }
+};
+
+// Function to generate the pie chart SVG
+const generatePieChartSVG = (runData, size = 150) => {
+  if (!runData || runData.totalTests === 0) {
+    return `<div style="text-align: center; padding: 20px; color: #6b7280;">No test data for chart</div>`;
+  }
+
+  const { passed, failed, skipped, totalTests } = runData;
+  const data = [
+    { status: "passed", value: passed, color: getStatusColor("passed") },
+    { status: "failed", value: failed, color: getStatusColor("failed") },
+    { status: "skipped", value: skipped, color: getStatusColor("skipped") },
+  ].filter((d) => d.value > 0);
+
+  const radius = size / 2;
+  const cx = radius;
+  const cy = radius;
+  let startAngle = -90; // Start from top
+
+  const paths = data.map((segment) => {
+    const angle = (segment.value / totalTests) * 360;
+    const endAngle = startAngle + angle;
+
+    const startRad = (startAngle * Math.PI) / 180;
+    const endRad = (endAngle * Math.PI) / 180;
+
+    const x1 = cx + radius * Math.cos(startRad);
+    const y1 = cy + radius * Math.sin(startRad);
+    const x2 = cx + radius * Math.cos(endRad);
+    const y2 = cy + radius * Math.sin(endRad);
+
+    const largeArcFlag = angle > 180 ? 1 : 0;
+
+    const d = [
+      `M ${cx},${cy}`, // Move to center
+      `L ${x1},${y1}`, // Line to start point
+      `A ${radius},${radius} 0 ${largeArcFlag},1 ${x2},${y2}`, // Arc to end point
+      "Z", // Close path
+    ].join(" ");
+
+    startAngle = endAngle;
+
+    return `<path d="${d}" fill="${segment.color}" data-status="${segment.status}" data-value="${segment.value}"></path>`;
+  });
+
+  // Add central text
+  const centralText = `
+        <text x="${cx}" y="${cy}" dominant-baseline="middle" text-anchor="middle" font-size="24" font-weight="bold" fill="#1f2937">
+            ${totalTests}
+        </text>
+         <text x="${cx}" y="${
+    cy + 20
+  }" dominant-baseline="middle" text-anchor="middle" font-size="12" fill="#6b7280">
+            Tests
+        </text>
+    `;
+
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths.join(
+    ""
+  )}${centralText}</svg>`;
+};
+
+// Function to generate HTML for test result details
+const generateTestResultDetailsHTML = (result) => {
+  // Sanitize all potentially problematic string inputs first
+  const runId = sanitizeHTML(result.runId);
+  const suiteName = sanitizeHTML(result.suiteName || "N/A");
+  const errorMessage = sanitizeHTML(result.errorMessage);
+  const stackTrace = sanitizeHTML(result.stackTrace);
+  const codeSnippet = sanitizeHTML(result.codeSnippet);
+  const tagsHTML =
+    result.tags && result.tags.length > 0
+      ? `<p><strong>Tags:</strong> ${result.tags
+          .map((tag) => `<span class="tag">${sanitizeHTML(tag)}</span>`)
+          .join(" ")}</p>`
+      : "";
+
+  const errorHTML = result.errorMessage
+    ? `
+            <h3>Error</h3>
+            <pre class="error-message"><code>${errorMessage}</code></pre>
+            ${
+              stackTrace
+                ? `<pre class="stack-trace"><code>${stackTrace}</code></pre>`
+                : ""
+            }
+          `
+    : "";
+
+  const stepsHTML =
+    result.steps && result.steps.length > 0
+      ? `
+            <h3>Steps</h3>
+            <ul class="steps-list">
+                ${result.steps
+                  .map(
+                    (step) => `
+                    <li class="step-item ${getStatusClass(step.status)}">
+                        <div class="step-title">
+                            <span class="step-icon-title">${getStatusIcon(
+                              step.status
+                            )} ${sanitizeHTML(step.title)}</span>
+                            <span class="step-duration">${formatDuration(
+                              step.duration
+                            )}</span>
+                        </div>
+                        ${
+                          step.errorMessage
+                            ? `<div class="step-error">${sanitizeHTML(
+                                step.errorMessage
+                              )}</div>`
+                            : ""
+                        }
+                    </li>
+                `
+                  )
+                  .join("")}
+            </ul>
+          `
+      : "<p>No steps recorded.</p>";
+
+  const attachmentsHTML = `
+        <h3>Attachments</h3>
+        ${
+          (result.screenshots && result.screenshots.length > 0) ||
+          result.videoPath ||
+          result.tracePath
+            ? `
+                ${
+                  result.screenshots
+                    ?.map(
+                      (screenshot, index) => `
+                    <div class="attachment">
+                        <strong>Screenshot ${index + 1}:</strong><br>
+                        ${
+                          screenshot.startsWith("data:image")
+                            ? `<img src="${screenshot}" alt="Screenshot ${
+                                index + 1
+                              }" style="max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 5px;">`
+                            : `<a href="${sanitizeHTML(
+                                screenshot
+                              )}" target="_blank" rel="noopener noreferrer">${sanitizeHTML(
+                                screenshot
+                              )}</a> (Link)`
+                        }
+                    </div>
+                `
+                    )
+                    .join("") || ""
+                }
+                ${
+                  result.videoPath
+                    ? `<div class="attachment"><strong>Video:</strong> <a href="${sanitizeHTML(
+                        result.videoPath
+                      )}" target="_blank" rel="noopener noreferrer">${sanitizeHTML(
+                        result.videoPath
+                      )}</a></div>`
+                    : ""
+                }
+                ${
+                  result.tracePath
+                    ? `<div class="attachment"><strong>Trace:</strong> <a href="${sanitizeHTML(
+                        result.tracePath
+                      )}" target="_blank" rel="noopener noreferrer">${sanitizeHTML(
+                        result.tracePath
+                      )}</a></div>`
+                    : ""
+                }
+              `
+            : "<p>No attachments available.</p>"
+        }
+    `;
+
+  const codeSnippetHTML = result.codeSnippet
+    ? `
+            <h3>Code Snippet</h3>
+            <pre class="code-snippet"><code>${codeSnippet}</code></pre>
+          `
+    : "";
+
+  return `
+        <div class="test-details">
+            <h3>Details</h3>
+            <p><strong>Run ID:</strong> ${runId}</p>
+            <p><strong>Suite:</strong> ${suiteName}</p>
+            <p><strong>Started:</strong> ${formatDate(result.startTime)}</p>
+            <p><strong>Ended:</strong> ${formatDate(result.endTime)}</p>
+            <p><strong>Duration:</strong> ${formatDuration(result.duration)}</p>
+            <p><strong>Retries:</strong> ${result.retries}</p>
+            ${tagsHTML}
+            ${errorHTML}
+            ${stepsHTML}
+            ${attachmentsHTML}
+            ${codeSnippetHTML}
+        </div>
+    `;
+};
+
+
+// Function to generate the full HTML content
+const generateHTML = (reportData) => {
+  const { run, results, metadata } = reportData;
+  const generatedAt = formatDate(metadata?.generatedAt);
+  const runTimestamp = run ? formatDate(run.timestamp) : "N/A";
+  const runDuration = run ? formatDuration(run.duration) : "N/A";
+
+  const summaryMetricsHTML = run
+    ? `
+        <div class="summary-grid">
+            <div class="summary-card"><h4>Total Tests</h4><p>${run.totalTests}</p></div>
+            <div class="summary-card status-passed"><h4>Passed</h4><p>${run.passed}</p></div>
+            <div class="summary-card status-failed"><h4>Failed</h4><p>${run.failed}</p></div>
+            <div class="summary-card status-skipped"><h4>Skipped</h4><p>${run.skipped}</p></div>
+        </div>
+    `
+    : "<p>No run summary available.</p>";
+
+  const pieChartHTML = run
+    ? `
+        <div class="chart-container">
+            <h4>Test Status Distribution</h4>
+            ${generatePieChartSVG(run)}
+             <div class="chart-legend">
+                <span class="legend-item status-passed">Passed (${
+                  run.passed
+                })</span>
+                <span class="legend-item status-failed">Failed (${
+                  run.failed
+                })</span>
+                <span class="legend-item status-skipped">Skipped (${
+                  run.skipped
+                })</span>
+            </div>
+        </div>
+    `
+    : "";
+
+  const testResultsHTML = results
+    .map(
+      (result) => `
+        <div class="test-result-item ${getStatusClass(
+          result.status
+        )}" data-suite="${sanitizeHTML(
+        result.suiteName || "Default Suite"
+      )}" data-status="${result.status}" data-name="${sanitizeHTML(
+        result.name.toLowerCase()
+      )}">
+            <div class="test-result-header" onclick="toggleDetails(this)">
+                <span class="test-status-icon">${getStatusIcon(
+                  result.status
+                )}</span>
+                <span class="test-name">${sanitizeHTML(result.name)}</span>
+                <span class="test-duration">${formatDuration(
+                  result.duration
+                )}</span>
+                <span class="test-suite-name">(${sanitizeHTML(
+                  result.suiteName || "Default Suite"
+                )})</span>
+                <span class="expand-icon">▶</span>
+            </div>
+            <div class="test-result-details" style="display: none;">
+                ${generateTestResultDetailsHTML(result)}
+            </div>
+        </div>
+    `
     )
-      ? `image/${mimeType}`
-      : "image/png";
-    return `data:${validMimeType};base64,${base64Image}`;
-  } catch (error) {
-    console.warn(
-      `   - Warning: Could not read or encode image at ${filePath}: ${error.message}`
-    );
-    return null; // Return null if image cannot be processed
-  }
-}
+    .join("");
 
-// --- Main Generation Logic ---
-
-async function generateStaticReport(pulseReportDir = DEFAULT_PULSE_REPORT_DIR) {
-  // Determine the correct directory for the JSON report
-  const reportJsonPath = path.resolve(
-    process.cwd(),
-    pulseReportDir,
-    REPORT_JSON_FILE
-  );
-  const staticHtmlPath = path.resolve(
-    process.cwd(),
-    pulseReportDir,
-    STATIC_HTML_FILE
-  );
-
-  console.log(`Generating static HTML report...`);
-  console.log(` > Reading report data from: ${reportJsonPath}`);
-
-  let reportData;
-  try {
-    const fileContent = await fs.readFile(reportJsonPath, "utf-8");
-    reportData = JSON.parse(fileContent); // Dates are still strings here initially
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      console.error(`Error: Report JSON file not found at ${reportJsonPath}.`);
-      console.error(
-        "Ensure Playwright tests ran with 'playwright-pulse-reporter' configured with the correct 'outputDir'."
-      );
-    } else {
-      console.error(
-        `Error reading or parsing report JSON file: ${error.message}`
-      );
-    }
-    process.exit(1); // Exit if report data is missing
-  }
-
-  // Basic validation
-  if (!reportData || !reportData.results) {
-    console.error("Error: Invalid report data structure in JSON file.");
-    process.exit(1);
-  }
-
-  // --- Resolve Attachment Paths ---
-  // Determine the Playwright output directory (where attachments like screenshots/videos are stored)
-  // Ideally, the reporter saves this information, but we need a fallback.
-  // For now, assume it's relative to the project root (where command is run)
-  const playwrightOutputDir = path.resolve(
-    process.cwd(),
-    DEFAULT_PLAYWRIGHT_OUTPUT_DIR_NAME
-  );
-  console.log(
-    ` > Assuming Playwright output (attachments) directory: ${playwrightOutputDir}`
-  );
-
-  // Process results to resolve paths and encode images
-  const processedResults = await Promise.all(
-    reportData.results.map(async (result) => {
-      let base64Screenshot = null;
-      if (result.screenshot) {
-        const screenshotPath = path.resolve(
-          playwrightOutputDir,
-          result.screenshot
-        );
-        base64Screenshot = await encodeImageToBase64(screenshotPath);
-      }
-
-      const processedSteps = await Promise.all(
-        (result.steps || []).map(async (step) => {
-          let base64StepScreenshot = null;
-          if (step.screenshot) {
-            const stepScreenshotPath = path.resolve(
-              playwrightOutputDir,
-              step.screenshot
-            );
-            base64StepScreenshot = await encodeImageToBase64(
-              stepScreenshotPath
-            );
-          }
-          return { ...step, screenshotDataUri: base64StepScreenshot };
-        })
-      );
-
-      // Store relative video path for linking
-      const videoRelativePath = result.video
-        ? path.relative(
-            pulseReportDir,
-            path.resolve(playwrightOutputDir, result.video)
-          )
-        : null;
-
-      return {
-        ...result,
-        screenshotDataUri: base64Screenshot,
-        videoRelativePath: videoRelativePath, // Use relative path for link
-        steps: processedSteps, // Update steps with embedded screenshot data
-      };
-    })
-  );
-
-  reportData.results = processedResults; // Update report data with processed results
-
-  // --- Calculate Summary ---
-  const run = reportData.run || {}; // Use empty object if run data is missing
-  const totalTests = reportData.results.length;
-  const passed = reportData.results.filter((r) => r.status === "passed").length;
-  const failed = reportData.results.filter((r) => r.status === "failed").length;
-  const skipped = reportData.results.filter(
-    (r) => r.status === "skipped"
-  ).length;
-  const duration = run.duration ? formatDuration(run.duration) : "N/A";
-  const timestamp = run.timestamp ? formatDate(run.timestamp) : "N/A";
-
-  // Data for Pie Chart
-  const chartData = [
-    { label: "Passed", value: passed, color: "#22c55e" }, // green-500
-    { label: "Failed", value: failed, color: "#ef4444" }, // red-500
-    { label: "Skipped", value: skipped, color: "#f59e0b" }, // amber-500
-  ].filter((d) => d.value > 0); // Filter out zero values
-
-  // --- Group Tests by Suite ---
-  const testsBySuite = reportData.results.reduce((acc, result) => {
+  // Group results by suite
+  const resultsBySuite = results.reduce((acc, result) => {
     const suite = result.suiteName || "Default Suite";
     if (!acc[suite]) {
       acc[suite] = [];
@@ -191,493 +353,307 @@ async function generateStaticReport(pulseReportDir = DEFAULT_PULSE_REPORT_DIR) {
     return acc;
   }, {});
 
-  // --- Generate HTML Content ---
-  const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Playwright Pulse Report</title>
-    <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f9fafb; color: #1f2937; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        header { border-bottom: 1px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; }
-        header h1 { margin: 0; font-size: 2em; color: #708090; /* Slate Blue */ }
-        nav { display: flex; gap: 15px; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px; }
-        nav button { padding: 10px 15px; font-size: 1em; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #4b5563; transition: border-color 0.2s, color 0.2s; }
-        nav button.active { border-bottom-color: #008080; /* Teal */ color: #008080; font-weight: 600; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
-        .summary-card { background-color: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; text-align: center; }
-        .summary-card h3 { margin: 0 0 5px 0; font-size: 1em; color: #4b5563; }
-        .summary-card .value { font-size: 2em; font-weight: 600; }
-        .status-passed .value { color: #16a34a; }
-        .status-failed .value { color: #dc2626; }
-        .status-skipped .value { color: #d97706; }
-        .chart-container { display: flex; justify-content: center; align-items: center; min-height: 250px; margin-bottom: 30px; background-color: #f3f4f6; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
-        .test-list { margin-top: 20px; }
-        .suite-group { margin-bottom: 25px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
-        .suite-header { background-color: #f3f4f6; padding: 10px 15px; font-weight: 600; border-bottom: 1px solid #e5e7eb; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .suite-header::after { content: '▼'; font-size: 0.8em; transition: transform 0.2s; }
-        .suite-header.collapsed::after { transform: rotate(-90deg); }
-        .suite-content { display: block; } /* Initially shown */
-        .suite-content.collapsed { display: none; }
-        .test-item { border-bottom: 1px solid #e5e7eb; padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: background-color 0.2s; }
-        .test-item:last-child { border-bottom: none; }
-        .test-item:hover { background-color: #f9fafb; }
-        .test-status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 500; white-space: nowrap; }
-        .status-passed { background-color: #dcfce7; color: #15803d; }
-        .status-failed { background-color: #fee2e2; color: #b91c1c; }
-        .status-skipped { background-color: #fef3c7; color: #a16207; }
-        .test-name { flex-grow: 1; font-weight: 500; }
-        .test-duration { font-size: 0.9em; color: #6b7280; white-space: nowrap; }
-        .test-details { display: none; padding: 15px; background-color: #f9fafb; border-top: 1px dashed #e5e7eb; }
-        .test-details.visible { display: block; }
-        .details-section { margin-bottom: 15px; }
-        .details-section h4 { margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
-        pre { background-color: #e5e7eb; padding: 10px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; }
-        .steps-list { list-style: none; padding: 0; margin: 0; }
-        .step-item { display: flex; align-items: start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-        .step-item:last-child { border-bottom: none; }
-        .step-status-icon { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
-        .step-passed { background-color: #22c55e; }
-        .step-failed { background-color: #ef4444; }
-        .step-skipped { background-color: #f59e0b; }
-        .step-info { flex-grow: 1; }
-        .step-title { font-weight: 500; margin-bottom: 3px; }
-        .step-details { font-size: 0.85em; color: #6b7280; }
-        .step-error { color: #dc2626; font-weight: 500; margin-top: 5px; font-family: 'Courier New', Courier, monospace; }
-        .attachment-container img, .attachment-container video { max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; margin-top: 10px; }
-        .step-screenshot img { max-width: 300px; cursor: pointer; } /* Smaller preview for steps */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
-        .modal-content { max-width: 90%; max-height: 90%; }
-        .modal-close { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
-        .filters { display: flex; gap: 15px; margin-bottom: 20px; }
-        .filters input, .filters select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.9em; }
-        .filters input { flex-grow: 1; }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>Playwright Pulse Report</h1>
-            <p>Run Timestamp: ${timestamp} | Total Duration: ${duration}</p>
-        </header>
-
-        <nav>
-            <button class="tab-button active" data-tab="dashboard">Dashboard</button>
-            <button class="tab-button" data-tab="test-runs">Test Runs</button>
-        </nav>
-
-        <!-- Dashboard Tab -->
-        <div id="dashboard" class="tab-content active">
-            <h2>Run Summary</h2>
-            <div class="summary-grid">
-                <div class="summary-card">
-                    <h3>Total Tests</h3>
-                    <div class="value">${totalTests}</div>
-                </div>
-                <div class="summary-card status-passed">
-                    <h3>Passed</h3>
-                    <div class="value">${passed}</div>
-                </div>
-                <div class="summary-card status-failed">
-                    <h3>Failed</h3>
-                    <div class="value">${failed}</div>
-                </div>
-                <div class="summary-card status-skipped">
-                    <h3>Skipped</h3>
-                    <div class="value">${skipped}</div>
-                </div>
-            </div>
-
-            <h2>Test Status Distribution</h2>
-            <div class="chart-container">
-                 ${
-                   chartData.length > 0
-                     ? '<canvas id="statusPieChart"></canvas>'
-                     : "<p>No test results to display chart.</p>"
-                 }
-            </div>
-        </div>
-
-        <!-- Test Runs Tab -->
-        <div id="test-runs" class="tab-content">
-            <h2>All Test Results</h2>
-             <div class="filters">
-                 <input type="text" id="searchInput" placeholder="Search by test name...">
-                 <select id="statusFilter">
-                     <option value="all">All Statuses</option>
-                     <option value="passed">Passed</option>
-                     <option value="failed">Failed</option>
-                     <option value="skipped">Skipped</option>
-                 </select>
-            </div>
-            <div class="test-list">
-                ${Object.entries(testsBySuite)
+  const testRunsBySuiteHTML = Object.entries(resultsBySuite)
+    .map(
+      ([suite, suiteResults]) => `
+        <div class="suite-group">
+            <h3 class="suite-title">${sanitizeHTML(suite)} (${
+        suiteResults.length
+      } tests)</h3>
+            <div class="suite-results">
+                ${suiteResults
                   .map(
-                    ([suiteName, tests]) => `
-                    <div class="suite-group" data-suite="${suiteName}">
-                        <div class="suite-header">
-                            <span>${suiteName} (${tests.length})</span>
+                    (result) => `
+                    <div class="test-result-item ${getStatusClass(
+                      result.status
+                    )}" data-suite="${sanitizeHTML(
+                      result.suiteName || "Default Suite"
+                    )}" data-status="${
+                      result.status
+                    }" data-name="${sanitizeHTML(result.name.toLowerCase())}">
+                        <div class="test-result-header" onclick="toggleDetails(this)">
+                            <span class="test-status-icon">${getStatusIcon(
+                              result.status
+                            )}</span>
+                            <span class="test-name">${sanitizeHTML(
+                              result.name
+                            )}</span>
+                            <span class="test-duration">${formatDuration(
+                              result.duration
+                            )}</span>
+                             <span class="expand-icon">▶</span>
                         </div>
-                        <div class="suite-content">
-                            ${tests
-                              .map(
-                                (result) => `
-                                <div class="test-item" data-testid="${
-                                  result.id
-                                }" data-status="${result.status}">
-                                    <span class="test-status-badge ${getStatusClass(
-                                      result.status
-                                    )}">${
-                                  result.status.charAt(0).toUpperCase() +
-                                  result.status.slice(1)
-                                }</span>
-                                    <span class="test-name">${
-                                      result.name
-                                    }</span>
-                                    <span class="test-duration">${formatDuration(
-                                      result.duration
-                                    )}</span>
-                                </div>
-                                <div class="test-details" id="details-${
-                                  result.id
-                                }">
-                                    <h4>Test Information</h4>
-                                    <p><strong>Full Name:</strong> ${
-                                      result.name
-                                    }</p>
-                                    <p><strong>Suite:</strong> ${
-                                      result.suiteName || "Default Suite"
-                                    }</p>
-                                    <p><strong>Status:</strong> ${
-                                      result.status
-                                    }</p>
-                                    <p><strong>Duration:</strong> ${formatDuration(
-                                      result.duration
-                                    )}</p>
-                                    <p><strong>Start Time:</strong> ${formatDate(
-                                      result.startTime
-                                    )}</p>
-                                    <p><strong>End Time:</strong> ${formatDate(
-                                      result.endTime
-                                    )}</p>
-                                    <p><strong>Retries:</strong> ${
-                                      result.retries
-                                    }</p>
-                                    ${
-                                      result.tags && result.tags.length > 0
-                                        ? `<p><strong>Tags:</strong> ${result.tags.join(
-                                            ", "
-                                          )}</p>`
-                                        : ""
-                                    }
-
-                                    ${
-                                      result.errorMessage
-                                        ? `
-                                        <div class="details-section">
-                                            <h4>Error</h4>
-                                            <pre><code>${
-                                              result.errorMessage
-                                            }</code></pre>
-                                            ${
-                                              result.stackTrace
-                                                ? `<h4>Stack Trace</h4><pre><code>${result.stackTrace}</code></pre>`
-                                                : ""
-                                            }
-                                        </div>
-                                    `
-                                        : ""
-                                    }
-
-                                    ${
-                                      result.screenshotDataUri
-                                        ? `
-                                        <div class="details-section attachment-container">
-                                            <h4>Screenshot (on failure)</h4>
-                                            <img src="${result.screenshotDataUri}" alt="Failure Screenshot" loading="lazy">
-                                        </div>
-                                    `
-                                        : ""
-                                    }
-
-                                    ${
-                                      result.videoRelativePath
-                                        ? `
-                                        <div class="details-section attachment-container">
-                                            <h4>Video Recording</h4>
-                                            <video controls preload="none" loading="lazy">
-                                                 <source src="${result.videoRelativePath}" type="video/webm"> <!-- Adjust type if needed -->
-                                                 Your browser does not support the video tag. <a href="${result.videoRelativePath}" target="_blank">Download video</a>
-                                             </video>
-                                        </div>
-                                    `
-                                        : ""
-                                    }
-
-                                    ${
-                                      result.steps && result.steps.length > 0
-                                        ? `
-                                        <div class="details-section">
-                                            <h4>Test Steps</h4>
-                                            <ul class="steps-list">
-                                                ${result.steps
-                                                  .map(
-                                                    (step) => `
-                                                    <li class="step-item">
-                                                        <span class="step-status-icon ${getStatusClass(
-                                                          step.status
-                                                        )}"></span>
-                                                        <div class="step-info">
-                                                            <div class="step-title">${
-                                                              step.title
-                                                            }</div>
-                                                            <div class="step-details">Duration: ${formatDuration(
-                                                              step.duration
-                                                            )} | Start: ${formatDate(
-                                                      step.startTime
-                                                    )} | End: ${formatDate(
-                                                      step.endTime
-                                                    )}</div>
-                                                            ${
-                                                              step.errorMessage
-                                                                ? `<div class="step-error">${step.errorMessage}</div>`
-                                                                : ""
-                                                            }
-                                                            ${
-                                                              step.screenshotDataUri
-                                                                ? `
-                                                                <div class="step-screenshot">
-                                                                    <img src="${step.screenshotDataUri}" alt="Step Screenshot" loading="lazy" onclick="openModal(this.src)">
-                                                                </div>`
-                                                                : ""
-                                                            }
-                                                        </div>
-                                                    </li>
-                                                `
-                                                  )
-                                                  .join("")}
-                                            </ul>
-                                        </div>
-                                    `
-                                        : "<p>No steps recorded for this test.</p>"
-                                    }
-
-                                    ${
-                                      result.codeSnippet
-                                        ? `
-                                    <div class="details-section">
-                                        <h4>Test Location</h4>
-                                        <pre><code>${result.codeSnippet}</code></pre>
-                                    </div>
-                                    `
-                                        : ""
-                                    }
-
-                                </div>
-                            `
-                              )
-                              .join("")}
-                        </div>
+                         <div class="test-result-details" style="display: none;">
+                             ${generateTestResultDetailsHTML(result)}
+                         </div>
                     </div>
                 `
                   )
                   .join("")}
             </div>
         </div>
+    `
+    )
+    .join("");
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright Pulse - Static Report</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; background-color: #f9fafb; color: #1f2937; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { padding-bottom: 15px; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 1.8em; color: #708090; /* Slate Blue */ }
+        header p { margin: 5px 0 0; color: #6b7280; font-size: 0.9em; }
+        nav { margin-bottom: 20px; background-color: #e5e7eb; border-radius: 6px; padding: 5px; }
+        nav button { background-color: transparent; border: none; padding: 10px 15px; cursor: pointer; font-size: 1em; border-radius: 4px; transition: background-color 0.2s; }
+        nav button.active { background-color: #708090; color: white; }
+        nav button:not(.active):hover { background-color: #d1d5db; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .summary-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; text-align: center; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .summary-card h4 { margin: 0 0 5px; font-size: 0.9em; color: #6b7280; }
+        .summary-card p { margin: 0; font-size: 1.5em; font-weight: bold; }
+        .summary-card.status-passed p { color: #10b981; }
+        .summary-card.status-failed p { color: #ef4444; }
+        .summary-card.status-skipped p { color: #f59e0b; }
+        .chart-container { margin-bottom: 20px; text-align: center; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px; background-color: #fff; }
+        .chart-container h4 { margin: 0 0 15px; font-size: 1.1em; color: #374151; }
+        .chart-legend { margin-top: 15px; display: flex; justify-content: center; gap: 15px; font-size: 0.9em; }
+        .legend-item { display: inline-flex; align-items: center; }
+        .legend-item::before { content: ''; display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
+        .legend-item.status-passed::before { background-color: ${getStatusColor(
+          "passed"
+        )}; }
+        .legend-item.status-failed::before { background-color: ${getStatusColor(
+          "failed"
+        )}; }
+        .legend-item.status-skipped::before { background-color: ${getStatusColor(
+          "skipped"
+        )}; }
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; padding: 15px; background-color: #f3f4f6; border-radius: 6px; }
+        .filters label { font-weight: bold; margin-right: 5px; }
+        .filters input, .filters select { padding: 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.9em; }
+        .filters input { flex-grow: 1; }
+        .test-results-list, .test-runs-list { border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+        .suite-group { margin-bottom: 20px; }
+        .suite-title { background-color: #f3f4f6; padding: 10px 15px; font-size: 1.1em; font-weight: bold; border-bottom: 1px solid #e5e7eb; }
+        .suite-results .test-result-item:first-child .test-result-header { border-top: none; }
+        .test-result-item { /* No border here */ }
+        .test-result-header { display: flex; align-items: center; padding: 12px 15px; cursor: pointer; background-color: #fff; transition: background-color 0.2s; border-top: 1px solid #e5e7eb; }
+        .test-result-header:hover { background-color: #f9fafb; }
+        .test-status-icon { display: inline-flex; margin-right: 8px; width: 1.2em; height: 1.2em; }
+        .test-status-icon svg { width: 100%; height: 100%; }
+        .test-name { font-weight: 500; flex-grow: 1; margin-right: 10px; }
+        .test-duration { font-size: 0.9em; color: #6b7280; margin-right: 10px; }
+        .test-suite-name { font-size: 0.8em; color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+        .expand-icon { margin-left: auto; font-size: 0.8em; transition: transform 0.2s; }
+        .test-result-header.open .expand-icon { transform: rotate(90deg); }
+        .test-result-details { display: none; padding: 15px; border-top: 1px dashed #e5e7eb; background-color: #f9fafb; }
+        .test-result-details h3 { font-size: 1.1em; margin: 15px 0 10px; padding-bottom: 5px; border-bottom: 1px solid #ccc; }
+        .test-result-details h3:first-child { margin-top: 0; }
+        .test-result-details p { margin: 5px 0; }
+        .steps-list { list-style: none; padding: 0; margin: 0; }
+        .step-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .step-item:last-child { border-bottom: none; }
+        .step-title { display: flex; justify-content: space-between; align-items: center; font-size: 0.95em; }
+        .step-icon-title { display: flex; align-items: center; gap: 5px; }
+        .step-duration { font-size: 0.85em; color: #6b7280; }
+        .step-error { color: #ef4444; font-size: 0.9em; margin-top: 4px; padding-left: 20px; }
+        .attachment { margin-bottom: 10px; }
+        .attachment img { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 5px; }
+        .tag { background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; display: inline-block; margin-right: 5px; }
+        pre { background-color: #f3f4f6; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; font-size: 0.9em; line-height: 1.4; }
+        code { font-family: 'Courier New', Courier, monospace; }
+        .status-passed .test-result-header { border-left: 4px solid ${getStatusColor(
+          "passed"
+        )}; }
+        .status-failed .test-result-header { border-left: 4px solid ${getStatusColor(
+          "failed"
+        )}; }
+        .status-skipped .test-result-header { border-left: 4px solid ${getStatusColor(
+          "skipped"
+        )}; }
+        .status-passed .step-title { color: #10b981; }
+        .status-failed .step-title { color: #ef4444; }
+        .status-skipped .step-title { color: #f59e0b; }
+        .status-passed .step-icon-title svg path { fill: #10b981; }
+        .status-failed .step-icon-title svg path { fill: #ef4444; }
+        .status-skipped .step-icon-title svg path { fill: #f59e0b; }
+        footer { text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; font-size: 0.85em; color: #6b7280; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Playwright Pulse Report</h1>
+            <p>Run ID: ${
+              run ? sanitizeHTML(run.id) : "N/A"
+            } | Timestamp: ${runTimestamp} | Duration: ${runDuration} | Generated: ${generatedAt}</p>
+        </header>
+
+        <nav>
+            <button id="tab-btn-dashboard" class="active" onclick="switchTab('dashboard')">Dashboard</button>
+            <button id="tab-btn-testruns" onclick="switchTab('testruns')">Test Runs</button>
+        </nav>
+
+        <div id="tab-content-dashboard" class="tab-content active">
+            <h2>Dashboard</h2>
+            ${summaryMetricsHTML}
+            ${pieChartHTML}
+        </div>
+
+        <div id="tab-content-testruns" class="tab-content">
+            <h2>Test Runs</h2>
+            <div class="filters">
+                <input type="search" id="searchInput" placeholder="Search by test name..." oninput="filterTests()">
+                <select id="statusFilter" onchange="filterTests()">
+                    <option value="all">All Statuses</option>
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="skipped">Skipped</option>
+                </select>
+            </div>
+            <div id="testRunsList" class="test-runs-list">
+                ${testRunsBySuiteHTML}
+            </div>
+             <div id="noResultsMessage" style="text-align: center; padding: 20px; color: #6b7280; display: none;">
+                No tests found matching your criteria.
+            </div>
+        </div>
+
+        <footer>
+            Report generated by Playwright Pulse Reporter
+        </footer>
     </div>
 
-     <!-- Image Modal -->
-     <div id="imageModal" class="modal" onclick="closeModal()">
-         <span class="modal-close" onclick="closeModal(event)">&times;</span>
-         <img class="modal-content" id="modalImage">
-     </div>
-
     <script>
-        // Tab Switching Logic
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
-
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const tab = button.getAttribute('data-tab');
-
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-
-                tabContents.forEach(content => {
-                    if (content.id === tab) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
-                });
-            });
-        });
-
-        // Test Details Toggling
-        const testItems = document.querySelectorAll('.test-item');
-        testItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const testId = item.getAttribute('data-testid');
-                const detailsDiv = document.getElementById(\`details-\${testId}\`);
-                if (detailsDiv) {
-                    detailsDiv.classList.toggle('visible');
-                }
-            });
-        });
-
-        // Suite Group Toggling
-        const suiteHeaders = document.querySelectorAll('.suite-header');
-        suiteHeaders.forEach(header => {
-            header.addEventListener('click', () => {
-                header.classList.toggle('collapsed');
-                const content = header.nextElementSibling;
-                if (content && content.classList.contains('suite-content')) {
-                    content.classList.toggle('collapsed');
-                }
-            });
-        });
-
-        // Filtering Logic
-        const searchInput = document.getElementById('searchInput');
-        const statusFilter = document.getElementById('statusFilter');
-        const allTestItems = document.querySelectorAll('#test-runs .test-item');
-        const allSuiteGroups = document.querySelectorAll('#test-runs .suite-group');
-
-        function applyFilters() {
-            const searchTerm = searchInput.value.toLowerCase();
-            const selectedStatus = statusFilter.value;
-
-            allSuiteGroups.forEach(suiteGroup => {
-                let suiteVisible = false;
-                const suiteTestItems = suiteGroup.querySelectorAll('.test-item');
-
-                suiteTestItems.forEach(item => {
-                    const testName = item.querySelector('.test-name').textContent.toLowerCase();
-                    const testStatus = item.getAttribute('data-status');
-                    const detailsDiv = document.getElementById(\`details-\${item.getAttribute('data-testid')}\`);
-
-                    const searchMatch = testName.includes(searchTerm);
-                    const statusMatch = selectedStatus === 'all' || testStatus === selectedStatus;
-
-                    if (searchMatch && statusMatch) {
-                        item.style.display = 'flex';
-                        if (detailsDiv) detailsDiv.style.display = detailsDiv.classList.contains('visible') ? 'block' : 'none'; // Keep details visibility if toggled open
-                        suiteVisible = true; // Show suite if any test matches
-                    } else {
-                        item.style.display = 'none';
-                         if (detailsDiv) detailsDiv.style.display = 'none'; // Hide details if test is filtered out
-                    }
-                });
-
-                // Show/hide the entire suite group based on whether any test items are visible
-                suiteGroup.style.display = suiteVisible ? 'block' : 'none';
-            });
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+            document.getElementById(\`tab-content-\${tabId}\`).classList.add('active');
+            document.getElementById(\`tab-btn-\${tabId}\`).classList.add('active');
         }
 
-        searchInput.addEventListener('input', applyFilters);
-        statusFilter.addEventListener('change', applyFilters);
+        function toggleDetails(headerElement) {
+            const detailsElement = headerElement.nextElementSibling;
+            const iconElement = headerElement.querySelector('.expand-icon');
+            if (detailsElement.style.display === 'none') {
+                detailsElement.style.display = 'block';
+                headerElement.classList.add('open');
+                 iconElement.style.transform = 'rotate(90deg)';
+            } else {
+                detailsElement.style.display = 'none';
+                headerElement.classList.remove('open');
+                 iconElement.style.transform = 'rotate(0deg)';
+            }
+        }
 
-         // Pie Chart Rendering (using Chart.js)
-         const ctx = document.getElementById('statusPieChart')?.getContext('2d');
-         if (ctx && ${chartData.length > 0}) {
-             new Chart(ctx, {
-                 type: 'pie',
-                 data: {
-                     labels: ${JSON.stringify(chartData.map((d) => d.label))},
-                     datasets: [{
-                         label: 'Test Status',
-                         data: ${JSON.stringify(chartData.map((d) => d.value))},
-                         backgroundColor: ${JSON.stringify(
-                           chartData.map((d) => d.color)
-                         )},
-                         borderColor: '#fff',
-                         borderWidth: 1
-                     }]
-                 },
-                 options: {
-                     responsive: true,
-                     maintainAspectRatio: false,
-                     plugins: {
-                         legend: {
-                             position: 'top',
-                         },
-                         tooltip: {
-                             callbacks: {
-                                 label: function(context) {
-                                     let label = context.label || '';
-                                     if (label) {
-                                         label += ': ';
-                                     }
-                                     if (context.parsed !== null) {
-                                         label += context.parsed;
-                                     }
-                                     return label;
-                                 }
-                             }
-                         }
-                     }
+        function filterTests() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const testItems = document.querySelectorAll('#testRunsList .test-result-item');
+            let hasVisibleItems = false;
+
+            testItems.forEach(item => {
+                const testName = item.getAttribute('data-name');
+                const testStatus = item.getAttribute('data-status');
+
+                const nameMatch = testName.includes(searchTerm);
+                const statusMatch = statusFilter === 'all' || testStatus === statusFilter;
+
+                if (nameMatch && statusMatch) {
+                    item.style.display = '';
+                    // Make sure the parent suite group is visible if any item inside matches
+                     const suiteGroup = item.closest('.suite-group');
+                     if (suiteGroup) suiteGroup.style.display = '';
+                     hasVisibleItems = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+             // Hide suite groups if all their items are hidden
+            document.querySelectorAll('#testRunsList .suite-group').forEach(suiteGroup => {
+                const visibleItems = suiteGroup.querySelectorAll('.test-result-item[style*="display: block"], .test-result-item:not([style])'); // Items not explicitly hidden
+                 if (visibleItems.length === 0 && suiteGroup.querySelectorAll('.test-result-item').length > 0) { // Check if it originally had items
+                     suiteGroup.style.display = 'none';
+                 } else {
+                     suiteGroup.style.display = ''; // Ensure it's visible if it has matching items
                  }
-             });
-         }
-
-         // Image Modal Logic
-         const modal = document.getElementById('imageModal');
-         const modalImg = document.getElementById('modalImage');
-
-         function openModal(src) {
-            if (modal && modalImg) {
-                 modal.style.display = 'flex';
-                 modalImg.src = src;
-             }
-         }
-
-         function closeModal(event) {
-            // Prevent closing if clicking inside the image itself
-            if (event && event.target === modalImg) {
-                return;
-            }
-             if (modal) {
-                 modal.style.display = 'none';
-                 modalImg.src = ""; // Clear src
-            }
-         }
-
-         // Close modal on Escape key
-         document.addEventListener('keydown', function(event) {
-             if (event.key === 'Escape') {
-                 closeModal();
-             }
-         });
+            });
 
 
+            // Show/hide the "no results" message
+             document.getElementById('noResultsMessage').style.display = hasVisibleItems ? 'none' : 'block';
+        }
+
+         // Initial call to filter in case there are default filter values (though none currently)
+        filterTests();
     </script>
 </body>
 </html>
     `;
+};
 
-  // --- Write HTML File ---
+// --- Main Execution ---
+
+const generateReport = async (inputDir = process.cwd(), options = {}) => {
+  const reportJsonPath = path.resolve(
+    inputDir,
+    options.outputFile || "playwright-pulse-report.json"
+  );
+  const reportHtmlPath = path.resolve(
+    inputDir,
+    "playwright-pulse-static-report.html"
+  );
+
+  console.log(`Generating static report in directory: ${inputDir}`);
+  console.log(`Reading report data from: ${reportJsonPath}`);
+
   try {
-    await fs.writeFile(staticHtmlPath, htmlContent);
+    const jsonData = await fs.readFile(reportJsonPath, "utf-8");
+    let reportData;
+    try {
+      reportData = JSON.parse(jsonData);
+      // Optional: Add date reviving here if needed for static report logic
+    } catch (parseError) {
+      console.error(`Error parsing JSON from ${reportJsonPath}:`, parseError);
+      throw new Error("Invalid JSON in report file.");
+    }
+
+    const htmlContent = generateHTML(reportData);
+    await fs.writeFile(reportHtmlPath, htmlContent);
+
     console.log(
-      `Static HTML report generated successfully at: ${staticHtmlPath}`
+      `Static HTML report generated successfully at ${reportHtmlPath}`
     );
   } catch (error) {
-    console.error(`Error writing static HTML report: ${error.message}`);
-    process.exit(1);
+    if (error.code === "ENOENT") {
+      console.error(`Error: Report JSON file not found at ${reportJsonPath}.`);
+      console.error(
+        "Ensure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated."
+      );
+    } else {
+      console.error("Error generating static HTML report:", error);
+    }
+    process.exit(1); // Exit with error code
   }
+};
+
+// Export the function and also run if executed directly
+export default generateReport;
+
+// Run if executed directly from command line
+if (process.argv[1] === __filename) {
+    // Default to current working directory if no argument is provided
+    const targetDir = process.argv[2] || process.cwd();
+    // Assume default options if run directly for simplicity
+    // In a real CLI, you'd parse arguments for options
+    generateReport(targetDir, {outputFile: 'playwright-pulse-report.json'});
 }
-
-// --- Script Execution ---
-// Allow running with an optional directory argument
-const customReportDir = process.argv[2]; // Get directory from command line argument if provided
-generateStaticReport(customReportDir);
-
-// Export the function for potential programmatic use (e.g., by the reporter)
-export default generateStaticReport;

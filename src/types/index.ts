@@ -10,8 +10,8 @@ export interface TestStep {
   startTime: Date;
   endTime: Date;
   errorMessage?: string;
-  screenshot?: string; // URL or path
-  videoTimestamp?: number; // Timestamp in video
+  steps?: TestStep[]; // Nested steps
+  // Removed step-level attachments as the new logic handles them at the result level
 }
 
 export interface TestResult {
@@ -26,11 +26,14 @@ export interface TestResult {
   errorMessage?: string;
   stackTrace?: string;
   codeSnippet?: string; // For AI analysis
-  screenshot?: string; // Final screenshot on failure
-  video?: string; // URL or path to video
   tags?: string[];
   suiteName?: string;
   runId: string; // Identifier for the test run this result belongs to
+
+  // New fields for refined attachment handling
+  screenshots?: string[]; // Array of paths or base64 data URIs for screenshots
+  videoPath?: string; // Relative path to the video file
+  tracePath?: string; // Relative path to the trace file
 }
 
 export interface TestRun {
@@ -55,4 +58,11 @@ export interface SummaryMetric {
   value: string | number;
   icon: LucideIcon;
   color?: string; // Tailwind color class
+}
+
+// Options for the reporter
+export interface PlaywrightPulseReporterOptions {
+  outputFile?: string;
+  outputDir?: string;
+  base64Images?: boolean; // Option to embed images as base64
 }

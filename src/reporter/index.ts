@@ -6,6 +6,6 @@ import { PlaywrightPulseReporter } from "./playwright-pulse-reporter";
 export default PlaywrightPulseReporter;
 export { PlaywrightPulseReporter };
 
-// You can also export other related types or utilities if needed
-export * from '../types'; // Re-export shared types using relative path
-export * from '../lib/report-types'; // Re-export report types using relative path
+// Re-export types needed by consumers of the reporter itself
+export type { PlaywrightPulseReport } from "../lib/report-types";
+export type { TestResult, TestRun, TestStep, TestStatus } from "../types";
