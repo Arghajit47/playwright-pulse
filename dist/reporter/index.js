@@ -22,5 +22,5 @@ Object.defineProperty(exports, "PlaywrightPulseReporter", { enumerable: true, ge
 // and also as a named export for potential ES module consumers.
 exports.default = playwright_pulse_reporter_1.PlaywrightPulseReporter;
 // You can also export other related types or utilities if needed
-__exportStar(require("../types"), exports); // Re-export shared types if they are used by the reporter consumers
-__exportStar(require("../lib/report-types"), exports);
+__exportStar(require("../types"), exports); // Re-export shared types using relative path
+__exportStar(require("../lib/report-types"), exports); // Re-export report types using relative path

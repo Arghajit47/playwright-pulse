@@ -2,25 +2,26 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src", // Changed from "src/reporter" to "src"
-    "module": "commonjs", // Required for Node.js compatibility
-    "target": "es2018", // Reasonably modern Node.js target
-    "moduleResolution": "node", // Ensure Node.js resolution
-    "declaration": true, // Generate .d.ts files
-    "declarationDir": "dist", // Place .d.ts files alongside .js
+    "rootDir": "src", // Changed back to 'src' to include types and lib
+    "module": "commonjs",
+    "target": "es2018",
+    "moduleResolution": "node",
+    "declaration": true,
+    "declarationDir": "dist",
     "emitDeclarationOnly": false,
-    "noEmit": false, // Ensure files are emitted
-    "isolatedModules": false,
-    "jsx": "react", // Keep if needed, though reporter likely doesn't use JSX
+    "noEmit": false,
+    "isolatedModules": false, // Required when rootDir is changed
+    "jsx": "react",
     "skipLibCheck": true,
     "paths": {
-      "@/*": ["./src/*"] // Keep if reporter code uses this alias
+      // Keep paths alias if used internally, but prefer relative for reporter build
+      "@/*": ["./src/*"]
     }
   },
-  "include": ["src/reporter/**/*", "src/types/**/*", "src/lib/report-types.ts"], // Include reporter source and necessary types/libs
+  // Include all necessary source files relative to the new rootDir ('src')
+  "include": ["src/reporter/**/*", "src/types/**/*", "src/lib/report-types.ts"],
   "exclude": [
     "node_modules",
-    // Exclude Next.js specific directories and files if they exist under src
     "src/app",
     "src/components",
     "src/ai",
