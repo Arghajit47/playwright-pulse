@@ -1,350 +1,345 @@
 #!/usr/bin/env node
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { format } from 'date-fns'; // Use date-fns for formatting
+import fs from "fs/promises";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// --- Helper Functions ---
+// Determine the project root based on script location
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Assume the script is in 'scripts/' directory, go up one level for project root
+const projectRoot = path.resolve(__dirname, '..');
 
-function escapeHtml(unsafe) {
-  if (unsafe === null || unsafe === undefined) return '';
-  return String(unsafe)
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/'/g, "&#039;");
-}
+const defaultReportDir = "pulse-report-output";
+const defaultJsonFile = "playwright-pulse-report.json";
+const defaultHtmlFile = "playwright-pulse-static-report.html";
 
-function getStatusClass(status) {
-    switch (status) {
-        case 'passed': return 'status-passed';
-        case 'failed': return 'status-failed';
-        case 'skipped': return 'status-skipped';
-        default: return '';
+async function generateStaticReport() {
+  const reportDir = path.resolve(projectRoot, defaultReportDir);
+  const jsonFilePath = path.join(reportDir, defaultJsonFile);
+  const htmlFilePath = path.join(reportDir, defaultHtmlFile);
+
+  console.log(`Reading report data from: ${jsonFilePath}`);
+
+  let reportData;
+  try {
+    const fileContent = await fs.readFile(jsonFilePath, "utf-8");
+    // Basic JSON parsing (dates will be strings, handled in HTML generation)
+    reportData = JSON.parse(fileContent);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      console.error(`Error: Report JSON file not found at ${jsonFilePath}.`);
+      console.error(
+        "Ensure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated."
+      );
+    } else {
+      console.error(
+        `Error reading or parsing report JSON file: ${error.message}`
+      );
     }
-}
+    process.exit(1);
+  }
 
-function getStatusIcon(status) {
-     switch (status) {
-        case 'passed': return '<span>&#10004;</span>'; // Check mark
-        case 'failed': return '<span>&#10008;</span>'; // Cross mark
-        case 'skipped': return '<span>&#9724;</span>'; // Square
-        default: return '';
-    }
-}
+  console.log("Generating static HTML report...");
 
-function formatDuration(ms) {
-    return `${(ms / 1000).toFixed(2)}s`;
-}
+  const { run, results } = reportData;
 
-// --- HTML Template ---
+  // Helper function to format duration
+  const formatDuration = (ms) => (ms / 1000).toFixed(2) + "s";
 
-function generateHtml(reportData) {
-  const { run, results, metadata } = reportData;
-
-  const css = `
-    :root {
-      --color-bg: #f8f9fa;
-      --color-text: #212529;
-      --color-border: #dee2e6;
-      --color-card-bg: #ffffff;
-      --color-muted: #6c757d;
-      --color-primary: #708090; /* Slate Blue */
-      --color-accent: #008080; /* Teal */
-      --color-passed: #28a745;
-      --color-failed: #dc3545;
-      --color-skipped: #ffc107;
-      --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-      --radius: 0.375rem;
-    }
-    body {
-      font-family: var(--font-sans);
-      background-color: var(--color-bg);
-      color: var(--color-text);
-      margin: 0;
-      padding: 1rem;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .container { max-width: 1200px; margin: auto; }
-    .card { background-color: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: var(--radius); margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--color-border); background-color: rgba(0,0,0,0.02); font-size: 1.1rem; font-weight: 500; }
-    .card-content { padding: 1.25rem; }
-    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
-    .summary-item { text-align: center; padding: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius); background-color: #fff; }
-    .summary-label { font-size: 0.9em; color: var(--color-muted); margin-bottom: 0.25rem; display: block;}
-    .summary-value { font-size: 1.5em; font-weight: 600; }
-    .tabs { display: flex; border-bottom: 1px solid var(--color-border); margin-bottom: 1rem; }
-    .tab-button { padding: 0.75rem 1rem; border: none; background: none; cursor: pointer; font-size: 1em; color: var(--color-muted); border-bottom: 2px solid transparent; margin-bottom: -1px;}
-    .tab-button.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 500; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--color-border); }
-    th { background-color: var(--color-bg); font-weight: 500; }
-    tbody tr:hover { background-color: rgba(0,0,0,0.03); }
-    .status-badge { display: inline-block; padding: 0.25em 0.6em; font-size: 0.8em; font-weight: 600; border-radius: var(--radius); line-height: 1; }
-    .status-passed { color: #fff; background-color: var(--color-passed); }
-    .status-failed { color: #fff; background-color: var(--color-failed); }
-    .status-skipped { color: #212529; background-color: var(--color-skipped); }
-    .test-item { border: 1px solid var(--color-border); margin-bottom: 0.5rem; border-radius: var(--radius); overflow: hidden; }
-    .test-header { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 1rem; background-color: rgba(0,0,0,0.02); border-bottom: 1px solid var(--color-border); }
-    .test-title { font-weight: 500; }
-    .test-details { padding: 1rem; font-size: 0.9em; }
-    .test-details p { margin: 0 0 0.5rem 0; }
-    .test-details strong { color: var(--color-muted); display: inline-block; min-width: 80px; }
-    .test-steps details { margin-left: 1rem; border-left: 2px solid var(--color-border); padding-left: 1rem; margin-bottom: 0.5rem; }
-    .test-steps summary { cursor: pointer; padding: 0.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
-    .step-status { display: inline-block; width: 1em; height: 1em; border-radius: 50%; margin-right: 0.5em; }
-    .step-content { padding-left: 1.5rem; font-size: 0.9em; color: var(--color-muted); }
-    pre { background-color: var(--color-bg); padding: 0.75rem; border-radius: var(--radius); overflow-x: auto; font-size: 0.85em; white-space: pre-wrap; word-wrap: break-word; }
-    .text-right { text-align: right; }
-    .text-center { text-align: center; }
-    .text-muted { color: var(--color-muted); }
-    .font-mono { font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    footer { text-align: center; margin-top: 2rem; font-size: 0.85em; color: var(--color-muted); }
-  `;
-
-  const runDetailsHtml = run ? `
-    <div class="summary-grid">
-      <div class="summary-item">
-        <span class="summary-label">Total Tests</span>
-        <span class="summary-value">${escapeHtml(run.totalTests)}</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">Passed</span>
-        <span class="summary-value" style="color: var(--color-passed);">${escapeHtml(run.passed)}</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">Failed</span>
-        <span class="summary-value" style="color: var(--color-failed);">${escapeHtml(run.failed)}</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">Skipped</span>
-        <span class="summary-value" style="color: var(--color-skipped);">${escapeHtml(run.skipped)}</span>
-      </div>
-      <div class="summary-item">
-        <span class="summary-label">Duration</span>
-        <span class="summary-value">${escapeHtml(formatDuration(run.duration))}</span>
-      </div>
-       <div class="summary-item">
-        <span class="summary-label">Timestamp</span>
-        <span class="summary-value" style="font-size: 1em;">${escapeHtml(format(run.timestamp, 'PP pp'))}</span>
-      </div>
-    </div>
-    <p class="text-muted text-center" style="margin-top: 1rem;">Run ID: ${escapeHtml(run.id)}</p>
-  ` : '<p class="text-muted text-center">No run data available.</p>';
-
-  const resultsHtml = results.length > 0 ? results.map(result => `
-    <div class="test-item">
-      <div class="test-header">
-        <span class="test-title">${escapeHtml(result.name)}</span>
-        <span class="status-badge ${getStatusClass(result.status)}">${escapeHtml(result.status)}</span>
-      </div>
-      <div class="test-details">
-        <p><strong>Suite:</strong> ${escapeHtml(result.suiteName || 'N/A')}</p>
-        <p><strong>Duration:</strong> ${escapeHtml(formatDuration(result.duration))}</p>
-        <p><strong>Timings:</strong> ${escapeHtml(format(result.startTime, 'p'))} - ${escapeHtml(format(result.endTime, 'p'))}</p>
-        <p><strong>Retries:</strong> ${escapeHtml(result.retries)}</p>
-        ${result.tags && result.tags.length > 0 ? `<p><strong>Tags:</strong> ${result.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join(' ')}</p>` : ''}
-        ${result.status === 'failed' ? `
-          <div><strong>Error:</strong> <pre class="font-mono">${escapeHtml(result.errorMessage || 'No error message.')}</pre></div>
-          ${result.stackTrace ? `<div><strong>Stack Trace:</strong> <pre class="font-mono">${escapeHtml(result.stackTrace)}</pre></div>` : ''}
-        ` : ''}
-         ${result.codeSnippet ? `<div><strong>Code Snippet:</strong> <pre class="font-mono">${escapeHtml(result.codeSnippet)}</pre></div>` : ''}
-
-         ${result.steps && result.steps.length > 0 ? `
-         <div class="test-steps" style="margin-top: 1rem;">
-             <strong>Steps:</strong>
-             ${result.steps.map(step => `
-                <details>
-                    <summary>
-                        <span class="step-status ${getStatusClass(step.status)}" style="background-color: var(--color-${step.status});"></span>
-                        ${escapeHtml(step.title)} (${escapeHtml(formatDuration(step.duration))})
-                    </summary>
-                    <div class="step-content">
-                        <p>Status: ${escapeHtml(step.status)}</p>
-                        <p>Timings: ${escapeHtml(format(step.startTime, 'p'))} - ${escapeHtml(format(step.endTime, 'p'))}</p>
-                        ${step.errorMessage ? `<p>Error: ${escapeHtml(step.errorMessage)}</p>` : ''}
-                    </div>
-                </details>
-             `).join('')}
-         </div>
-         ` : '<p><strong>Steps:</strong> No steps recorded.</p>'}
-      </div>
-    </div>
-  `).join('') : '<p class="text-muted text-center">No test results available.</p>';
-
-
-   const runsTableHtml = run ? `
-       <tr>
-           <td>${escapeHtml(run.id)}</td>
-           <td>${escapeHtml(format(run.timestamp, 'PP pp'))}</td>
-           <td class="text-center"><span class="status-badge ${run.failed > 0 ? 'status-failed' : 'status-passed'}">${run.failed > 0 ? 'Failed' : 'Passed'}</span></td>
-           <td class="text-right">${escapeHtml(run.totalTests)}</td>
-           <td class="text-right">${escapeHtml(run.passed)}</td>
-           <td class="text-right">${escapeHtml(run.failed)}</td>
-           <td class="text-right">${escapeHtml(run.skipped)}</td>
-           <td class="text-right">${escapeHtml(formatDuration(run.duration))}</td>
-       </tr>
-   ` : '<tr><td colspan="8" class="text-center text-muted">No run data available.</td></tr>';
-
-
-  const html = `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Playwright Pulse Report</title>
-      <style>${css}</style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>Playwright Pulse Report</h1>
-        <p class="text-muted">Generated at: ${escapeHtml(format(new Date(metadata.generatedAt), 'PPP p'))}</p>
-
-        <div class="tabs">
-          <button class="tab-button active" onclick="openTab(event, 'summary')">Summary</button>
-          <button class="tab-button" onclick="openTab(event, 'results')">Test Results</button>
-           <button class="tab-button" onclick="openTab(event, 'runs')">Run History (Current)</button>
-        </div>
-
-        <div id="summary" class="tab-content active">
-          <div class="card">
-            <div class="card-header">Run Summary</div>
-            <div class="card-content">
-              ${runDetailsHtml}
-            </div>
-          </div>
-        </div>
-
-        <div id="results" class="tab-content">
-          <div class="card">
-            <div class="card-header">All Test Results</div>
-            <div class="card-content">
-              ${resultsHtml}
-            </div>
-          </div>
-        </div>
-
-         <div id="runs" class="tab-content">
-           <div class="card">
-             <div class="card-header">Run History</div>
-             <div class="card-content">
-                 <table>
-                     <thead>
-                         <tr>
-                             <th>Run ID</th>
-                             <th>Timestamp</th>
-                             <th class="text-center">Status</th>
-                             <th class="text-right">Total</th>
-                             <th class="text-right">Passed</th>
-                             <th class="text-right">Failed</th>
-                             <th class="text-right">Skipped</th>
-                             <th class="text-right">Duration</th>
-                         </tr>
-                     </thead>
-                     <tbody>
-                        ${runsTableHtml}
-                     </tbody>
-                 </table>
-             </div>
-           </div>
-         </div>
-
-        <footer>
-          Playwright Pulse Reporter
-        </footer>
-      </div>
-
-      <script>
-        function openTab(evt, tabName) {
-          var i, tabcontent, tablinks;
-          tabcontent = document.getElementsByClassName("tab-content");
-          for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-            tabcontent[i].classList.remove("active");
-          }
-          tablinks = document.getElementsByClassName("tab-button");
-          for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].classList.remove("active");
-          }
-          document.getElementById(tabName).style.display = "block";
-          document.getElementById(tabName).classList.add("active");
-          evt.currentTarget.classList.add("active");
-        }
-        // Ensure the default active tab is displayed on load
-        document.addEventListener('DOMContentLoaded', () => {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (activeTab) activeTab.style.display = 'block';
-        });
-      </script>
-    </body>
-    </html>
-  `;
-  return html;
-}
-
-
-// --- Main Script Logic ---
-
-async function main() {
-    const reportFileNameJson = 'playwright-pulse-report.json';
-    const reportFileNameHtml = 'playwright-pulse-static-report.html';
-    const reportDir = path.resolve(process.cwd(), 'pulse-report-output'); // Use the same output dir as reporter config
-    const jsonFilePath = path.join(reportDir, reportFileNameJson);
-    const htmlFilePath = path.join(reportDir, reportFileNameHtml);
-
-    console.log(`Generating static HTML report from: ${jsonFilePath}`);
-
+  // Helper function to format date strings (assuming ISO format)
+  const formatDate = (dateString) => {
     try {
-        // Read the JSON report data
-        const fileContent = await fs.readFile(jsonFilePath, 'utf-8');
-        let reportData;
-
-        // Revive dates from JSON strings
-        const reviveDates = (key, value) => {
-           const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-           if (typeof value === 'string' && isoDateRegex.test(value)) {
-               const date = new Date(value);
-               return !isNaN(date.getTime()) ? date : value;
-           }
-           return value;
-        };
-
-        try {
-            reportData = JSON.parse(fileContent, reviveDates);
-        } catch (parseError) {
-            console.error(`Error parsing JSON from ${jsonFilePath}:`, parseError);
-            throw new Error(`Invalid JSON in report file: ${parseError.message}`);
-        }
-
-        // Validate basic structure
-         if (!reportData || typeof reportData !== 'object' || !reportData.metadata || !Array.isArray(reportData.results)) {
-             throw new Error('Invalid report data structure in JSON file.');
-         }
-
-        // Generate the HTML content
-        const htmlContent = generateHtml(reportData);
-
-        // Ensure output directory exists
-         await fs.mkdir(reportDir, { recursive: true });
-
-        // Write the HTML file
-        await fs.writeFile(htmlFilePath, htmlContent, 'utf-8');
-
-        console.log(`Successfully generated static HTML report: ${htmlFilePath}`);
-
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            console.error(`Error: JSON report file not found at ${jsonFilePath}.`);
-            console.error('Please run your Playwright tests with the playwright-pulse-reporter enabled first.');
-        } else {
-            console.error('Error generating static HTML report:', error);
-        }
-        process.exit(1); // Exit with error code
+      return new Date(dateString).toLocaleString();
+    } catch (e) {
+      return dateString || "N/A"; // Fallback
     }
+  };
+
+  // --- Generate HTML Content ---
+  const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright Pulse - Static Report</title>
+    <style>
+        /* Reset and Base Styles */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        body { background-color: #f8f9fa; color: #343a40; padding: 2rem; }
+        h1, h2, h3, h4, h5, h6 { font-weight: 600; margin-bottom: 0.75rem; }
+        a { color: #007bff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        pre { background-color: #e9ecef; padding: 1rem; border-radius: 0.3rem; overflow-x: auto; font-family: monospace; font-size: 0.875rem; margin-top: 0.5rem; margin-bottom: 1rem; white-space: pre-wrap; word-wrap: break-word; }
+        code { font-family: monospace; }
+
+        /* Layout */
+        .container { max-width: 1200px; margin: 0 auto; }
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+
+        /* Card Component */
+        .card { background-color: #ffffff; border: 1px solid #dee2e6; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; }
+        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e9ecef; }
+        .card-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .card-description { color: #6c757d; font-size: 0.875rem; }
+        .card-content { padding: 1.5rem; flex-grow: 1; }
+        .card-footer { padding: 1rem 1.5rem; border-top: 1px solid #e9ecef; background-color: #f8f9fa; color: #6c757d; font-size: 0.875rem; }
+
+        /* Badge Component */
+        .badge { display: inline-flex; align-items: center; padding: 0.25em 0.6em; font-size: 0.75rem; font-weight: 600; line-height: 1; text-align: center; white-space: nowrap; vertical-align: baseline; border-radius: 0.375rem; border: 1px solid transparent; }
+        .badge-passed { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .badge-failed { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .badge-skipped { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .badge svg { width: 0.75em; height: 0.75em; margin-right: 0.25em; }
+
+        /* Text Colors */
+        .text-green-600 { color: #28a745; }
+        .text-red-600 { color: #dc3545; }
+        .text-yellow-600 { color: #ffc107; }
+        .text-muted-foreground { color: #6c757d; }
+        .text-destructive { color: #dc3545; }
+
+        /* Icons (Inline SVG for simplicity) */
+        .icon { display: inline-block; width: 1em; height: 1em; vertical-align: -0.125em; fill: currentColor; }
+        .icon-list-checks { /* SVG Placeholder */}
+        .icon-check-circle { /* SVG Placeholder */}
+        .icon-x-circle { /* SVG Placeholder */}
+        .icon-skip-forward { /* SVG Placeholder */}
+        .icon-clock { /* SVG Placeholder */}
+        .icon-alert-triangle { /* SVG Placeholder */}
+        .icon-code { /* SVG Placeholder */}
+
+         /* Chart Placeholders */
+        .chart-placeholder { min-height: 200px; display: flex; align-items: center; justify-content: center; background-color: #e9ecef; border-radius: 0.3rem; color: #6c757d; font-style: italic; }
+        .chart-legend { list-style: none; padding: 0; display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; font-size: 0.875rem; }
+        .chart-legend li { display: flex; align-items: center; gap: 0.5rem; }
+        .legend-color-box { width: 12px; height: 12px; border-radius: 2px; }
+
+         /* Test Result Item */
+        .test-result-item { border-bottom: 1px solid #e9ecef; padding: 1rem; transition: background-color 0.2s ease-in-out; }
+        .test-result-item:last-child { border-bottom: none; }
+        .test-result-item:hover { background-color: #f8f9fa; }
+        .test-result-item .status-duration { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .test-result-item .title { font-weight: 500; color: #007bff; margin-bottom: 0.25rem; display: block;}
+        .test-result-item .suite { font-size: 0.8rem; color: #6c757d; margin-bottom: 0.5rem;}
+        .test-result-item .error { font-size: 0.8rem; color: #dc3545; margin-top: 0.5rem; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .test-result-item .time { font-size: 0.75rem; color: #6c757d; text-align: right; margin-top: 0.5rem; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          body { padding: 1rem; }
+          .grid-cols-5, .grid-cols-4, .grid-cols-3, .grid-cols-2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container space-y-6">
+        <header>
+            <h1>Playwright Pulse Report</h1>
+            ${
+              run
+                ? `<p class="text-muted-foreground">Generated: ${formatDate(
+                    reportData.metadata?.generatedAt
+                  )} | Run ID: ${run.id} | Run Timestamp: ${formatDate(
+                    run.timestamp
+                  )}</p>`
+                : '<p class="text-muted-foreground">No run data available.</p>'
+            }
+        </header>
+
+        <!-- Summary Metrics -->
+        ${
+          run
+            ? `
+        <h2>Summary</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5">
+            <div class="card">
+                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Total Tests</h4></div>
+                <div class="card-content"><div class="text-2xl font-bold">${
+                  run.totalTests
+                }</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Passed</h4></div>
+                <div class="card-content"><div class="text-2xl font-bold text-green-600">${
+                  run.passed
+                }</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Failed</h4></div>
+                <div class="card-content"><div class="text-2xl font-bold text-red-600">${
+                  run.failed
+                }</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Skipped</h4></div>
+                <div class="card-content"><div class="text-2xl font-bold text-yellow-600">${
+                  run.skipped
+                }</div></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h4 class="card-title text-sm font-medium text-muted-foreground">Duration</h4></div>
+                <div class="card-content"><div class="text-2xl font-bold">${formatDuration(
+                  run.duration
+                )}</div></div>
+            </div>
+        </div>
+        `
+            : ""
+        }
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2">
+            <!-- Test Status Pie Chart Placeholder -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Test Status Distribution</h3>
+                    <p class="card-description">Latest Run Summary</p>
+                </div>
+                <div class="card-content">
+                    ${
+                      run && run.totalTests > 0
+                        ? `
+                    <div class="chart-placeholder" style="padding: 1rem; text-align: center;">
+                        <p><strong>Total Tests:</strong> ${run.totalTests}</p>
+                        <ul class="chart-legend">
+                            <li><span class="legend-color-box" style="background-color: #d4edda;"></span>Passed: ${
+                              run.passed
+                            } (${((run.passed / run.totalTests) * 100).toFixed(
+                            1
+                          )}%)</li>
+                            <li><span class="legend-color-box" style="background-color: #f8d7da;"></span>Failed: ${
+                              run.failed
+                            } (${((run.failed / run.totalTests) * 100).toFixed(
+                            1
+                          )}%)</li>
+                            <li><span class="legend-color-box" style="background-color: #fff3cd;"></span>Skipped: ${
+                              run.skipped
+                            } (${((run.skipped / run.totalTests) * 100).toFixed(
+                            1
+                          )}%)</li>
+                        </ul>
+                        <p style="font-size: 0.8rem; margin-top: 1rem;">(Actual chart rendering requires JavaScript or server-side generation)</p>
+                    </div>
+                    `
+                        : `<p class="text-muted-foreground chart-placeholder">No data to display chart.</p>`
+                    }
+                </div>
+            </div>
+
+            <!-- Trends Area Chart Placeholder -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Test Result Trends</h3>
+                     <p class="card-description">Trends over time (placeholder)</p>
+                </div>
+                 <div class="card-content">
+                     <div class="chart-placeholder">Trend chart placeholder</div>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Test Results</h2>
+                 <p class="card-description">Details for each test case.</p>
+            </div>
+            <div class="card-content" style="padding: 0;"> <!-- Remove padding for list items -->
+                 ${
+                   results.length > 0
+                     ? results
+                         .map(
+                           (test) => `
+                    <div class="test-result-item">
+                        <div class="status-duration">
+                            <span class="badge badge-${test.status}">${
+                             test.status.charAt(0).toUpperCase() +
+                             test.status.slice(1)
+                           }</span>
+                            <span class="text-xs text-muted-foreground">Duration: ${formatDuration(
+                              test.duration
+                            )}</span>
+                        </div>
+                         <a href="#test-${test.id}" class="title">${
+                             test.name
+                           }</a>
+                         ${
+                           test.suiteName
+                             ? `<div class="suite">Suite: ${test.suiteName}</div>`
+                             : ""
+                         }
+                        ${
+                          test.status === "failed" && test.errorMessage
+                            ? `<div class="error">${test.errorMessage}</div>`
+                            : ""
+                        }
+                        <div class="time">Finished: ${formatDate(
+                          test.endTime
+                        )}</div>
+                        <!-- Simple anchor link for potential detail expansion later -->
+                        <div id="test-${
+                          test.id
+                        }" style="margin-top: 1rem; display: none;"> <!-- Hidden details area -->
+                             <h4>Steps & Details (Placeholder)</h4>
+                             ${
+                               test.errorMessage
+                                 ? `<p><strong>Error:</strong> ${test.errorMessage}</p>`
+                                 : ""
+                             }
+                             ${
+                               test.stackTrace
+                                 ? `<p><strong>Stack Trace:</strong></p><pre><code>${test.stackTrace}</code></pre>`
+                                 : ""
+                             }
+                         </div>
+                     </div>
+                 `
+                         )
+                         .join("")
+                     : '<p class="text-muted-foreground" style="padding: 1.5rem;">No test results found.</p>'
+                 }
+            </div>
+        </div>
+
+    </div>
+     <script>
+         // Basic script to toggle test details (optional enhancement)
+         document.querySelectorAll('.test-result-item .title').forEach(titleLink => {
+             titleLink.addEventListener('click', (event) => {
+                 event.preventDefault();
+                 const detailId = titleLink.getAttribute('href').substring(1);
+                 const detailElement = document.getElementById(detailId);
+                 if (detailElement) {
+                     detailElement.style.display = detailElement.style.display === 'none' ? 'block' : 'none';
+                 }
+             });
+         });
+     </script>
+</body>
+</html>
+    `;
+
+  try {
+    await fs.mkdir(reportDir, { recursive: true }); // Ensure directory exists
+    await fs.writeFile(htmlFilePath, htmlContent);
+    console.log(
+      `Static HTML report successfully generated at: ${htmlFilePath}`
+    );
+  } catch (error) {
+    console.error(`Error writing static HTML report: ${error.message}`);
+    process.exit(1);
+  }
 }
 
-main();
+generateStaticReport();
+
+    
