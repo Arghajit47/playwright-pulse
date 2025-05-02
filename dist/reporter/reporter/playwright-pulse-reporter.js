@@ -67,7 +67,8 @@ class PlaywrightPulseReporter {
             ? path.resolve(options.outputDir)
             : process.cwd();
         this.outputDir = baseDir;
-        console.log(`PlaywrightPulseReporter: Output dir configured to ${this.outputDir}`);
+        // Note: Final resolution happens in onBegin after config is available
+        console.log(`PlaywrightPulseReporter: Initial Output dir configured to ${this.outputDir}`);
     }
     printsToStdio() {
         // Prevent shard processes other than the first from printing duplicate status updates
@@ -87,19 +88,20 @@ class PlaywrightPulseReporter {
         // Resolve outputDir relative to playwright config directory if possible, otherwise use cwd
         // This needs the config object, so it's done in onBegin
         const configDir = this.config.rootDir; // Playwright config directory
+        // Use outputDir from options if provided and resolve it relative to configDir, otherwise default
         this.outputDir = this.outputDir
             ? path.resolve(configDir, this.outputDir)
             : path.resolve(configDir, "pulse-report-output"); // Default to 'pulse-report-output' relative to config
         console.log(`PlaywrightPulseReporter: Final Output dir resolved to ${this.outputDir}`);
         if (this.shardIndex === undefined) {
             // Main process
-            console.log(`PlaywrightPulseReporter: Starting test run with ${suite.allTests().length} tests${this.isSharded ? ` across ${totalShards} shards` : ""}.`);
+            console.log(`PlaywrightPulseReporter: Starting test run with ${suite.allTests().length} tests${this.isSharded ? ` across ${totalShards} shards` : ""}. Outputting to ${this.outputDir}`);
             // Clean up any leftover temp files from previous runs in the main process
             this._cleanupTemporaryFiles().catch((err) => console.error("Pulse Reporter: Error cleaning up temp files:", err));
         }
         else {
             // Shard process
-            console.log(`PlaywrightPulseReporter: Shard ${this.shardIndex + 1}/${totalShards} starting.`);
+            console.log(`PlaywrightPulseReporter: Shard ${this.shardIndex + 1}/${totalShards} starting. Outputting temp results to ${this.outputDir}`);
         }
     }
     onTestBegin(test) {

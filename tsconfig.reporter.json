@@ -1,36 +1,31 @@
-
 {
-  "extends": "./tsconfig.json", // Inherit base config
+  "extends": "./tsconfig.json",
   "compilerOptions": {
-    "module": "CommonJS", // Reporter needs CommonJS for Node environment
-    "moduleResolution": "node", // Override moduleResolution for CommonJS compatibility
-    "outDir": "dist/reporter", // Output directory for the reporter JS
+    "outDir": "dist",
+    "rootDir": "src", // Changed from "src/reporter" to "src"
+    "module": "commonjs", // Required for Node.js compatibility
+    "target": "es2018", // Reasonably modern Node.js target
+    "moduleResolution": "node", // Ensure Node.js resolution
     "declaration": true, // Generate .d.ts files
-    "declarationDir": "dist/reporter",
-    "emitDeclarationOnly": false, // Ensure JS files are also generated
+    "declarationDir": "dist", // Place .d.ts files alongside .js
+    "emitDeclarationOnly": false,
     "noEmit": false, // Ensure files are emitted
-    "isolatedModules": false, // Not needed for library build
-    "jsx": "react", // Or preserve, depending on needs, but likely 'react' for CommonJS
+    "isolatedModules": false,
+    "jsx": "react", // Keep if needed, though reporter likely doesn't use JSX
+    "skipLibCheck": true,
     "paths": {
-      // Adjust paths for reporter context if needed
-      "@/*": ["./src/*"]
-    },
-    "target": "ES2016", // Target Node.js compatible version
-    "skipLibCheck": true // Speed up build
+      "@/*": ["./src/*"] // Keep if reporter code uses this alias
+    }
   },
-  "include": [
-    "src/reporter/**/*.ts",
-    "src/types/**/*.ts",
-    "src/lib/report-types.ts"
-  ], // Only include reporter, types and report-types
+  "include": ["src/reporter/**/*", "src/types/**/*", "src/lib/report-types.ts"], // Include reporter source and necessary types/libs
   "exclude": [
     "node_modules",
-    "dist",
-    ".next",
-    "src/app", // Exclude Next.js app code
-    "src/components", // Exclude React components
-    "src/lib", // Exclude app-specific libs (keep report-types.ts)
-    "src/ai", // Exclude AI code
-    "src/hooks" // Exclude hooks
+    // Exclude Next.js specific directories and files if they exist under src
+    "src/app",
+    "src/components",
+    "src/ai",
+    "src/hooks",
+    "src/lib/data*.ts", // Exclude Next.js data fetching logic
+    "src/lib/utils.ts" // Exclude client-side utils if not needed by reporter
   ]
 }
