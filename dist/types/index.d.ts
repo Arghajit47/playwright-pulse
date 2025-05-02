@@ -8,7 +8,6 @@ export interface TestStep {
     startTime: Date;
     endTime: Date;
     errorMessage?: string;
-    screenshot?: string;
     steps?: TestStep[];
 }
 export interface TestResult {
@@ -23,12 +22,12 @@ export interface TestResult {
     errorMessage?: string;
     stackTrace?: string;
     codeSnippet?: string;
-    screenshot?: string;
-    video?: string;
-    attachments?: Record<string, string>;
     tags?: string[];
     suiteName?: string;
     runId: string;
+    screenshots?: string[];
+    videoPath?: string;
+    tracePath?: string;
 }
 export interface TestRun {
     id: string;
@@ -50,4 +49,9 @@ export interface SummaryMetric {
     value: string | number;
     icon: LucideIcon;
     color?: string;
+}
+export interface PlaywrightPulseReporterOptions {
+    outputFile?: string;
+    outputDir?: string;
+    base64Images?: boolean;
 }
