@@ -1,184 +1,188 @@
 #!/usr/bin/env node
-// scripts/generate-static-report.mjs
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { format, formatDistanceToNow } from 'date-fns'; // Added for date formatting
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import fs from "fs/promises";
+import path from "path";
 
 // --- Configuration ---
-// Find the project root by looking for package.json
-async function findProjectRoot(startDir) {
-    let currentDir = startDir;
-    while (true) {
-        try {
-            await fs.access(path.join(currentDir, 'package.json'));
-            return currentDir;
-        } catch (e) {
-            const parentDir = path.dirname(currentDir);
-            if (parentDir === currentDir) {
-                // Reached the filesystem root
-                throw new Error("Could not find project root (package.json). Run this script from within your project.");
-            }
-            currentDir = parentDir;
-        }
-    }
+const DEFAULT_PULSE_REPORT_DIR = "pulse-report-output";
+const REPORT_JSON_FILE = "playwright-pulse-report.json";
+const STATIC_HTML_FILE = "playwright-pulse-static-report.html";
+const DEFAULT_PLAYWRIGHT_OUTPUT_DIR_NAME = "test-results"; // Default if not found in JSON
+
+// --- Helper Functions ---
+
+// Function to format duration in milliseconds to a readable string (e.g., 1.23s)
+function formatDuration(ms) {
+  if (typeof ms !== "number" || ms < 0) return "N/A";
+  return (ms / 1000).toFixed(2) + "s";
 }
 
-async function generateReport() {
-  let projectRoot;
+// Function to format date objects to a readable string
+function formatDate(date) {
+  if (!date) return "N/A";
+  // Check if it's already a Date object or needs parsing
+  const d = date instanceof Date ? date : new Date(date);
+  if (isNaN(d.getTime())) return "N/A"; // Invalid date
+  return d.toLocaleString(); // Adjust format as needed
+}
+
+// Function to get status color class
+function getStatusClass(status) {
+  switch (status) {
+    case "passed":
+      return "status-passed";
+    case "failed":
+      return "status-failed";
+    case "skipped":
+      return "status-skipped";
+    default:
+      return "status-unknown";
+  }
+}
+
+// Function to encode image path to base64 data URI
+async function encodeImageToBase64(filePath) {
+  if (!filePath) return null;
   try {
-    projectRoot = await findProjectRoot(process.cwd());
-    // console.log(`Project root found at: ${projectRoot}`);
+    const absolutePath = path.resolve(filePath); // Ensure absolute path
+    const imageBuffer = await fs.readFile(absolutePath);
+    const base64Image = imageBuffer.toString("base64");
+    const mimeType = path.extname(filePath).slice(1); // Get extension without dot
+    // Handle common image types; default to png if unknown
+    const validMimeType = ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(
+      mimeType
+    )
+      ? `image/${mimeType}`
+      : "image/png";
+    return `data:${validMimeType};base64,${base64Image}`;
   } catch (error) {
-    console.error(error.message);
-    process.exit(1);
-  }
-
-  // Attempt to read Playwright config to find pulse reporter outputDir (best effort)
-  let pulseOutputDir = path.resolve(projectRoot, "pulse-report-output"); // Default
-  const playwrightConfigPathJs = path.join(projectRoot, "playwright.config.js");
-  const playwrightConfigPathTs = path.join(projectRoot, "playwright.config.ts");
-  let configPath = "";
-
-  try {
-    await fs.access(playwrightConfigPathTs);
-    configPath = playwrightConfigPathTs;
-  } catch {
-    try {
-      await fs.access(playwrightConfigPathJs);
-      configPath = playwrightConfigPathJs;
-    } catch {
-      console.warn(
-        "Warning: Could not find playwright.config.js or playwright.config.ts. Using default output directory 'pulse-report-output'."
-      );
-    }
-  }
-
-  if (configPath) {
-    try {
-      // Very basic parsing attempt - might fail for complex configs
-      const configContent = await fs.readFile(configPath, "utf-8");
-      const outputDirMatch = configContent.match(
-        /reporter:.*?['"]playwright-pulse-reporter['"].*?outputDir:\s*['"](.*?)['"]/s
-      );
-      const outputDirMatchAlt = configContent.match(
-        /reporter:.*?\[\s*['"]playwright-pulse-reporter['"].*?{\s*outputDir:\s*['"](.*?)['"]\s*}/s
-      );
-      const outputDirMatchVar = configContent.match(
-        /const\s+(\w+)\s*=\s*path\.resolve\(.*?['"](.*?)['"]\)/
-      ); // Match const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report-output');
-      const outputDirMatchVarUsage = configContent.match(
-        /reporter:.*?outputDir:\s*(\w+)/s
-      );
-
-      if (outputDirMatch && outputDirMatch[1]) {
-        pulseOutputDir = path.resolve(
-          path.dirname(configPath),
-          outputDirMatch[1]
-        );
-        // console.log(`Found outputDir in config (regex 1): ${pulseOutputDir}`);
-      } else if (outputDirMatchAlt && outputDirMatchAlt[1]) {
-        pulseOutputDir = path.resolve(
-          path.dirname(configPath),
-          outputDirMatchAlt[1]
-        );
-        // console.log(`Found outputDir in config (regex 2): ${pulseOutputDir}`);
-      } else if (
-        outputDirMatchVar &&
-        outputDirMatchVarUsage &&
-        outputDirMatchVar[1] === outputDirMatchVarUsage[1]
-      ) {
-        pulseOutputDir = path.resolve(
-          path.dirname(configPath),
-          outputDirMatchVar[2]
-        );
-        // console.log(`Found outputDir in config (variable): ${pulseOutputDir}`);
-      } else {
-        console.warn(
-          `Warning: Could not automatically detect 'outputDir' for playwright-pulse-reporter in ${configPath}. Using default: ${pulseOutputDir}`
-        );
-      }
-    } catch (err) {
-      console.warn(
-        `Warning: Error reading or parsing ${configPath}. Using default output directory 'pulse-report-output'. Error: ${err.message}`
-      );
-    }
-  }
-
-  const reportJsonPath = path.join(
-    pulseOutputDir,
-    "playwright-pulse-report.json"
-  );
-  const reportHtmlPath = path.join(
-    pulseOutputDir,
-    "playwright-pulse-static-report.html"
-  );
-
-  console.log(`Reading report data from: ${reportJsonPath}`);
-
-  try {
-    const reportJsonContent = await fs.readFile(reportJsonPath, "utf-8");
-    const reportData = JSON.parse(reportJsonContent, (key, value) => {
-      // Date reviver
-      const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-      if (typeof value === "string" && isoDateRegex.test(value)) {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) return date;
-      }
-      return value;
-    });
-
-    if (!reportData || typeof reportData !== "object") {
-      throw new Error("Report data is invalid or empty.");
-    }
-
-    const htmlContent = generateHtml(reportData);
-    await fs.mkdir(path.dirname(reportHtmlPath), { recursive: true }); // Ensure directory exists
-    await fs.writeFile(reportHtmlPath, htmlContent);
-    console.log(
-      `Static HTML report generated successfully at: ${reportHtmlPath}`
+    console.warn(
+      `   - Warning: Could not read or encode image at ${filePath}: ${error.message}`
     );
+    return null; // Return null if image cannot be processed
+  }
+}
+
+// --- Main Generation Logic ---
+
+async function generateStaticReport(pulseReportDir = DEFAULT_PULSE_REPORT_DIR) {
+  // Determine the correct directory for the JSON report
+  const reportJsonPath = path.resolve(
+    process.cwd(),
+    pulseReportDir,
+    REPORT_JSON_FILE
+  );
+  const staticHtmlPath = path.resolve(
+    process.cwd(),
+    pulseReportDir,
+    STATIC_HTML_FILE
+  );
+
+  console.log(`Generating static HTML report...`);
+  console.log(` > Reading report data from: ${reportJsonPath}`);
+
+  let reportData;
+  try {
+    const fileContent = await fs.readFile(reportJsonPath, "utf-8");
+    reportData = JSON.parse(fileContent); // Dates are still strings here initially
   } catch (error) {
     if (error.code === "ENOENT") {
       console.error(`Error: Report JSON file not found at ${reportJsonPath}.`);
       console.error(
-        "Ensure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated in the correct output directory."
+        "Ensure Playwright tests ran with 'playwright-pulse-reporter' configured with the correct 'outputDir'."
       );
     } else {
-      console.error("Error generating static HTML report:", error);
+      console.error(
+        `Error reading or parsing report JSON file: ${error.message}`
+      );
     }
+    process.exit(1); // Exit if report data is missing
+  }
+
+  // Basic validation
+  if (!reportData || !reportData.results) {
+    console.error("Error: Invalid report data structure in JSON file.");
     process.exit(1);
   }
-}
 
-// --- HTML Generation ---
+  // --- Resolve Attachment Paths ---
+  // Determine the Playwright output directory (where attachments like screenshots/videos are stored)
+  // Ideally, the reporter saves this information, but we need a fallback.
+  // For now, assume it's relative to the project root (where command is run)
+  const playwrightOutputDir = path.resolve(
+    process.cwd(),
+    DEFAULT_PLAYWRIGHT_OUTPUT_DIR_NAME
+  );
+  console.log(
+    ` > Assuming Playwright output (attachments) directory: ${playwrightOutputDir}`
+  );
 
-function generateHtml(data) {
-  const { run, results } = data;
-  const runSummary = run || {
-    totalTests: results.length,
-    passed: 0,
-    failed: 0,
-    skipped: 0,
-    duration: 0,
-    timestamp: new Date(),
-    id: "N/A",
-  };
-  if (!run) {
-    // Calculate summary if run object is missing
-    runSummary.passed = results.filter((r) => r.status === "passed").length;
-    runSummary.failed = results.filter((r) => r.status === "failed").length;
-    runSummary.skipped = results.filter((r) => r.status === "skipped").length;
-    runSummary.duration = results.reduce(
-      (sum, r) => sum + (r.duration || 0),
-      0
-    );
-  }
+  // Process results to resolve paths and encode images
+  const processedResults = await Promise.all(
+    reportData.results.map(async (result) => {
+      let base64Screenshot = null;
+      if (result.screenshot) {
+        const screenshotPath = path.resolve(
+          playwrightOutputDir,
+          result.screenshot
+        );
+        base64Screenshot = await encodeImageToBase64(screenshotPath);
+      }
 
-  const groupedResults = results.reduce((acc, result) => {
+      const processedSteps = await Promise.all(
+        (result.steps || []).map(async (step) => {
+          let base64StepScreenshot = null;
+          if (step.screenshot) {
+            const stepScreenshotPath = path.resolve(
+              playwrightOutputDir,
+              step.screenshot
+            );
+            base64StepScreenshot = await encodeImageToBase64(
+              stepScreenshotPath
+            );
+          }
+          return { ...step, screenshotDataUri: base64StepScreenshot };
+        })
+      );
+
+      // Store relative video path for linking
+      const videoRelativePath = result.video
+        ? path.relative(
+            pulseReportDir,
+            path.resolve(playwrightOutputDir, result.video)
+          )
+        : null;
+
+      return {
+        ...result,
+        screenshotDataUri: base64Screenshot,
+        videoRelativePath: videoRelativePath, // Use relative path for link
+        steps: processedSteps, // Update steps with embedded screenshot data
+      };
+    })
+  );
+
+  reportData.results = processedResults; // Update report data with processed results
+
+  // --- Calculate Summary ---
+  const run = reportData.run || {}; // Use empty object if run data is missing
+  const totalTests = reportData.results.length;
+  const passed = reportData.results.filter((r) => r.status === "passed").length;
+  const failed = reportData.results.filter((r) => r.status === "failed").length;
+  const skipped = reportData.results.filter(
+    (r) => r.status === "skipped"
+  ).length;
+  const duration = run.duration ? formatDuration(run.duration) : "N/A";
+  const timestamp = run.timestamp ? formatDate(run.timestamp) : "N/A";
+
+  // Data for Pie Chart
+  const chartData = [
+    { label: "Passed", value: passed, color: "#22c55e" }, // green-500
+    { label: "Failed", value: failed, color: "#ef4444" }, // red-500
+    { label: "Skipped", value: skipped, color: "#f59e0b" }, // amber-500
+  ].filter((d) => d.value > 0); // Filter out zero values
+
+  // --- Group Tests by Suite ---
+  const testsBySuite = reportData.results.reduce((acc, result) => {
     const suite = result.suiteName || "Default Suite";
     if (!acc[suite]) {
       acc[suite] = [];
@@ -187,7 +191,8 @@ function generateHtml(data) {
     return acc;
   }, {});
 
-  return `
+  // --- Generate HTML Content ---
+  const htmlContent = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -195,553 +200,484 @@ function generateHtml(data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playwright Pulse Report</title>
     <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f9fafb; color: #1f2937; line-height: 1.5; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        header { border-bottom: 1px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { font-size: 1.8rem; font-weight: 600; color: #374151; margin: 0; }
-        .run-info { font-size: 0.9rem; color: #6b7280; text-align: right; }
-        .tabs { display: flex; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
-        .tab-button { padding: 10px 20px; cursor: pointer; border: none; background: none; font-size: 1rem; font-weight: 500; color: #6b7280; border-bottom: 2px solid transparent; margin-bottom: -2px; }
-        .tab-button.active { color: #10b981; border-bottom-color: #10b981; }
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; margin: 0; background-color: #f9fafb; color: #1f2937; }
+        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        header { border-bottom: 1px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 2em; color: #708090; /* Slate Blue */ }
+        nav { display: flex; gap: 15px; border-bottom: 1px solid #e5e7eb; margin-bottom: 20px; }
+        nav button { padding: 10px 15px; font-size: 1em; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; color: #4b5563; transition: border-color 0.2s, color 0.2s; }
+        nav button.active { border-bottom-color: #008080; /* Teal */ color: #008080; font-weight: 600; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px; }
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 30px; }
         .summary-card { background-color: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; text-align: center; }
-        .summary-card-label { display: block; font-size: 0.85rem; color: #6b7280; margin-bottom: 5px; }
-        .summary-card-value { display: block; font-size: 1.75rem; font-weight: 600; color: #1f2937; }
-        .status-distro { background-color: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; padding: 20px; margin-top: 20px; }
-        .status-distro h3 { font-size: 1.1rem; font-weight: 600; margin: 0 0 15px 0; color: #374151; }
-        .status-bar-container { display: flex; height: 20px; border-radius: 4px; overflow: hidden; background-color: #e5e7eb; margin-bottom: 10px; }
-        .status-bar { height: 100%; transition: width 0.3s ease-in-out; }
-        .status-bar.passed { background-color: #10b981; }
-        .status-bar.failed { background-color: #ef4444; }
-        .status-bar.skipped { background-color: #f59e0b; }
-        .status-legend { display: flex; justify-content: center; gap: 20px; font-size: 0.9rem; }
-        .legend-item { display: flex; align-items: center; gap: 5px; }
-        .legend-color { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
-        .filters { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; padding: 15px; background-color: #f3f4f6; border-radius: 6px; border: 1px solid #e5e7eb;}
-        .filters label { font-weight: 500; color: #4b5563; }
-        .filters input[type="text"], .filters select { padding: 8px 12px; border-radius: 4px; border: 1px solid #d1d5db; font-size: 0.9rem; }
-        .filters input[type="text"] { flex-grow: 1; min-width: 200px; }
-        .test-suite { margin-bottom: 25px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
-        .suite-header { background-color: #f3f4f6; padding: 10px 15px; font-weight: 600; color: #374151; border-bottom: 1px solid #e5e7eb; cursor: pointer; user-select: none; }
-        .suite-header::before { content: '▶ '; display: inline-block; transition: transform 0.2s; margin-right: 5px; }
-        .suite-header.expanded::before { transform: rotate(90deg); }
-        .suite-content { display: none; padding: 0; }
-        .suite-content.expanded { display: block; }
-        .test-result { border-bottom: 1px solid #e5e7eb; padding: 15px; display: flex; align-items: center; gap: 15px; background-color: #fff; cursor: pointer; transition: background-color 0.2s; }
-        .test-result:last-child { border-bottom: none; }
-        .test-result:hover { background-color: #f9fafb; }
-        .test-status { flex-shrink: 0; padding: 3px 8px; font-size: 0.8rem; font-weight: 500; border-radius: 12px; text-transform: capitalize; }
-        .status-passed { background-color: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
-        .status-failed { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-        .status-skipped { background-color: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
-        .test-info { flex-grow: 1; }
-        .test-name { font-weight: 500; color: #11182c; margin-bottom: 3px; }
-        .test-meta { font-size: 0.8rem; color: #6b7280; }
-        .test-duration::before { content: '⏱ '; }
-        .test-retries::before { content: '🔁 '; margin-left: 10px;}
-        .test-details { display: none; padding: 15px; background-color: #f8f9fa; border-top: 1px dashed #d1d5db; }
+        .summary-card h3 { margin: 0 0 5px 0; font-size: 1em; color: #4b5563; }
+        .summary-card .value { font-size: 2em; font-weight: 600; }
+        .status-passed .value { color: #16a34a; }
+        .status-failed .value { color: #dc2626; }
+        .status-skipped .value { color: #d97706; }
+        .chart-container { display: flex; justify-content: center; align-items: center; min-height: 250px; margin-bottom: 30px; background-color: #f3f4f6; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .test-list { margin-top: 20px; }
+        .suite-group { margin-bottom: 25px; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+        .suite-header { background-color: #f3f4f6; padding: 10px 15px; font-weight: 600; border-bottom: 1px solid #e5e7eb; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .suite-header::after { content: '▼'; font-size: 0.8em; transition: transform 0.2s; }
+        .suite-header.collapsed::after { transform: rotate(-90deg); }
+        .suite-content { display: block; } /* Initially shown */
+        .suite-content.collapsed { display: none; }
+        .test-item { border-bottom: 1px solid #e5e7eb; padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: background-color 0.2s; }
+        .test-item:last-child { border-bottom: none; }
+        .test-item:hover { background-color: #f9fafb; }
+        .test-status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 500; white-space: nowrap; }
+        .status-passed { background-color: #dcfce7; color: #15803d; }
+        .status-failed { background-color: #fee2e2; color: #b91c1c; }
+        .status-skipped { background-color: #fef3c7; color: #a16207; }
+        .test-name { flex-grow: 1; font-weight: 500; }
+        .test-duration { font-size: 0.9em; color: #6b7280; white-space: nowrap; }
+        .test-details { display: none; padding: 15px; background-color: #f9fafb; border-top: 1px dashed #e5e7eb; }
+        .test-details.visible { display: block; }
         .details-section { margin-bottom: 15px; }
-        .details-section h4 { font-size: 1rem; font-weight: 600; color: #374151; margin: 0 0 8px 0; border-bottom: 1px solid #e0e0e0; padding-bottom: 4px;}
-        .details-content pre { background-color: #e5e7eb; padding: 10px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; color: #1f2937; max-height: 300px; overflow-y: auto; }
-        .step-list { list-style: none; padding: 0; margin: 0; }
-        .step-item { padding: 8px 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 10px; }
+        .details-section h4 { margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+        pre { background-color: #e5e7eb; padding: 10px; border-radius: 4px; font-family: 'Courier New', Courier, monospace; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word; overflow-x: auto; }
+        .steps-list { list-style: none; padding: 0; margin: 0; }
+        .step-item { display: flex; align-items: start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
         .step-item:last-child { border-bottom: none; }
-        .step-status { flex-shrink: 0; font-size: 1.1rem; }
-        .step-status-passed { color: #10b981; }
-        .step-status-failed { color: #ef4444; }
-        .step-status-skipped { color: #f59e0b; }
-        .step-title { flex-grow: 1; font-size: 0.9rem; }
-        .step-duration { font-size: 0.8rem; color: #6b7280; flex-shrink: 0; }
-        .step-error { font-size: 0.85rem; color: #ef4444; margin-top: 5px; padding-left: 25px; }
-        .attachment-section img, .attachment-section video { max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #d1d5db; margin-top: 5px; }
-        .attachment-section video { max-width: 400px; }
-        .no-results { text-align: center; padding: 30px; color: #6b7280; }
+        .step-status-icon { width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+        .step-passed { background-color: #22c55e; }
+        .step-failed { background-color: #ef4444; }
+        .step-skipped { background-color: #f59e0b; }
+        .step-info { flex-grow: 1; }
+        .step-title { font-weight: 500; margin-bottom: 3px; }
+        .step-details { font-size: 0.85em; color: #6b7280; }
+        .step-error { color: #dc2626; font-weight: 500; margin-top: 5px; font-family: 'Courier New', Courier, monospace; }
+        .attachment-container img, .attachment-container video { max-width: 100%; height: auto; border-radius: 4px; border: 1px solid #ddd; margin-top: 10px; }
+        .step-screenshot img { max-width: 300px; cursor: pointer; } /* Smaller preview for steps */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
+        .modal-content { max-width: 90%; max-height: 90%; }
+        .modal-close { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; }
+        .filters input, .filters select { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.9em; }
+        .filters input { flex-grow: 1; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Playwright Pulse Report</h1>
-            <div class="run-info">
-                Run ID: ${runSummary.id}<br>
-                Generated: ${format(new Date(), "PP pp")}
-            </div>
+            <p>Run Timestamp: ${timestamp} | Total Duration: ${duration}</p>
         </header>
 
-        <div class="tabs">
-            <button class="tab-button active" onclick="openTab(event, 'dashboard')">Dashboard</button>
-            <button class="tab-button" onclick="openTab(event, 'testRuns')">Test Runs</button>
-        </div>
+        <nav>
+            <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-button" data-tab="test-runs">Test Runs</button>
+        </nav>
 
+        <!-- Dashboard Tab -->
         <div id="dashboard" class="tab-content active">
             <h2>Run Summary</h2>
             <div class="summary-grid">
                 <div class="summary-card">
-                    <span class="summary-card-label">Total Tests</span>
-                    <span class="summary-card-value">${
-                      runSummary.totalTests
-                    }</span>
+                    <h3>Total Tests</h3>
+                    <div class="value">${totalTests}</div>
                 </div>
-                <div class="summary-card">
-                    <span class="summary-card-label">Passed</span>
-                    <span class="summary-card-value" style="color: #10b981;">${
-                      runSummary.passed
-                    }</span>
+                <div class="summary-card status-passed">
+                    <h3>Passed</h3>
+                    <div class="value">${passed}</div>
                 </div>
-                <div class="summary-card">
-                    <span class="summary-card-label">Failed</span>
-                    <span class="summary-card-value" style="color: #ef4444;">${
-                      runSummary.failed
-                    }</span>
+                <div class="summary-card status-failed">
+                    <h3>Failed</h3>
+                    <div class="value">${failed}</div>
                 </div>
-                <div class="summary-card">
-                    <span class="summary-card-label">Skipped</span>
-                    <span class="summary-card-value" style="color: #f59e0b;">${
-                      runSummary.skipped
-                    }</span>
-                </div>
-                <div class="summary-card">
-                    <span class="summary-card-label">Duration</span>
-                    <span class="summary-card-value">${(
-                      runSummary.duration / 1000
-                    ).toFixed(1)}s</span>
+                <div class="summary-card status-skipped">
+                    <h3>Skipped</h3>
+                    <div class="value">${skipped}</div>
                 </div>
             </div>
 
-            <div class="status-distro">
-                <h3>Test Status Distribution</h3>
-                <div class="status-bar-container">
-                    ${generateStatusBar(runSummary)}
-                </div>
-                <div class="status-legend">
-                    ${generateLegendItem(
-                      "Passed",
-                      runSummary.passed,
-                      runSummary.totalTests,
-                      "passed"
-                    )}
-                    ${generateLegendItem(
-                      "Failed",
-                      runSummary.failed,
-                      runSummary.totalTests,
-                      "failed"
-                    )}
-                    ${generateLegendItem(
-                      "Skipped",
-                      runSummary.skipped,
-                      runSummary.totalTests,
-                      "skipped"
-                    )}
-                </div>
+            <h2>Test Status Distribution</h2>
+            <div class="chart-container">
+                 ${
+                   chartData.length > 0
+                     ? '<canvas id="statusPieChart"></canvas>'
+                     : "<p>No test results to display chart.</p>"
+                 }
             </div>
         </div>
 
-        <div id="testRuns" class="tab-content">
+        <!-- Test Runs Tab -->
+        <div id="test-runs" class="tab-content">
             <h2>All Test Results</h2>
              <div class="filters">
-                <label for="statusFilter">Filter by Status:</label>
-                <select id="statusFilter">
-                    <option value="all">All Statuses</option>
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="skipped">Skipped</option>
-                </select>
-                <label for="suiteFilter">Filter by Suite:</label>
-                <select id="suiteFilter">
-                    <option value="all">All Suites</option>
-                    ${Object.keys(groupedResults)
-                      .map(
-                        (suiteName) =>
-                          `<option value="${suiteName}">${suiteName}</option>`
-                      )
-                      .join("")}
-                </select>
-                 <label for="searchFilter">Search:</label>
-                <input type="text" id="searchFilter" placeholder="Search by test name...">
+                 <input type="text" id="searchInput" placeholder="Search by test name...">
+                 <select id="statusFilter">
+                     <option value="all">All Statuses</option>
+                     <option value="passed">Passed</option>
+                     <option value="failed">Failed</option>
+                     <option value="skipped">Skipped</option>
+                 </select>
             </div>
+            <div class="test-list">
+                ${Object.entries(testsBySuite)
+                  .map(
+                    ([suiteName, tests]) => `
+                    <div class="suite-group" data-suite="${suiteName}">
+                        <div class="suite-header">
+                            <span>${suiteName} (${tests.length})</span>
+                        </div>
+                        <div class="suite-content">
+                            ${tests
+                              .map(
+                                (result) => `
+                                <div class="test-item" data-testid="${
+                                  result.id
+                                }" data-status="${result.status}">
+                                    <span class="test-status-badge ${getStatusClass(
+                                      result.status
+                                    )}">${
+                                  result.status.charAt(0).toUpperCase() +
+                                  result.status.slice(1)
+                                }</span>
+                                    <span class="test-name">${
+                                      result.name
+                                    }</span>
+                                    <span class="test-duration">${formatDuration(
+                                      result.duration
+                                    )}</span>
+                                </div>
+                                <div class="test-details" id="details-${
+                                  result.id
+                                }">
+                                    <h4>Test Information</h4>
+                                    <p><strong>Full Name:</strong> ${
+                                      result.name
+                                    }</p>
+                                    <p><strong>Suite:</strong> ${
+                                      result.suiteName || "Default Suite"
+                                    }</p>
+                                    <p><strong>Status:</strong> ${
+                                      result.status
+                                    }</p>
+                                    <p><strong>Duration:</strong> ${formatDuration(
+                                      result.duration
+                                    )}</p>
+                                    <p><strong>Start Time:</strong> ${formatDate(
+                                      result.startTime
+                                    )}</p>
+                                    <p><strong>End Time:</strong> ${formatDate(
+                                      result.endTime
+                                    )}</p>
+                                    <p><strong>Retries:</strong> ${
+                                      result.retries
+                                    }</p>
+                                    ${
+                                      result.tags && result.tags.length > 0
+                                        ? `<p><strong>Tags:</strong> ${result.tags.join(
+                                            ", "
+                                          )}</p>`
+                                        : ""
+                                    }
 
-            <div id="test-list">
-                ${generateTestList(groupedResults)}
+                                    ${
+                                      result.errorMessage
+                                        ? `
+                                        <div class="details-section">
+                                            <h4>Error</h4>
+                                            <pre><code>${
+                                              result.errorMessage
+                                            }</code></pre>
+                                            ${
+                                              result.stackTrace
+                                                ? `<h4>Stack Trace</h4><pre><code>${result.stackTrace}</code></pre>`
+                                                : ""
+                                            }
+                                        </div>
+                                    `
+                                        : ""
+                                    }
+
+                                    ${
+                                      result.screenshotDataUri
+                                        ? `
+                                        <div class="details-section attachment-container">
+                                            <h4>Screenshot (on failure)</h4>
+                                            <img src="${result.screenshotDataUri}" alt="Failure Screenshot" loading="lazy">
+                                        </div>
+                                    `
+                                        : ""
+                                    }
+
+                                    ${
+                                      result.videoRelativePath
+                                        ? `
+                                        <div class="details-section attachment-container">
+                                            <h4>Video Recording</h4>
+                                            <video controls preload="none" loading="lazy">
+                                                 <source src="${result.videoRelativePath}" type="video/webm"> <!-- Adjust type if needed -->
+                                                 Your browser does not support the video tag. <a href="${result.videoRelativePath}" target="_blank">Download video</a>
+                                             </video>
+                                        </div>
+                                    `
+                                        : ""
+                                    }
+
+                                    ${
+                                      result.steps && result.steps.length > 0
+                                        ? `
+                                        <div class="details-section">
+                                            <h4>Test Steps</h4>
+                                            <ul class="steps-list">
+                                                ${result.steps
+                                                  .map(
+                                                    (step) => `
+                                                    <li class="step-item">
+                                                        <span class="step-status-icon ${getStatusClass(
+                                                          step.status
+                                                        )}"></span>
+                                                        <div class="step-info">
+                                                            <div class="step-title">${
+                                                              step.title
+                                                            }</div>
+                                                            <div class="step-details">Duration: ${formatDuration(
+                                                              step.duration
+                                                            )} | Start: ${formatDate(
+                                                      step.startTime
+                                                    )} | End: ${formatDate(
+                                                      step.endTime
+                                                    )}</div>
+                                                            ${
+                                                              step.errorMessage
+                                                                ? `<div class="step-error">${step.errorMessage}</div>`
+                                                                : ""
+                                                            }
+                                                            ${
+                                                              step.screenshotDataUri
+                                                                ? `
+                                                                <div class="step-screenshot">
+                                                                    <img src="${step.screenshotDataUri}" alt="Step Screenshot" loading="lazy" onclick="openModal(this.src)">
+                                                                </div>`
+                                                                : ""
+                                                            }
+                                                        </div>
+                                                    </li>
+                                                `
+                                                  )
+                                                  .join("")}
+                                            </ul>
+                                        </div>
+                                    `
+                                        : "<p>No steps recorded for this test.</p>"
+                                    }
+
+                                    ${
+                                      result.codeSnippet
+                                        ? `
+                                    <div class="details-section">
+                                        <h4>Test Location</h4>
+                                        <pre><code>${result.codeSnippet}</code></pre>
+                                    </div>
+                                    `
+                                        : ""
+                                    }
+
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                    </div>
+                `
+                  )
+                  .join("")}
             </div>
-             <div id="no-results-message" class="no-results" style="display: none;">No tests found matching your criteria.</div>
         </div>
-
     </div>
 
+     <!-- Image Modal -->
+     <div id="imageModal" class="modal" onclick="closeModal()">
+         <span class="modal-close" onclick="closeModal(event)">&times;</span>
+         <img class="modal-content" id="modalImage">
+     </div>
+
     <script>
-        function openTab(evt, tabName) {
-            var i, tabcontent, tablinks;
-            tabcontent = document.getElementsByClassName("tab-content");
-            for (i = 0; i < tabcontent.length; i++) {
-                tabcontent[i].style.display = "none";
-                tabcontent[i].classList.remove("active");
-            }
-            tablinks = document.getElementsByClassName("tab-button");
-            for (i = 0; i < tablinks.length; i++) {
-                tablinks[i].classList.remove("active");
-            }
-            document.getElementById(tabName).style.display = "block";
-            document.getElementById(tabName).classList.add("active");
-            evt.currentTarget.classList.add("active");
-        }
+        // Tab Switching Logic
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
 
-        function toggleDetails(element) {
-            const detailsDiv = element.nextElementSibling;
-            if (detailsDiv && detailsDiv.classList.contains('test-details')) {
-                detailsDiv.style.display = detailsDiv.style.display === 'none' ? 'block' : 'none';
-            }
-        }
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tab = button.getAttribute('data-tab');
 
-         function toggleSuite(element) {
-            const contentDiv = element.nextElementSibling;
-            element.classList.toggle('expanded');
-            contentDiv.classList.toggle('expanded');
-            contentDiv.style.display = contentDiv.style.display === 'block' ? 'none' : 'block'; // Toggle display
-         }
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
 
-        // Initialize suite toggles
-        document.querySelectorAll('.suite-header').forEach(header => {
-            header.addEventListener('click', () => toggleSuite(header));
-            // Optionally expand all suites by default
-            // toggleSuite(header);
-        });
-
-         // Initialize test result details toggles
-        document.querySelectorAll('.test-result').forEach(item => {
-            item.addEventListener('click', (event) => {
-                 // Prevent toggling details when clicking on a link inside details
-                if (event.target.closest('a, img, video')) return;
-                 toggleDetails(item);
+                tabContents.forEach(content => {
+                    if (content.id === tab) {
+                        content.classList.add('active');
+                    } else {
+                        content.classList.remove('active');
+                    }
+                });
             });
         });
 
-        // Filtering logic
+        // Test Details Toggling
+        const testItems = document.querySelectorAll('.test-item');
+        testItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const testId = item.getAttribute('data-testid');
+                const detailsDiv = document.getElementById(\`details-\${testId}\`);
+                if (detailsDiv) {
+                    detailsDiv.classList.toggle('visible');
+                }
+            });
+        });
+
+        // Suite Group Toggling
+        const suiteHeaders = document.querySelectorAll('.suite-header');
+        suiteHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                header.classList.toggle('collapsed');
+                const content = header.nextElementSibling;
+                if (content && content.classList.contains('suite-content')) {
+                    content.classList.toggle('collapsed');
+                }
+            });
+        });
+
+        // Filtering Logic
+        const searchInput = document.getElementById('searchInput');
         const statusFilter = document.getElementById('statusFilter');
-        const suiteFilter = document.getElementById('suiteFilter');
-        const searchFilter = document.getElementById('searchFilter');
-        const testListContainer = document.getElementById('test-list');
-        const noResultsMessage = document.getElementById('no-results-message');
+        const allTestItems = document.querySelectorAll('#test-runs .test-item');
+        const allSuiteGroups = document.querySelectorAll('#test-runs .suite-group');
 
         function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
             const selectedStatus = statusFilter.value;
-            const selectedSuite = suiteFilter.value;
-            const searchTerm = searchFilter.value.toLowerCase();
-            let hasVisibleResults = false;
 
-            document.querySelectorAll('.test-suite').forEach(suiteElement => {
-                let suiteHasVisibleTests = false;
-                const suiteName = suiteElement.getAttribute('data-suite-name');
+            allSuiteGroups.forEach(suiteGroup => {
+                let suiteVisible = false;
+                const suiteTestItems = suiteGroup.querySelectorAll('.test-item');
 
-                // Suite filter
-                if (selectedSuite !== 'all' && suiteName !== selectedSuite) {
-                    suiteElement.style.display = 'none';
-                    return; // Skip processing tests in this suite
-                } else {
-                    suiteElement.style.display = 'block'; // Show suite if it matches or 'all' is selected
-                }
+                suiteTestItems.forEach(item => {
+                    const testName = item.querySelector('.test-name').textContent.toLowerCase();
+                    const testStatus = item.getAttribute('data-status');
+                    const detailsDiv = document.getElementById(\`details-\${item.getAttribute('data-testid')}\`);
 
-                 suiteElement.querySelectorAll('.test-result').forEach(testElement => {
-                     const testStatus = testElement.getAttribute('data-status');
-                     const testName = testElement.querySelector('.test-name').textContent.toLowerCase();
-                     let isVisible = true;
+                    const searchMatch = testName.includes(searchTerm);
+                    const statusMatch = selectedStatus === 'all' || testStatus === selectedStatus;
 
-                     // Status filter
-                     if (selectedStatus !== 'all' && testStatus !== selectedStatus) {
-                         isVisible = false;
-                     }
-
-                     // Search filter
-                     if (searchTerm && !testName.includes(searchTerm)) {
-                         isVisible = false;
-                     }
-
-                    testElement.style.display = isVisible ? 'flex' : 'none';
-                    if (isVisible) {
-                        suiteHasVisibleTests = true;
-                         hasVisibleResults = true; // Mark that at least one test is visible overall
+                    if (searchMatch && statusMatch) {
+                        item.style.display = 'flex';
+                        if (detailsDiv) detailsDiv.style.display = detailsDiv.classList.contains('visible') ? 'block' : 'none'; // Keep details visibility if toggled open
+                        suiteVisible = true; // Show suite if any test matches
+                    } else {
+                        item.style.display = 'none';
+                         if (detailsDiv) detailsDiv.style.display = 'none'; // Hide details if test is filtered out
                     }
-                 });
+                });
 
-                 // Hide suite header if no tests within it are visible
-                 if (!suiteHasVisibleTests) {
-                     suiteElement.style.display = 'none';
-                 } else {
-                      suiteElement.style.display = 'block'; // Ensure suite is visible if it has results
-                 }
+                // Show/hide the entire suite group based on whether any test items are visible
+                suiteGroup.style.display = suiteVisible ? 'block' : 'none';
             });
-
-             // Show/hide the "no results" message
-            noResultsMessage.style.display = hasVisibleResults ? 'none' : 'block';
         }
 
+        searchInput.addEventListener('input', applyFilters);
         statusFilter.addEventListener('change', applyFilters);
-        suiteFilter.addEventListener('change', applyFilters);
-        searchFilter.addEventListener('input', applyFilters);
 
-        // Initial filter application
-        applyFilters();
+         // Pie Chart Rendering (using Chart.js)
+         const ctx = document.getElementById('statusPieChart')?.getContext('2d');
+         if (ctx && ${chartData.length > 0}) {
+             new Chart(ctx, {
+                 type: 'pie',
+                 data: {
+                     labels: ${JSON.stringify(chartData.map((d) => d.label))},
+                     datasets: [{
+                         label: 'Test Status',
+                         data: ${JSON.stringify(chartData.map((d) => d.value))},
+                         backgroundColor: ${JSON.stringify(
+                           chartData.map((d) => d.color)
+                         )},
+                         borderColor: '#fff',
+                         borderWidth: 1
+                     }]
+                 },
+                 options: {
+                     responsive: true,
+                     maintainAspectRatio: false,
+                     plugins: {
+                         legend: {
+                             position: 'top',
+                         },
+                         tooltip: {
+                             callbacks: {
+                                 label: function(context) {
+                                     let label = context.label || '';
+                                     if (label) {
+                                         label += ': ';
+                                     }
+                                     if (context.parsed !== null) {
+                                         label += context.parsed;
+                                     }
+                                     return label;
+                                 }
+                             }
+                         }
+                     }
+                 }
+             });
+         }
+
+         // Image Modal Logic
+         const modal = document.getElementById('imageModal');
+         const modalImg = document.getElementById('modalImage');
+
+         function openModal(src) {
+            if (modal && modalImg) {
+                 modal.style.display = 'flex';
+                 modalImg.src = src;
+             }
+         }
+
+         function closeModal(event) {
+            // Prevent closing if clicking inside the image itself
+            if (event && event.target === modalImg) {
+                return;
+            }
+             if (modal) {
+                 modal.style.display = 'none';
+                 modalImg.src = ""; // Clear src
+            }
+         }
+
+         // Close modal on Escape key
+         document.addEventListener('keydown', function(event) {
+             if (event.key === 'Escape') {
+                 closeModal();
+             }
+         });
+
 
     </script>
 </body>
 </html>
     `;
-}
 
-function generateStatusBar(summary) {
-  const total = summary.totalTests;
-  if (total === 0)
-    return '<div class="status-bar" style="width: 100%; background-color: #e5e7eb;"></div>'; // Handle no tests case
-  const passedWidth = total > 0 ? (summary.passed / total) * 100 : 0;
-  const failedWidth = total > 0 ? (summary.failed / total) * 100 : 0;
-  const skippedWidth = 100 - passedWidth - failedWidth; // Remainder
-
-  return `
-        <div class="status-bar passed" style="width: ${passedWidth}%;" title="Passed: ${summary.passed}"></div>
-        <div class="status-bar failed" style="width: ${failedWidth}%;" title="Failed: ${summary.failed}"></div>
-        <div class="status-bar skipped" style="width: ${skippedWidth}%;" title="Skipped: ${summary.skipped}"></div>
-    `;
-}
-
-function generateLegendItem(label, count, total, statusClass) {
-  if (total === 0) return ""; // Don't show legend items if no tests
-  const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
-  return `
-        <div class="legend-item">
-            <span class="legend-color status-${statusClass}"></span>
-            <span>${label}: ${count} (${percentage}%)</span>
-        </div>
-    `;
-}
-
-function generateTestList(groupedResults) {
-  if (Object.keys(groupedResults).length === 0) {
-    return '<div class="no-results">No test results available.</div>';
-  }
-  return Object.entries(groupedResults)
-    .map(
-      ([suiteName, tests]) => `
-        <div class="test-suite" data-suite-name="${escapeHtml(suiteName)}">
-            <div class="suite-header">${escapeHtml(suiteName)} (${
-        tests.length
-      })</div>
-            <div class="suite-content">
-                ${tests.map((test) => generateTestResultItem(test)).join("")}
-            </div>
-        </div>
-    `
-    )
-    .join("");
-}
-
-function generateTestResultItem(result) {
-  const timeAgo = result.endTime
-    ? formatDistanceToNow(result.endTime, { addSuffix: true })
-    : "N/A";
-  const durationSeconds = result.duration
-    ? (result.duration / 1000).toFixed(2) + "s"
-    : "N/A";
-
-  // Generate attachments HTML only if needed
-  const attachmentsHtml =
-    result.status === "failed" || result.status === "skipped"
-      ? generateAttachmentsHtml(result)
-      : "";
-
-  return `
-        <div class="test-result" data-status="${result.status}">
-            <span class="test-status status-${result.status}">${
-    result.status
-  }</span>
-            <div class="test-info">
-                <div class="test-name">${escapeHtml(result.name)}</div>
-                <div class="test-meta">
-                    <span class="test-duration">${durationSeconds}</span>
-                    ${
-                      result.retries > 0
-                        ? `<span class="test-retries">${result.retries} retries</span>`
-                        : ""
-                    }
-                    <span style="margin-left: 10px;">Finished ${timeAgo}</span>
-                 </div>
-            </div>
-        </div>
-        <div class="test-details" style="display: none;">
-            ${
-              result.errorMessage
-                ? `
-                <div class="details-section">
-                    <h4>Error Message</h4>
-                    <div class="details-content"><pre><code>${escapeHtml(
-                      result.errorMessage
-                    )}</code></pre></div>
-                </div>
-            `
-                : ""
-            }
-             ${
-               result.stackTrace
-                 ? `
-                <div class="details-section">
-                    <h4>Stack Trace</h4>
-                    <div class="details-content"><pre><code>${escapeHtml(
-                      result.stackTrace
-                    )}</code></pre></div>
-                </div>
-            `
-                 : ""
-             }
-            <div class="details-section">
-                <h4>Test Steps (${result.steps?.length || 0})</h4>
-                <div class="details-content">
-                    ${generateStepsHtml(result.steps || [])}
-                </div>
-            </div>
-             ${attachmentsHtml} {/* Include attachments section */}
-             ${
-               result.codeSnippet
-                 ? `
-                <div class="details-section">
-                    <h4>Code Snippet</h4>
-                     <div class="details-content"><pre><code>${escapeHtml(
-                       result.codeSnippet
-                     )}</code></pre></div>
-                 </div>
-            `
-                 : ""
-             }
-             <div class="details-section">
-                <h4>Timestamps</h4>
-                 <div class="details-content" style="font-size: 0.85rem;">
-                    Start: ${
-                      result.startTime
-                        ? format(result.startTime, "PP pp")
-                        : "N/A"
-                    }<br>
-                    End: ${
-                      result.endTime ? format(result.endTime, "PP pp") : "N/A"
-                    }
-                </div>
-             </div>
-        </div>
-    `;
-}
-
-function generateStepsHtml(steps) {
-  if (!steps || steps.length === 0) {
-    return "<p>No steps recorded.</p>";
-  }
-  return `
-        <ul class="step-list">
-            ${steps
-              .map(
-                (step) => `
-                <li class="step-item">
-                    <span class="step-status step-status-${step.status}">
-                        ${
-                          step.status === "passed"
-                            ? "✓"
-                            : step.status === "failed"
-                            ? "✕"
-                            : "»"
-                        }
-                    </span>
-                    <span class="step-title">${escapeHtml(step.title)}</span>
-                    <span class="step-duration">(${(
-                      step.duration / 1000
-                    ).toFixed(2)}s)</span>
-                 </li>
-                 ${
-                   step.errorMessage
-                     ? `<li class="step-error">${escapeHtml(
-                         step.errorMessage
-                       )}</li>`
-                     : ""
-                 }
-                  ${
-                    step.screenshot
-                      ? `<li><div class="attachment-section"><img src="${escapeHtml(
-                          step.screenshot
-                        )}" alt="Step Screenshot" loading="lazy"></div></li>`
-                      : ""
-                  }
-            `
-              )
-              .join("")}
-        </ul>
-    `;
-}
-
-function generateAttachmentsHtml(result) {
-  let html =
-    '<div class="details-section attachment-section"><h4>Attachments</h4><div class="details-content">';
-  let foundAttachment = false;
-
-  if (result.screenshot) {
-    // Assume screenshot path is absolute or relative *to the project root* where tests ran
-    // We need to make it relative to the HTML report location for it to work reliably
-    const relativeScreenshotPath = path.relative(
-      path.dirname(reportHtmlPath),
-      result.screenshot
+  // --- Write HTML File ---
+  try {
+    await fs.writeFile(staticHtmlPath, htmlContent);
+    console.log(
+      `Static HTML report generated successfully at: ${staticHtmlPath}`
     );
-    html += `
-            <div>
-                <h5>Screenshot (on failure/skip)</h5>
-                 <a href="${escapeHtml(
-                   relativeScreenshotPath
-                 )}" target="_blank" rel="noopener noreferrer">
-                    <img src="${escapeHtml(
-                      relativeScreenshotPath
-                    )}" alt="Failure Screenshot" loading="lazy" style="max-width: 400px; height: auto;">
-                 </a>
-            </div>`;
-    foundAttachment = true;
+  } catch (error) {
+    console.error(`Error writing static HTML report: ${error.message}`);
+    process.exit(1);
   }
-
-  if (result.video) {
-    const relativeVideoPath = path.relative(
-      path.dirname(reportHtmlPath),
-      result.video
-    );
-    html += `
-             <div style="margin-top: 15px;">
-                 <h5>Video Recording</h5>
-                 <video controls preload="none" style="max-width: 400px;">
-                     <source src="${escapeHtml(
-                       relativeVideoPath
-                     )}" type="video/webm">
-                     Your browser does not support the video tag. <a href="${escapeHtml(
-                       relativeVideoPath
-                     )}" target="_blank">Download video</a>
-                 </video>
-            </div>`;
-    foundAttachment = true;
-  }
-
-  if (!foundAttachment) {
-    html += "<p>No attachments available for this test.</p>";
-  }
-
-  html += "</div></div>";
-  return html;
 }
 
-function escapeHtml(unsafe) {
-  if (unsafe === null || typeof unsafe === "undefined") {
-    return "";
-  }
-  return unsafe
-    .toString()
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
+// --- Script Execution ---
+// Allow running with an optional directory argument
+const customReportDir = process.argv[2]; // Get directory from command line argument if provided
+generateStaticReport(customReportDir);
 
-
-// --- Execution ---
-generateReport();
-
-    
+// Export the function for potential programmatic use (e.g., by the reporter)
+export default generateStaticReport;
