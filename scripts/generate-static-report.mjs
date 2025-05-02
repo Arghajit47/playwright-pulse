@@ -1,192 +1,333 @@
 #!/usr/bin/env node
-
 import * as fs from "fs/promises";
 import * as path from "path";
-import { format } from "date-fns"; // For formatting dates
+import { format, formatDistanceToNow } from "date-fns";
 
-/**
- * @typedef {import('../src/types').TestStatus} TestStatus
- * @typedef {import('../src/types').TestRun} TestRun
- * @typedef {import('../src/types').TestResult} TestResult
- * @typedef {import('../src/lib/report-types').PlaywrightPulseReport} PlaywrightPulseReport
- */
+// --- Configuration ---
+const reportJsonFileName = 'playwright-pulse-report.json';
+const outputHtmlFileName = 'playwright-pulse-static-report.html';
+const reportJsonDir = path.resolve(process.cwd(), 'pulse-report-output'); // Read from project root's output dir
+const outputHtmlPath = path.join(reportJsonDir, outputHtmlFileName); // Write HTML to the same dir
+const reportJsonPath = path.join(reportJsonDir, reportJsonFileName);
 
-// Configuration
-const REPORT_DIR_NAME = "pulse-report-output";
-const JSON_FILE_NAME = "playwright-pulse-report.json";
-const HTML_FILE_NAME = "playwright-pulse-static-report.html";
+// --- Helper Functions ---
 
-// Get the current working directory where the command is executed
-const CWD = process.cwd();
-const reportDirPath = path.resolve(CWD, REPORT_DIR_NAME);
-const reportJsonPath = path.resolve(reportDirPath, JSON_FILE_NAME);
-const reportHtmlPath = path.resolve(reportDirPath, HTML_FILE_NAME);
+const log = (message) => console.log(`[Static Report Generator] ${message}`);
+const logError = (message, error) =>
+  console.error(`[Static Report Generator] ${message}`, error);
 
-// Helper function to generate CSS for status colors
-const getStatusColor = (status) => {
-  switch (status) {
-    case "passed":
-      return "#10B981"; // Emerald-500
-    case "failed":
-      return "#EF4444"; // Red-500
-    case "skipped":
-      return "#F59E0B"; // Amber-500
-    default:
-      return "#6B7280"; // Gray-500
+// Basic HTML escaping
+const escapeHtml = (unsafe) => {
+    if (typeof unsafe !== 'string') return unsafe;
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
+
+// Format duration (ms to seconds string)
+const formatDuration = (ms) => ms === undefined || ms === null ? 'N/A' : `${(ms / 1000).toFixed(1)}s`;
+
+// Format date object or string
+const formatDate = (date) => {
+    if (!date) return 'N/A';
+    try {
+        const d = typeof date === 'string' ? new Date(date) : date;
+        if (isNaN(d.getTime())) return 'Invalid Date';
+        return format(d, 'PP pp'); // e.g., Jul 20, 2024 10:30:00 AM
+    } catch (e) {
+        return 'Invalid Date';
+    }
+};
+
+const formatTimeAgo = (date) => {
+  if (!date) return "N/A";
+  try {
+    const d = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(d.getTime())) return "Invalid Date";
+    return formatDistanceToNow(d, { addSuffix: true });
+  } catch (e) {
+    return "Invalid Date";
   }
 };
 
+// Get status color class (simplified)
+const getStatusClass = (status) => {
+  switch (status) {
+    case "passed":
+      return "status-passed";
+    case "failed":
+      return "status-failed";
+    case "skipped":
+      return "status-skipped";
+    default:
+      return "status-unknown";
+  }
+};
 const getStatusIcon = (status) => {
-  switch (status) {
-    case "passed":
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${getStatusColor(
-        status
-      )};"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
-    case "failed":
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${getStatusColor(
-        status
-      )};"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
-    case "skipped":
-      return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: ${getStatusColor(
-        status
-      )};"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>`;
-    default:
-      return "";
+    switch (status) {
+      case "passed":
+        return "✓"; // Check mark
+      case "failed":
+        return "✕"; // Cross mark
+      case "skipped":
+        return "»"; // Skip symbol
+      default:
+        return "?";
+    }
+};
+
+
+// --- HTML Generation Functions ---
+
+function generateRunSummaryHtml(runData) {
+  if (!runData) {
+    return `<div class="card"><div class="card-content"><p class="muted-text">No run summary data available.</p></div></div>`;
   }
-};
 
-const formatDuration = (ms) => {
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
-};
+  const metrics = [
+    { label: "Total Tests", value: runData.totalTests ?? "N/A", icon: "📊" }, // Using emojis as placeholders
+    {
+      label: "Passed",
+      value: runData.passed ?? "N/A",
+      icon: "✓",
+      colorClass: "status-passed-text",
+    },
+    {
+      label: "Failed",
+      value: runData.failed ?? "N/A",
+      icon: "✕",
+      colorClass: "status-failed-text",
+    },
+    {
+      label: "Skipped",
+      value: runData.skipped ?? "N/A",
+      icon: "»",
+      colorClass: "status-skipped-text",
+    },
+    { label: "Duration", value: formatDuration(runData.duration), icon: "⏱️" },
+  ];
 
-/**
- * Generate the HTML content for the static report.
- * @param {PlaywrightPulseReport} data - The parsed report data.
- * @returns {string} - The HTML content.
- */
-const generateHtmlContent = (data) => {
-  const { run, results, metadata } = data;
-
-  // --- Summary Section ---
-  const summaryHtml = run
-    ? `
-    <div class="summary-grid">
-      <div class="summary-card">
-        <h3>Total Tests</h3>
-        <p>${run.totalTests}</p>
-      </div>
-      <div class="summary-card">
-        <h3 style="color: ${getStatusColor("passed")};">Passed</h3>
-        <p>${run.passed}</p>
-      </div>
-      <div class="summary-card">
-        <h3 style="color: ${getStatusColor("failed")};">Failed</h3>
-        <p>${run.failed}</p>
-      </div>
-      <div class="summary-card">
-        <h3 style="color: ${getStatusColor("skipped")};">Skipped</h3>
-        <p>${run.skipped}</p>
-      </div>
-      <div class="summary-card">
-        <h3>Duration</h3>
-        <p>${formatDuration(run.duration)}</p>
-      </div>
-    </div>
-    <p class="run-info">Run ID: ${run.id} | Timestamp: ${format(
-        new Date(run.timestamp),
-        "PP pp"
-      )}</p>
-  `
-    : "<p>No run information available.</p>";
-
-  // --- Results Section ---
-  const resultsHtml =
-    results.length > 0
-      ? results
+  return `
+    <div class="grid summary-grid">
+        ${metrics
           .map(
-            (result, index) => `
-    <div class="result-item" data-status="${
-      result.status
-    }" onclick="toggleDetails('details-${index}')">
-      <div class="result-header">
-        <span class="status-icon" style="color: ${getStatusColor(
-          result.status
-        )};">${getStatusIcon(result.status)}</span>
-        <span class="test-name">${result.name}</span>
-        <span class="duration">${formatDuration(result.duration)}</span>
-        <span class="status-text">${result.status}</span>
-      </div>
-      <div id="details-${index}" class="result-details" style="display: none;">
-        ${
-          result.suiteName
-            ? `<p><strong>Suite:</strong> ${result.suiteName}</p>`
-            : ""
-        }
-        <p><strong>Started:</strong> ${format(
-          new Date(result.startTime),
-          "pp"
-        )}</p>
-        <p><strong>Ended:</strong> ${format(new Date(result.endTime), "pp")}</p>
-        ${
-          result.retries > 0
-            ? `<p><strong>Retries:</strong> ${result.retries}</p>`
-            : ""
-        }
-        ${
-          result.errorMessage
-            ? `<p><strong>Error:</strong> <pre>${result.errorMessage}</pre></p>`
-            : ""
-        }
-        ${
-          result.stackTrace
-            ? `<p><strong>Stack Trace:</strong> <pre>${result.stackTrace}</pre></p>`
-            : ""
-        }
-        ${
-          result.steps && result.steps.length > 0
-            ? `
-            <h4>Steps:</h4>
-            <ul class="steps-list">
-                ${result.steps
-                  .map(
-                    (step) => `
-                    <li data-status="${step.status}">
-                        <span class="status-icon" style="color: ${getStatusColor(
-                          step.status
-                        )};">${getStatusIcon(step.status)}</span>
-                        ${step.title} (${formatDuration(step.duration)})
-                        ${
-                          step.errorMessage
-                            ? `<pre class="step-error">${step.errorMessage}</pre>`
-                            : ""
-                        }
-                    </li>
-                `
-                  )
-                  .join("")}
-            </ul>
+            (metric) => `
+            <div class="card summary-card">
+                <div class="card-header">
+                    <span class="card-title-sm muted-text">${escapeHtml(
+                      metric.label
+                    )}</span>
+                    <span class="summary-icon ${metric.colorClass || ""}">${
+              metric.icon
+            }</span>
+                </div>
+                <div class="card-content">
+                    <div class="summary-value ${
+                      metric.colorClass || ""
+                    }">${escapeHtml(metric.value)}</div>
+                </div>
+            </div>
         `
-            : ""
-        }
-        ${
-          result.screenshot
-            ? `<p><strong>Screenshot:</strong> <a href="${result.screenshot}" target="_blank">View</a></p>`
-            : ""
-        }
-        ${
-          result.video
-            ? `<p><strong>Video:</strong> <a href="${result.video}" target="_blank">View</a></p>`
-            : ""
-        }
-      </div>
-    </div>
-  `
           )
-          .join("")
-      : "<p>No test results found.</p>";
+          .join("")}
+    </div>
+    <div class="run-meta muted-text">
+        Run ID: ${escapeHtml(runData.id)} | Timestamp: ${formatDate(
+    runData.timestamp
+  )}
+    </div>
+    `;
+}
 
-  // --- Full HTML ---
+function generateTestStepHtml(step) {
+  const duration = formatDuration(step.duration);
+  const statusClass = getStatusClass(step.status);
+  const icon = getStatusIcon(step.status);
+  return `
+        <details class="step-details">
+            <summary class="step-summary ${statusClass}">
+                <span class="step-icon">${icon}</span>
+                <span class="step-title">${escapeHtml(step.title)}</span>
+                <span class="step-duration muted-text">(${duration})</span>
+            </summary>
+            <div class="step-content">
+                ${
+                  step.errorMessage
+                    ? `<div class="error-message"><strong>Error:</strong> <pre>${escapeHtml(
+                        step.errorMessage
+                      )}</pre></div>`
+                    : ""
+                }
+                <div class="muted-text text-xs">
+                    Started: ${formatDate(
+                      step.startTime
+                    )} | Ended: ${formatDate(step.endTime)}
+                </div>
+                ${
+                  step.screenshot
+                    ? `<div class="step-attachment"><span class="muted-text">Screenshot:</span> <a href="${escapeHtml(
+                        step.screenshot
+                      )}" target="_blank" rel="noopener noreferrer">[View Screenshot]</a> *</div>`
+                    : ""
+                }
+            </div>
+        </details>
+     `;
+}
+
+
+function generateTestResultHtml(result, index) {
+  const statusClass = getStatusClass(result.status);
+  const icon = getStatusIcon(result.status);
+  const timeAgo = formatTimeAgo(result.endTime);
+  const duration = formatDuration(result.duration);
+
+  // Unique ID for toggling
+  const detailId = `test-detail-${index}`;
+
+  return `
+    <div class="card test-result-item" data-status="${
+      result.status
+    }" data-text="${escapeHtml(result.name.toLowerCase())} ${escapeHtml(
+    result.suiteName?.toLowerCase() || ""
+  )}">
+        <button class="test-result-summary" onclick="toggleDetail('${detailId}')" aria-expanded="false" aria-controls="${detailId}">
+            <div class="summary-header">
+                <span class="badge ${statusClass}">${icon} ${escapeHtml(
+    result.status
+  )}</span>
+                <span class="duration muted-text">⏱️ ${duration}</span>
+            </div>
+            <div class="test-name">${escapeHtml(result.name)}</div>
+            ${
+              result.suiteName
+                ? `<div class="suite-name muted-text text-sm">Suite: ${escapeHtml(
+                    result.suiteName
+                  )}</div>`
+                : ""
+            }
+            <div class="time-ago muted-text text-xs">Finished ${timeAgo}</div>
+        </button>
+        <div id="${detailId}" class="test-result-details" hidden>
+            <div class="detail-section">
+                <h4 class="detail-title">Details</h4>
+                <p><span class="muted-text">Status:</span> <span class="status-text ${statusClass}">${escapeHtml(
+    result.status
+  )}</span></p>
+                <p><span class="muted-text">Duration:</span> ${duration}</p>
+                <p><span class="muted-text">Started:</span> ${formatDate(
+                  result.startTime
+                )}</p>
+                <p><span class="muted-text">Ended:</span> ${formatDate(
+                  result.endTime
+                )}</p>
+                <p><span class="muted-text">Retries:</span> ${
+                  result.retries ?? 0
+                }</p>
+                ${
+                  result.tags && result.tags.length > 0
+                    ? `<p><span class="muted-text">Tags:</span> ${result.tags
+                        .map(
+                          (tag) => `<span class="tag">${escapeHtml(tag)}</span>`
+                        )
+                        .join(" ")}</p>`
+                    : ""
+                }
+                <p><span class="muted-text">Run ID:</span> ${escapeHtml(
+                  result.runId
+                )}</p>
+                 <p><span class="muted-text">Full Path:</span> ${escapeHtml(
+                   result.name
+                 )}</p>
+                 <p><span class="muted-text">Location:</span> ${escapeHtml(
+                   result.codeSnippet?.replace("Test defined at: ", "") || "N/A"
+                 )}</p>
+            </div>
+
+            ${
+              result.status === "failed" &&
+              (result.errorMessage || result.stackTrace)
+                ? `
+                <div class="detail-section error-section">
+                    <h4 class="detail-title error-title">Failure Details</h4>
+                    ${
+                      result.errorMessage
+                        ? `<div class="error-message"><strong>Error:</strong><pre>${escapeHtml(
+                            result.errorMessage
+                          )}</pre></div>`
+                        : ""
+                    }
+                    ${
+                      result.stackTrace
+                        ? `<div class="stack-trace"><strong>Stack Trace:</strong><pre>${escapeHtml(
+                            result.stackTrace
+                          )}</pre></div>`
+                        : ""
+                    }
+                </div>
+            `
+                : ""
+            }
+
+            ${
+              result.steps && result.steps.length > 0
+                ? `
+                <div class="detail-section">
+                    <h4 class="detail-title">Test Steps</h4>
+                    <div class="steps-container">
+                        ${result.steps.map(generateTestStepHtml).join("")}
+                    </div>
+                    <p class="muted-text text-xs">* Attachments like screenshots/videos require the original Playwright output artifacts.</p>
+                </div>
+            `
+                : '<div class="detail-section muted-text">No steps recorded.</div>'
+            }
+
+             ${
+               result.codeSnippet
+                 ? `
+                <div class="detail-section">
+                    <h4 class="detail-title">Source Location</h4>
+                    <pre class="code-snippet"><code>${escapeHtml(
+                      result.codeSnippet
+                    )}</code></pre>
+                </div>
+            `
+                 : ""
+             }
+
+            <div class="detail-section attachments-section">
+                 <h4 class="detail-title">Attachments</h4>
+                 <div class="attachments-grid">
+                    ${
+                      result.screenshot
+                        ? `<div><span class="muted-text">Screenshot (on failure):</span> <a href="${escapeHtml(
+                            result.screenshot
+                          )}" target="_blank" rel="noopener noreferrer">[View Screenshot]</a> *</div>`
+                        : '<div class="muted-text">No failure screenshot available.</div>'
+                    }
+                    ${
+                      result.video
+                        ? `<div><span class="muted-text">Video:</span> <a href="${escapeHtml(
+                            result.video
+                          )}" target="_blank" rel="noopener noreferrer">[View Video]</a> *</div>`
+                        : '<div class="muted-text">No video available.</div>'
+                    }
+                </div>
+                 <p class="muted-text text-xs">* Attachments require access to the original Playwright output directory.</p>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+function generateHtml(reportData) {
+  const { run, results, metadata } = reportData;
+  const generationTime = formatDate(metadata.generatedAt);
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -195,162 +336,321 @@ const generateHtmlContent = (data) => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playwright Pulse - Static Report</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; padding: 20px; background-color: #f9fafb; color: #1f2937; }
-        .container { max-width: 1200px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        h1 { color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; margin-bottom: 20px; }
-        h2 { color: #374151; margin-top: 30px; margin-bottom: 15px; }
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .summary-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; text-align: center; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .summary-card h3 { margin: 0 0 5px 0; font-size: 0.9em; color: #6b7280; }
-        .summary-card p { margin: 0; font-size: 1.5em; font-weight: 600; color: #111827; }
-        .run-info { font-size: 0.85em; color: #6b7280; text-align: center; margin-bottom: 25px; }
-        .result-item { border: 1px solid #e5e7eb; border-left-width: 4px; border-radius: 4px; margin-bottom: 10px; cursor: pointer; transition: background-color 0.2s; overflow: hidden; }
-        .result-item:hover { background-color: #f3f4f6; }
-        .result-item[data-status="passed"] { border-left-color: ${getStatusColor(
-          "passed"
-        )}; }
-        .result-item[data-status="failed"] { border-left-color: ${getStatusColor(
-          "failed"
-        )}; }
-        .result-item[data-status="skipped"] { border-left-color: ${getStatusColor(
-          "skipped"
-        )}; }
-        .result-header { display: flex; align-items: center; padding: 10px 15px; gap: 10px; font-weight: 500; }
-        .status-icon { display: inline-flex; align-items: center; }
-        .test-name { flex-grow: 1; }
-        .duration { font-size: 0.9em; color: #6b7280; margin-left: auto; padding-left: 10px; }
-        .status-text { font-size: 0.9em; font-weight: 600; text-transform: capitalize; min-width: 60px; text-align: right; }
-        .result-item[data-status="passed"] .status-text { color: ${getStatusColor(
-          "passed"
-        )}; }
-        .result-item[data-status="failed"] .status-text { color: ${getStatusColor(
-          "failed"
-        )}; }
-        .result-item[data-status="skipped"] .status-text { color: ${getStatusColor(
-          "skipped"
-        )}; }
-        .result-details { padding: 10px 15px 15px 30px; border-top: 1px solid #e5e7eb; background-color: #fafafa; font-size: 0.9em; }
-        .result-details p { margin: 5px 0; }
-        .result-details h4 { margin-top: 15px; margin-bottom: 5px; font-weight: 600; }
-        .result-details pre { background-color: #e5e7eb; padding: 8px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-size: 0.85em; margin-top: 3px; max-height: 200px; overflow-y: auto; }
-        .steps-list { list-style: none; padding-left: 0; margin-top: 5px; }
-        .steps-list li { padding: 4px 0 4px 10px; border-left: 2px solid #d1d5db; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .steps-list li[data-status="passed"] { border-left-color: ${getStatusColor(
-          "passed"
-        )}; }
-        .steps-list li[data-status="failed"] { border-left-color: ${getStatusColor(
-          "failed"
-        )}; }
-        .steps-list li[data-status="skipped"] { border-left-color: ${getStatusColor(
-          "skipped"
-        )}; }
-        .step-error { background-color: #fee2e2; color: #991b1b; padding: 5px; border-radius: 3px; margin-top: 5px; }
-        footer { margin-top: 30px; text-align: center; font-size: 0.8em; color: #9ca3af; }
+        /* Reset and Base Styles (Inspired by globals.css and ShadCN) */
+        :root {
+            --background: #ffffff;
+            --foreground: #334155; /* slate-700 */
+            --card: #ffffff;
+            --card-foreground: #334155;
+            --popover: #ffffff;
+            --popover-foreground: #334155;
+            --primary: #64748b; /* slate-500 */
+            --primary-foreground: #ffffff;
+            --secondary: #f1f5f9; /* slate-100 */
+            --secondary-foreground: #334155;
+            --muted: #f8fafc; /* slate-50 */
+            --muted-foreground: #64748b; /* slate-500 */
+            --accent: #0f766e; /* teal-700 */
+            --accent-foreground: #ffffff;
+            --destructive: #dc2626; /* red-600 */
+            --destructive-foreground: #ffffff;
+            --border: #e2e8f0; /* slate-200 */
+            --input: #e2e8f0;
+            --ring: #0d9488; /* teal-600 */
+            --radius: 0.5rem;
+            --success: #16a34a; /* green-600 */
+            --warning: #f59e0b; /* amber-500 */
+            --success-light: #dcfce7; /* green-100 */
+            --warning-light: #fef3c7; /* amber-100 */
+            --destructive-light: #fee2e2; /* red-100 */
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            margin: 0;
+            padding: 0;
+            background-color: var(--secondary);
+            color: var(--foreground);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+        h1, h2, h3, h4 { margin-top: 1.5em; margin-bottom: 0.5em; font-weight: 600; }
+        h1 { font-size: 1.8rem; }
+        h2 { font-size: 1.5rem; }
+        h3 { font-size: 1.2rem; }
+        h4 { font-size: 1.0rem; margin-top: 1em; margin-bottom: 0.3em; }
+        pre {
+            background-color: var(--muted);
+            padding: 1rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.85em;
+            border: 1px solid var(--border);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        code { font-family: monospace; }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Layout */
+        .grid { display: grid; gap: 1rem; }
+        .summary-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        .filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filters input, .filters select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--input);
+            border-radius: var(--radius);
+            background-color: var(--background);
+            color: var(--foreground);
+            font-size: 0.9em;
+        }
+
+        /* Card Component */
+        .card {
+            background-color: var(--card);
+            color: var(--card-foreground);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+            margin-bottom: 1rem;
+            overflow: hidden; /* Prevent content overflow */
+        }
+        .card-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;}
+        .card-title { font-size: 1.1rem; font-weight: 600; margin: 0; }
+        .card-title-sm { font-size: 0.9rem; font-weight: 500; }
+        .card-content { padding: 1.5rem; }
+
+        /* Summary Card Specific */
+        .summary-card .card-header { padding: 0.75rem 1rem; border-bottom: none; }
+        .summary-card .card-content { padding: 0.5rem 1rem 1rem 1rem; }
+        .summary-value { font-size: 1.5rem; font-weight: bold; }
+        .summary-icon { font-size: 1.1rem; }
+        .run-meta { text-align: center; margin-top: 1rem; font-size: 0.85em; }
+
+        /* Test Result Item */
+        .test-result-item { margin-bottom: 0.5rem; }
+        .test-result-summary {
+            display: block;
+            width: 100%;
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border: none;
+            background: none;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .test-result-summary:hover { background-color: var(--muted); }
+        .test-result-summary .summary-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+        .test-result-summary .test-name { font-weight: 500; margin-bottom: 0.25rem; }
+        .test-result-details {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            border-top: 1px solid var(--border);
+            background-color: #fafbfc; /* Slightly different bg for details */
+        }
+        .detail-section { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--border); }
+        .detail-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .detail-title { font-weight: 600; margin-bottom: 0.5rem; color: var(--primary); }
+        .error-section { border-left: 3px solid var(--destructive); padding-left: 1rem; }
+        .error-title { color: var(--destructive); }
+        .error-message pre, .stack-trace pre { background-color: #fff5f5; border-color: #fecaca; color: #991b1b; font-size: 0.8em; }
+
+        /* Steps */
+        .steps-container { max-height: 400px; overflow-y: auto; padding-right: 0.5rem;}
+        .step-details { border-left: 2px solid var(--border); margin-left: 0.5rem; margin-bottom: 0.5rem; }
+        .step-summary { padding: 0.4rem 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background-color 0.2s; }
+        .step-summary:hover { background-color: var(--muted); }
+        .step-summary::-webkit-details-marker { display: none; } /* Hide default marker */
+        .step-summary::before { content: '▸'; display: inline-block; margin-right: 0.3rem; transition: transform 0.2s; }
+        .step-details[open] > .step-summary::before { transform: rotate(90deg); }
+        .step-icon { font-weight: bold; }
+        .step-title { flex-grow: 1; }
+        .step-content { padding: 0.5rem 0.8rem 0.8rem 2rem; font-size: 0.9em; border-top: 1px dashed var(--border); margin-top: 0.4rem; }
+        .step-attachment { margin-top: 0.5rem; }
+
+        /* Attachments */
+         .attachments-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+        /* Code Snippet */
+         .code-snippet { background-color: var(--muted); border: 1px solid var(--border); padding: 0.5rem 1rem; border-radius: var(--radius); font-size: 0.85em; }
+
+        /* Badge and Status Styles */
+        .badge {
+            display: inline-block;
+            padding: 0.25em 0.6em;
+            font-size: 0.75rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .status-passed { background-color: var(--success-light); color: var(--success); border-color: var(--success); }
+        .status-failed { background-color: var(--destructive-light); color: var(--destructive); border-color: var(--destructive); }
+        .status-skipped { background-color: var(--warning-light); color: var(--warning); border-color: var(--warning); }
+        .status-passed-text { color: var(--success); }
+        .status-failed-text { color: var(--destructive); }
+        .status-skipped-text { color: var(--warning); }
+        .status-text { font-weight: bold; text-transform: capitalize; }
+
+        /* Utility Classes */
+        .muted-text { color: var(--muted-foreground); }
+        .text-xs { font-size: 0.75rem; }
+        .text-sm { font-size: 0.875rem; }
+        .tag { background-color: var(--secondary); padding: 0.15rem 0.4rem; border-radius: 0.25rem; font-size: 0.8em; }
+        .footer { text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85em; color: var(--muted-foreground); }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .summary-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+            .filters { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Playwright Pulse Report</h1>
+        <h1>Playwright Pulse - Test Report</h1>
 
-        <h2>Run Summary</h2>
-        ${summaryHtml}
+        <section id="summary">
+            <h2>Run Summary</h2>
+            ${generateRunSummaryHtml(run)}
+        </section>
 
-        <h2>Test Results (${results.length})</h2>
-        <div class="results-list">
-            ${resultsHtml}
-        </div>
+        <section id="test-results">
+            <h2>Test Results (${results.length})</h2>
+             <div class="filters">
+                 <input type="text" id="search-input" placeholder="🔎 Search by name or suite..." oninput="filterTests()">
+                 <select id="status-filter" onchange="filterTests()">
+                     <option value="all">All Statuses</option>
+                     <option value="passed">Passed</option>
+                     <option value="failed">Failed</option>
+                     <option value="skipped">Skipped</option>
+                 </select>
+                 <span id="filter-count" class="muted-text" style="align-self: center;"></span>
+             </div>
+            <div id="results-list">
+                ${
+                  results.length > 0
+                    ? results.map(generateTestResultHtml).join("")
+                    : '<p class="muted-text">No test results found.</p>'
+                }
+            </div>
+        </section>
 
-        <footer>
-            Generated by Playwright Pulse Reporter on ${format(
-              new Date(),
-              "PP pp"
-            )}<br>
-            Report data generated at: ${
-              metadata.generatedAt
-                ? format(new Date(metadata.generatedAt), "PP pp")
-                : "N/A"
-            }
+        <footer class="footer">
+            Generated by Playwright Pulse Reporter on ${generationTime}
         </footer>
     </div>
 
     <script>
-        function toggleDetails(id) {
-            const element = document.getElementById(id);
-            if (element) {
-                element.style.display = element.style.display === 'none' ? 'block' : 'none';
+        function toggleDetail(id) {
+            const detailElement = document.getElementById(id);
+            const buttonElement = detailElement.previousElementSibling; // The summary button
+            if (detailElement) {
+                const isHidden = detailElement.hidden;
+                detailElement.hidden = !isHidden;
+                 buttonElement.setAttribute('aria-expanded', isHidden);
             }
         }
+
+        function filterTests() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const resultsList = document.getElementById('results-list');
+            const testItems = resultsList.querySelectorAll('.test-result-item');
+            let visibleCount = 0;
+
+            testItems.forEach(item => {
+                const status = item.getAttribute('data-status');
+                const textContent = item.getAttribute('data-text') || ''; // Use pre-calculated text
+
+                const statusMatch = statusFilter === 'all' || status === statusFilter;
+                const searchMatch = searchTerm === '' || textContent.includes(searchTerm);
+
+                if (statusMatch && searchMatch) {
+                    item.style.display = '';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            const filterCountElement = document.getElementById('filter-count');
+            if(filterCountElement){
+                 filterCountElement.textContent = \`Showing \${visibleCount} of \${testItems.length} tests\`;
+            }
+        }
+
+        // Initial filter application if needed (e.g., if filters have default values)
+        // filterTests();
+         // Initialize count on load
+        document.addEventListener('DOMContentLoaded', filterTests);
     </script>
 </body>
 </html>
-  `;
-};
+    `;
+}
 
-/**
- * Main function to generate the static report.
- */
-const generateReport = async () => {
-  console.log(`Reading report data from: ${reportJsonPath}`);
+// --- Main Execution ---
+
+async function main() {
+  log(`Attempting to read report data from: ${reportJsonPath}`);
   let reportData;
-
   try {
     const fileContent = await fs.readFile(reportJsonPath, "utf-8");
-
-    // --- Date Reviver for JSON ---
-    const reviveDates = (key, value) => {
+    // Reviver to parse dates correctly
+    reportData = JSON.parse(fileContent, (key, value) => {
       const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
       if (typeof value === "string" && isoDateRegex.test(value)) {
-        const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          return date;
+        try {
+          const date = new Date(value);
+          if (!isNaN(date.getTime())) return date;
+        } catch (e) {
+          /* ignore parse error, return original string */
         }
       }
       return value;
-    };
-
-    reportData = JSON.parse(fileContent, reviveDates);
-
-    // Basic Validation
-    if (!reportData || typeof reportData !== "object") {
-      throw new Error("Report data is not a valid object.");
-    }
-    if (!reportData.metadata) {
-      throw new Error("Report metadata is missing.");
-    }
-    if (!Array.isArray(reportData.results)) {
-      reportData.results = []; // Ensure results is an array even if missing/null
-    }
-    // Ensure run is either null or an object
-    if (reportData.run !== null && typeof reportData.run !== "object") {
-      console.warn("Warning: Invalid 'run' data found, treating as null.");
-      reportData.run = null;
-    }
+    });
+    log("Successfully read and parsed report data.");
   } catch (error) {
     if (error.code === "ENOENT") {
-      console.error(`Error: Report JSON file not found at ${reportJsonPath}.`);
-      console.error(
-        "Ensure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated."
+      logError(
+        `Report JSON file not found at ${reportJsonPath}.\nEnsure Playwright tests ran with 'playwright-pulse-reporter' and the file was generated in the 'pulse-report-output' directory relative to your project root.`
       );
     } else {
-      console.error(
-        `Error reading or parsing JSON report file: ${error.message}`
+      logError(
+        `Failed to read or parse report data from ${reportJsonPath}.`,
+        error
       );
     }
-    process.exit(1); // Exit with error code
+    process.exit(1); // Exit if report data is missing or invalid
   }
 
-  try {
-    const htmlContent = generateHtmlContent(reportData);
-    await fs.mkdir(reportDirPath, { recursive: true }); // Ensure directory exists
-    await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
-    console.log(
-      `Static HTML report generated successfully at: ${reportHtmlPath}`
+  // Basic validation
+  if (
+    !reportData ||
+    !reportData.metadata ||
+    !Array.isArray(reportData.results)
+  ) {
+    logError(
+      "Report data is missing required fields (metadata, results). Aborting."
     );
-  } catch (error) {
-    console.error(`Error generating or writing HTML report: ${error.message}`);
     process.exit(1);
   }
-};
 
-// Execute the report generation
-generateReport();
+  log("Generating static HTML report...");
+  const htmlContent = generateHtml(reportData);
+
+  try {
+    // Ensure output directory exists
+    await fs.mkdir(reportJsonDir, { recursive: true });
+    await fs.writeFile(outputHtmlPath, htmlContent, "utf-8");
+    log(`Successfully generated static HTML report: ${outputHtmlPath}`);
+  } catch (error) {
+    logError(`Failed to write static HTML report to ${outputHtmlPath}.`, error);
+    process.exit(1);
+  }
+}
+
+main();
