@@ -12,7 +12,7 @@
     "reporting",
     "nextjs"
   ],
-  "private": true,
+  "private": false,
   "main": "dist/reporter/playwright-pulse-reporter.js",
   "types": "dist/reporter/playwright-pulse-reporter.d.ts",
   "files": [
