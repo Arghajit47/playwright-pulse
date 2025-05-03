@@ -112,9 +112,17 @@ class PlaywrightPulseReporter {
         // console.log(`Starting test: ${test.title}`);
     }
     async processStep(step, testId) {
-        var _a, _b;
+        var _a, _b, _c, _d;
         // Determine actual step status (don't inherit from parent)
-        const actualStatus = convertStatus(step.error ? "failed" : "passed");
+        let stepStatus = "passed";
+        let errorMessage = ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined;
+        if ((_c = (_b = step.error) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.startsWith("Test is skipped:")) {
+            stepStatus = "skipped";
+            errorMessage = "Info: Test is skipped:";
+        }
+        else {
+            stepStatus = convertStatus(step.error ? "failed" : "passed");
+        }
         const duration = step.duration;
         const startTime = new Date(step.startTime);
         const endTime = new Date(startTime.getTime() + Math.max(0, duration));
@@ -126,12 +134,12 @@ class PlaywrightPulseReporter {
         return {
             id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
             title: step.title,
-            status: actualStatus,
+            status: stepStatus,
             duration: duration,
             startTime: startTime,
             endTime: endTime,
-            errorMessage: ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined,
-            stackTrace: ((_b = step.error) === null || _b === void 0 ? void 0 : _b.stack) || undefined,
+            errorMessage: errorMessage,
+            stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
             isHook: step.category === "hook",
             hookType: step.category === "hook"

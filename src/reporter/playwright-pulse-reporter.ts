@@ -35,6 +35,7 @@ const convertStatus = (
     return "failed";
   return "skipped";
 };
+  
 
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
 const ATTACHMENTS_SUBDIR = "attachments"; // Centralized definition
@@ -127,7 +128,16 @@ export class PlaywrightPulseReporter implements Reporter {
     testId: string
   ): Promise<PulseTestStep> {
     // Determine actual step status (don't inherit from parent)
-    const actualStatus = convertStatus(step.error ? "failed" : "passed");
+    let stepStatus: PulseTestStatus = "passed";
+    let errorMessage = step.error?.message || undefined;
+
+    if (step.error?.message?.startsWith("Test is skipped:")) {
+      stepStatus = "skipped";
+      errorMessage = "Info: Test is skipped:";
+    } else {
+      stepStatus = convertStatus(step.error ? "failed" : "passed");
+    }
+
     const duration = step.duration;
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
@@ -144,11 +154,11 @@ export class PlaywrightPulseReporter implements Reporter {
     return {
       id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}`,
       title: step.title,
-      status: actualStatus,
+      status: stepStatus,
       duration: duration,
       startTime: startTime,
       endTime: endTime,
-      errorMessage: step.error?.message || undefined,
+      errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
       isHook: step.category === "hook",
@@ -161,6 +171,7 @@ export class PlaywrightPulseReporter implements Reporter {
       steps: [], // Will be populated recursively
     };
   }
+  
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const testStatus = convertStatus(result.status, test);
