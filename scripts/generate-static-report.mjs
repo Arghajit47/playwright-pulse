@@ -147,6 +147,41 @@ function generatePieChartSVG(data) {
   `;
 }
 
+function generateStepsHTML(steps, level = 0) {
+  if (!steps || steps.length === 0) return "";
+
+  let stepsHTML = '<ul class="steps-list">';
+  for (const step of steps) {
+    const isHookClass = step.isHook ? " step-hook" : "";
+    const nestedStepsHTML = generateStepsHTML(step.steps, level + 1);
+    const hasNestedSteps = step.steps && step.steps.length > 0;
+    const toggleIcon = hasNestedSteps ? "▼" : ""; // Only show toggle if there are nested steps
+    const stepHeaderClass = hasNestedSteps ? "step-header" : "";
+
+    stepsHTML += `
+      <li class="step-item${isHookClass}">
+        <div class="${stepHeaderClass}">
+          <span class="step-title">${sanitizeHTML(step.title)}</span>
+          <span class="step-duration">${formatDuration(step.duration)}</span>
+          ${toggleIcon ? `<span class="step-toggle">${toggleIcon}</span>` : ""}
+        </div>
+        ${
+          step.errorMessage
+            ? `<div class="step-error">${sanitizeHTML(step.errorMessage)}</div>`
+            : ""
+        }
+        ${
+          hasNestedSteps
+            ? `<div class="nested-steps">${nestedStepsHTML}</div>`
+            : ""
+        }
+      </li>
+    `;
+  }
+  stepsHTML += "</ul>";
+  return stepsHTML;
+}
+
 // Enhanced HTML generation
 function generateHTML(reportData) {
   const { run, results } = reportData;
@@ -513,7 +548,7 @@ function generateHTML(reportData) {
         }
         
         .suite-content {
-          display: block;
+          display: none;
         }
         
         .suite-content.collapsed {
@@ -771,570 +806,333 @@ function generateHTML(reportData) {
             align-items: flex-start;
             gap: 15px;
           }
-          
           .run-info {
             text-align: left;
             width: 100%;
           }
-          
           .dashboard-grid {
             grid-template-columns: 1fr;
           }
-          
           .pie-chart-container {
             grid-column: span 1;
           }
+          .metrics-grid {
+            grid-template-columns: 1fr;
+          }
+          .filters {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+          }
+          .test-runs-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+          }
         }
-
-.step-header {
-  cursor: pointer;
-  padding: 8px 0;
-  display: flex;
-  align-items: center;
-}
-
-.step-icon {
-  margin-right: 8px;
-  width: 20px;
-  text-align: center;
-}
-
-.step-details {
-  display: none;
-  padding: 10px;
-  margin: 5px 0;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  border-left: 3px solid #ddd;
-}
-
-.nested-steps {
-  display: none;
-  padding-left: 20px;
-  border-left: 2px solid #eee;
-  margin: 5px 0;
-}
-
-.step-hook {
-  background-color: #f0f7ff;
-  border-left: 3px solid #4a90e2;
-}
-
-        body { font-family: sans-serif; margin: 0; background-color: #f8f9fa; color: #343a40; display: flex; }
-        .container { max-width: 1200px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); flex-grow: 1; }
-        .header { border-bottom: 1px solid #dee2e6; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        .header h1 { margin: 0; font-size: 1.8em; color: #708090; } /* Slate Blue */
-        .header .run-info { text-align: right; font-size: 0.9em; color: #6c757d; }
-        .tabs { display: flex; border-bottom: 1px solid #dee2e6; margin-bottom: 20px; }
-        .tab-button { padding: 10px 20px; cursor: pointer; border: none; background-color: transparent; font-size: 1em; margin-right: 5px; border-bottom: 3px solid transparent; }
-        .tab-button.active { border-bottom-color: #008080; font-weight: bold; color: #008080; } /* Teal */
-        .tab-content { display: none; animation: fadeIn 0.5s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .summary-card { background-color: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .summary-card h3 { margin: 0 0 10px; font-size: 1.1em; color: #6c757d; }
-        .summary-card .value { font-size: 2em; font-weight: bold; }
-        .status-passed .value { color: #28a745; }
-        .status-failed .value { color: #dc3545; }
-        .status-skipped .value { color: #ffc107; }
-        .pie-chart-container { display: flex; flex-direction: column; align-items: center; background-color: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .pie-chart-container h3 { margin: 0 0 15px; font-size: 1.1em; color: #6c757d; }
-        .pie-chart-svg { display: block; margin: 0 auto; }
-        .pie-chart-total { font-size: 24px; font-weight: bold; fill: #343a40; }
-        .pie-chart-label { font-size: 12px; fill: #6c757d; }
-        .pie-chart-placeholder { color: #6c757d; font-style: italic; padding: 20px; }
-        .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
-        .filters input, .filters select { padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.9em; }
-        .test-suite { margin-bottom: 25px; border: 1px solid #e9ecef; border-radius: 6px; overflow: hidden; }
-        .suite-header { background-color: #f8f9fa; padding: 10px 15px; font-weight: bold; border-bottom: 1px solid #e9ecef; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .suite-header::after { content: '▼'; font-size: 0.8em; }
-        .suite-header.collapsed::after { content: '►'; }
-        .suite-content { display: block; }
-        .suite-content.collapsed { display: none; }
-        .test-result-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f1f3f5; cursor: pointer; transition: background-color 0.2s; }
-        .test-result-item:last-child { border-bottom: none; }
-        .test-result-item:hover { background-color: #f1f3f5; }
-        .test-result-item .name { flex-grow: 1; margin-right: 15px; font-size: 0.95em; }
-        .test-result-item .status-badge { padding: 3px 8px; border-radius: 12px; font-size: 0.8em; font-weight: bold; color: #fff; }
-        .status-passed .status-badge { background-color: #28a745; }
-        .status-failed .status-badge { background-color: #dc3545; }
-        .status-skipped .status-badge { background-color: #ffc107; color: #343a40; }
-        .test-result-item .duration { font-size: 0.9em; color: #6c757d; min-width: 50px; text-align: right; }
-        .test-details { background-color: #f8f9fa; padding: 15px; margin-top: -1px; border-top: 1px solid #e9ecef; display: none; animation: slideDown 0.3s ease-out; }
-        .test-details h3 { margin-top: 0; margin-bottom: 10px; font-size: 1.1em; color: #495057; border-bottom: 1px solid #dee2e6; padding-bottom: 5px; }
-        .test-details p { margin: 5px 0; font-size: 0.9em; }
-        .test-details strong { color: #495057; }
-        .test-details pre { background-color: #e9ecef; padding: 10px; border-radius: 4px; font-size: 0.85em; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
-        .test-details code { font-family: monospace; }
-        .steps-list { list-style: none; padding: 0; margin: 10px 0 0; }
-        .step-item { padding: 8px 0; border-bottom: 1px dashed #e0e0e0; font-size: 0.9em; }
-        .step-item:last-child { border-bottom: none; }
-        .step-title { display: flex; justify-content: space-between; align-items: center; }
-        .step-duration { font-size: 0.9em; color: #6c757d; }
-        .step-error { color: #dc3545; margin-top: 5px; font-size: 0.9em; padding-left: 20px; }
-        .status-failed .step-title { color: #dc3545; }
-        .status-skipped .step-title { color: #6c757d; }
-        .attachments-section img, .attachments-section video { max-width: 100%; height: auto; margin-top: 10px; border: 1px solid #dee2e6; border-radius: 4px; }
-        .attachments-section a { color: #007bff; text-decoration: none; }
-        .attachments-section a:hover { text-decoration: underline; }
-        @keyframes slideDown { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 1000px; /* Adjust as needed */ } }
+        
+        @media (max-width: 480px) {
+          .filters input,
+          .filters select {
+            min-width: 100%;
+            flex: none;
+          }
+          .tab-button {
+            padding: 10px 12px;
+          }
+          .header h1 {
+            font-size: 1.8em;
+          }
+          .run-info {
+            font-size: 0.9em;
+          }
+          .summary-card .value {
+            font-size: 2em;
+          }
+          .metric-value {
+            font-size: 1.4em;
+          }
+          .test-result-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }
+          .test-result-item .duration {
+            text-align: left;
+          }
+          .share-options {
+            flex-direction: column;
+            gap: 12px;
+          }
+          .share-btn {
+            width: 100%;
+            text-align: center;
+          }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <header class="header">
             <h1>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16.59 4.57A2 2 0 0 0 15.17 4H9.83a2 2 0 0 0-1.42.57L8.68 6.15a2 2 0 0 1-.58 1.41V11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7.56a2 2 0 0 1-.59-1.42L16.59 4.57z"></path>
+                    <path d="M7.5 17a3.5 3.5 0 1 1 9 0"></path>
+                    <path d="M3 10h18"></path>
+                    <path d="M12 10v7"></path>
                 </svg>
                 Playwright Pulse Report
             </h1>
             <div class="run-info">
-                <div><strong>Generated:</strong> ${formatDate(new Date())}</div>
-                <div><strong>Run Started:</strong> ${formatDate(
+                <strong>Run Date:</strong> ${formatDate(
                   runSummary.timestamp
-                )}</div>
-                <div><strong>Total Duration:</strong> ${formatDuration(
+                )}<br>
+                <strong>Total Duration:</strong> ${formatDuration(
                   runSummary.duration
-                )}</div>
+                )}
             </div>
-        </div>
-
+        </header>
+        
         <div class="tabs">
-            <button class="tab-button active" onclick="openTab('dashboard')">Dashboard</button>
-            <button class="tab-button" onclick="openTab('testRuns')">Test Runs</button>
+            <button class="tab-button active" data-tab="dashboard">Dashboard</button>
+            <button class="tab-button" data-tab="test-runs">Test Runs</button>
         </div>
-
-        <!-- Dashboard Tab -->
+        
         <div id="dashboard" class="tab-content active">
-            <h2>Test Execution Overview</h2>
-            
             <div class="dashboard-grid">
                 <div class="summary-card">
                     <h3>Total Tests</h3>
                     <div class="value">${runSummary.totalTests}</div>
-                    <div class="trend">All test cases executed</div>
                 </div>
-                
                 <div class="summary-card status-passed">
                     <h3>Passed</h3>
                     <div class="value">${runSummary.passed}</div>
-                    <div class="trend">${passPercentage}% success rate</div>
+                    <div class="trend trend-up">+${passPercentage}%</div>
                 </div>
-                
                 <div class="summary-card status-failed">
                     <h3>Failed</h3>
                     <div class="value">${runSummary.failed}</div>
-                    <div class="trend">${
-                      runSummary.failed > 0
-                        ? "Needs investigation"
-                        : "All tests passed"
-                    }</div>
+                    <div class="trend trend-down">-${
+                      100 - passPercentage
+                    }%</div>
                 </div>
-                
                 <div class="summary-card status-skipped">
                     <h3>Skipped</h3>
                     <div class="value">${runSummary.skipped}</div>
-                    <div class="trend">${
-                      runSummary.skipped > 0
-                        ? "Tests were skipped"
-                        : "No skipped tests"
-                    }</div>
                 </div>
-                
-                ${generatePieChartSVG(runSummary)}
-            </div>
-            
-            <div class="metrics-grid">
-                <div class="metric-card">
-                    <h3>Test Execution Efficiency</h3>
-                    <div class="metric-value">${avgTestDuration}</div>
-                    <div class="metric-description">Average test duration across all test cases</div>
+                <div class="pie-chart-container">
+                    ${generatePieChartSVG(runSummary)}
                 </div>
-                
-                <div class="metric-card">
-                    <h3>Test Stability</h3>
-                    <div class="metric-value">${passPercentage}%</div>
-                    <div class="metric-description">Percentage of tests that passed successfully</div>
-                </div>
-                
-                <div class="metric-card">
-                    <h3>Failure Rate</h3>
-                    <div class="metric-value">${
-                      runSummary.totalTests > 0
-                        ? Math.round(
-                            (runSummary.failed / runSummary.totalTests) * 100
-                          )
-                        : 0
-                    }%</div>
-                    <div class="metric-description">Percentage of tests that failed during execution</div>
-                </div>
-            </div>
-            
-            <div class="share-section">
-                <h3>Share This Report</h3>
-                <p>Share this test report with your team members or stakeholders.</p>
-                <div class="share-options">
-                    <button class="share-btn email-btn" onclick="shareViaEmail()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white">
-                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                        </svg>
-                        Share via Email
-                    </button>
-                    <button class="share-btn copy-btn" onclick="copyReportLink()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white">
-                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
-                        </svg>
-                        Copy Report Link
-                    </button>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>Pass Rate</h3>
+                        <div class="metric-value">${passPercentage}%</div>
+                        <div class="metric-description">Percentage of tests passed</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Avg. Test Duration</h3>
+                        <div class="metric-value">${avgTestDuration}</div>
+                        <div class="metric-description">Average time per test</div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- Test Runs Tab -->
-        <div id="testRuns" class="tab-content">
-            <h2>Detailed Test Results</h2>
+        
+        <div id="test-runs" class="tab-content">
+            <div class="test-runs-header">
+                <h2>Test Runs</h2>
+                <span class="total-count">Total Tests: ${
+                  runSummary.totalTests
+                }</span>
+            </div>
             <div class="filters">
-                <input type="text" id="searchInput" placeholder="Search by test name..." onkeyup="filterTests()">
-                <select id="statusFilter" onchange="filterTests()">
-                    <option value="all">All Statuses</option>
+                <input type="text" id="filter-name" placeholder="Filter by Test Name">
+                <select id="filter-status">
+                    <option value="">All Statuses</option>
                     <option value="passed">Passed</option>
                     <option value="failed">Failed</option>
                     <option value="skipped">Skipped</option>
                 </select>
             </div>
+            <table class="test-table">
+                <thead>
+                    <tr>
+                        <th>Test Name</th>
+                        <th>Status</th>
+                        <th>Duration</th>
+                        <th>Retries</th>
+                        <th>Start Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${results
+                      .map(
+                        (test) => `
+                        <tr data-name="${sanitizeHTML(
+                          test.name
+                        )}" data-status="${test.status}" id="test-row-${
+                          test.id
+                        }">
+                            <td>${sanitizeHTML(test.name)}</td>
+                            <td class="${getStatusClass(test.status)}">
+                              ${getStatusIcon(test.status)} ${test.status}
+                            </td>
+                            <td>${formatDuration(test.duration)}</td>
+                            <td>${test.retries}</td>
+                            <td>${formatDate(test.startTime)}</td>
+                        </tr>
+                    `
+                      )
+                      .join("")}
+                </tbody>
+            </table>
             
-            <div id="test-suites-container">
-                ${Object.entries(
-                  results.reduce((acc, result) => {
-                    const suiteName = result.suiteName || "Default Suite";
-                    if (!acc[suiteName]) acc[suiteName] = [];
-                    acc[suiteName].push(result);
-                    return acc;
-                  }, {})
-                )
-                  .map(
-                    ([suiteName, tests]) => `
-                    <div class="test-suite" data-suite-name="${sanitizeHTML(
-                      suiteName
-                    )}">
-                        <div class="suite-header" onclick="toggleSuite(this)">
-                           ${sanitizeHTML(suiteName)} (${tests.length} tests)
-                        </div>
-                        <div class="suite-content">
-                            ${tests
-                              .map((result) => {
-                                const attachments = (result.screenshots || [])
-                                  .concat(
-                                    result.videoPath ? [result.videoPath] : []
-                                  )
-                                  .concat(
-                                    result.tracePath ? [result.tracePath] : []
-                                  );
-
-                                return `
-                                <div class="test-result-item ${getStatusClass(
-                                  result.status
-                                )}" 
-                                     data-test-name="${sanitizeHTML(
-                                       result.name
-                                     )}" 
-                                     data-status="${result.status}" 
-                                     onclick="toggleDetails(this)">
-                                    <div class="name">${sanitizeHTML(
-                                      result.name
-                                    )}</div>
-                                    <div class="status-badge">${result.status.toUpperCase()}</div>
-                                    <div class="duration">${formatDuration(
-                                      result.duration
-                                    )}</div>
-                                </div>
-                                <div class="test-details">
-                                     <h3>Test Details</h3>
-                                     <p><strong>Run ID:</strong> ${sanitizeHTML(
-                                       result.runId || "N/A"
-                                     )}</p>
-                                     <p><strong>Suite:</strong> ${sanitizeHTML(
-                                       result.suiteName || "N/A"
-                                     )}</p>
-                                     <p><strong>Started:</strong> ${formatDate(
-                                       result.startTime
-                                     )}</p>
-                                     <p><strong>Ended:</strong> ${formatDate(
-                                       result.endTime
-                                     )}</p>
-                                     <p><strong>Duration:</strong> ${formatDuration(
-                                       result.duration
-                                     )}</p>
-                                     <p><strong>Retries:</strong> ${
-                                       result.retries || 0
-                                     }</p>
-                                     
-                                     ${
-                                       result.tags && result.tags.length > 0
-                                         ? `
-                                        <p><strong>Tags:</strong> ${result.tags
-                                          .map(
-                                            (tag) => `
-                                            <span style="background-color: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">
-                                                ${sanitizeHTML(tag)}
-                                            </span>
-                                        `
-                                          )
-                                          .join(" ")}</p>
-                                     `
-                                         : ""
-                                     }
-
-                                     ${
-                                       result.errorMessage
-                                         ? `
-                                        <h3>Error Details</h3>
-                                        <pre><code>${sanitizeHTML(
-                                          result.errorMessage
-                                        )}</code></pre>
-                                        ${
-                                          result.stackTrace
-                                            ? `
-                                            <pre><code>${sanitizeHTML(
-                                              result.stackTrace
-                                            )}</code></pre>
-                                        `
-                                            : ""
-                                        }
-                                     `
-                                         : ""
-                                     }
-
-                                     ${
-                                       result.steps && result.steps.length > 0
-                                         ? `
-                                        <h3>Execution Steps</h3>
-                                        <ul class="steps-list">
-                                            ${result.steps
-                                              .map(
-                                                (step) => `
-                                                <li class="step-item ${getStatusClass(
-                                                  step.status
-                                                )}">
-                                                    <div class="step-title">
-                                                        <span>${getStatusIcon(
-                                                          step.status
-                                                        )} ${sanitizeHTML(
-                                                  step.title
-                                                )}</span>
-                                                        <span class="step-duration">${formatDuration(
-                                                          step.duration
-                                                        )}</span>
-                                                    </div>
-                                                    ${
-                                                      step.errorMessage
-                                                        ? `
-                                                        <div class="step-error">${sanitizeHTML(
-                                                          step.errorMessage
-                                                        )}</div>
-                                                    `
-                                                        : ""
-                                                    }
-                                                </li>
-                                            `
-                                              )
-                                              .join("")}
-                                        </ul>
-                                     `
-                                         : "<p>No steps recorded.</p>"
-                                     }
-
-                                     ${
-                                       attachments.length > 0
-                                         ? `
-                                        <h3>Attachments</h3>
-                                        <div class="attachments-grid">
-                                            ${attachments
-                                              .map((att) => {
-                                                const isScreenshot =
-                                                  att.startsWith(
-                                                    "data:image"
-                                                  ) ||
-                                                  [
-                                                    ".png",
-                                                    ".jpg",
-                                                    ".jpeg",
-                                                  ].some((ext) =>
-                                                    att.endsWith(ext)
-                                                  );
-                                                const isVideo = [
-                                                  ".webm",
-                                                  ".mp4",
-                                                ].some((ext) =>
-                                                  att.endsWith(ext)
-                                                );
-                                                const isTrace =
-                                                  att.endsWith(".zip");
-                                                const src = att.startsWith(
-                                                  "data:image"
-                                                )
-                                                  ? att
-                                                  : att;
-
-                                                if (isScreenshot) {
-                                                  return `
-                                                  <div class="attachment-item">
-                                                    <img src="${sanitizeHTML(
-                                                      src
-                                                    )}" alt="Screenshot" loading="lazy">
-                                                    <div class="attachment-info">Screenshot</div>
-                                                  </div>
-                                                `;
-                                                } else if (isVideo) {
-                                                  return `
-                                                  <div class="attachment-item">
-                                                    <div class="attachment-info">
-                                                      <a href="${sanitizeHTML(
-                                                        src
-                                                      )}" target="_blank" rel="noopener noreferrer">
-                                                        View Video (${sanitizeHTML(
-                                                          path.basename(src)
-                                                        )})
-                                                      </a>
-                                                    </div>
-                                                  </div>
-                                                `;
-                                                } else if (isTrace) {
-                                                  return `
-                                                  <div class="attachment-item">
-                                                    <div class="attachment-info">
-                                                      <a href="${sanitizeHTML(
-                                                        src
-                                                      )}" download>
-                                                        Download Trace (${sanitizeHTML(
-                                                          path.basename(src)
-                                                        )})
-                                                      </a>
-                                                    </div>
-                                                  </div>
-                                                `;
-                                                }
-                                                return "";
-                                              })
-                                              .join("")}
-                                        </div>
-                                     `
-                                         : "<p>No attachments available.</p>"
-                                     }
-                                </div>
-                              `;
-                              })
-                              .join("")}
-                        </div>
-                    </div>
-                `
-                  )
-                  .join("")}
+            ${results
+              .map(
+                (test) => `
+            <div class="test-details" id="test-details-${test.id}">
+                <h3>Test Details: ${sanitizeHTML(test.name)}</h3>
+                <p><strong>Status:</strong> <span class="${getStatusClass(
+                  test.status
+                )}">${getStatusIcon(test.status)} ${test.status}</span></p>
+                <p><strong>Duration:</strong> ${formatDuration(
+                  test.duration
+                )}</p>
+                <p><strong>Start Time:</strong> ${formatDate(
+                  test.startTime
+                )}</p>
+                <p><strong>End Time:</strong> ${formatDate(test.endTime)}</p>
+                <p><strong>Retries:</strong> ${test.retries}</p>
+                <p><strong>Code Snippet:</strong> <pre><code>${sanitizeHTML(
+                  test.codeSnippet
+                )}</code></pre></p>
+                <h3>Execution Steps:</h3>
+                ${generateStepsHTML(test.steps)}
             </div>
+            `
+              )
+              .join("")}
         </div>
-
-        <script>
-      
-        
-        function toggleStepDetails(element) {
-          const details = element.nextElementSibling;
-          if (details && details.classList.contains('step-details')) {
-            details.style.display = details.style.display === 'block' ? 'none' : 'block';
-            }
-            const nestedSteps = element.parentElement.querySelector('.nested-steps');
-            if (nestedSteps) {
-              nestedSteps.style.display = nestedSteps.style.display === 'block' ? 'none' : 'block';
-              }
-              }
-              
-              // Tab navigation
-            function openTab(tabName) {
-                const tabContents = document.querySelectorAll('.tab-content');
-                tabContents.forEach(content => content.classList.remove('active'));
-                const tabButtons = document.querySelectorAll('.tab-button');
-                tabButtons.forEach(button => button.classList.remove('active'));
-
-                document.getElementById(tabName).classList.add('active');
-                document.querySelector(\`.tab-button[onclick="openTab('\${tabName}')"]\`).classList.add('active');
-            }
-
-            // Toggle test details
-            function toggleDetails(element) {
-                const details = element.nextElementSibling;
-                if (details && details.classList.contains('test-details')) {
-                    details.style.display = details.style.display === 'block' ? 'none' : 'block';
-                }
-            }
-
-            // Toggle suite collapse/expand
-            function toggleSuite(headerElement) {
-                headerElement.classList.toggle('collapsed');
-                const content = headerElement.nextElementSibling;
-                if (content && content.classList.contains('suite-content')) {
-                    content.classList.toggle('collapsed');
-                }
-            }
-
-            // Filter tests by name and status
-            function filterTests() {
-                const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-                const statusFilter = document.getElementById('statusFilter').value;
-                const suites = document.querySelectorAll('.test-suite');
-
-                suites.forEach(suite => {
-                    const tests = suite.querySelectorAll('.test-result-item');
-                    let suiteVisible = false;
-                    
-                    tests.forEach(test => {
-                        const testName = test.getAttribute('data-test-name').toLowerCase();
-                        const testStatus = test.getAttribute('data-status');
-                        const details = test.nextElementSibling;
-
-                        const nameMatch = testName.includes(searchTerm);
-                        const statusMatch = statusFilter === 'all' || testStatus === statusFilter;
-
-                        if (nameMatch && statusMatch) {
-                            test.style.display = 'flex';
-                            if (details) details.style.display = 'none';
-                            suiteVisible = true;
-                        } else {
-                            test.style.display = 'none';
-                            if (details) details.style.display = 'none';
-                        }
-                    });
-                    
-                    suite.style.display = suiteVisible ? 'block' : 'none';
-                });
-            }
-
-            // Copy report link to clipboard
-            function copyReportLink() {
-                // In a real implementation, you would copy the actual URL to the report
-                // For now, we'll just copy a placeholder message
-                const el = document.createElement('textarea');
-                el.value = 'Playwright test report (local file)';
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                
-                alert('Report information copied to clipboard');
-            }
-
-            // Initialize the page
-            document.addEventListener('DOMContentLoaded', function() {
-                openTab('dashboard');
-                
-                // Collapse all suites by default in test runs view
-                document.querySelectorAll('.suite-header').forEach(header => {
-                    header.classList.add('collapsed');
-                    header.nextElementSibling.classList.add('collapsed');
-                });
-            });
-        </script>
     </div>
+    
+    <script>
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const testTableRows = document.querySelectorAll('.test-table tbody tr');
+    const testDetailsDivs = document.querySelectorAll('.test-details');
+    
+    let activeTestRow = null; // Track the currently selected test row
+    
+    function showTab(tabId) {
+        tabButtons.forEach(button => button.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        const tabButton = document.querySelector(\`[data-tab="\${tabId}"]\`);
+        const tabContent = document.getElementById(tabId);
+        
+        tabButton.classList.add('active');
+        tabContent.classList.add('active');
+    }
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const tabId = button.dataset.tab;
+            showTab(tabId);
+            
+            // If switching to the test runs tab, clear any selected test details
+            if (tabId === 'test-runs' && activeTestRow) {
+                activeTestRow.classList.remove('selected');
+                activeTestRow = null;
+                testDetailsDivs.forEach(div => div.style.display = 'none');
+            }
+        });
+    });
+    
+    showTab('dashboard'); // Show the dashboard tab by default
+    
+    // Function to filter test runs table
+    function filterTestRuns() {
+        const nameFilter = document.getElementById('filter-name').value.toLowerCase();
+        const statusFilter = document.getElementById('filter-status').value.toLowerCase();
+        
+        testTableRows.forEach(row => {
+            const name = row.dataset.name.toLowerCase();
+            const status = row.dataset.status.toLowerCase();
+            
+            const nameMatch = name.includes(nameFilter);
+            const statusMatch = !statusFilter || status === statusFilter;
+            
+            if (nameMatch && statusMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Also hide test details when filtering
+        testDetailsDivs.forEach(div => div.style.display = 'none');
+        activeTestRow = null;
+    }
+    
+    document.getElementById('filter-name').addEventListener('input', filterTestRuns);
+    document.getElementById('filter-status').addEventListener('change', filterTestRuns);
+    
+    // Event listener for test table row clicks
+    testTableRows.forEach(row => {
+        row.addEventListener('click', () => {
+            const testId = row.id.replace('test-row-', ''); // Extract test ID
+            const testDetailsDiv = document.getElementById(\`test-details-\${testId}\`);
+            
+            // Remove 'selected' class from any previously selected row
+            if (activeTestRow) {
+                activeTestRow.classList.remove('selected');
+            }
+            
+            // Add 'selected' class to the clicked row
+            row.classList.add('selected');
+            activeTestRow = row; // Update the active row
+            
+            // Show the corresponding test details
+            testDetailsDivs.forEach(div => {
+                div.style.display = 'none'; // Hide all details first
+            });
+            
+            if (testDetailsDiv) {
+                testDetailsDiv.style.display = 'block'; // Show the matching details
+                 // Expand the steps
+                const stepsDiv = testDetailsDiv.querySelector('.steps-list');
+                if (stepsDiv) {
+                    expandSteps(stepsDiv);
+                }
+            }
+           
+        });
+    });
+
+    function expandSteps(stepsList) {
+        const stepHeaders = stepsList.querySelectorAll('.step-header');
+        stepHeaders.forEach(header => {
+            if (header.classList.contains('collapsed')) {
+                header.classList.remove('collapsed');
+                header.classList.add('expanded');
+                header.nextElementSibling.classList.add('expanded');
+            }
+        });
+    }
+    
+    // Event listener for expanding/collapsing steps
+    document.addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.classList.contains('step-header')) {
+            target.classList.toggle('collapsed');
+            target.classList.toggle('expanded');
+            const nextSibling = target.nextElementSibling;
+            if (nextSibling) {
+                nextSibling.classList.toggle('expanded');
+            }
+        }
+    });
+    </script>
 </body>
 </html>
   `;
@@ -1373,10 +1171,11 @@ async function main() {
     console.log(chalk.blue(`You can open it in your browser with:`));
     console.log(chalk.blue(`open ${reportHtmlPath}`));
   } catch (error) {
-    console.error(chalk.red(`Error generating report: ${error.message}`));
+    console.error(chalk.red(`Error: ${error.message}`));
     process.exit(1);
   }
 }
 
-// Execute the main function
+// Run the main function
 main();
+
