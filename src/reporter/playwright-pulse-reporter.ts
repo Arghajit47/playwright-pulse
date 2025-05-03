@@ -8,20 +8,18 @@ import type {
   TestResult as PwTestResult,
   TestStep as PwStep,
 } from "@playwright/test/reporter";
-// Removed direct import of Playwright Attachment type as it's handled internally now
-
 import * as fs from "fs/promises";
 import * as path from "path";
-import type { PlaywrightPulseReport } from "../lib/report-types";
+import type { PlaywrightPulseReport } from "../lib/report-types"; // Use relative path
 import type {
   TestResult,
   TestRun,
   TestStatus as PulseTestStatus,
   TestStep as PulseTestStep,
   PlaywrightPulseReporterOptions,
-} from "../types"; // Import options type
+} from "../types"; // Use relative path
 import { randomUUID } from "crypto";
-import { attachFiles } from "./attachment-utils"; // Import the new utility
+import { attachFiles } from "./attachment-utils"; // Use relative path
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted"
@@ -42,7 +40,6 @@ export class PlaywrightPulseReporter implements Reporter {
   private runStartTime!: number;
   private options: PlaywrightPulseReporterOptions; // Store reporter options
   private outputDir: string; // Resolved final output directory for the report
-  // Removed playwrightOutputDir as it's less reliable and attachment paths are handled differently now
   private attachmentsDir: string; // Base directory for attachments (e.g., pulse-report-output/attachments)
   private baseOutputFile: string = "playwright-pulse-report.json";
   private isSharded: boolean = false;
@@ -118,8 +115,6 @@ export class PlaywrightPulseReporter implements Reporter {
     // Optional: Log test start if needed
     // console.log(`Starting test: ${test.title}`);
   }
-
-  // REMOVED saveAttachment method - logic moved to attachment-utils.ts
 
   private async processStep(
     step: PwStep,
@@ -487,62 +482,9 @@ PlaywrightPulseReporter: Run Finished
         `PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`
       );
 
-      // --- Generate Static HTML Report ---
-      // Find the script relative to the current file's directory
-      const staticScriptPath = path.resolve(
-        __dirname,
-        "../../scripts/generate-static-report.mjs"
-      );
-
-      try {
-        // Check if script exists before trying to import
-        await fs.access(staticScriptPath);
-
-        // Dynamically import the ES Module
-        const generateStaticReportModule = await import(staticScriptPath);
-        const generateStaticReport = generateStaticReportModule.default; // Assuming default export
-
-        if (typeof generateStaticReport === "function") {
-          // Pass the directory containing the JSON report
-          await generateStaticReport(this.outputDir, this.options); // Pass options
-          console.log(
-            `PlaywrightPulseReporter: Static HTML report generated in ${this.outputDir}`
-          );
-        } else {
-          console.warn(
-            `Pulse Reporter: Default export of ${staticScriptPath} is not a function. Cannot generate static report.`
-          );
-        }
-      } catch (scriptError: unknown) {
-        // More robust type checking for errors
-        if (
-          scriptError instanceof Error &&
-          "code" in scriptError &&
-          (scriptError as NodeJS.ErrnoException).code === "ERR_MODULE_NOT_FOUND"
-        ) {
-          console.warn(
-            `Pulse Reporter: Static report generation script not found at ${staticScriptPath} or one of its dependencies is missing. Looked relative to reporter dist. Skipping HTML generation.`
-          );
-        } else if (
-          scriptError instanceof Error &&
-          "code" in scriptError &&
-          (scriptError as NodeJS.ErrnoException).code === "ENOENT"
-        ) {
-          console.warn(
-            `Pulse Reporter: Static report generation script file does not exist at ${staticScriptPath}. Skipping HTML generation.`
-          );
-        } else if (scriptError instanceof Error) {
-          console.error(
-            `Pulse Reporter: Error trying to run static report generation script: ${scriptError.message}`,
-            scriptError.stack
-          );
-        } else {
-          console.error(
-            `Pulse Reporter: Unknown error trying to run static report generation script:`,
-            scriptError
-          );
-        }
-      }
+      // REMOVED Static HTML Generation Call
+      // The reporter's responsibility is now only to create the JSON file.
+      // The user will run `npx generate-pulse-report` separately.
     } catch (error: any) {
       console.error(
         `Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`

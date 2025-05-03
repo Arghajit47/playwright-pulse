@@ -23,14 +23,14 @@ This project provides both a custom Playwright reporter and a Next.js web dashbo
 In your main Playwright project (the one containing your tests), install this reporter package:
 
 ```bash
-npm install playwright-pulse-reporter --save-dev
+npm install @arghajit/playwright-pulse-reporter --save-dev
 # or
-yarn add playwright-pulse-reporter --dev
+yarn add @arghajit/playwright-pulse-reporter --dev
 # or
-pnpm add playwright-pulse-reporter --save-dev
+pnpm add @arghajit/playwright-pulse-reporter --save-dev
 ```
 
-*(Replace `playwright-pulse-reporter` with the actual published package name if you customized it)*
+*(Replace `@arghajit/playwright-pulse-reporter` with the actual published package name if you customized it)*
 
 ### 2. Configure Playwright
 
@@ -55,7 +55,7 @@ export default defineConfig({
     ['list'], // Keep other reporters like 'list' or 'html' if desired
 
     // Add the Playwright Pulse Reporter
-    ['playwright-pulse-reporter', {
+    ['@arghajit/playwright-pulse-reporter', {
         // Optional: Specify the output file name (defaults to 'playwright-pulse-report.json')
         // outputFile: 'my-custom-report-name.json',
 
@@ -77,7 +77,7 @@ export default defineConfig({
 **Explanation:**
 
 *   `outputDir` in the main `defineConfig`: This is where Playwright stores its own artifacts like traces and screenshots.
-*   `outputDir` inside the `playwright-pulse-reporter` options: This tells *our reporter* where to save the final `playwright-pulse-report.json`. Using a dedicated directory like `pulse-report-output` is **required** for the reporter and static report generation to work correctly.
+*   `outputDir` inside the `@arghajit/playwright-pulse-reporter` options: This tells *our reporter* where to save the final `playwright-pulse-report.json`. Using a dedicated directory like `pulse-report-output` is **required** for the reporter and static report generation to work correctly.
 
 ### 3. Run Your Tests
 
@@ -89,7 +89,7 @@ npx playwright test
 # npx playwright test --project=chromium --shard=1/3
 ```
 
-The `playwright-pulse-reporter` will automatically handle sharding if Playwright is configured to use it. Upon completion, the final `playwright-pulse-report.json` will be generated in the directory you specified (e.g., `pulse-report-output`).
+The `@arghajit/playwright-pulse-reporter` will automatically handle sharding if Playwright is configured to use it. Upon completion, the final `playwright-pulse-report.json` will be generated in the directory you specified (e.g., `pulse-report-output`).
 
 ### 4. Generate the Static HTML Report (Option 1)
 
@@ -100,16 +100,16 @@ After your tests run and `playwright-pulse-report.json` is created, you can gene
     ```bash
     npx generate-pulse-report
     ```
-    This command executes the `scripts/generate-static-report.mjs` script included in the `playwright-pulse-reporter` package. It reads the `pulse-report-output/playwright-pulse-report.json` file (relative to your current directory) and creates `pulse-report-output/playwright-pulse-static-report.html`.
+    This command executes the `scripts/generate-static-report.mjs` script included in the `@arghajit/playwright-pulse-reporter` package. It reads the `pulse-report-output/playwright-pulse-report.json` file (relative to your current directory) and creates `pulse-report-output/playwright-pulse-static-report.html`.
 3.  **Open the HTML file:** Open the generated `pulse-report-output/playwright-pulse-static-report.html` in your browser.
 
 This HTML file is self-contained and provides a detailed, interactive dashboard-like overview suitable for sharing or archiving.
 
-### 5. View the Next.js Dashboard (Option 2)
+### 5. View the Next.js Dashboard (Option 2 - *Currently Part of the Same Project*)
 
-If you prefer the interactive Next.js dashboard (which requires running a server):
+**Note:** The Next.js dashboard is currently part of the reporter project itself. To view it:
 
-1.  **Navigate to the Dashboard Project:**
+1.  **Navigate to the Reporter/Dashboard Project:**
     ```bash
     cd path/to/playwright-pulse-reporter # The directory containing THIS dashboard code
     ```
@@ -122,6 +122,10 @@ If you prefer the interactive Next.js dashboard (which requires running a server
     ```bash
     # Example: Copying from your main project to the dashboard project directory
     cp ../my-playwright-project/pulse-report-output/playwright-pulse-report.json ./
+    ```
+    **Tip for Development:** You can also use the `sample-report.json` file included in this project for development:
+    ```bash
+    cp sample-report.json ./playwright-pulse-report.json
     ```
 4.  **Start the Dashboard:**
     ```bash
@@ -158,29 +162,31 @@ To work on the reporter or the dashboard itself:
     ```
 4.  **Run the dashboard in development mode:**
     ```bash
-    # Make sure a sample playwright-pulse-report.json exists in the root
+    # Make sure a playwright-pulse-report.json exists in the root
+    # Using the sample data:
+    cp sample-report.json ./playwright-pulse-report.json
     npm run dev
     ```
 5.  **Test static report generation:**
     ```bash
-    # 1. Ensure a sample playwright-pulse-report.json exists in pulse-report-output
-    #    (You might need to manually run a test or copy one there)
+    # 1. Ensure playwright-pulse-report.json exists in pulse-report-output
     mkdir -p pulse-report-output
-    cp sample-report.json pulse-report-output/playwright-pulse-report.json # Example
-    # 2. Run the generation script directly
-    npm run report:static
-    # or node scripts/generate-static-report.mjs
+    cp sample-report.json pulse-report-output/playwright-pulse-report.json
+    # 2. Run the generation script directly using node (or via the bin command)
+    node ./scripts/generate-static-report.mjs
+    # or
+    # npx generate-pulse-report
     ```
 
 ## Key Files
 
 *   `src/reporter/index.ts`: The entry point for the Playwright reporter logic (exports the class).
-*   `src/reporter/playwright-pulse-reporter.ts`: The core Playwright reporter implementation (handles sharding).
-*   `scripts/generate-static-report.mjs`: Script to generate the standalone HTML report.
+*   `src/reporter/playwright-pulse-reporter.ts`: The core Playwright reporter implementation (handles sharding, generates JSON).
+*   `scripts/generate-static-report.mjs`: Script to generate the standalone HTML report (executed via `npx generate-pulse-report`).
 *   `src/lib/data-reader.ts`: Server-side logic for reading the JSON report file (used by Next.js dashboard).
 *   `src/lib/data.ts`: Data fetching functions used by the Next.js dashboard components.
 *   `src/app/`: Contains the Next.js dashboard pages and components.
 *   `pulse-report-output/playwright-pulse-report.json`: (Generated by the reporter in the *user's project*) The primary data source.
 *   `pulse-report-output/playwright-pulse-static-report.html`: (Generated by the script in the *user's project*) The standalone HTML report.
 *   `playwright-pulse-report.json`: (Manually copied to the *dashboard project root*) Used by the Next.js dashboard.
-
+*   `sample-report.json`: (Included in this project) Dummy data for development/testing visualization.
