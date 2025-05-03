@@ -147,41 +147,6 @@ function generatePieChartSVG(data) {
   `;
 }
 
-function generateStepsHTML(steps, level = 0) {
-  if (!steps || steps.length === 0) return "";
-
-  let stepsHTML = '<ul class="steps-list">';
-  for (const step of steps) {
-    const isHookClass = step.isHook ? " step-hook" : "";
-    const nestedStepsHTML = generateStepsHTML(step.steps, level + 1);
-    const hasNestedSteps = step.steps && step.steps.length > 0;
-    const toggleIcon = hasNestedSteps ? "▼" : ""; // Only show toggle if there are nested steps
-    const stepHeaderClass = hasNestedSteps ? "step-header" : "";
-
-    stepsHTML += `
-      <li class="step-item${isHookClass}">
-        <div class="${stepHeaderClass}">
-          <span class="step-title">${sanitizeHTML(step.title)}</span>
-          <span class="step-duration">${formatDuration(step.duration)}</span>
-          ${toggleIcon ? `<span class="step-toggle">${toggleIcon}</span>` : ""}
-        </div>
-        ${
-          step.errorMessage
-            ? `<div class="step-error">${sanitizeHTML(step.errorMessage)}</div>`
-            : ""
-        }
-        ${
-          hasNestedSteps
-            ? `<div class="nested-steps">${nestedStepsHTML}</div>`
-            : ""
-        }
-      </li>
-    `;
-  }
-  stepsHTML += "</ul>";
-  return stepsHTML;
-}
-
 // Enhanced HTML generation
 function generateHTML(reportData) {
   const { run, results } = reportData;
@@ -548,7 +513,7 @@ function generateHTML(reportData) {
         }
         
         .suite-content {
-          display: none;
+          display: none; /* Changed to none */
         }
         
         .suite-content.collapsed {
@@ -972,8 +937,7 @@ function generateHTML(reportData) {
                           test.name
                         )}" data-status="${test.status}" id="test-row-${
                           test.id
-                        }">
-                            <td>${sanitizeHTML(test.name)}</td>
+                        }">  <td>${sanitizeHTML(test.name)}</td>
                             <td class="${getStatusClass(test.status)}">
                               ${getStatusIcon(test.status)} ${test.status}
                             </td>
@@ -990,8 +954,9 @@ function generateHTML(reportData) {
             ${results
               .map(
                 (test) => `
-            <div class="test-details" id="test-details-${test.id}">
-                <h3>Test Details: ${sanitizeHTML(test.name)}</h3>
+            <div class="test-details" id="test-details-${
+              test.id
+            }">  <h3>Test Details: ${sanitizeHTML(test.name)}</h3>
                 <p><strong>Status:</strong> <span class="${getStatusClass(
                   test.status
                 )}">${getStatusIcon(test.status)} ${test.status}</span></p>
@@ -1007,7 +972,12 @@ function generateHTML(reportData) {
                   test.codeSnippet
                 )}</code></pre></p>
                 <h3>Execution Steps:</h3>
-                ${generateStepsHTML(test.steps)}
+                <div class="steps-container">
+                  <button class="expand-steps-button">Expand Steps</button>
+                  <div class="steps-list" style="display: none;"> 
+                    ${generateStepsHTML(test.steps)}
+                  </div>
+                </div>
             </div>
             `
               )
@@ -1099,39 +1069,26 @@ function generateHTML(reportData) {
             
             if (testDetailsDiv) {
                 testDetailsDiv.style.display = 'block'; // Show the matching details
-                 // Expand the steps
-                const stepsDiv = testDetailsDiv.querySelector('.steps-list');
-                if (stepsDiv) {
-                    expandSteps(stepsDiv);
-                }
             }
            
         });
     });
 
-    function expandSteps(stepsList) {
-        const stepHeaders = stepsList.querySelectorAll('.step-header');
-        stepHeaders.forEach(header => {
-            if (header.classList.contains('collapsed')) {
-                header.classList.remove('collapsed');
-                header.classList.add('expanded');
-                header.nextElementSibling.classList.add('expanded');
-            }
-        });
-    }
-    
-    // Event listener for expanding/collapsing steps
+    // Event listener for expanding steps
     document.addEventListener('click', (event) => {
         const target = event.target;
-        if (target.classList.contains('step-header')) {
-            target.classList.toggle('collapsed');
-            target.classList.toggle('expanded');
-            const nextSibling = target.nextElementSibling;
-            if (nextSibling) {
-                nextSibling.classList.toggle('expanded');
+        if (target.classList.contains('expand-steps-button')) {
+            const stepsContainer = target.nextElementSibling; // Get the steps container
+            if (stepsContainer.style.display === 'none') {
+                stepsContainer.style.display = 'block';
+                target.textContent = 'Collapse Steps'; // Change button text
+            } else {
+                stepsContainer.style.display = 'none';
+                target.textContent = 'Expand Steps';
             }
         }
     });
+    
     </script>
 </body>
 </html>
@@ -1178,4 +1135,3 @@ async function main() {
 
 // Run the main function
 main();
-
