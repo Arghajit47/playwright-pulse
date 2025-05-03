@@ -1,5 +1,5 @@
 // src/reporter/index.ts
-import { PlaywrightPulseReporter } from "./playwright-pulse-reporter";
+import PlaywrightPulseReporter from "./playwright-pulse-reporter";
 
 // Export the reporter class as the default export for CommonJS compatibility
 // and also as a named export for potential ES module consumers.

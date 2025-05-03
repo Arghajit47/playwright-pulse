@@ -1,4 +1,4 @@
-import { PlaywrightPulseReporter } from "./playwright-pulse-reporter";
+import PlaywrightPulseReporter from "./playwright-pulse-reporter";
 export default PlaywrightPulseReporter;
 export { PlaywrightPulseReporter };
 export type { PlaywrightPulseReport } from "../lib/report-types";
