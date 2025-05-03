@@ -937,164 +937,8 @@ function generateHTML(reportData) {
         </div>
         
         <div id="test-runs" class="tab-content">
-            <div class="test-runs-header">
-                <h2>Test Runs</h2>
-                <span class="total-count">Total Tests: ${
-                  runSummary.totalTests
-                }</span>
-            </div>
-            <div class="filters">
-                <input type="text" id="filter-name" placeholder="Filter by Test Name">
-                <select id="filter-status">
-                    <option value="">All Statuses</option>
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="skipped">Skipped</option>
-                </select>
-            </div>
-            <table class="test-table">
-                <thead>
-                    <tr>
-                        <th>Test Name</th>
-                        <th>Status</th>
-                        <th>Duration</th>
-                        <th>Retries</th>
-                        <th>Start Time</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${results
-                      .map(
-                        (test) => `
-                        <tr data-name="${sanitizeHTML(
-                          test.name
-                        )}" data-status="${test.status}" id="test-row-${
-                          test.id
-                        }">  <td>${sanitizeHTML(test.name)}</td>
-                            <td class="${getStatusClass(test.status)}">
-                              ${getStatusIcon(test.status)} ${test.status}
-                            </td>
-                            <td>${formatDuration(test.duration)}</td>
-                            <td>${test.retries}</td>
-                            <td>${formatDate(test.startTime)}</td>
-                        </tr>
-                    `
-                      )
-                      .join("")}
-                </tbody>
-            </table>
-            
-            ${results
-              .map(
-                (test) => `
-            <div class="test-details" id="test-details-${
-              test.id
-            }">  <h3>Test Details: ${sanitizeHTML(test.name)}</h3>
-                <p><strong>Status:</strong> <span class="${getStatusClass(
-                  test.status
-                )}">${getStatusIcon(test.status)} ${test.status}</span></p>
-                <p><strong>Duration:</strong> ${formatDuration(
-                  test.duration
-                )}</p>
-                <p><strong>Start Time:</strong> ${formatDate(
-                  test.startTime
-                )}</p>
-                <p><strong>End Time:</strong> ${formatDate(test.endTime)}</p>
-                <p><strong>Retries:</strong> ${test.retries}</p>
-                <p><strong>Code Snippet:</strong> <pre><code>${sanitizeHTML(
-                  test.codeSnippet
-                )}</code></pre></p>
-                ${
-                  results.steps && results.steps.length > 0
-                    ? `
-    <h3>Execution Steps</h3>
-    <div class="steps-controls" style="margin-bottom: 10px;">
-        <button onclick="expandAllSteps()" style="margin-right: 5px; padding: 3px 8px; font-size: 0.8em;">Expand All</button>
-        <button onclick="collapseAllSteps()" style="padding: 3px 8px; font-size: 0.8em;">Collapse All</button>
-    </div>
-    <ul class="steps-list">
-        ${results.steps
-          .map((step) => {
-            const hasNestedSteps = step.steps && step.steps.length > 0;
-            return `
-            <li class="step-item ${getStatusClass(step.status)} ${
-              step.isHook ? "step-hook" : ""
-            }">
-                <div class="step-header" onclick="toggleStepDetails(this)">
-                    <span class="step-icon">${getStatusIcon(step.status)}</span>
-                    <span>${sanitizeHTML(step.title)}</span>
-                    <span class="step-duration">${formatDuration(
-                      step.duration
-                    )}</span>
-                </div>
-                <div class="step-details">
-                    ${
-                      step.codeLocation
-                        ? `<p><strong>Location:</strong> ${sanitizeHTML(
-                            step.codeLocation
-                          )}</p>`
-                        : ""
-                    }
-                    ${
-                      step.errorMessage
-                        ? `<div class="step-error">${sanitizeHTML(
-                            step.errorMessage
-                          )}</div>`
-                        : ""
-                    }
-                </div>
-                ${
-                  hasNestedSteps
-                    ? `
-                    <div class="nested-steps">
-                        ${step.steps
-                          .map(
-                            (nestedStep) => `
-                            <div class="step-header" onclick="toggleStepDetails(this)">
-                                <span class="step-icon">${getStatusIcon(
-                                  nestedStep.status
-                                )}</span>
-                                <span>${sanitizeHTML(nestedStep.title)}</span>
-                                <span class="step-duration">${formatDuration(
-                                  nestedStep.duration
-                                )}</span>
-                            </div>
-                            <div class="step-details">
-                                ${
-                                  nestedStep.codeLocation
-                                    ? `<p><strong>Location:</strong> ${sanitizeHTML(
-                                        nestedStep.codeLocation
-                                      )}</p>`
-                                    : ""
-                                }
-                                ${
-                                  nestedStep.errorMessage
-                                    ? `<div class="step-error">${sanitizeHTML(
-                                        nestedStep.errorMessage
-                                      )}</div>`
-                                    : ""
-                                }
-                            </div>
-                        `
-                          )
-                          .join("")}
-                    </div>
-                    `
-                    : ""
-                }
-            </li>
-        `;
-          })
-          .join("")}
-    </ul>
-`
-                    : "<p>No steps recorded.</p>"
-                }
-            </div>
-            `
-              )
-              .join("")}
-        </div>
+    <div class="test-list" id="test-list"></div>
+</div>
     </div>
     
     <script>
@@ -1230,6 +1074,229 @@ function collapseAllSteps() {
     });
 }
     </script>
+
+    <script>
+    // Helper functions
+    function formatDuration(ms) {
+        if (!ms) return '0ms';
+        if (ms < 1000) return ms + 'ms';
+        return (ms / 1000).toFixed(2) + 's';
+    }
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr);
+        return date.toLocaleString();
+    }
+
+    function getStatusIcon(status) {
+        switch (status) {
+            case 'passed': return '✓';
+            case 'failed': return '✖';
+            case 'skipped': return '↷';
+            default: return '?';
+        }
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // Initialize the report
+    function initReport() {
+        // Update summary counts
+        document.getElementById('passed-count').textContent = reportData.run.passed;
+        document.getElementById('failed-count').textContent = reportData.run.failed;
+        document.getElementById('skipped-count').textContent = reportData.run.skipped;
+        
+        // Update run info
+        document.getElementById('generated-time').textContent = formatDate(reportData.metadata.generatedAt);
+        document.getElementById('duration').textContent = formatDuration(reportData.run.duration);
+        
+        // Render tests
+        const testListEl = document.getElementById('test-list');
+        reportData.results.forEach(function(test) {
+            testListEl.appendChild(renderTest(test));
+        });
+
+        // Tab functionality
+        var tabButtons = document.querySelectorAll('.tab-button');
+        tabButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                var tabId = this.dataset.tab;
+                showTab(tabId);
+            });
+        });
+
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-button').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(function(content) {
+                content.classList.remove('active');
+            });
+            
+            document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    }
+
+    // Render a test
+    function renderTest(test) {
+        var testEl = document.createElement('div');
+        testEl.className = 'test-item';
+        
+        var headerEl = document.createElement('div');
+        headerEl.className = 'test-header';
+        headerEl.innerHTML = [
+            '<span class="status-icon">', getStatusIcon(test.status), '</span>',
+            '<span class="test-title">', escapeHtml(test.name), '</span>',
+            '<span class="duration">', formatDuration(test.duration), '</span>'
+        ].join('');
+        
+        var detailsEl = document.createElement('div');
+        detailsEl.className = 'test-details';
+        
+        // Test metadata
+        var metaEl = document.createElement('div');
+        metaEl.className = 'section';
+        metaEl.innerHTML = [
+            '<div class="section-title">Test Details</div>',
+            '<div><strong>Suite:</strong> ', escapeHtml(test.suiteName), '</div>',
+            '<div><strong>Started:</strong> ', formatDate(test.startTime), '</div>',
+            '<div><strong>Ended:</strong> ', formatDate(test.endTime), '</div>',
+            '<div><strong>Duration:</strong> ', formatDuration(test.duration), '</div>',
+            test.tags && test.tags.length > 0 ? 
+                '<div><strong>Tags:</strong> ' + 
+                test.tags.map(function(tag) { 
+                    return '<span class="tag">' + escapeHtml(tag) + '</span>'; 
+                }).join(', ') + '</div>' : ''
+        ].join('');
+        detailsEl.appendChild(metaEl);
+        
+        // Steps
+        if (test.steps && test.steps.length > 0) {
+            var stepsEl = document.createElement('div');
+            stepsEl.className = 'section';
+            stepsEl.innerHTML = '<div class="section-title">Test Steps</div>';
+            
+            var stepsListEl = document.createElement('ul');
+            stepsListEl.className = 'steps-list';
+            test.steps.forEach(function(step) {
+                stepsListEl.appendChild(renderStep(step));
+            });
+            
+            stepsEl.appendChild(stepsListEl);
+            detailsEl.appendChild(stepsEl);
+        }
+        
+        // Error
+        if (test.errorMessage) {
+            var errorEl = document.createElement('div');
+            errorEl.className = 'section';
+            errorEl.innerHTML = [
+                '<div class="section-title">Error</div>',
+                '<pre class="error-message">', escapeHtml(test.errorMessage), '</pre>'
+            ].join('');
+            
+            if (test.stackTrace) {
+                errorEl.innerHTML += [
+                    '<div class="section-title">Stack Trace</div>',
+                    '<pre class="error-message">', escapeHtml(test.stackTrace), '</pre>'
+                ].join('');
+            }
+            detailsEl.appendChild(errorEl);
+        }
+        
+        // Attachments
+        if (test.screenshots && test.screenshots.length > 0) {
+            var attachmentsEl = document.createElement('div');
+            attachmentsEl.className = 'section';
+            attachmentsEl.innerHTML = '<div class="section-title">Attachments</div>';
+            
+            var attachmentsContainer = document.createElement('div');
+            attachmentsContainer.className = 'attachments';
+            
+            test.screenshots.forEach(function(screenshot) {
+                var attachmentEl = document.createElement('div');
+                attachmentEl.className = 'attachment';
+                attachmentEl.innerHTML = '<img src="' + escapeHtml(screenshot) + '" alt="Screenshot">';
+                attachmentsContainer.appendChild(attachmentEl);
+            });
+            
+            attachmentsEl.appendChild(attachmentsContainer);
+            detailsEl.appendChild(attachmentsEl);
+        }
+        
+        headerEl.addEventListener('click', function() {
+            detailsEl.classList.toggle('show');
+        });
+        
+        testEl.appendChild(headerEl);
+        testEl.appendChild(detailsEl);
+        
+        return testEl;
+    }
+
+    // Render a step
+    function renderStep(step) {
+        var stepEl = document.createElement('li');
+        stepEl.className = 'step-item';
+        
+        var headerEl = document.createElement('div');
+        headerEl.className = 'step-header';
+        headerEl.innerHTML = [
+            '<span class="status-icon">', getStatusIcon(step.status), '</span>',
+            '<span class="step-title">',
+                step.isHook ? '<span class="hook-badge ' + step.hookType + '">' + step.hookType.toUpperCase() + '</span>' : '',
+                escapeHtml(step.title),
+            '</span>',
+            '<span class="duration">', formatDuration(step.duration), '</span>'
+        ].join('');
+        
+        var detailsEl = document.createElement('div');
+        detailsEl.className = 'step-details';
+        
+        if (step.codeLocation) {
+            var locationEl = document.createElement('div');
+            locationEl.className = 'code-location';
+            locationEl.textContent = step.codeLocation;
+            detailsEl.appendChild(locationEl);
+        }
+        
+        if (step.errorMessage) {
+            var errorEl = document.createElement('pre');
+            errorEl.className = 'error-message';
+            errorEl.textContent = step.errorMessage + (step.stackTrace ? '\n' + step.stackTrace : '');
+            detailsEl.appendChild(errorEl);
+        }
+        
+        if (step.steps && step.steps.length > 0) {
+            var nestedStepsEl = document.createElement('ul');
+            nestedStepsEl.className = 'nested-steps';
+            step.steps.forEach(function(nestedStep) {
+                nestedStepsEl.appendChild(renderStep(nestedStep));
+            });
+            detailsEl.appendChild(nestedStepsEl);
+        }
+        
+        headerEl.addEventListener('click', function() {
+            detailsEl.classList.toggle('show');
+        });
+        
+        stepEl.appendChild(headerEl);
+        stepEl.appendChild(detailsEl);
+        
+        return stepEl;
+    }
+
+    // Start the report when page loads
+    window.addEventListener('DOMContentLoaded', initReport);
+</script>
 </body>
 </html>
   `;
