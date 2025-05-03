@@ -1005,7 +1005,7 @@ function generateHTML(reportData) {
                   test.codeSnippet
                 )}</code></pre></p>
                 ${
-                  result.steps && result.steps.length > 0
+                  results.steps && results.steps.length > 0
                     ? `
     <h3>Execution Steps</h3>
     <div class="steps-controls" style="margin-bottom: 10px;">
@@ -1013,7 +1013,7 @@ function generateHTML(reportData) {
         <button onclick="collapseAllSteps()" style="padding: 3px 8px; font-size: 0.8em;">Collapse All</button>
     </div>
     <ul class="steps-list">
-        ${result.steps
+        ${results.steps
           .map((step) => {
             const hasNestedSteps = step.steps && step.steps.length > 0;
             return `
