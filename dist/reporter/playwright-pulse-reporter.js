@@ -38,7 +38,11 @@ const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
-const convertStatus = (status) => {
+const convertStatus = (status, testCase) => {
+    // Handle explicit test.fail() cases
+    if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
+        return status === "failed" ? "passed" : "failed";
+    }
     if (status === "passed")
         return "passed";
     if (status === "failed" || status === "timedOut" || status === "interrupted")
@@ -107,29 +111,40 @@ class PlaywrightPulseReporter {
         // Optional: Log test start if needed
         // console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId, parentStatus) {
-        var _a;
-        const inherentStatus = parentStatus === "failed" || parentStatus === "skipped"
-            ? parentStatus
-            : convertStatus(step.error ? "failed" : "passed");
+    async processStep(step, testId) {
+        var _a, _b;
+        // Determine actual step status (don't inherit from parent)
+        const actualStatus = convertStatus(step.error ? "failed" : "passed");
         const duration = step.duration;
         const startTime = new Date(step.startTime);
         const endTime = new Date(startTime.getTime() + Math.max(0, duration));
-        // Step-level attachments are no longer processed here. Handled at TestResult level.
+        // Capture code location if available
+        let codeLocation = "";
+        if (step.location) {
+            codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
+        }
         return {
             id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
             title: step.title,
-            status: inherentStatus,
+            status: actualStatus,
             duration: duration,
             startTime: startTime,
             endTime: endTime,
-            errorMessage: (_a = step.error) === null || _a === void 0 ? void 0 : _a.message,
-            // Removed attachments field
+            errorMessage: ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined,
+            stackTrace: ((_b = step.error) === null || _b === void 0 ? void 0 : _b.stack) || undefined,
+            codeLocation: codeLocation || undefined,
+            isHook: step.category === "hook",
+            hookType: step.category === "hook"
+                ? step.title.toLowerCase().includes("before")
+                    ? "before"
+                    : "after"
+                : undefined,
+            steps: [], // Will be populated recursively
         };
     }
     async onTestEnd(test, result) {
         var _a, _b, _c, _d, _e;
-        const testStatus = convertStatus(result.status);
+        const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
         // Generate a slightly more robust ID for attachments, especially if test.id is missing
@@ -142,7 +157,7 @@ class PlaywrightPulseReporter {
         const processAllSteps = async (steps, parentTestStatus) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles, parentTestStatus);
+                const processedStep = await this.processStep(step, testIdForFiles);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     const nestedSteps = await processAllSteps(step.steps, processedStep.status);

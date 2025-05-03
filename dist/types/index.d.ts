@@ -8,6 +8,10 @@ export interface TestStep {
     startTime: Date;
     endTime: Date;
     errorMessage?: string;
+    stackTrace?: string;
+    codeLocation?: string;
+    isHook?: boolean;
+    hookType?: "before" | "after";
     steps?: TestStep[];
 }
 export interface TestResult {
