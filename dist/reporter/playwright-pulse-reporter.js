@@ -34,11 +34,10 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlaywrightPulseReporter = void 0;
-// Removed direct import of Playwright Attachment type as it's handled internally now
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
-const attachment_utils_1 = require("./attachment-utils"); // Import the new utility
+const attachment_utils_1 = require("./attachment-utils"); // Use relative path
 const convertStatus = (status) => {
     if (status === "passed")
         return "passed";
@@ -108,7 +107,6 @@ class PlaywrightPulseReporter {
         // Optional: Log test start if needed
         // console.log(`Starting test: ${test.title}`);
     }
-    // REMOVED saveAttachment method - logic moved to attachment-utils.ts
     async processStep(step, testId, parentStatus) {
         var _a;
         const inherentStatus = parentStatus === "failed" || parentStatus === "skipped"
@@ -369,43 +367,9 @@ PlaywrightPulseReporter: Run Finished
                 return value;
             }, 2));
             console.log(`PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`);
-            // --- Generate Static HTML Report ---
-            // Find the script relative to the current file's directory
-            const staticScriptPath = path.resolve(__dirname, "../../scripts/generate-static-report.mjs");
-            try {
-                // Check if script exists before trying to import
-                await fs.access(staticScriptPath);
-                // Dynamically import the ES Module
-                const generateStaticReportModule = await Promise.resolve(`${staticScriptPath}`).then(s => __importStar(require(s)));
-                const generateStaticReport = generateStaticReportModule.default; // Assuming default export
-                if (typeof generateStaticReport === "function") {
-                    // Pass the directory containing the JSON report
-                    await generateStaticReport(this.outputDir, this.options); // Pass options
-                    console.log(`PlaywrightPulseReporter: Static HTML report generated in ${this.outputDir}`);
-                }
-                else {
-                    console.warn(`Pulse Reporter: Default export of ${staticScriptPath} is not a function. Cannot generate static report.`);
-                }
-            }
-            catch (scriptError) {
-                // More robust type checking for errors
-                if (scriptError instanceof Error &&
-                    "code" in scriptError &&
-                    scriptError.code === "ERR_MODULE_NOT_FOUND") {
-                    console.warn(`Pulse Reporter: Static report generation script not found at ${staticScriptPath} or one of its dependencies is missing. Looked relative to reporter dist. Skipping HTML generation.`);
-                }
-                else if (scriptError instanceof Error &&
-                    "code" in scriptError &&
-                    scriptError.code === "ENOENT") {
-                    console.warn(`Pulse Reporter: Static report generation script file does not exist at ${staticScriptPath}. Skipping HTML generation.`);
-                }
-                else if (scriptError instanceof Error) {
-                    console.error(`Pulse Reporter: Error trying to run static report generation script: ${scriptError.message}`, scriptError.stack);
-                }
-                else {
-                    console.error(`Pulse Reporter: Unknown error trying to run static report generation script:`, scriptError);
-                }
-            }
+            // REMOVED Static HTML Generation Call
+            // The reporter's responsibility is now only to create the JSON file.
+            // The user will run `npx generate-pulse-report` separately.
         }
         catch (error) {
             console.error(`Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`);
