@@ -833,6 +833,39 @@ function generateHTML(reportData) {
             width: 100%;
             text-align: center;
           }
+            .step-header {
+  cursor: pointer;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+}
+
+.step-icon {
+  margin-right: 8px;
+  width: 20px;
+  text-align: center;
+}
+
+.step-details {
+  display: none;
+  padding: 10px;
+  margin: 5px 0;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid #ddd;
+}
+
+.nested-steps {
+  display: none;
+  padding-left: 20px;
+  border-left: 2px solid #eee;
+  margin: 5px 0;
+}
+
+.step-hook {
+  background-color: #f0f7ff;
+  border-left: 3px solid #4a90e2;
+}
         }
     </style>
 </head>
@@ -971,13 +1004,92 @@ function generateHTML(reportData) {
                 <p><strong>Code Snippet:</strong> <pre><code>${sanitizeHTML(
                   test.codeSnippet
                 )}</code></pre></p>
-                <h3>Execution Steps:</h3>
-                <div class="steps-container">
-                  <button class="expand-steps-button">Expand Steps</button>
-                  <div class="steps-list" style="display: none;"> 
-                    ${generateStepsHTML(test.steps)}
-                  </div>
+                ${
+                  result.steps && result.steps.length > 0
+                    ? `
+    <h3>Execution Steps</h3>
+    <div class="steps-controls" style="margin-bottom: 10px;">
+        <button onclick="expandAllSteps()" style="margin-right: 5px; padding: 3px 8px; font-size: 0.8em;">Expand All</button>
+        <button onclick="collapseAllSteps()" style="padding: 3px 8px; font-size: 0.8em;">Collapse All</button>
+    </div>
+    <ul class="steps-list">
+        ${result.steps
+          .map((step) => {
+            const hasNestedSteps = step.steps && step.steps.length > 0;
+            return `
+            <li class="step-item ${getStatusClass(step.status)} ${
+              step.isHook ? "step-hook" : ""
+            }">
+                <div class="step-header" onclick="toggleStepDetails(this)">
+                    <span class="step-icon">${getStatusIcon(step.status)}</span>
+                    <span>${sanitizeHTML(step.title)}</span>
+                    <span class="step-duration">${formatDuration(
+                      step.duration
+                    )}</span>
                 </div>
+                <div class="step-details">
+                    ${
+                      step.codeLocation
+                        ? `<p><strong>Location:</strong> ${sanitizeHTML(
+                            step.codeLocation
+                          )}</p>`
+                        : ""
+                    }
+                    ${
+                      step.errorMessage
+                        ? `<div class="step-error">${sanitizeHTML(
+                            step.errorMessage
+                          )}</div>`
+                        : ""
+                    }
+                </div>
+                ${
+                  hasNestedSteps
+                    ? `
+                    <div class="nested-steps">
+                        ${step.steps
+                          .map(
+                            (nestedStep) => `
+                            <div class="step-header" onclick="toggleStepDetails(this)">
+                                <span class="step-icon">${getStatusIcon(
+                                  nestedStep.status
+                                )}</span>
+                                <span>${sanitizeHTML(nestedStep.title)}</span>
+                                <span class="step-duration">${formatDuration(
+                                  nestedStep.duration
+                                )}</span>
+                            </div>
+                            <div class="step-details">
+                                ${
+                                  nestedStep.codeLocation
+                                    ? `<p><strong>Location:</strong> ${sanitizeHTML(
+                                        nestedStep.codeLocation
+                                      )}</p>`
+                                    : ""
+                                }
+                                ${
+                                  nestedStep.errorMessage
+                                    ? `<div class="step-error">${sanitizeHTML(
+                                        nestedStep.errorMessage
+                                      )}</div>`
+                                    : ""
+                                }
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                    `
+                    : ""
+                }
+            </li>
+        `;
+          })
+          .join("")}
+    </ul>
+`
+                    : "<p>No steps recorded.</p>"
+                }
             </div>
             `
               )
@@ -1088,7 +1200,35 @@ function generateHTML(reportData) {
             }
         }
     });
-    
+    // Step management functions
+function toggleStepDetails(element) {
+    const details = element.nextElementSibling;
+    if (details && details.classList.contains('step-details')) {
+        details.style.display = details.style.display === 'block' ? 'none' : 'block';
+    }
+    const nestedSteps = element.parentElement.querySelector('.nested-steps');
+    if (nestedSteps) {
+        nestedSteps.style.display = nestedSteps.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+function expandAllSteps() {
+    document.querySelectorAll('.step-details').forEach(el => {
+        el.style.display = 'block';
+    });
+    document.querySelectorAll('.nested-steps').forEach(el => {
+        el.style.display = 'block';
+    });
+}
+
+function collapseAllSteps() {
+    document.querySelectorAll('.step-details').forEach(el => {
+        el.style.display = 'none';
+    });
+    document.querySelectorAll('.nested-steps').forEach(el => {
+        el.style.display = 'none';
+    });
+}
     </script>
 </body>
 </html>
