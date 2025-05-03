@@ -1077,23 +1077,23 @@ function collapseAllSteps() {
 
     <script>
     // Helper functions
-    function formatDuration(${ms}) {
-        if (!${ms}) return '0ms';
-        if (${ms} < 1000) return ${ms} + 'ms';
-        return (${ms} / 1000).toFixed(2) + 's';
+    function formatDuration(ms) {
+        if (!ms) return '0ms';
+        if (ms < 1000) return ms + 'ms';
+        return (ms / 1000).toFixed(2) + 's';
     }
 
-    function formatDate(${dateStr}) {
+    function formatDate(dateStr) {
         try {
-            const date = new Date(${dateStr});
-            return isNaN(${date.getTime()}) ? 'Invalid Date' : ${date.toLocaleString()};
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString();
         } catch (e) {
             return 'Invalid Date';
         }
     }
 
-    function getStatusIcon(${status}) {
-        switch (${status}) {
+    function getStatusIcon(status) {
+        switch (status) {
             case 'passed': return '✓';
             case 'failed': return '✖';
             case 'skipped': return '↷';
@@ -1115,7 +1115,7 @@ function collapseAllSteps() {
     function initReport() {
         try {
             // Ensure reportData exists
-            if (!${window.reportData}) {
+            if (!window.reportData) {
                 console.error('reportData is not defined');
                 return;
             }
@@ -1125,24 +1125,18 @@ function collapseAllSteps() {
             const failedEl = document.getElementById('failed-count');
             const skippedEl = document.getElementById('skipped-count');
             
-            if (passedEl) passedEl.textContent = ${reportData.run.passed} || 0;
-            if (failedEl) failedEl.textContent = ${reportData.run.failed} || 0;
-            if (skippedEl) skippedEl.textContent = ${
-              reportData.run.skipped
-            } || 0;
+            if (passedEl) passedEl.textContent = window.reportData.run.passed || 0;
+            if (failedEl) failedEl.textContent = window.reportData.run.failed || 0;
+            if (skippedEl) skippedEl.textContent = window.reportData.run.skipped || 0;
             
             // Update run info
             const generatedTimeEl = document.getElementById('generated-time');
             const durationEl = document.getElementById('duration');
             
             if (generatedTimeEl) generatedTimeEl.textContent = formatDate(
-                ${reportData.metadata?.generatedAt} || ${
-    reportData.run?.timestamp
-  }
+                window.reportData.metadata?.generatedAt || window.reportData.run?.timestamp
             );
-            if (durationEl) durationEl.textContent = ${formatDuration(
-              reportData.run.duration
-            )};
+            if (durationEl) durationEl.textContent = formatDuration(window.reportData.run.duration);
 
             // Render tests
             const testListEl = document.getElementById('test-list');
@@ -1151,8 +1145,8 @@ function collapseAllSteps() {
                 return;
             }
 
-            if (${reportData.results} && ${reportData.results}.length > 0) {
-                ${reportData.results}.forEach(function(test) {
+            if (window.reportData.results && window.reportData.results.length > 0) {
+                window.reportData.results.forEach(function(test) {
                     const testElement = renderTest(test);
                     if (testElement) {
                         testListEl.appendChild(testElement);
@@ -1183,7 +1177,7 @@ function collapseAllSteps() {
         showTab('dashboard');
     }
 
-    function showTab(${tabId}) {
+    function showTab(tabId) {
         // Hide all tab contents
         document.querySelectorAll('.tab-content').forEach(function(content) {
             content.classList.remove('active');
@@ -1195,7 +1189,7 @@ function collapseAllSteps() {
         });
 
         // Activate selected tab
-        const selectedTab = document.getElementById(${tabId});
+        const selectedTab = document.getElementById(tabId);
         const selectedButton = document.querySelector('[data-tab="' + tabId + '"]');
         
         if (selectedTab) selectedTab.classList.add('active');
@@ -1203,24 +1197,18 @@ function collapseAllSteps() {
     }
 
     // Render a test
-    function renderTest(${test}) {
-        if (!${test}) return null;
+    function renderTest(test) {
+        if (!test) return null;
         
         const testEl = document.createElement('div');
         testEl.className = 'test-item';
         
         const headerEl = document.createElement('div');
         headerEl.className = 'test-header';
-        header.innerHTML = \`
-                    <span class="test-status">${getStatusIcon(
-                      test.status
-                    )}</span>
-                    <span class="test-title">${
-                      test.name || "Unnamed Test"
-                    }</span>
-                    <span class="test-duration">${formatDuration(
-                      test.duration
-                    )}</span>
+        headerEl.innerHTML = \`
+                    <span class="test-status">\${getStatusIcon(test.status)}</span>
+                    <span class="test-title">\${test.name || "Unnamed Test"}</span>
+                    <span class="test-duration">\${formatDuration(test.duration)}</span>
                 \`;
 
         
@@ -1230,27 +1218,17 @@ function collapseAllSteps() {
         // Test metadata
         const metaContent = [
             '<div class="section-title">Test Details</div>',
-            '<div><strong>Suite:</strong> ', ${escapeHtml(
-              test.suiteName
-            )}, '</div>',
-            '<div><strong>Started:</strong> ', ${formatDate(
-              test.startTime
-            )}, '</div>',
-            '<div><strong>Ended:</strong> ', ${formatDate(
-              test.endTime
-            )}, '</div>',
-            '<div><strong>Duration:</strong> ', ${formatDuration(
-              test.duration
-            )}, '</div>'
+            '<div><strong>Suite:</strong> ', escapeHtml(test.suiteName), '</div>',
+            '<div><strong>Started:</strong> ', formatDate(test.startTime), '</div>',
+            '<div><strong>Ended:</strong> ', formatDate(test.endTime), '</div>',
+            '<div><strong>Duration:</strong> ', formatDuration(test.duration), '</div>'
         ];
 
         if (test.tags && test.tags.length > 0) {
             metaContent.push(
                 '<div><strong>Tags:</strong> ',
                 test.tags.map(function(tag) { 
-                    return '<span class="tag">' + ${escapeHtml(
-                      tag
-                    )} + '</span>'; 
+                    return '<span class="tag">' + escapeHtml(tag) + '</span>'; 
                 }).join(', '),
                 '</div>'
             );
@@ -1270,7 +1248,7 @@ function collapseAllSteps() {
             const stepsListEl = document.createElement('ul');
             stepsListEl.className = 'steps-list';
             test.steps.forEach(function(step) {
-                const stepElement = ${renderStep(step)};
+                const stepElement = renderStep(step);
                 if (stepElement) {
                     stepsListEl.appendChild(stepElement);
                 }
@@ -1287,17 +1265,13 @@ function collapseAllSteps() {
             
             const errorContent = [
                 '<div class="section-title">Error</div>',
-                '<pre class="error-message">', ${escapeHtml(
-                  test.errorMessage
-                )}, '</pre>'
+                '<pre class="error-message">', escapeHtml(test.errorMessage), '</pre>'
             ];
 
             if (test.stackTrace) {
                 errorContent.push(
                     '<div class="section-title">Stack Trace</div>',
-                    '<pre class="error-message">', ${escapeHtml(
-                      test.stackTrace
-                    )}, '</pre>'
+                    '<pre class="error-message">', escapeHtml(test.stackTrace), '</pre>'
                 );
             }
 
@@ -1314,13 +1288,11 @@ function collapseAllSteps() {
             const attachmentsContainer = document.createElement('div');
             attachmentsContainer.className = 'attachments';
             
-            ${test.screenshots}.forEach(function(screenshot) {
+            test.screenshots.forEach(function(screenshot) {
                 if (screenshot) {
                     const attachmentEl = document.createElement('div');
                     attachmentEl.className = 'attachment';
-                    attachmentEl.innerHTML = '<img src="' + ${escapeHtml(
-                      screenshot
-                    )} + '" alt="Screenshot">';
+                    attachmentEl.innerHTML = '<img src="' + escapeHtml(screenshot) + '" alt="Screenshot">';
                     attachmentsContainer.appendChild(attachmentEl);
                 }
             });
@@ -1340,40 +1312,32 @@ function collapseAllSteps() {
     }
 
     // Render a step
-    function renderStep(${step}) {
-        if (!${step}) return null;
+    function renderStep(step) {
+        if (!step) return null;
         
         const stepEl = document.createElement('li');
-        stepEl.className = 'step-item ' + (${step.isHook} ? 'step-hook' : '');
+        stepEl.className = 'step-item ' + (step.isHook ? 'step-hook' : '');
         
         const headerEl = document.createElement('div');
         headerEl.className = 'step-header';
         
-        const hookBadge = ${step.isHook} 
-            ? '<span class="hook-badge ' + ${step.hookType} + '">' + ${
-    step.hookType
-  }.toUpperCase() + '</span>' 
+        const hookBadge = step.isHook 
+            ? '<span class="hook-badge ' + step.hookType + '">' + step.hookType.toUpperCase() + '</span>' 
             : '';
         
         headerEl.innerHTML = [
-            '<span class="status-icon">', ${getStatusIcon(
-              step.status
-            )}, '</span>',
-            '<span class="step-title">', ${hookBadge}, ${escapeHtml(
-    step.title
-  )}, '</span>',
-            '<span class="duration">', ${formatDuration(
-              step.duration
-            )}, '</span>'
+            '<span class="status-icon">', getStatusIcon(step.status), '</span>',
+            '<span class="step-title">', hookBadge, escapeHtml(step.title), '</span>',
+            '<span class="duration">', formatDuration(step.duration), '</span>'
         ].join('');
         
         const detailsEl = document.createElement('div');
         detailsEl.className = 'step-details';
         
-        if (${step.codeLocation}) {
+        if (step.codeLocation) {
             const locationEl = document.createElement('div');
             locationEl.className = 'code-location';
-            locationEl.textContent = ${step.codeLocation};
+            locationEl.textContent = step.codeLocation;
             detailsEl.appendChild(locationEl);
         }
         
@@ -1382,19 +1346,17 @@ function collapseAllSteps() {
             errorEl.className = 'error-message';
             
             // Fixed the SyntaxError by using proper string concatenation
-            const errorText = ${step.errorMessage} + (${
-    step.stackTrace
-  } ? '\n' + ${step.stackTrace} : '');
-            errorEl.textContent = ${escapeHtml(errorText)};
+            const errorText = step.errorMessage + (step.stackTrace ? '\\n' + step.stackTrace : '');
+            errorEl.textContent = escapeHtml(errorText);
             
             detailsEl.appendChild(errorEl);
         }
         
-        if (${step.steps} && ${step.steps}.length > 0) {
+        if (step.steps && step.steps.length > 0) {
             const nestedStepsEl = document.createElement('ul');
             nestedStepsEl.className = 'nested-steps';
-            ${step.steps}.forEach(function(nestedStep) {
-                const nestedStepElement = ${renderStep(nestedStep)};
+            step.steps.forEach(function(nestedStep) {
+                const nestedStepElement = renderStep(nestedStep);
                 if (nestedStepElement) {
                     nestedStepsEl.appendChild(nestedStepElement);
                 }
@@ -1405,7 +1367,7 @@ function collapseAllSteps() {
         headerEl.addEventListener('click', function() {
             detailsEl.classList.toggle('show');
             const nestedSteps = detailsEl.querySelector('.nested-steps');
-            if (${nestedSteps}) {
+            if (nestedSteps) {
                 nestedSteps.classList.toggle('show');
             }
         });
