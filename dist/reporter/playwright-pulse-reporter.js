@@ -151,7 +151,7 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e;
+        var _a, _b, _c, _d, _e, _f;
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -197,18 +197,18 @@ class PlaywrightPulseReporter {
             startTime: startTime,
             endTime: endTime,
             retries: result.retry,
-            steps: await processAllSteps(result.steps, testStatus),
-            errorMessage: (_d = result.error) === null || _d === void 0 ? void 0 : _d.message,
-            stackTrace: (_e = result.error) === null || _e === void 0 ? void 0 : _e.stack,
+            steps: ((_d = result.steps) === null || _d === void 0 ? void 0 : _d.length)
+                ? await processAllSteps(result.steps, testStatus)
+                : [],
+            errorMessage: (_e = result.error) === null || _e === void 0 ? void 0 : _e.message,
+            stackTrace: (_f = result.error) === null || _f === void 0 ? void 0 : _f.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
-            // Initialize new attachment fields
             screenshots: [],
             videoPath: undefined,
             tracePath: undefined,
         };
         // --- Process Attachments using the new utility ---
-        // This function will modify pulseResult directly
         try {
             (0, attachment_utils_1.attachFiles)(testIdForFiles, result, pulseResult, this.options);
         }

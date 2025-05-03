@@ -177,6 +177,7 @@ export class PlaywrightPulseReporter implements Reporter {
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
+
     // Generate a slightly more robust ID for attachments, especially if test.id is missing
     const testIdForFiles =
       test.id ||
@@ -234,21 +235,21 @@ export class PlaywrightPulseReporter implements Reporter {
       startTime: startTime,
       endTime: endTime,
       retries: result.retry,
-      steps: await processAllSteps(result.steps, testStatus),
+      steps: result.steps?.length
+        ? await processAllSteps(result.steps, testStatus)
+        : [],
       errorMessage: result.error?.message,
       stackTrace: result.error?.stack,
       codeSnippet: codeSnippet,
       tags: test.tags.map((tag) =>
         tag.startsWith("@") ? tag.substring(1) : tag
       ),
-      // Initialize new attachment fields
       screenshots: [],
       videoPath: undefined,
       tracePath: undefined,
     };
 
     // --- Process Attachments using the new utility ---
-    // This function will modify pulseResult directly
     try {
       attachFiles(testIdForFiles, result, pulseResult, this.options);
     } catch (attachError: any) {
@@ -259,6 +260,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     this.results.push(pulseResult);
   }
+  
 
   onError(error: any): void {
     console.error(
