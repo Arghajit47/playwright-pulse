@@ -22,8 +22,14 @@ import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
 
 const convertStatus = (
-  status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted"
+  status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
+  testCase?: TestCase
 ): PulseTestStatus => {
+  // Handle explicit test.fail() cases
+  if (testCase?.expectedStatus === "failed") {
+    return status === "failed" ? "passed" : "failed";
+  }
+
   if (status === "passed") return "passed";
   if (status === "failed" || status === "timedOut" || status === "interrupted")
     return "failed";
@@ -118,33 +124,46 @@ export class PlaywrightPulseReporter implements Reporter {
 
   private async processStep(
     step: PwStep,
-    testId: string,
-    parentStatus: PulseTestStatus
+    testId: string
   ): Promise<PulseTestStep> {
-    const inherentStatus =
-      parentStatus === "failed" || parentStatus === "skipped"
-        ? parentStatus
-        : convertStatus(step.error ? "failed" : "passed");
+    // Determine actual step status (don't inherit from parent)
+    const actualStatus = convertStatus(step.error ? "failed" : "passed");
     const duration = step.duration;
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
 
-    // Step-level attachments are no longer processed here. Handled at TestResult level.
+    // Capture code location if available
+    let codeLocation = "";
+    if (step.location) {
+      codeLocation = `${path.relative(
+        this.config.rootDir,
+        step.location.file
+      )}:${step.location.line}:${step.location.column}`;
+    }
 
     return {
       id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}`,
       title: step.title,
-      status: inherentStatus,
+      status: actualStatus,
       duration: duration,
       startTime: startTime,
       endTime: endTime,
-      errorMessage: step.error?.message,
-      // Removed attachments field
+      errorMessage: step.error?.message || undefined,
+      stackTrace: step.error?.stack || undefined,
+      codeLocation: codeLocation || undefined,
+      isHook: step.category === "hook",
+      hookType:
+        step.category === "hook"
+          ? step.title.toLowerCase().includes("before")
+            ? "before"
+            : "after"
+          : undefined,
+      steps: [], // Will be populated recursively
     };
   }
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
-    const testStatus = convertStatus(result.status);
+    const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
     // Generate a slightly more robust ID for attachments, especially if test.id is missing
@@ -162,11 +181,7 @@ export class PlaywrightPulseReporter implements Reporter {
     ): Promise<PulseTestStep[]> => {
       let processed: PulseTestStep[] = [];
       for (const step of steps) {
-        const processedStep = await this.processStep(
-          step,
-          testIdForFiles,
-          parentTestStatus
-        );
+        const processedStep = await this.processStep(step, testIdForFiles);
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {
           const nestedSteps = await processAllSteps(

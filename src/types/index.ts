@@ -10,6 +10,10 @@ export interface TestStep {
   startTime: Date;
   endTime: Date;
   errorMessage?: string;
+  stackTrace?: string;
+  codeLocation?: string;
+  isHook?: boolean;
+  hookType?: "before" | "after";
   steps?: TestStep[]; // Nested steps
   // Removed step-level attachments as the new logic handles them at the result level
 }
