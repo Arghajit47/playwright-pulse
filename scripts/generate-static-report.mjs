@@ -1084,8 +1084,12 @@ function collapseAllSteps() {
     }
 
     function formatDate(dateStr) {
-        const date = new Date(dateStr);
-        return date.toLocaleString();
+        try {
+            const date = new Date(dateStr);
+            return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString();
+        } catch (e) {
+            return 'Invalid Date';
+        }
     }
 
     function getStatusIcon(status) {
@@ -1098,7 +1102,8 @@ function collapseAllSteps() {
     }
 
     function escapeHtml(unsafe) {
-        return unsafe
+        if (!unsafe) return '';
+        return unsafe.toString()
             .replace(/&/g, "&amp;")
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;")
@@ -1108,49 +1113,97 @@ function collapseAllSteps() {
 
     // Initialize the report
     function initReport() {
-        // Update summary counts
-        document.getElementById('passed-count').textContent = reportData.run.passed;
-        document.getElementById('failed-count').textContent = reportData.run.failed;
-        document.getElementById('skipped-count').textContent = reportData.run.skipped;
-        
-        // Update run info
-        document.getElementById('generated-time').textContent = formatDate(reportData.metadata.generatedAt);
-        document.getElementById('duration').textContent = formatDuration(reportData.run.duration);
-        
-        // Render tests
-        const testListEl = document.getElementById('test-list');
-        reportData.results.forEach(function(test) {
-            testListEl.appendChild(renderTest(test));
-        });
+        try {
+            // Ensure reportData exists
+            if (!window.reportData) {
+                console.error('reportData is not defined');
+                return;
+            }
 
-        // Tab functionality
-        var tabButtons = document.querySelectorAll('.tab-button');
+            // Update summary counts
+            const passedEl = document.getElementById('passed-count');
+            const failedEl = document.getElementById('failed-count');
+            const skippedEl = document.getElementById('skipped-count');
+            
+            if (passedEl) passedEl.textContent = reportData.run.passed || 0;
+            if (failedEl) failedEl.textContent = reportData.run.failed || 0;
+            if (skippedEl) skippedEl.textContent = reportData.run.skipped || 0;
+            
+            // Update run info
+            const generatedTimeEl = document.getElementById('generated-time');
+            const durationEl = document.getElementById('duration');
+            
+            if (generatedTimeEl) generatedTimeEl.textContent = formatDate(
+                reportData.metadata?.generatedAt || reportData.run?.timestamp
+            );
+            if (durationEl) durationEl.textContent = formatDuration(reportData.run.duration);
+
+            // Render tests
+            const testListEl = document.getElementById('test-list');
+            if (!testListEl) {
+                console.error('test-list element not found');
+                return;
+            }
+
+            if (reportData.results && reportData.results.length > 0) {
+                reportData.results.forEach(function(test) {
+                    const testElement = renderTest(test);
+                    if (testElement) {
+                        testListEl.appendChild(testElement);
+                    }
+                });
+            } else {
+                testListEl.innerHTML = '<div class="no-tests">No test results found</div>';
+            }
+
+            // Initialize tabs
+            initTabs();
+        } catch (error) {
+            console.error('Error initializing report:', error);
+        }
+    }
+
+    function initTabs() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        
         tabButtons.forEach(function(button) {
             button.addEventListener('click', function() {
-                var tabId = this.dataset.tab;
+                const tabId = this.getAttribute('data-tab');
                 showTab(tabId);
             });
         });
 
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-button').forEach(function(btn) {
-                btn.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-content').forEach(function(content) {
-                content.classList.remove('active');
-            });
-            
-            document.querySelector('[data-tab="' + tabId + '"]').classList.add('active');
-            document.getElementById(tabId).classList.add('active');
-        }
+        // Show dashboard by default
+        showTab('dashboard');
+    }
+
+    function showTab(tabId) {
+        // Hide all tab contents
+        document.querySelectorAll('.tab-content').forEach(function(content) {
+            content.classList.remove('active');
+        });
+
+        // Deactivate all tab buttons
+        document.querySelectorAll('.tab-button').forEach(function(button) {
+            button.classList.remove('active');
+        });
+
+        // Activate selected tab
+        const selectedTab = document.getElementById(tabId);
+        const selectedButton = document.querySelector('[data-tab="' + tabId + '"]');
+        
+        if (selectedTab) selectedTab.classList.add('active');
+        if (selectedButton) selectedButton.classList.add('active');
     }
 
     // Render a test
     function renderTest(test) {
-        var testEl = document.createElement('div');
+        if (!test) return null;
+        
+        const testEl = document.createElement('div');
         testEl.className = 'test-item';
         
-        var headerEl = document.createElement('div');
+        const headerEl = document.createElement('div');
         headerEl.className = 'test-header';
         headerEl.innerHTML = [
             '<span class="status-icon">', getStatusIcon(test.status), '</span>',
@@ -1158,36 +1211,46 @@ function collapseAllSteps() {
             '<span class="duration">', formatDuration(test.duration), '</span>'
         ].join('');
         
-        var detailsEl = document.createElement('div');
+        const detailsEl = document.createElement('div');
         detailsEl.className = 'test-details';
         
         // Test metadata
-        var metaEl = document.createElement('div');
-        metaEl.className = 'section';
-        metaEl.innerHTML = [
+        const metaContent = [
             '<div class="section-title">Test Details</div>',
             '<div><strong>Suite:</strong> ', escapeHtml(test.suiteName), '</div>',
             '<div><strong>Started:</strong> ', formatDate(test.startTime), '</div>',
             '<div><strong>Ended:</strong> ', formatDate(test.endTime), '</div>',
-            '<div><strong>Duration:</strong> ', formatDuration(test.duration), '</div>',
-            test.tags && test.tags.length > 0 ? 
-                '<div><strong>Tags:</strong> ' + 
+            '<div><strong>Duration:</strong> ', formatDuration(test.duration), '</div>'
+        ];
+
+        if (test.tags && test.tags.length > 0) {
+            metaContent.push(
+                '<div><strong>Tags:</strong> ',
                 test.tags.map(function(tag) { 
                     return '<span class="tag">' + escapeHtml(tag) + '</span>'; 
-                }).join(', ') + '</div>' : ''
-        ].join('');
+                }).join(', '),
+                '</div>'
+            );
+        }
+
+        const metaEl = document.createElement('div');
+        metaEl.className = 'section';
+        metaEl.innerHTML = metaContent.join('');
         detailsEl.appendChild(metaEl);
         
         // Steps
         if (test.steps && test.steps.length > 0) {
-            var stepsEl = document.createElement('div');
+            const stepsEl = document.createElement('div');
             stepsEl.className = 'section';
             stepsEl.innerHTML = '<div class="section-title">Test Steps</div>';
             
-            var stepsListEl = document.createElement('ul');
+            const stepsListEl = document.createElement('ul');
             stepsListEl.className = 'steps-list';
             test.steps.forEach(function(step) {
-                stepsListEl.appendChild(renderStep(step));
+                const stepElement = renderStep(step);
+                if (stepElement) {
+                    stepsListEl.appendChild(stepElement);
+                }
             });
             
             stepsEl.appendChild(stepsListEl);
@@ -1196,36 +1259,41 @@ function collapseAllSteps() {
         
         // Error
         if (test.errorMessage) {
-            var errorEl = document.createElement('div');
+            const errorEl = document.createElement('div');
             errorEl.className = 'section';
-            errorEl.innerHTML = [
+            
+            const errorContent = [
                 '<div class="section-title">Error</div>',
                 '<pre class="error-message">', escapeHtml(test.errorMessage), '</pre>'
-            ].join('');
-            
+            ];
+
             if (test.stackTrace) {
-                errorEl.innerHTML += [
+                errorContent.push(
                     '<div class="section-title">Stack Trace</div>',
                     '<pre class="error-message">', escapeHtml(test.stackTrace), '</pre>'
-                ].join('');
+                );
             }
+
+            errorEl.innerHTML = errorContent.join('');
             detailsEl.appendChild(errorEl);
         }
         
         // Attachments
         if (test.screenshots && test.screenshots.length > 0) {
-            var attachmentsEl = document.createElement('div');
+            const attachmentsEl = document.createElement('div');
             attachmentsEl.className = 'section';
             attachmentsEl.innerHTML = '<div class="section-title">Attachments</div>';
             
-            var attachmentsContainer = document.createElement('div');
+            const attachmentsContainer = document.createElement('div');
             attachmentsContainer.className = 'attachments';
             
             test.screenshots.forEach(function(screenshot) {
-                var attachmentEl = document.createElement('div');
-                attachmentEl.className = 'attachment';
-                attachmentEl.innerHTML = '<img src="' + escapeHtml(screenshot) + '" alt="Screenshot">';
-                attachmentsContainer.appendChild(attachmentEl);
+                if (screenshot) {
+                    const attachmentEl = document.createElement('div');
+                    attachmentEl.className = 'attachment';
+                    attachmentEl.innerHTML = '<img src="' + escapeHtml(screenshot) + '" alt="Screenshot">';
+                    attachmentsContainer.appendChild(attachmentEl);
+                }
             });
             
             attachmentsEl.appendChild(attachmentsContainer);
@@ -1244,48 +1312,63 @@ function collapseAllSteps() {
 
     // Render a step
     function renderStep(step) {
-        var stepEl = document.createElement('li');
-        stepEl.className = 'step-item';
+        if (!step) return null;
         
-        var headerEl = document.createElement('div');
+        const stepEl = document.createElement('li');
+        stepEl.className = 'step-item ' + (step.isHook ? 'step-hook' : '');
+        
+        const headerEl = document.createElement('div');
         headerEl.className = 'step-header';
+        
+        const hookBadge = step.isHook 
+            ? '<span class="hook-badge ' + step.hookType + '">' + step.hookType.toUpperCase() + '</span>' 
+            : '';
+        
         headerEl.innerHTML = [
             '<span class="status-icon">', getStatusIcon(step.status), '</span>',
-            '<span class="step-title">',
-                step.isHook ? '<span class="hook-badge ' + step.hookType + '">' + step.hookType.toUpperCase() + '</span>' : '',
-                escapeHtml(step.title),
-            '</span>',
+            '<span class="step-title">', hookBadge, escapeHtml(step.title), '</span>',
             '<span class="duration">', formatDuration(step.duration), '</span>'
         ].join('');
         
-        var detailsEl = document.createElement('div');
+        const detailsEl = document.createElement('div');
         detailsEl.className = 'step-details';
         
         if (step.codeLocation) {
-            var locationEl = document.createElement('div');
+            const locationEl = document.createElement('div');
             locationEl.className = 'code-location';
             locationEl.textContent = step.codeLocation;
             detailsEl.appendChild(locationEl);
         }
         
         if (step.errorMessage) {
-            var errorEl = document.createElement('pre');
+            const errorEl = document.createElement('pre');
             errorEl.className = 'error-message';
-            errorEl.textContent = step.errorMessage + (step.stackTrace ? '\n' + step.stackTrace : '');
+            
+            // Fixed the SyntaxError by using proper string concatenation
+            const errorText = step.errorMessage + (step.stackTrace ? '\n' + step.stackTrace : '');
+            errorEl.textContent = escapeHtml(errorText);
+            
             detailsEl.appendChild(errorEl);
         }
         
         if (step.steps && step.steps.length > 0) {
-            var nestedStepsEl = document.createElement('ul');
+            const nestedStepsEl = document.createElement('ul');
             nestedStepsEl.className = 'nested-steps';
             step.steps.forEach(function(nestedStep) {
-                nestedStepsEl.appendChild(renderStep(nestedStep));
+                const nestedStepElement = renderStep(nestedStep);
+                if (nestedStepElement) {
+                    nestedStepsEl.appendChild(nestedStepElement);
+                }
             });
             detailsEl.appendChild(nestedStepsEl);
         }
         
         headerEl.addEventListener('click', function() {
             detailsEl.classList.toggle('show');
+            const nestedSteps = detailsEl.querySelector('.nested-steps');
+            if (nestedSteps) {
+                nestedSteps.classList.toggle('show');
+            }
         });
         
         stepEl.appendChild(headerEl);
@@ -1295,7 +1378,15 @@ function collapseAllSteps() {
     }
 
     // Start the report when page loads
-    window.addEventListener('DOMContentLoaded', initReport);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Make sure reportData is available globally
+        if (!window.reportData) {
+            console.error('reportData is not available');
+            return;
+        }
+        
+        initReport();
+    });
 </script>
 </body>
 </html>
