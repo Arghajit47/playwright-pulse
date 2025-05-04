@@ -25,16 +25,29 @@ const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
   testCase?: TestCase
 ): PulseTestStatus => {
-  // Handle explicit test.fail() cases
+  // Special case: test was expected to fail (test.fail())
   if (testCase?.expectedStatus === "failed") {
     return status === "failed" ? "passed" : "failed";
   }
 
-  if (status === "passed") return "passed";
-  if (status === "failed" || status === "timedOut" || status === "interrupted")
-    return "failed";
-  return "skipped";
+  // Special case: test was expected to skip (test.skip())
+  if (testCase?.expectedStatus === "skipped") {
+    return "skipped";
+  }
+
+  switch (status) {
+    case "passed":
+      return "passed";
+    case "failed":
+    case "timedOut":
+    case "interrupted":
+      return "failed";
+    case "skipped":
+    default:
+      return "skipped";
+  }
 };
+
   
 
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";

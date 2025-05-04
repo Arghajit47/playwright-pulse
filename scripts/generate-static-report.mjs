@@ -175,7 +175,6 @@ function generatePieChartSVG(data) {
 
 // Enhanced status badge colors in the CSS section
 const enhancedCSS = `
-  /* [Previous CSS remains the same until status badges] */
 
   /* Enhanced Status Badges */
   .status-badge {
@@ -187,17 +186,16 @@ const enhancedCSS = `
     text-transform: uppercase;
   }
 
-  .status-passed .status-badge {
+  span.status-badge .status-passed  {
     background-color: #4CAF50; /* Bright green */
   }
 
-  .status-failed .status-badge {
+  span.status-badge .status-failed {
     background-color: #F44336; /* Bright red */
   }
 
-  .status-skipped .status-badge {
+  span.status-badge .status-skipped {
     background-color: #FFC107; /* Deep yellow */
-    color: #333; /* Dark text for better contrast */
   }
 
   /* Enhanced Pie Chart Styles */

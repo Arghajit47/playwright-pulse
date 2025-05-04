@@ -39,15 +39,25 @@ const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
 const convertStatus = (status, testCase) => {
-    // Handle explicit test.fail() cases
+    // Special case: test was expected to fail (test.fail())
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return status === "failed" ? "passed" : "failed";
     }
-    if (status === "passed")
-        return "passed";
-    if (status === "failed" || status === "timedOut" || status === "interrupted")
-        return "failed";
-    return "skipped";
+    // Special case: test was expected to skip (test.skip())
+    if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "skipped") {
+        return "skipped";
+    }
+    switch (status) {
+        case "passed":
+            return "passed";
+        case "failed":
+        case "timedOut":
+        case "interrupted":
+            return "failed";
+        case "skipped":
+        default:
+            return "skipped";
+    }
 };
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
 const ATTACHMENTS_SUBDIR = "attachments"; // Centralized definition
