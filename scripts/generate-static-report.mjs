@@ -173,163 +173,6 @@ function generatePieChartSVG(data) {
   `;
 }
 
-// Enhanced status badge colors in the CSS section
-const enhancedCSS = `
-
-  /* Enhanced Status Badges */
-  .status-badge {
-    padding: 3px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: bold;
-    color: white;
-    text-transform: uppercase;
-  }
-
-  span.status-badge .status-passed  {
-    background-color: #4CAF50; /* Bright green */
-  }
-
-  span.status-badge .status-failed {
-    background-color: #F44336; /* Bright red */
-  }
-
-  span.status-badge .status-skipped {
-    background-color: #FFC107; /* Deep yellow */
-  }
-
-  /* Enhanced Pie Chart Styles */
-  .pie-chart-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 20px 0;
-  }
-
-  .pie-chart-svg {
-    margin: 0 auto;
-  }
-
-  .pie-chart-total {
-    font-size: 18px;
-    font-weight: bold;
-    fill: #333;
-  }
-
-  .pie-chart-label {
-    font-size: 12px;
-    fill: #666;
-  }
-
-  .pie-chart-legend {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 15px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 14px;
-  }
-
-  .legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-  }
-
-  .legend-value {
-    font-weight: 500;
-  }
-`;
-
-// Enhanced JavaScript for expand/collapse functionality
-const enhancedJS = `
-  // Enhanced expand/collapse functionality
-  function toggleTestDetails(header) {
-    const content = header.nextElementSibling;
-    const isExpanded = content.style.display === 'block';
-    content.style.display = isExpanded ? 'none' : 'block';
-    header.setAttribute('aria-expanded', !isExpanded);
-  }
-
-  function toggleStepDetails(header) {
-    const details = header.nextElementSibling;
-    const nestedSteps = header.parentElement.querySelector('.nested-steps');
-    
-    // Toggle main step details
-    const isExpanded = details.style.display === 'block';
-    details.style.display = isExpanded ? 'none' : 'block';
-    
-    // Toggle nested steps if they exist
-    if (nestedSteps) {
-      nestedSteps.style.display = isExpanded ? 'none' : 'block';
-    }
-    
-    header.setAttribute('aria-expanded', !isExpanded);
-  }
-
-  function expandAllTests() {
-    document.querySelectorAll('.suite-content').forEach(el => {
-      el.style.display = 'block';
-    });
-    document.querySelectorAll('.step-details').forEach(el => {
-      el.style.display = 'block';
-    });
-    document.querySelectorAll('.nested-steps').forEach(el => {
-      el.style.display = 'block';
-    });
-    document.querySelectorAll('[aria-expanded]').forEach(el => {
-      el.setAttribute('aria-expanded', 'true');
-    });
-  }
-
-  function collapseAllTests() {
-    document.querySelectorAll('.suite-content').forEach(el => {
-      el.style.display = 'none';
-    });
-    document.querySelectorAll('.step-details').forEach(el => {
-      el.style.display = 'none';
-    });
-    document.querySelectorAll('.nested-steps').forEach(el => {
-      el.style.display = 'none';
-    });
-    document.querySelectorAll('[aria-expanded]').forEach(el => {
-      el.setAttribute('aria-expanded', 'false');
-    });
-  }
-
-  // Initialize all interactive elements
-  function initializeInteractiveElements() {
-    // Test headers
-    document.querySelectorAll('.suite-header').forEach(header => {
-      header.addEventListener('click', () => toggleTestDetails(header));
-      header.setAttribute('role', 'button');
-      header.setAttribute('aria-expanded', 'false');
-    });
-
-    // Step headers
-    document.querySelectorAll('.step-header').forEach(header => {
-      header.addEventListener('click', () => toggleStepDetails(header));
-      header.setAttribute('role', 'button');
-      header.setAttribute('aria-expanded', 'false');
-    });
-
-    // Filter buttons
-    document.getElementById('filter-name').addEventListener('input', filterTests);
-    document.getElementById('filter-status').addEventListener('change', filterTests);
-    document.getElementById('filter-browser').addEventListener('change', filterTests);
-  }
-
-  // Initialize when DOM is loaded
-  document.addEventListener('DOMContentLoaded', initializeInteractiveElements);
-`;
-
 // Enhanced HTML generation with properly integrated CSS and JS
 function generateHTML(reportData) {
   const { run, results } = reportData;
@@ -523,7 +366,6 @@ function generateHTML(reportData) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playwright Pulse Report</title>
-    <style>${enhancedCSS}</style>
     <style>
         /* Base Styles */
         :root {
@@ -822,6 +664,75 @@ function generateHTML(reportData) {
           font-size: 12px;
           margin-right: 5px;
         }
+        .status-badge {
+          padding: 3px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          font-weight: bold;
+          color: white;
+          text-transform: uppercase;
+        }
+
+        span.status-badge .status-passed  {
+          background-color: #4CAF50; /* Bright green */
+        }
+
+        span.status-badge .status-failed {
+          background-color: #F44336; /* Bright red */
+        }
+
+        span.status-badge .status-skipped {
+          background-color: #FFC107; /* Deep yellow */
+        }
+
+        /* Enhanced Pie Chart Styles */
+        .pie-chart-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          margin: 20px 0;
+        }
+
+        .pie-chart-svg {
+          margin: 0 auto;
+        }
+
+        .pie-chart-total {
+          font-size: 18px;
+          font-weight: bold;
+          fill: #333;
+        }
+
+        .pie-chart-label {
+          font-size: 12px;
+          fill: #666;
+        }
+
+        .pie-chart-legend {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 15px;
+          margin-top: 15px;
+        }
+
+        .legend-item {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 14px;
+        }
+
+        .legend-color {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .legend-value {
+          font-weight: 500;
+        }
         
         /* Responsive Styles */
         @media (max-width: 768px) {
@@ -1033,8 +944,86 @@ function generateHTML(reportData) {
         });
       });
     });
+
+    // Enhanced expand/collapse functionality
+    function toggleTestDetails(header) {
+      const content = header.nextElementSibling;
+      const isExpanded = content.style.display === 'block';
+      content.style.display = isExpanded ? 'none' : 'block';
+      header.setAttribute('aria-expanded', !isExpanded);
+    }
+
+    function toggleStepDetails(header) {
+      const details = header.nextElementSibling;
+      const nestedSteps = header.parentElement.querySelector('.nested-steps');
+
+      // Toggle main step details
+      const isExpanded = details.style.display === 'block';
+      details.style.display = isExpanded ? 'none' : 'block';
+
+      // Toggle nested steps if they exist
+      if (nestedSteps) {
+        nestedSteps.style.display = isExpanded ? 'none' : 'block';
+      }
+    
+      header.setAttribute('aria-expanded', !isExpanded);
+    }
+
+    function expandAllTests() {
+      document.querySelectorAll('.suite-content').forEach(el => {
+        el.style.display = 'block';
+      });
+      document.querySelectorAll('.step-details').forEach(el => {
+        el.style.display = 'block';
+      });
+      document.querySelectorAll('.nested-steps').forEach(el => {
+        el.style.display = 'block';
+      });
+      document.querySelectorAll('[aria-expanded]').forEach(el => {
+        el.setAttribute('aria-expanded', 'true');
+      });
+    }
+
+    function collapseAllTests() {
+      document.querySelectorAll('.suite-content').forEach(el => {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('.step-details').forEach(el => {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('.nested-steps').forEach(el => {
+        el.style.display = 'none';
+      });
+      document.querySelectorAll('[aria-expanded]').forEach(el => {
+        el.setAttribute('aria-expanded', 'false');
+      });
+    }
+
+    // Initialize all interactive elements
+    function initializeInteractiveElements() {
+      // Test headers
+      document.querySelectorAll('.suite-header').forEach(header => {
+        header.addEventListener('click', () => toggleTestDetails(header));
+        header.setAttribute('role', 'button');
+        header.setAttribute('aria-expanded', 'false');
+    });
+
+      // Step headers
+    document.querySelectorAll('.step-header').forEach(header => {
+      header.addEventListener('click', () => toggleStepDetails(header));
+      header.setAttribute('role', 'button');
+      header.setAttribute('aria-expanded', 'false');
+    });
+
+    // Filter buttons
+    document.getElementById('filter-name').addEventListener('input', filterTests);
+    document.getElementById('filter-status').addEventListener('change', filterTests);
+    document.getElementById('filter-browser').addEventListener('change', filterTests);
+  }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', initializeInteractiveElements);
     </script>
-    <script>${enhancedJS}</script>
 </body>
 </html>
   `;
