@@ -2,6 +2,7 @@
 // Using Node.js syntax compatible with `.mjs`
 import * as fs from "fs/promises";
 import path from "path";
+import * as d3 from "d3";
 // Use dynamic import for chalk as it's ESM only
 let chalk;
 try {
@@ -76,101 +77,32 @@ function getStatusIcon(status) {
   }
 }
 
-// Fixed and enhanced pie chart generation
-function generatePieChartSVG(data) {
-  const { passed = 0, failed = 0, skipped = 0 } = data || {};
-  const total = passed + failed + skipped;
-  if (total === 0) {
-    return '<div class="pie-chart-placeholder">No tests found</div>';
-  }
+function generatePieChartD3(data, width = 200, height = 200) {
+  const radius = Math.min(width, height) / 2;
+  const pie = d3.pie().value((d) => d.value);
+  const arc = d3.arc().innerRadius(0).outerRadius(radius);
+  const color = d3
+    .scaleOrdinal()
+    .domain(data.map((d) => d.label))
+    .range(["#4CAF50", "#F44336", "#FFC107"]);
 
-  const radius = 40;
-  const center = 50;
-  let currentAngle = -90;
+  const svg = d3
+    .create("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .append("g")
+    .attr("transform", `translate(${width / 2},${height / 2})`);
 
-  const segments = [
-    { value: passed, color: "#4CAF50", label: "Passed" },
-    { value: failed, color: "#F44336", label: "Failed" },
-    { value: skipped, color: "#FFC107", label: "Skipped" },
-  ].filter((segment) => segment.value > 0);
+  svg
+    .selectAll("path")
+    .data(pie(data))
+    .enter()
+    .append("path")
+    .attr("d", arc)
+    .attr("fill", (d) => color(d.data.label));
 
-  // Calculate percentages and angles
-  const segmentData = segments.map((segment) => {
-    const percentage = (segment.value / total) * 100;
-    const angle = (percentage / 100) * 360;
-    const startAngle = currentAngle;
-    currentAngle += angle;
-    return {
-      ...segment,
-      percentage,
-      angle,
-      startAngle,
-      endAngle: currentAngle,
-    };
-  });
-
-  // Generate SVG paths
-  const paths = segmentData.map((segment) => {
-    const startRad = (segment.startAngle * Math.PI) / 180;
-    const endRad = (segment.endAngle * Math.PI) / 180;
-
-    const x1 = center + radius * Math.cos(startRad);
-    const y1 = center + radius * Math.sin(startRad);
-    const x2 = center + radius * Math.cos(endRad);
-    const y2 = center + radius * Math.sin(endRad);
-
-    const largeArcFlag = segment.angle > 180 ? 1 : 0;
-
-    return `
-      <path 
-        d="M ${center},${center} L ${x1},${y1} A ${radius},${radius} 0 ${largeArcFlag},1 ${x2},${y2} Z"
-        fill="${segment.color}"
-        stroke="#ffffff"
-        stroke-width="1"
-      />
-    `;
-  });
-
-  // Generate legend
-  const legend = segmentData
-    .map(
-      (segment) => `
-    <div class="legend-item">
-      <span class="legend-color" style="background-color:${
-        segment.color
-      }"></span>
-      <span class="legend-label">${segment.label}</span>
-      <span class="legend-value">${segment.value} (${Math.round(
-        segment.percentage
-      )}%)</span>
-    </div>
-  `
-    )
-    .join("");
-
-  return `
-    <div class="pie-chart-container">
-      <svg viewBox="0 0 100 100" width="200" height="200" class="pie-chart-svg">
-        ${paths.join("")}
-        <circle cx="${center}" cy="${center}" r="${
-    radius * 0.6
-  }" fill="#ffffff" />
-        <text x="${center}" y="${
-    center - 5
-  }" text-anchor="middle" dominant-baseline="middle" class="pie-chart-total">
-          ${total}
-        </text>
-        <text x="${center}" y="${
-    center + 10
-  }" text-anchor="middle" dominant-baseline="middle" class="pie-chart-label">
-          Tests
-        </text>
-      </svg>
-      <div class="pie-chart-legend">
-        ${legend}
-      </div>
-    </div>
-  `;
+  return svg.node().outerHTML;
 }
 
 // Enhanced HTML generation with properly integrated CSS and JS
@@ -674,15 +606,15 @@ function generateHTML(reportData) {
         }
 
         span.status-badge .status-passed  {
-          background-color: #4CAF50; /* Bright green */
+          background-color: #4CAF50 !important; /* Bright green */
         }
 
         span.status-badge .status-failed {
-          background-color: #F44336; /* Bright red */
+          background-color: #F44336 !important; /* Bright red */
         }
 
         span.status-badge .status-skipped {
-          background-color: #FFC107; /* Deep yellow */
+          background-color: #FFC107 !important; /* Deep yellow */
         }
 
         /* Enhanced Pie Chart Styles */
@@ -794,7 +726,11 @@ function generateHTML(reportData) {
                     <div class="value">${runSummary.skipped}</div>
                 </div>
                 <div class="pie-chart-container">
-                    ${generatePieChartSVG(runSummary)}
+                    ${generatePieChartD3([
+                      { label: "Passed", value: runSummary.passed },
+                      { label: "Failed", value: runSummary.failed },
+                      { label: "Skipped", value: runSummary.skipped },
+                    ])}
                 </div>
             </div>
         </div>
