@@ -242,7 +242,7 @@ export class PlaywrightPulseReporter implements Reporter {
       id: test.id || `${test.title}-${startTime.toISOString()}-${randomUUID()}`, // Use the original ID logic here
       runId: "TBD", // Will be set later
       name: test.titlePath().join(" > "),
-      suiteName: test.parent.title || "Default Suite",
+      suiteName: this.config.projects[0]?.name || "Default Suite",
       status: testStatus,
       duration: result.duration,
       startTime: startTime,

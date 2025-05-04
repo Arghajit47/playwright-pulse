@@ -161,7 +161,7 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f;
+        var _a, _b, _c, _d, _e, _f, _g;
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -201,17 +201,17 @@ class PlaywrightPulseReporter {
             id: test.id || `${test.title}-${startTime.toISOString()}-${(0, crypto_1.randomUUID)()}`, // Use the original ID logic here
             runId: "TBD", // Will be set later
             name: test.titlePath().join(" > "),
-            suiteName: test.parent.title || "Default Suite",
+            suiteName: ((_d = this.config.projects[0]) === null || _d === void 0 ? void 0 : _d.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
             retries: result.retry,
-            steps: ((_d = result.steps) === null || _d === void 0 ? void 0 : _d.length)
+            steps: ((_e = result.steps) === null || _e === void 0 ? void 0 : _e.length)
                 ? await processAllSteps(result.steps, testStatus)
                 : [],
-            errorMessage: (_e = result.error) === null || _e === void 0 ? void 0 : _e.message,
-            stackTrace: (_f = result.error) === null || _f === void 0 ? void 0 : _f.stack,
+            errorMessage: (_f = result.error) === null || _f === void 0 ? void 0 : _f.message,
+            stackTrace: (_g = result.error) === null || _g === void 0 ? void 0 : _g.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
