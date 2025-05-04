@@ -242,38 +242,182 @@ function getSuitesData(results) {
 // Generate suites widget (updated for your data)
 function generateSuitesWidget(suitesData) {
   return `
-<div class="widget island" data-id="suites">
-    <div class="widget__handle">
-        <span class="draggable-icon">≡</span>
+<div class="suites-widget">
+  <div class="suites-header">
+    <h2>Test Suites</h2>
+    <div class="summary-badge">
+      ${suitesData.length} suites • ${suitesData.reduce(
+    (sum, suite) => sum + suite.count,
+    0
+  )} tests
     </div>
-    <div class="widget__body">
-        <div>
-            <h2 class="widget__title">
-                Suites by Browser
-                <span class="widget__subtitle">${suitesData.length} items total</span>
-            </h2>
-            <div class="table table_hover widget__table">
-                ${suitesData.map(suite => `
-                <a class="table__row" href="#suites/${suite.id}">
-                    <div class="table__col">${suite.name}</div>
-                    <div class="table__col">
-                        <div class="bar">
-                            <div class="bar__fill bar__fill_status_${suite.status}" 
-                                 style="flex-grow: ${suite.count}">
-                                ${suite.count}
-                            </div>
-                        </div>
-                    </div>
-                </a>
-                `).join('')}
-                <a class="table__row" href="#suites">
-                    <div class="table__col table__col_center">
-                        Show all
-                    </div>
-                </a>
-            </div>
+  </div>
+
+  <div class="suites-grid">
+    ${suitesData
+      .map(
+        (suite) => `
+    <div class="suite-card ${suite.status}">
+      <div class="suite-meta">
+        <span class="browser-tag">${suite.name
+          .split("(")
+          .pop()
+          .replace(")", "")}</span>
+        <span class="status-indicator ${suite.status}"></span>
+      </div>
+      <h3>${suite.name.split(" (")[0]}</h3>
+      
+      <div class="test-visualization">
+        <div class="test-dots">
+          ${Array(suite.count)
+            .fill()
+            .map(() => `<div class="test-dot ${suite.status}"></div>`)
+            .join("")}
         </div>
+        <span class="test-count">${suite.count} test${
+          suite.count !== 1 ? "s" : ""
+        }</span>
+      </div>
     </div>
+    `
+      )
+      .join("")}
+  </div>
+
+  <style>
+    .suites-widget {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      font-family: 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .suites-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .suites-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+      color: #1a202c;
+    }
+
+    .summary-badge {
+      background: #f8fafc;
+      color: #64748b;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .suites-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .suite-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      border: 1px solid #f1f5f9;
+      transition: all 0.2s ease;
+    }
+
+    .suite-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+      border-color: #e2e8f0;
+    }
+
+    .suite-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .browser-tag {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .status-indicator.passed {
+      background: #10b981;
+      box-shadow: 0 0 0 3px #ecfdf5;
+    }
+
+    .status-indicator.failed {
+      background: #ef4444;
+      box-shadow: 0 0 0 3px #fef2f2;
+    }
+
+    .status-indicator.skipped {
+      background: #f59e0b;
+      box-shadow: 0 0 0 3px #fffbeb;
+    }
+
+    .suite-card h3 {
+      font-size: 16px;
+      margin: 0 0 16px 0;
+      color: #1e293b;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .test-visualization {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .test-dots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex-grow: 1;
+    }
+
+    .test-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .test-dot.passed {
+      background: #a7f3d0;
+    }
+
+    .test-dot.failed {
+      background: #fecaca;
+    }
+
+    .test-dot.skipped {
+      background: #fde68a;
+    }
+
+    .test-count {
+      font-size: 14px;
+      color: #64748b;
+      min-width: 60px;
+      text-align: right;
+    }
+  </style>
 </div>
   `;
 }
@@ -861,46 +1005,6 @@ function generateHTML(reportData) {
           .filters {
             flex-direction: column;
           }
-          
-          .widget {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            overflow: hidden;
-          }
-    
-          .widget__handle {
-            padding: 8px;
-            cursor: move;
-            background: #f5f5f5;
-            border-bottom: 1px solid #eee;
-          }
-    
-          .widget__title {
-            font-size: 18px;
-            margin: 0 0 5px 0;
-            padding: 15px 15px 0;
-          }
-    
-          .widget__subtitle {
-            font-size: 14px;
-            color: #666;
-            margin-left: 8px;
-          }
-    
-          .table__row {
-            display: flex;
-            padding: 12px 15px;
-            text-decoration: none;
-            color: inherit;
-            border-top: 1px solid #eee;
-            align-items: center;
-          }
-    
-          .bar__fill_status_passed { background-color: #4CAF50; }
-          .bar__fill_status_failed { background-color: #F44336; }
-          .bar__fill_status_skipped { background-color: #FFC107; }
         }
     </style>
 </head>
