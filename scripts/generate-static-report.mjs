@@ -76,44 +76,63 @@ function getStatusIcon(status) {
   }
 }
 
-// Enhanced pie chart with legend
+// Fixed and enhanced pie chart generation
 function generatePieChartSVG(data) {
   const { passed = 0, failed = 0, skipped = 0 } = data || {};
   const total = passed + failed + skipped;
-  if (total === 0)
+  if (total === 0) {
     return '<div class="pie-chart-placeholder">No tests found</div>';
+  }
 
-  const radius = 50;
-  const circumference = 2 * Math.PI * radius;
-  const center = 70;
+  const radius = 40;
+  const center = 50;
   let currentAngle = -90;
 
   const segments = [
     { value: passed, color: "#4CAF50", label: "Passed" },
     { value: failed, color: "#F44336", label: "Failed" },
     { value: skipped, color: "#FFC107", label: "Skipped" },
-  ];
+  ].filter((segment) => segment.value > 0);
 
-  const paths = segments
-    .filter((segment) => segment.value > 0)
-    .map((segment) => {
-      const percent = segment.value / total;
-      const angle = percent * 360;
-      const endAngle = currentAngle + angle;
+  // Calculate percentages and angles
+  const segmentData = segments.map((segment) => {
+    const percentage = (segment.value / total) * 100;
+    const angle = (percentage / 100) * 360;
+    const startAngle = currentAngle;
+    currentAngle += angle;
+    return {
+      ...segment,
+      percentage,
+      angle,
+      startAngle,
+      endAngle: currentAngle,
+    };
+  });
 
-      const startX = center + radius * Math.cos((Math.PI / 180) * currentAngle);
-      const startY = center + radius * Math.sin((Math.PI / 180) * currentAngle);
-      const endX = center + radius * Math.cos((Math.PI / 180) * endAngle);
-      const endY = center + radius * Math.sin((Math.PI / 180) * endAngle);
+  // Generate SVG paths
+  const paths = segmentData.map((segment) => {
+    const startRad = (segment.startAngle * Math.PI) / 180;
+    const endRad = (segment.endAngle * Math.PI) / 180;
 
-      const largeArcFlag = angle > 180 ? 1 : 0;
-      const pathData = `M ${center},${center} L ${startX},${startY} A ${radius},${radius} 0 ${largeArcFlag} 1 ${endX},${endY} Z`;
-      currentAngle = endAngle;
+    const x1 = center + radius * Math.cos(startRad);
+    const y1 = center + radius * Math.sin(startRad);
+    const x2 = center + radius * Math.cos(endRad);
+    const y2 = center + radius * Math.sin(endRad);
 
-      return `<path d="${pathData}" fill="${segment.color}" stroke="#fff" stroke-width="1" />`;
-    });
+    const largeArcFlag = segment.angle > 180 ? 1 : 0;
 
-  const legend = segments
+    return `
+      <path 
+        d="M ${center},${center} L ${x1},${y1} A ${radius},${radius} 0 ${largeArcFlag},1 ${x2},${y2} Z"
+        fill="${segment.color}"
+        stroke="#ffffff"
+        stroke-width="1"
+      />
+    `;
+  });
+
+  // Generate legend
+  const legend = segmentData
     .map(
       (segment) => `
     <div class="legend-item">
@@ -122,7 +141,7 @@ function generatePieChartSVG(data) {
       }"></span>
       <span class="legend-label">${segment.label}</span>
       <span class="legend-value">${segment.value} (${Math.round(
-        (segment.value / total) * 100
+        segment.percentage
       )}%)</span>
     </div>
   `
@@ -131,12 +150,19 @@ function generatePieChartSVG(data) {
 
   return `
     <div class="pie-chart-container">
-      <svg viewBox="0 0 140 140" width="140" height="140" class="pie-chart-svg">
+      <svg viewBox="0 0 100 100" width="200" height="200" class="pie-chart-svg">
         ${paths.join("")}
-        <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" class="pie-chart-total">
+        <circle cx="${center}" cy="${center}" r="${
+    radius * 0.6
+  }" fill="#ffffff" />
+        <text x="${center}" y="${
+    center - 5
+  }" text-anchor="middle" dominant-baseline="middle" class="pie-chart-total">
           ${total}
         </text>
-        <text x="50%" y="65%" dominant-baseline="middle" text-anchor="middle" class="pie-chart-label">
+        <text x="${center}" y="${
+    center + 10
+  }" text-anchor="middle" dominant-baseline="middle" class="pie-chart-label">
           Tests
         </text>
       </svg>
@@ -146,6 +172,166 @@ function generatePieChartSVG(data) {
     </div>
   `;
 }
+
+// Enhanced status badge colors in the CSS section
+const enhancedCSS = `
+  /* [Previous CSS remains the same until status badges] */
+
+  /* Enhanced Status Badges */
+  .status-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
+    text-transform: uppercase;
+  }
+
+  .status-passed .status-badge {
+    background-color: #4CAF50; /* Bright green */
+  }
+
+  .status-failed .status-badge {
+    background-color: #F44336; /* Bright red */
+  }
+
+  .status-skipped .status-badge {
+    background-color: #FFC107; /* Deep yellow */
+    color: #333; /* Dark text for better contrast */
+  }
+
+  /* Enhanced Pie Chart Styles */
+  .pie-chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 20px 0;
+  }
+
+  .pie-chart-svg {
+    margin: 0 auto;
+  }
+
+  .pie-chart-total {
+    font-size: 18px;
+    font-weight: bold;
+    fill: #333;
+  }
+
+  .pie-chart-label {
+    font-size: 12px;
+    fill: #666;
+  }
+
+  .pie-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 15px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .legend-value {
+    font-weight: 500;
+  }
+`;
+
+// Enhanced JavaScript for expand/collapse functionality
+const enhancedJS = `
+  // Enhanced expand/collapse functionality
+  function toggleTestDetails(header) {
+    const content = header.nextElementSibling;
+    const isExpanded = content.style.display === 'block';
+    content.style.display = isExpanded ? 'none' : 'block';
+    header.setAttribute('aria-expanded', !isExpanded);
+  }
+
+  function toggleStepDetails(header) {
+    const details = header.nextElementSibling;
+    const nestedSteps = header.parentElement.querySelector('.nested-steps');
+    
+    // Toggle main step details
+    const isExpanded = details.style.display === 'block';
+    details.style.display = isExpanded ? 'none' : 'block';
+    
+    // Toggle nested steps if they exist
+    if (nestedSteps) {
+      nestedSteps.style.display = isExpanded ? 'none' : 'block';
+    }
+    
+    header.setAttribute('aria-expanded', !isExpanded);
+  }
+
+  function expandAllTests() {
+    document.querySelectorAll('.suite-content').forEach(el => {
+      el.style.display = 'block';
+    });
+    document.querySelectorAll('.step-details').forEach(el => {
+      el.style.display = 'block';
+    });
+    document.querySelectorAll('.nested-steps').forEach(el => {
+      el.style.display = 'block';
+    });
+    document.querySelectorAll('[aria-expanded]').forEach(el => {
+      el.setAttribute('aria-expanded', 'true');
+    });
+  }
+
+  function collapseAllTests() {
+    document.querySelectorAll('.suite-content').forEach(el => {
+      el.style.display = 'none';
+    });
+    document.querySelectorAll('.step-details').forEach(el => {
+      el.style.display = 'none';
+    });
+    document.querySelectorAll('.nested-steps').forEach(el => {
+      el.style.display = 'none';
+    });
+    document.querySelectorAll('[aria-expanded]').forEach(el => {
+      el.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  // Initialize all interactive elements
+  function initializeInteractiveElements() {
+    // Test headers
+    document.querySelectorAll('.suite-header').forEach(header => {
+      header.addEventListener('click', () => toggleTestDetails(header));
+      header.setAttribute('role', 'button');
+      header.setAttribute('aria-expanded', 'false');
+    });
+
+    // Step headers
+    document.querySelectorAll('.step-header').forEach(header => {
+      header.addEventListener('click', () => toggleStepDetails(header));
+      header.setAttribute('role', 'button');
+      header.setAttribute('aria-expanded', 'false');
+    });
+
+    // Filter buttons
+    document.getElementById('filter-name').addEventListener('input', filterTests);
+    document.getElementById('filter-status').addEventListener('change', filterTests);
+    document.getElementById('filter-browser').addEventListener('change', filterTests);
+  }
+
+  // Initialize when DOM is loaded
+  document.addEventListener('DOMContentLoaded', initializeInteractiveElements);
+`;
+
 // Enhanced HTML generation with properly integrated CSS and JS
 function generateHTML(reportData) {
   const { run, results } = reportData;
@@ -339,6 +525,7 @@ function generateHTML(reportData) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playwright Pulse Report</title>
+    <style>${enhancedCSS}</style>
     <style>
         /* Base Styles */
         :root {
@@ -530,26 +717,6 @@ function generateHTML(reportData) {
         
         .suite-header:hover {
           background: #f0f0f0;
-        }
-        
-        .status-badge {
-          padding: 3px 8px;
-          border-radius: 4px;
-          font-size: 12px;
-          font-weight: bold;
-          color: white;
-        }
-        
-        .status-passed .status-badge {
-          background: var(--success-color);
-        }
-        
-        .status-failed .status-badge {
-          background: var(--danger-color);
-        }
-        
-        .status-skipped .status-badge {
-          background: var(--warning-color);
         }
         
         .suite-content {
@@ -869,6 +1036,7 @@ function generateHTML(reportData) {
       });
     });
     </script>
+    <script>${enhancedJS}</script>
 </body>
 </html>
   `;
