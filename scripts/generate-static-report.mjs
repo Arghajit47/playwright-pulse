@@ -216,9 +216,72 @@ function generatePieChartD3(data, width = 300, height = 300) {
   `;
 }
 
+// Process the JSON data to extract suites information
+function getSuitesData(results) {
+  const suitesMap = new Map();
+  
+  results.forEach(test => {
+    const browser = test.name.split(' > ')[1]; // Extract browser (chromium/firefox/webkit)
+    const suiteName = test.suiteName;
+    const key = `${suiteName}|${browser}`;
+    
+    if (!suitesMap.has(key)) {
+      suitesMap.set(key, {
+        id: test.id,
+        name: `${suiteName} (${browser})`,
+        status: test.status,
+        count: 0
+      });
+    }
+    suitesMap.get(key).count++;
+  });
+
+  return Array.from(suitesMap.values());
+}
+
+// Generate suites widget (updated for your data)
+function generateSuitesWidget(suitesData) {
+  return `
+<div class="widget island" data-id="suites">
+    <div class="widget__handle">
+        <span class="draggable-icon">≡</span>
+    </div>
+    <div class="widget__body">
+        <div>
+            <h2 class="widget__title">
+                Suites by Browser
+                <span class="widget__subtitle">${suitesData.length} items total</span>
+            </h2>
+            <div class="table table_hover widget__table">
+                ${suitesData.map(suite => `
+                <a class="table__row" href="#suites/${suite.id}">
+                    <div class="table__col">${suite.name}</div>
+                    <div class="table__col">
+                        <div class="bar">
+                            <div class="bar__fill bar__fill_status_${suite.status}" 
+                                 style="flex-grow: ${suite.count}">
+                                ${suite.count}
+                            </div>
+                        </div>
+                    </div>
+                </a>
+                `).join('')}
+                <a class="table__row" href="#suites">
+                    <div class="table__col table__col_center">
+                        Show all
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+  `;
+}
+
 // Enhanced HTML generation with properly integrated CSS and JS
 function generateHTML(reportData) {
   const { run, results } = reportData;
+  const suitesData = getSuitesData(reportData.results);
   const runSummary = run || {
     totalTests: 0,
     passed: 0,
@@ -232,6 +295,14 @@ function generateHTML(reportData) {
   const passPercentage =
     runSummary.totalTests > 0
       ? Math.round((runSummary.passed / runSummary.totalTests) * 100)
+      : 0;
+  const failPercentage =
+    runSummary.totalTests > 0
+      ? Math.round((runSummary.failed / runSummary.totalTests) * 100)
+      : 0;
+  const skipPercentage =
+    runSummary.totalTests > 0
+      ? Math.round((runSummary.skipped / runSummary.totalTests) * 100)
       : 0;
   const avgTestDuration =
     runSummary.totalTests > 0
@@ -790,6 +861,46 @@ function generateHTML(reportData) {
           .filters {
             flex-direction: column;
           }
+          
+          .widget {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            overflow: hidden;
+          }
+    
+          .widget__handle {
+            padding: 8px;
+            cursor: move;
+            background: #f5f5f5;
+            border-bottom: 1px solid #eee;
+          }
+    
+          .widget__title {
+            font-size: 18px;
+            margin: 0 0 5px 0;
+            padding: 15px 15px 0;
+          }
+    
+          .widget__subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-left: 8px;
+          }
+    
+          .table__row {
+            display: flex;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: inherit;
+            border-top: 1px solid #eee;
+            align-items: center;
+          }
+    
+          .bar__fill_status_passed { background-color: #4CAF50; }
+          .bar__fill_status_failed { background-color: #F44336; }
+          .bar__fill_status_skipped { background-color: #FFC107; }
         }
     </style>
 </head>
@@ -831,18 +942,19 @@ function generateHTML(reportData) {
                 <div class="summary-card status-failed">
                     <h3>Failed</h3>
                     <div class="value">${runSummary.failed}</div>
+                    <div class="trend">${failPercentage}%</div>
                 </div>
                 <div class="summary-card status-skipped">
                     <h3>Skipped</h3>
                     <div class="value">${runSummary.skipped}</div>
+                    <div class="trend">${skipPercentage}%</div>
                 </div>
-                
                     ${generatePieChartD3([
                       { label: "Passed", value: runSummary.passed },
                       { label: "Failed", value: runSummary.failed },
                       { label: "Skipped", value: runSummary.skipped },
                     ])}
-                
+                    ${generateSuitesWidget(suitesData)}
             </div>
         </div>
         
