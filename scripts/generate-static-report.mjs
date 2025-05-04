@@ -78,8 +78,7 @@ function getStatusIcon(status) {
   }
 }
 
-function generatePieChartD3(data, width = 280, height = 280) {
-  // Create simulated DOM
+function generatePieChartD3(data, width = 300, height = 300) {
   const { document } = new JSDOM().window;
   const body = d3.select(document.body);
 
@@ -93,42 +92,40 @@ function generatePieChartD3(data, width = 280, height = 280) {
       : 0;
 
   // Chart dimensions
-  const radius = Math.min(width, height) / 2 - 40;
-  const legendRectSize = 18;
-  const legendSpacing = 4;
+  const radius = Math.min(width, height) / 2 - 50; // Reduced radius for legend space
+  const legendRectSize = 15;
+  const legendSpacing = 8;
 
   // Pie generator
   const pie = d3
     .pie()
     .value((d) => d.value)
     .sort(null);
-
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
 
-  // Color scale
+  // Colors
   const color = d3
     .scaleOrdinal()
     .domain(data.map((d) => d.label))
     .range(["#4CAF50", "#F44336", "#FFC107"]);
 
-  // Create SVG
+  // Create SVG with more width for legend
   const svg = body
     .append("svg")
-    .attr("width", width)
+    .attr("width", width + 100) // Extra width for legend
     .attr("height", height)
     .append("g")
     .attr("transform", `translate(${width / 2},${height / 2})`);
 
-  // Add tooltip container (hidden by default)
+  // Tooltip setup
   const tooltip = body
     .append("div")
     .style("opacity", 0)
     .style("position", "absolute")
     .style("background", "white")
-    .style("padding", "5px")
-    .style("border", "1px solid #ddd")
+    .style("padding", "5px 10px")
     .style("border-radius", "4px")
-    .style("pointer-events", "none");
+    .style("box-shadow", "0 2px 5px rgba(0,0,0,0.1)");
 
   // Draw pie slices
   const arcs = svg
@@ -155,11 +152,9 @@ function generatePieChartD3(data, width = 280, height = 280) {
         .style("left", event.pageX + 10 + "px")
         .style("top", event.pageY - 28 + "px");
     })
-    .on("mouseout", function () {
-      tooltip.transition().style("opacity", 0);
-    });
+    .on("mouseout", () => tooltip.transition().style("opacity", 0));
 
-  // Add passed percentage in center
+  // Center percentage
   svg
     .append("text")
     .attr("text-anchor", "middle")
@@ -168,7 +163,7 @@ function generatePieChartD3(data, width = 280, height = 280) {
     .style("font-weight", "bold")
     .text(`${passedPercentage}%`);
 
-  // Add legend
+  // Legend - positioned to the right
   const legend = svg
     .selectAll(".legend")
     .data(color.domain())
@@ -178,10 +173,8 @@ function generatePieChartD3(data, width = 280, height = 280) {
     .attr(
       "transform",
       (d, i) =>
-        `translate(-${width / 2 - 30},${
-          i * (legendRectSize + legendSpacing) - 60
-        })`
-    );
+        `translate(${radius + 20},${i * (legendRectSize + legendSpacing) - 40})`
+    ); // Moved right
 
   legend
     .append("rect")
@@ -192,24 +185,32 @@ function generatePieChartD3(data, width = 280, height = 280) {
 
   legend
     .append("text")
-    .attr("x", legendRectSize + 4)
-    .attr("y", legendRectSize - 4)
+    .attr("x", legendRectSize + 5)
+    .attr("y", legendRectSize - 2)
     .text((d) => d)
     .style("font-size", "12px")
     .style("text-anchor", "start");
 
   return `
     <div class="pie-chart-container">
+      <h3>Test Distribution Chart</h3>
       ${body.html()}
       <style>
         .pie-chart-container {
           display: flex;
-          flex-direction: column;
-          align-items: center;
+          justify-content: center;
+          margin: 20px 0;
         }
         .pie-chart-container svg {
-          margin-bottom: 20px;
+          display: block;
+          margin: 0 auto;
         }
+        .pie-chart-container h3 {
+          text-align: center;
+          margin: 0 0 10px;
+          font-size: 16px;
+          color: var(--text-color);
+        }  
       </style>
     </div>
   `;
@@ -835,13 +836,13 @@ function generateHTML(reportData) {
                     <h3>Skipped</h3>
                     <div class="value">${runSummary.skipped}</div>
                 </div>
-                <div class="pie-chart-container">
+                
                     ${generatePieChartD3([
                       { label: "Passed", value: runSummary.passed },
                       { label: "Failed", value: runSummary.failed },
                       { label: "Skipped", value: runSummary.skipped },
                     ])}
-                </div>
+                
             </div>
         </div>
         
