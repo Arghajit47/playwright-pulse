@@ -146,8 +146,7 @@ function generatePieChartSVG(data) {
     </div>
   `;
 }
-
-// Enhanced HTML generation with Test Run Summary tab
+// Enhanced HTML generation with properly integrated CSS and JS
 function generateHTML(reportData) {
   const { run, results } = reportData;
   const runSummary = run || {
@@ -169,7 +168,7 @@ function generateHTML(reportData) {
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
 
-  // Generate test cases HTML for Test Run Summary tab
+  // Generate test cases HTML
   const generateTestCasesHTML = () => {
     if (!results || results.length === 0) {
       return '<div class="no-tests">No test results found</div>';
@@ -185,8 +184,7 @@ function generateHTML(reportData) {
       if (browserMatch) allBrowsers.add(browserMatch[1]);
     });
 
-    // Generate test case HTML
-    const testCasesHTML = results
+    return results
       .map((test, index) => {
         const browserMatch = test.name.match(/ > (\w+) > /);
         const browser = browserMatch ? browserMatch[1] : "unknown";
@@ -331,46 +329,9 @@ function generateHTML(reportData) {
       `;
       })
       .join("");
-
-    return `
-      <div class="filters">
-        <input type="text" id="filter-name" placeholder="Search by test name..." oninput="filterTests()">
-        <select id="filter-status" onchange="filterTests()">
-          <option value="">All Statuses</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="skipped">Skipped</option>
-        </select>
-        <select id="filter-browser" onchange="filterTests()">
-          <option value="">All Browsers</option>
-          ${Array.from(allBrowsers)
-            .map(
-              (browser) => `
-            <option value="${browser}">${browser}</option>
-          `
-            )
-            .join("")}
-        </select>
-        <select id="filter-tag" onchange="filterTests()">
-          <option value="">All Tags</option>
-          ${Array.from(allTags)
-            .map(
-              (tag) => `
-            <option value="${tag}">${tag}</option>
-          `
-            )
-            .join("")}
-        </select>
-        <button onclick="expandAllTests()">Expand All</button>
-        <button onclick="collapseAllTests()">Collapse All</button>
-      </div>
-      <div class="test-suites">
-        ${testCasesHTML}
-      </div>
-    `;
   };
 
-  // Generate HTML
+  // Generate HTML with optimized CSS and JS
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -379,6 +340,7 @@ function generateHTML(reportData) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playwright Pulse Report</title>
     <style>
+        /* Base Styles */
         :root {
           --primary-color: #3f51b5;
           --secondary-color: #ff4081;
@@ -395,6 +357,7 @@ function generateHTML(reportData) {
         body {
           font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
           margin: 0;
+          padding: 0;
           background-color: #fafafa;
           color: var(--text-color);
           line-height: 1.6;
@@ -405,68 +368,57 @@ function generateHTML(reportData) {
           margin: 20px auto;
           padding: 20px;
           background-color: #fff;
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+          border-radius: 8px;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
+        /* Header Styles */
         .header {
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 20px;
-          margin-bottom: 30px;
           display: flex;
           justify-content: space-between;
           align-items: center;
           flex-wrap: wrap;
+          margin-bottom: 20px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid var(--border-color);
         }
         
         .header h1 {
           margin: 0;
-          font-size: 2.2em;
+          font-size: 24px;
           color: var(--primary-color);
-          font-weight: 600;
           display: flex;
           align-items: center;
-        }
-        
-        .header h1 svg {
-          margin-right: 10px;
-          width: 36px;
-          height: 36px;
+          gap: 10px;
         }
         
         .run-info {
-          text-align: right;
-          font-size: 0.95em;
-          color: #757575;
           background: #f5f5f5;
-          padding: 12px 16px;
-          border-radius: 8px;
+          padding: 10px 15px;
+          border-radius: 6px;
+          font-size: 14px;
         }
         
-        .run-info strong {
-          color: var(--dark-color);
-        }
-        
+        /* Tab Styles */
         .tabs {
           display: flex;
           border-bottom: 1px solid var(--border-color);
-          margin-bottom: 25px;
+          margin-bottom: 20px;
         }
         
         .tab-button {
-          padding: 12px 24px;
-          cursor: pointer;
+          padding: 10px 20px;
+          background: none;
           border: none;
-          background-color: transparent;
-          font-size: 1em;
-          font-weight: 500;
-          color: #757575;
+          cursor: pointer;
+          font-size: 16px;
+          color: #666;
           position: relative;
-          transition: all 0.3s ease;
         }
         
         .tab-button.active {
           color: var(--primary-color);
+          font-weight: 500;
         }
         
         .tab-button.active::after {
@@ -475,62 +427,42 @@ function generateHTML(reportData) {
           bottom: -1px;
           left: 0;
           right: 0;
-          height: 3px;
-          background-color: var(--primary-color);
-          border-radius: 3px 3px 0 0;
-        }
-        
-        .tab-button:hover {
-          color: var(--primary-color);
-          background-color: rgba(63, 81, 181, 0.05);
+          height: 2px;
+          background: var(--primary-color);
         }
         
         .tab-content {
           display: none;
-          animation: fadeIn 0.5s;
         }
         
         .tab-content.active {
           display: block;
         }
         
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        
         /* Dashboard Styles */
         .dashboard-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
           gap: 20px;
           margin-bottom: 30px;
         }
         
         .summary-card {
-          background-color: #fff;
-          border: 1px solid var(--border-color);
-          border-radius: 10px;
+          background: #fff;
+          border-radius: 8px;
           padding: 20px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.05);
           text-align: center;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        
-        .summary-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
         
         .summary-card h3 {
           margin: 0 0 10px;
-          font-size: 1.1em;
-          color: #757575;
-          font-weight: 500;
+          font-size: 16px;
+          color: #666;
         }
         
         .summary-card .value {
-          font-size: 2.4em;
+          font-size: 28px;
           font-weight: 600;
           margin: 10px 0;
         }
@@ -547,600 +479,111 @@ function generateHTML(reportData) {
           color: var(--warning-color);
         }
         
-        .summary-card .trend {
-          font-size: 0.9em;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #757575;
-        }
-        
-        .trend-up {
-          color: var(--success-color);
-        }
-        
-        .trend-down {
-          color: var(--danger-color);
-        }
-        
         .pie-chart-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          background-color: #fff;
-          border: 1px solid var(--border-color);
-          border-radius: 10px;
-          padding: 20px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           grid-column: span 2;
-        }
-        
-        .pie-chart-svg {
-          display: block;
-          margin: 0 auto 20px;
-        }
-        
-        .pie-chart-total {
-          font-size: 24px;
-          font-weight: bold;
-          fill: var(--dark-color);
-        }
-        
-        .pie-chart-label {
-          font-size: 12px;
-          fill: #757575;
-        }
-        
-        .pie-chart-legend {
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 15px;
-          margin-top: 15px;
-        }
-        
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.9em;
-        }
-        
-        .legend-color {
-          display: inline-block;
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-        }
-        
-        .legend-value {
-          font-weight: 500;
-          color: var(--dark-color);
-        }
-        
-        .metrics-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 20px;
-          margin-bottom: 30px;
-        }
-        
-        .metric-card {
-          background-color: #fff;
-          border: 1px solid var(--border-color);
-          border-radius: 10px;
+          background: #fff;
+          border-radius: 8px;
           padding: 20px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+          box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         
-        .metric-card h3 {
-          margin-top: 0;
-          color: var(--primary-color);
-          font-size: 1.2em;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 10px;
-        }
-        
-        .metric-value {
-          font-size: 1.8em;
-          font-weight: 600;
-          margin: 15px 0;
-          color: var(--dark-color);
-        }
-        
-        .metric-description {
-          color: #757575;
-          font-size: 0.9em;
-        }
-        
-        /* Test Runs Styles */
+        /* Test Run Summary Styles */
         .filters {
           display: flex;
-          gap: 15px;
+          gap: 10px;
           margin-bottom: 20px;
           flex-wrap: wrap;
-          align-items: center;
         }
         
-        .filters input, .filters select {
-          padding: 10px 15px;
-          border: 1px solid var(--border-color);
-          border-radius: 6px;
-          font-size: 0.95em;
-          min-width: 200px;
-          background-color: #fff;
-          transition: border-color 0.3s ease;
+        .filters input, 
+        .filters select {
+          padding: 8px 12px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
         }
         
-        .filters input:focus, .filters select:focus {
-          outline: none;
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.2);
+        .filters button {
+          padding: 8px 16px;
+          background: var(--primary-color);
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
         }
         
         .test-suite {
-          margin-bottom: 25px;
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          overflow: hidden;
-          background-color: #fff;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        
-        .suite-header {
-          background-color: #f5f5f5;
-          padding: 15px;
-          font-weight: 600;
-          border-bottom: 1px solid var(--border-color);
-          cursor: pointer;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          transition: background-color 0.2s ease;
-        }
-        
-        .suite-header:hover {
-          background-color: #eeeeee;
-        }
-        
-        .suite-header::after {
-          content: '▼';
-          font-size: 0.8em;
-          transition: transform 0.2s ease;
-        }
-        
-        .suite-header.collapsed::after {
-          content: '►';
-        }
-        
-        .suite-content {
-          display: none; /* Changed to none */
-        }
-        
-        .suite-content.collapsed {
-          display: none;
-        }
-        
-        .test-result-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 15px;
-          border-bottom: 1px solid #f5f5f5;
-          cursor: pointer;
-          transition: background-color 0.2s ease;
-        }
-        
-        .test-result-item:last-child {
-          border-bottom: none;
-        }
-        
-        .test-result-item:hover {
-          background-color: #fafafa;
-        }
-        
-        .test-result-item .name {
-          flex-grow: 1;
-          margin-right: 15px;
-          font-size: 0.95em;
-          font-weight: 500;
-        }
-        
-        .test-result-item .status-badge {
-          padding: 5px 12px;
-          border-radius: 20px;
-          font-size: 0.85em;
-          font-weight: 600;
-          min-width: 80px;
-          text-align: center;
-        }
-        
-        .status-passed .status-badge {
-          background-color: rgba(76, 175, 80, 0.1);
-          color: var(--success-color);
-        }
-        
-        .status-failed .status-badge {
-          background-color: rgba(244, 67, 54, 0.1);
-          color: var(--danger-color);
-        }
-        
-        .status-skipped .status-badge {
-          background-color: rgba(255, 193, 7, 0.1);
-          color: var(--warning-color);
-        }
-        
-        .test-result-item .duration {
-          font-size: 0.9em;
-          color: #757575;
-          min-width: 60px;
-          text-align: right;
-        }
-        
-        .test-details {
-          background-color: #fafafa;
-          padding: 20px;
-          border-top: 1px solid var(--border-color);
-          display: none;
-          animation: slideDown 0.3s ease-out;
-        }
-        
-        .test-details h3 {
-          margin-top: 0;
           margin-bottom: 15px;
-          font-size: 1.2em;
-          color: var(--dark-color);
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 8px;
-        }
-        
-        .test-details p {
-          margin: 8px 0;
-          font-size: 0.95em;
-        }
-        
-        .test-details strong {
-          color: var(--dark-color);
-          font-weight: 500;
-        }
-        
-        .test-details pre {
-          background-color: #f5f5f5;
-          padding: 12px;
-          border-radius: 6px;
-          font-size: 0.9em;
-          overflow-x: auto;
-          white-space: pre-wrap;
-          word-wrap: break-word;
-          border-left: 3px solid var(--primary-color);
-        }
-        
-        .test-details code {
-          font-family: 'Courier New', Courier, monospace;
-        }
-        
-        .steps-list {
-          list-style: none;
-          padding: 0;
-          margin: 15px 0 0;
-        }
-        
-        .step-item {
-          padding: 10px 0;
-          border-bottom: 1px dashed #e0e0e0;
-          font-size: 0.95em;
-        }
-        
-        .step-item:last-child {
-          border-bottom: none;
-        }
-        
-        .step-title {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        
-        .step-duration {
-          font-size: 0.9em;
-          color: #757575;
-        }
-        
-        .step-error {
-          color: var(--danger-color);
-          margin-top: 8px;
-          font-size: 0.9em;
-          padding-left: 20px;
-          border-left: 2px solid var(--danger-color);
-          background-color: rgba(244, 67, 54, 0.05);
-          padding: 8px 12px;
-          border-radius: 4px;
-        }
-        
-        .status-failed .step-title {
-          color: var(--danger-color);
-        }
-        
-        .status-skipped .step-title {
-          color: #757575;
-        }
-        
-        .attachments-section {
-          margin-top: 15px;
-        }
-        
-        .attachments-section h4 {
-          margin: 15px 0 10px;
-          font-size: 1.1em;
-          color: var(--dark-color);
-        }
-        
-        .attachments-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 15px;
-          margin-top: 10px;
-        }
-        
-        .attachment-item {
-          border: 1px solid var(--border-color);
+          border: 1px solid #eee;
           border-radius: 6px;
           overflow: hidden;
-          background-color: #fff;
-        }
-        
-        .attachment-item img {
-          width: 100%;
-          height: auto;
-          display: block;
-        }
-        
-        .attachment-info {
-          padding: 10px;
-          font-size: 0.85em;
-        }
-        
-        .attachment-info a {
-          color: var(--primary-color);
-          text-decoration: none;
-          font-weight: 500;
-        }
-        
-        .attachment-info a:hover {
-          text-decoration: underline;
-        }
-        
-        .share-section {
-          margin-top: 30px;
-          padding: 20px;
-          background-color: #f5f5f5;
-          border-radius: 8px;
-        }
-        
-        .share-section h3 {
-          margin-top: 0;
-          color: var(--primary-color);
-        }
-        
-        .share-options {
-          display: flex;
-          gap: 15px;
-          margin-top: 15px;
-          flex-wrap: wrap;
-        }
-        
-        .share-btn {
-          padding: 10px 20px;
-          border: none;
-          border-radius: 6px;
-          font-size: 0.95em;
-          font-weight: 500;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          transition: background-color 0.3s ease;
-        }
-        
-        .email-btn {
-          background-color: var(--primary-color);
-          color: white;
-        }
-        
-        .email-btn:hover {
-          background-color: #303f9f;
-        }
-        
-        .copy-btn {
-          background-color: #757575;
-          color: white;
-        }
-        
-        .copy-btn:hover {
-          background-color: #616161;
-        }
-        
-        @keyframes slideDown {
-          from { opacity: 0; max-height: 0; }
-          to { opacity: 1; max-height: 1000px; }
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-          .header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-          }
-          .run-info {
-            text-align: left;
-            width: 100%;
-          }
-          .dashboard-grid {
-            grid-template-columns: 1fr;
-          }
-          .pie-chart-container {
-            grid-column: span 1;
-          }
-          .metrics-grid {
-            grid-template-columns: 1fr;
-          }
-          .filters {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-          }
-          .test-runs-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 10px;
-          }
-        }
-        
-        @media (max-width: 480px) {
-          .filters input,
-          .filters select {
-            min-width: 100%;
-            flex: none;
-          }
-          .tab-button {
-            padding: 10px 12px;
-          }
-          .header h1 {
-            font-size: 1.8em;
-          }
-          .run-info {
-            font-size: 0.9em;
-          }
-          .summary-card .value {
-            font-size: 2em;
-          }
-          .metric-value {
-            font-size: 1.4em;
-          }
-          .test-result-item {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-          }
-          .test-result-item .duration {
-            text-align: left;
-          }
-          .share-options {
-            flex-direction: column;
-            gap: 12px;
-          }
-          .share-btn {
-            width: 100%;
-            text-align: center;
-          }
-            .step-header {
-  cursor: pointer;
-  padding: 8px 0;
-  display: flex;
-  align-items: center;
-}
-
-.step-icon {
-  margin-right: 8px;
-  width: 20px;
-  text-align: center;
-}
-
-.step-details {
-  display: none;
-  padding: 10px;
-  margin: 5px 0;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  border-left: 3px solid #ddd;
-}
-
-.nested-steps {
-  display: none;
-  padding-left: 20px;
-  border-left: 2px solid #eee;
-  margin: 5px 0;
-}
-
-.step-hook {
-  background-color: #f0f7ff;
-  border-left: 3px solid #4a90e2;
-}
-        }
-
-
-        /* New styles for test run summary */
-        .test-suites {
-          margin-top: 20px;
         }
         
         .suite-header {
+          padding: 12px 15px;
+          background: #f9f9f9;
+          cursor: pointer;
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 12px 15px;
-          background-color: #f5f5f5;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background-color 0.2s;
         }
         
         .suite-header:hover {
-          background-color: #e9e9e9;
-        }
-        
-        .suite-content {
-          display: none;
-          padding: 15px;
-          border: 1px solid #eee;
-          border-top: none;
-          border-radius: 0 0 6px 6px;
+          background: #f0f0f0;
         }
         
         .status-badge {
           padding: 3px 8px;
           border-radius: 4px;
-          font-size: 0.8em;
+          font-size: 12px;
           font-weight: bold;
-          margin-right: 10px;
+          color: white;
         }
         
-        .test-name {
-          font-weight: 500;
+        .status-passed .status-badge {
+          background: var(--success-color);
         }
         
-        .test-browser {
-          color: #666;
-          font-size: 0.9em;
-          margin-left: 8px;
+        .status-failed .status-badge {
+          background: var(--danger-color);
         }
         
-        .test-meta {
-          display: flex;
-          align-items: center;
-          gap: 15px;
+        .status-skipped .status-badge {
+          background: var(--warning-color);
         }
         
-        .test-duration {
-          color: #666;
-          font-size: 0.9em;
+        .suite-content {
+          display: none;
+          padding: 15px;
+          background: white;
         }
         
-        .tag {
-          display: inline-block;
-          background-color: #e0e0e0;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 0.8em;
-          margin-right: 5px;
+        .test-details h3 {
+          margin-top: 0;
+          font-size: 18px;
+          color: var(--dark-color);
+        }
+        
+        .steps-list {
+          margin: 15px 0;
+          padding: 0;
+          list-style: none;
+        }
+        
+        .step-item {
+          margin-bottom: 8px;
         }
         
         .step-header {
-          cursor: pointer;
-          padding: 8px 0;
           display: flex;
           align-items: center;
+          cursor: pointer;
+          padding: 8px;
+          border-radius: 4px;
+        }
+        
+        .step-header:hover {
+          background: #f5f5f5;
         }
         
         .step-icon {
@@ -1149,32 +592,85 @@ function generateHTML(reportData) {
           text-align: center;
         }
         
+        .step-title {
+          flex: 1;
+        }
+        
+        .step-duration {
+          color: #666;
+          font-size: 12px;
+        }
+        
         .step-details {
           display: none;
           padding: 10px;
-          margin: 5px 0;
-          background-color: #f8f9fa;
+          margin-top: 5px;
+          background: #f9f9f9;
           border-radius: 4px;
-          border-left: 3px solid #ddd;
+          font-size: 14px;
+        }
+        
+        .step-error {
+          color: var(--danger-color);
+          margin-top: 8px;
+          padding: 8px;
+          background: rgba(244, 67, 54, 0.1);
+          border-radius: 4px;
+          font-size: 13px;
+        }
+        
+        .step-hook {
+          background: rgba(33, 150, 243, 0.1);
         }
         
         .nested-steps {
           display: none;
           padding-left: 20px;
           border-left: 2px solid #eee;
-          margin: 5px 0;
+          margin-top: 8px;
         }
         
-        .step-hook {
-          background-color: #f0f7ff;
-          border-left: 3px solid #4a90e2;
+        .attachments-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 15px;
+          margin-top: 15px;
         }
         
-        .no-tests {
-          text-align: center;
-          padding: 40px;
-          color: #666;
-          font-size: 1.2em;
+        .attachment-item {
+          border: 1px solid #eee;
+          border-radius: 4px;
+          overflow: hidden;
+        }
+        
+        .attachment-item img {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+        
+        .tag {
+          display: inline-block;
+          background: #e0e0e0;
+          padding: 2px 6px;
+          border-radius: 4px;
+          font-size: 12px;
+          margin-right: 5px;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+          .dashboard-grid {
+            grid-template-columns: 1fr;
+          }
+          
+          .pie-chart-container {
+            grid-column: span 1;
+          }
+          
+          .filters {
+            flex-direction: column;
+          }
         }
     </style>
 </head>
@@ -1182,7 +678,6 @@ function generateHTML(reportData) {
     <div class="container">
         <header class="header">
             <div style="display: flex; align-items: center; gap: 15px;">
-                <!-- Logo placeholder - replace src with your logo -->
                 <img id="report-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMNCA3bDggNSA4LTUtOC01eiIgZmlsbD0iIzNmNTEiLz48cGF0aCBkPSJNMTIgNkw0IDExbDggNSA4LTUtOC01eiIgZmlsbD0iIzQyODVmNCIvPjxwYXRoIGQ9Ik0xMiAxMGwtOCA1IDggNSA4LTUtOC01eiIgZmlsbD0iIzNkNTViNCIvPjwvc3ZnPg==" alt="Logo" style="height: 40px;">
                 <h1>
                     Playwright Pulse Report
@@ -1204,181 +699,120 @@ function generateHTML(reportData) {
         </div>
         
         <div id="dashboard" class="tab-content active">
-            <!-- [Previous dashboard content remains the same...] -->
+            <div class="dashboard-grid">
+                <div class="summary-card">
+                    <h3>Total Tests</h3>
+                    <div class="value">${runSummary.totalTests}</div>
+                </div>
+                <div class="summary-card status-passed">
+                    <h3>Passed</h3>
+                    <div class="value">${runSummary.passed}</div>
+                    <div class="trend">${passPercentage}%</div>
+                </div>
+                <div class="summary-card status-failed">
+                    <h3>Failed</h3>
+                    <div class="value">${runSummary.failed}</div>
+                </div>
+                <div class="summary-card status-skipped">
+                    <h3>Skipped</h3>
+                    <div class="value">${runSummary.skipped}</div>
+                </div>
+                <div class="pie-chart-container">
+                    ${generatePieChartSVG(runSummary)}
+                </div>
+            </div>
         </div>
         
         <div id="test-runs" class="tab-content">
-            ${generateTestCasesHTML()}
+            <div class="filters">
+                <input type="text" id="filter-name" placeholder="Search by test name...">
+                <select id="filter-status">
+                    <option value="">All Statuses</option>
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="skipped">Skipped</option>
+                </select>
+                <select id="filter-browser">
+                    <option value="">All Browsers</option>
+                    ${Array.from(
+                      new Set(
+                        results.map((test) => {
+                          const match = test.name.match(/ > (\w+) > /);
+                          return match ? match[1] : "unknown";
+                        })
+                      )
+                    )
+                      .map(
+                        (browser) => `
+                      <option value="${browser}">${browser}</option>
+                    `
+                      )
+                      .join("")}
+                </select>
+                <button onclick="expandAllTests()">Expand All</button>
+                <button onclick="collapseAllTests()">Collapse All</button>
+            </div>
+            <div class="test-suites">
+                ${generateTestCasesHTML()}
+            </div>
         </div>
     </div>
     
     <script>
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
-    const testTableRows = document.querySelectorAll('.test-table tbody tr');
-    const testDetailsDivs = document.querySelectorAll('.test-details');
-    
-    let activeTestRow = null; // Track the currently selected test row
-    
-    function showTab(tabId) {
-        tabButtons.forEach(button => button.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
+    // Tab switching functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active class from all buttons and contents
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
         
-        const tabButton = document.querySelector(\`[data-tab="\${tabId}"]\`);
-        const tabContent = document.getElementById(tabId);
-        
-        tabButton.classList.add('active');
-        tabContent.classList.add('active');
-    }
-    
-    tabButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const tabId = button.dataset.tab;
-            showTab(tabId);
-            
-            // If switching to the test runs tab, clear any selected test details
-            if (tabId === 'test-runs' && activeTestRow) {
-                activeTestRow.classList.remove('selected');
-                activeTestRow = null;
-                testDetailsDivs.forEach(div => div.style.display = 'none');
-            }
-        });
-    });
-    
-    showTab('dashboard'); // Show the dashboard tab by default
-    
-    // Function to filter test runs table
-    function filterTestRuns() {
-        const nameFilter = document.getElementById('filter-name').value.toLowerCase();
-        const statusFilter = document.getElementById('filter-status').value.toLowerCase();
-        
-        testTableRows.forEach(row => {
-            const name = row.dataset.name.toLowerCase();
-            const status = row.dataset.status.toLowerCase();
-            
-            const nameMatch = name.includes(nameFilter);
-            const statusMatch = !statusFilter || status === statusFilter;
-            
-            if (nameMatch && statusMatch) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        // Also hide test details when filtering
-        testDetailsDivs.forEach(div => div.style.display = 'none');
-        activeTestRow = null;
-    }
-    
-    document.getElementById('filter-name').addEventListener('input', filterTestRuns);
-    document.getElementById('filter-status').addEventListener('change', filterTestRuns);
-    
-    // Event listener for test table row clicks
-    testTableRows.forEach(row => {
-        row.addEventListener('click', () => {
-            const testId = row.id.replace('test-row-', ''); // Extract test ID
-            const testDetailsDiv = document.getElementById(\`test-details-\${testId}\`);
-            
-            // Remove 'selected' class from any previously selected row
-            if (activeTestRow) {
-                activeTestRow.classList.remove('selected');
-            }
-            
-            // Add 'selected' class to the clicked row
-            row.classList.add('selected');
-            activeTestRow = row; // Update the active row
-            
-            // Show the corresponding test details
-            testDetailsDivs.forEach(div => {
-                div.style.display = 'none'; // Hide all details first
-            });
-            
-            if (testDetailsDiv) {
-                testDetailsDiv.style.display = 'block'; // Show the matching details
-            }
-           
-        });
-    });
-
-    // Event listener for expanding steps
-    document.addEventListener('click', (event) => {
-        const target = event.target;
-        if (target.classList.contains('expand-steps-button')) {
-            const stepsContainer = target.nextElementSibling; // Get the steps container
-            if (stepsContainer.style.display === 'none') {
-                stepsContainer.style.display = 'block';
-                target.textContent = 'Collapse Steps'; // Change button text
-            } else {
-                stepsContainer.style.display = 'none';
-                target.textContent = 'Expand Steps';
-            }
-        }
-    });
-    // Step management functions
-function toggleStepDetails(element) {
-    const details = element.nextElementSibling;
-    if (details && details.classList.contains('step-details')) {
-        details.style.display = details.style.display === 'block' ? 'none' : 'block';
-    }
-    const nestedSteps = element.parentElement.querySelector('.nested-steps');
-    if (nestedSteps) {
-        nestedSteps.style.display = nestedSteps.style.display === 'block' ? 'none' : 'block';
-    }
-}
-
-function expandAllSteps() {
-    document.querySelectorAll('.step-details').forEach(el => {
-        el.style.display = 'block';
-    });
-    document.querySelectorAll('.nested-steps').forEach(el => {
-        el.style.display = 'block';
-    });
-}
-
-function collapseAllSteps() {
-    document.querySelectorAll('.step-details').forEach(el => {
-        el.style.display = 'none';
-    });
-    document.querySelectorAll('.nested-steps').forEach(el => {
-        el.style.display = 'none';
-    });
-}
-
-    // Test filtering function
-    function filterTests() {
-      const nameFilter = document.getElementById('filter-name').value.toLowerCase();
-      const statusFilter = document.getElementById('filter-status').value;
-      const browserFilter = document.getElementById('filter-browser').value;
-      const tagFilter = document.getElementById('filter-tag').value;
-      
-      document.querySelectorAll('.test-suite').forEach(suite => {
-        const name = suite.querySelector('.test-name').textContent.toLowerCase();
-        const status = suite.dataset.status;
-        const browser = suite.dataset.browser;
-        const tags = suite.dataset.tags;
-        
-        const nameMatch = name.includes(nameFilter);
-        const statusMatch = !statusFilter || status === statusFilter;
-        const browserMatch = !browserFilter || browser === browserFilter;
-        const tagMatch = !tagFilter || tags.includes(tagFilter);
-        
-        if (nameMatch && statusMatch && browserMatch && tagMatch) {
-          suite.style.display = 'block';
-        } else {
-          suite.style.display = 'none';
-        }
+        // Add active class to clicked button and corresponding content
+        const tabId = button.getAttribute('data-tab');
+        button.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
       });
+    });
+    
+    // Test filtering functionality
+    function setupFilters() {
+      const nameFilter = document.getElementById('filter-name');
+      const statusFilter = document.getElementById('filter-status');
+      const browserFilter = document.getElementById('filter-browser');
+      
+      const filterTests = () => {
+        const nameValue = nameFilter.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const browserValue = browserFilter.value;
+        
+        document.querySelectorAll('.test-suite').forEach(suite => {
+          const name = suite.querySelector('.test-name').textContent.toLowerCase();
+          const status = suite.getAttribute('data-status');
+          const browser = suite.getAttribute('data-browser');
+          
+          const nameMatch = name.includes(nameValue);
+          const statusMatch = !statusValue || status === statusValue;
+          const browserMatch = !browserValue || browser === browserValue;
+          
+          if (nameMatch && statusMatch && browserMatch) {
+            suite.style.display = 'block';
+          } else {
+            suite.style.display = 'none';
+          }
+        });
+      };
+      
+      nameFilter.addEventListener('input', filterTests);
+      statusFilter.addEventListener('change', filterTests);
+      browserFilter.addEventListener('change', filterTests);
     }
-
-    // Toggle test details
+    
+    // Test expansion functionality
     function toggleTestDetails(header) {
       const content = header.nextElementSibling;
       content.style.display = content.style.display === 'block' ? 'none' : 'block';
-      header.classList.toggle('expanded');
     }
-
-    // Toggle step details
+    
+    // Step expansion functionality
     function toggleStepDetails(header) {
       const details = header.nextElementSibling;
       details.style.display = details.style.display === 'block' ? 'none' : 'block';
@@ -1389,7 +823,7 @@ function collapseAllSteps() {
         nestedSteps.style.display = nestedSteps.style.display === 'block' ? 'none' : 'block';
       }
     }
-
+    
     // Expand all tests
     function expandAllTests() {
       document.querySelectorAll('.suite-content').forEach(el => {
@@ -1402,7 +836,7 @@ function collapseAllSteps() {
         el.style.display = 'block';
       });
     }
-
+    
     // Collapse all tests
     function collapseAllTests() {
       document.querySelectorAll('.suite-content').forEach(el => {
@@ -1415,14 +849,32 @@ function collapseAllSteps() {
         el.style.display = 'none';
       });
     }
-
-    // Initialize with dashboard tab active
-    showTab('dashboard');
+    
+    // Initialize everything when DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+      setupFilters();
+      
+      // Make step headers clickable
+      document.querySelectorAll('.step-header').forEach(header => {
+        header.addEventListener('click', function() {
+          toggleStepDetails(this);
+        });
+      });
+      
+      // Make test headers clickable
+      document.querySelectorAll('.suite-header').forEach(header => {
+        header.addEventListener('click', function() {
+          toggleTestDetails(this);
+        });
+      });
+    });
     </script>
 </body>
 </html>
   `;
 }
+
+// [Keep the rest of the file unchanged...]
 
 // [Rest of the file remains the same...]
 
