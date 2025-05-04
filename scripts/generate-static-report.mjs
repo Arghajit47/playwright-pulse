@@ -3,6 +3,7 @@
 import * as fs from "fs/promises";
 import path from "path";
 import * as d3 from "d3";
+import { JSDOM } from "jsdom";
 // Use dynamic import for chalk as it's ESM only
 let chalk;
 try {
@@ -78,6 +79,9 @@ function getStatusIcon(status) {
 }
 
 function generatePieChartD3(data, width = 200, height = 200) {
+  // Create a simulated DOM environment
+  const { document } = new JSDOM().window;
+
   const radius = Math.min(width, height) / 2;
   const pie = d3.pie().value((d) => d.value);
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
@@ -86,8 +90,10 @@ function generatePieChartD3(data, width = 200, height = 200) {
     .domain(data.map((d) => d.label))
     .range(["#4CAF50", "#F44336", "#FFC107"]);
 
+  // Use the simulated document
   const svg = d3
-    .create("svg")
+    .select(document.body)
+    .append("svg")
     .attr("width", width)
     .attr("height", height)
     .attr("viewBox", `0 0 ${width} ${height}`)
@@ -102,7 +108,14 @@ function generatePieChartD3(data, width = 200, height = 200) {
     .attr("d", arc)
     .attr("fill", (d) => color(d.data.label));
 
-  return svg.node().outerHTML;
+  // Add total count text
+  svg
+    .append("text")
+    .attr("text-anchor", "middle")
+    .attr("dy", "0.35em")
+    .text(data.reduce((sum, d) => sum + d.value, 0));
+
+  return document.body.innerHTML; // Returns the SVG as string
 }
 
 // Enhanced HTML generation with properly integrated CSS and JS

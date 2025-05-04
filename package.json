@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.13-beta.8-f",
+  "version": "0.2.13-beta.8-g",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -73,6 +73,7 @@
     "date-fns": "^3.6.0",
     "firebase": "^11.3.0",
     "genkit": "^1.6.2",
+    "jsdom": "^26.1.0",
     "lucide-react": "^0.475.0",
     "next": "15.2.3",
     "patch-package": "^8.0.0",
