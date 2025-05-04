@@ -78,44 +78,141 @@ function getStatusIcon(status) {
   }
 }
 
-function generatePieChartD3(data, width = 200, height = 200) {
-  // Create a simulated DOM environment
+function generatePieChartD3(data, width = 280, height = 280) {
+  // Create simulated DOM
   const { document } = new JSDOM().window;
+  const body = d3.select(document.body);
 
-  const radius = Math.min(width, height) / 2;
-  const pie = d3.pie().value((d) => d.value);
+  // Calculate passed percentage
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  const passedPercentage =
+    total > 0
+      ? Math.round(
+          ((data.find((d) => d.label === "Passed")?.value || 0) / total) * 100
+        )
+      : 0;
+
+  // Chart dimensions
+  const radius = Math.min(width, height) / 2 - 40;
+  const legendRectSize = 18;
+  const legendSpacing = 4;
+
+  // Pie generator
+  const pie = d3
+    .pie()
+    .value((d) => d.value)
+    .sort(null);
+
   const arc = d3.arc().innerRadius(0).outerRadius(radius);
+
+  // Color scale
   const color = d3
     .scaleOrdinal()
     .domain(data.map((d) => d.label))
     .range(["#4CAF50", "#F44336", "#FFC107"]);
 
-  // Use the simulated document
-  const svg = d3
-    .select(document.body)
+  // Create SVG
+  const svg = body
     .append("svg")
     .attr("width", width)
     .attr("height", height)
-    .attr("viewBox", `0 0 ${width} ${height}`)
     .append("g")
     .attr("transform", `translate(${width / 2},${height / 2})`);
 
-  svg
-    .selectAll("path")
+  // Add tooltip container (hidden by default)
+  const tooltip = body
+    .append("div")
+    .style("opacity", 0)
+    .style("position", "absolute")
+    .style("background", "white")
+    .style("padding", "5px")
+    .style("border", "1px solid #ddd")
+    .style("border-radius", "4px")
+    .style("pointer-events", "none");
+
+  // Draw pie slices
+  const arcs = svg
+    .selectAll(".arc")
     .data(pie(data))
     .enter()
+    .append("g")
+    .attr("class", "arc");
+
+  arcs
     .append("path")
     .attr("d", arc)
-    .attr("fill", (d) => color(d.data.label));
+    .attr("fill", (d) => color(d.data.label))
+    .style("stroke", "#fff")
+    .style("stroke-width", 2)
+    .on("mouseover", function (event, d) {
+      tooltip.transition().style("opacity", 1);
+      tooltip
+        .html(
+          `${d.data.label}: ${d.data.value} (${Math.round(
+            (d.data.value / total) * 100
+          )}%)`
+        )
+        .style("left", event.pageX + 10 + "px")
+        .style("top", event.pageY - 28 + "px");
+    })
+    .on("mouseout", function () {
+      tooltip.transition().style("opacity", 0);
+    });
 
-  // Add total count text
+  // Add passed percentage in center
   svg
     .append("text")
     .attr("text-anchor", "middle")
-    .attr("dy", "0.35em")
-    .text(data.reduce((sum, d) => sum + d.value, 0));
+    .attr("dy", ".3em")
+    .style("font-size", "24px")
+    .style("font-weight", "bold")
+    .text(`${passedPercentage}%`);
 
-  return document.body.innerHTML; // Returns the SVG as string
+  // Add legend
+  const legend = svg
+    .selectAll(".legend")
+    .data(color.domain())
+    .enter()
+    .append("g")
+    .attr("class", "legend")
+    .attr(
+      "transform",
+      (d, i) =>
+        `translate(-${width / 2 - 30},${
+          i * (legendRectSize + legendSpacing) - 60
+        })`
+    );
+
+  legend
+    .append("rect")
+    .attr("width", legendRectSize)
+    .attr("height", legendRectSize)
+    .style("fill", color)
+    .style("stroke", color);
+
+  legend
+    .append("text")
+    .attr("x", legendRectSize + 4)
+    .attr("y", legendRectSize - 4)
+    .text((d) => d)
+    .style("font-size", "12px")
+    .style("text-anchor", "start");
+
+  return `
+    <div class="pie-chart-container">
+      ${body.html()}
+      <style>
+        .pie-chart-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .pie-chart-container svg {
+          margin-bottom: 20px;
+        }
+      </style>
+    </div>
+  `;
 }
 
 // Enhanced HTML generation with properly integrated CSS and JS
