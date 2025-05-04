@@ -1,0 +1,379 @@
+{
+  "run": {
+    "id": "run-1746279264509-73d50c14-5e3e-413b-b010-38ba7e9bd3fb",
+    "timestamp": "2025-05-03T13:34:24.509Z",
+    "totalTests": 3,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 3,
+    "duration": 7435
+  },
+  "results": [
+    {
+      "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd",
+      "runId": "run-1746279264509-73d50c14-5e3e-413b-b010-38ba7e9bd3fb",
+      "name": " > chromium > example.spec.js > authentication in github",
+      "suiteName": "example.spec.js",
+      "status": "skipped",
+      "duration": 5041,
+      "startTime": "2025-05-03T13:34:25.156Z",
+      "endTime": "2025-05-03T13:34:30.197Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:25.160Z-9-654a3258-a3da-4256-8ad6-c2e7399ebc28",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 9,
+          "startTime": "2025-05-03T13:34:25.160Z",
+          "endTime": "2025-05-03T13:34:25.169Z",
+          "isHook": true,
+          "hookType": "before",
+          "steps": []
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:25.169Z-2010-92f2c544-97eb-4d7d-aa89-fb5874e77aa8",
+          "title": "Setting up the browser",
+          "status": "passed",
+          "duration": 2010,
+          "startTime": "2025-05-03T13:34:25.169Z",
+          "endTime": "2025-05-03T13:34:27.179Z",
+          "codeLocation": "example.spec.js:12:14",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:25.171Z-1253-e00206f3-239a-4b59-a4f1-cc03e957068a",
+              "title": "browserType.launch",
+              "status": "passed",
+              "duration": 1253,
+              "startTime": "2025-05-03T13:34:25.171Z",
+              "endTime": "2025-05-03T13:34:26.424Z",
+              "codeLocation": "example.spec.js:13:36",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:26.433Z-19-53ac68d4-5958-402a-a928-0770522a7ad2",
+              "title": "browser.newContext",
+              "status": "passed",
+              "duration": 19,
+              "startTime": "2025-05-03T13:34:26.433Z",
+              "endTime": "2025-05-03T13:34:26.452Z",
+              "codeLocation": "example.spec.js:14:22",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:26.456Z-723-2b3f6606-2dd6-4c9b-a0f2-7c94f2cb88c0",
+              "title": "browserContext.newPage",
+              "status": "passed",
+              "duration": 723,
+              "startTime": "2025-05-03T13:34:26.456Z",
+              "endTime": "2025-05-03T13:34:27.179Z",
+              "codeLocation": "example.spec.js:15:33",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:27.180Z-3018-998ad440-e6e8-4733-b9bf-7c336fa01fbb",
+          "title": "Navigating to GitHub login page",
+          "status": "passed",
+          "duration": 3018,
+          "startTime": "2025-05-03T13:34:27.180Z",
+          "endTime": "2025-05-03T13:34:30.198Z",
+          "codeLocation": "example.spec.js:17:14",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:27.183Z-3014-4a0e6cf2-0c2d-4b98-8cd3-2c59298e6d98",
+              "title": "page.goto(https://www.apple.com/in/)",
+              "status": "passed",
+              "duration": 3014,
+              "startTime": "2025-05-03T13:34:27.183Z",
+              "endTime": "2025-05-03T13:34:30.197Z",
+              "codeLocation": "example.spec.js:18:16",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:30.200Z-1-ab7c4a59-9cab-4360-b541-a492e28d32b0",
+          "title": "Filling in the login form",
+          "status": "failed",
+          "duration": 1,
+          "startTime": "2025-05-03T13:34:30.200Z",
+          "endTime": "2025-05-03T13:34:30.201Z",
+          "errorMessage": "Error: Test is skipped: ",
+          "stackTrace": "Error: Test is skipped: \n    at /Users/arghajitsingha/juliaHub/tests/example.spec.js:27:10\n    at /Users/arghajitsingha/juliaHub/tests/example.spec.js:26:14",
+          "codeLocation": "example.spec.js:26:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-9d2429d2a4e199244ffd_step_2025-05-03T13:34:30.202Z-3-7b87de80-ae58-4645-a3ef-d9ae70041338",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 3,
+          "startTime": "2025-05-03T13:34:30.202Z",
+          "endTime": "2025-05-03T13:34:30.205Z",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        }
+      ],
+      "codeSnippet": "Test defined at: example.spec.js:10:1",
+      "tags": ["new"],
+      "screenshots": [
+        "attachments/dd9b2edffe9b7501040c-9d2429d2a4e199244ffd/image_1746279270214.svg"
+      ]
+    },
+    {
+      "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2",
+      "runId": "run-1746279264509-73d50c14-5e3e-413b-b010-38ba7e9bd3fb",
+      "name": " > firefox > example.spec.js > authentication in github",
+      "suiteName": "example.spec.js",
+      "status": "skipped",
+      "duration": 5907,
+      "startTime": "2025-05-03T13:34:25.156Z",
+      "endTime": "2025-05-03T13:34:31.063Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:25.160Z-8-dc7bd7b5-7300-40a8-b89d-f96cccad0c73",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 8,
+          "startTime": "2025-05-03T13:34:25.160Z",
+          "endTime": "2025-05-03T13:34:25.168Z",
+          "isHook": true,
+          "hookType": "before",
+          "steps": []
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:25.169Z-2180-42933965-b2e3-495f-a3ba-ce2b11f80ea4",
+          "title": "Setting up the browser",
+          "status": "passed",
+          "duration": 2180,
+          "startTime": "2025-05-03T13:34:25.169Z",
+          "endTime": "2025-05-03T13:34:27.349Z",
+          "codeLocation": "example.spec.js:12:14",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:25.171Z-1273-e3ca4e96-0cd6-4f52-831a-9ee7563dc23b",
+              "title": "browserType.launch",
+              "status": "passed",
+              "duration": 1273,
+              "startTime": "2025-05-03T13:34:25.171Z",
+              "endTime": "2025-05-03T13:34:26.444Z",
+              "codeLocation": "example.spec.js:13:36",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:26.449Z-10-96c86f8a-3b88-4335-a4dd-5545448c44b0",
+              "title": "browser.newContext",
+              "status": "passed",
+              "duration": 10,
+              "startTime": "2025-05-03T13:34:26.449Z",
+              "endTime": "2025-05-03T13:34:26.459Z",
+              "codeLocation": "example.spec.js:14:22",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:26.468Z-880-762953e7-8c91-4aab-8209-90baf1baec2d",
+              "title": "browserContext.newPage",
+              "status": "passed",
+              "duration": 880,
+              "startTime": "2025-05-03T13:34:26.468Z",
+              "endTime": "2025-05-03T13:34:27.348Z",
+              "codeLocation": "example.spec.js:15:33",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:27.356Z-3709-762ef8d1-183c-43b3-b036-a6f0478f9235",
+          "title": "Navigating to GitHub login page",
+          "status": "passed",
+          "duration": 3709,
+          "startTime": "2025-05-03T13:34:27.356Z",
+          "endTime": "2025-05-03T13:34:31.065Z",
+          "codeLocation": "example.spec.js:17:14",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:27.364Z-3700-4eac6722-b602-44ec-ba94-ecabc9b1385b",
+              "title": "page.goto(https://www.apple.com/in/)",
+              "status": "passed",
+              "duration": 3700,
+              "startTime": "2025-05-03T13:34:27.364Z",
+              "endTime": "2025-05-03T13:34:31.064Z",
+              "codeLocation": "example.spec.js:18:16",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:31.066Z-1-55871d5c-e2cb-4761-896a-63a00e5b0212",
+          "title": "Filling in the login form",
+          "status": "failed",
+          "duration": 1,
+          "startTime": "2025-05-03T13:34:31.066Z",
+          "endTime": "2025-05-03T13:34:31.067Z",
+          "errorMessage": "Error: Test is skipped: ",
+          "stackTrace": "Error: Test is skipped: \n    at /Users/arghajitsingha/juliaHub/tests/example.spec.js:27:10\n    at /Users/arghajitsingha/juliaHub/tests/example.spec.js:26:14",
+          "codeLocation": "example.spec.js:26:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2_step_2025-05-03T13:34:31.069Z-2-97eee3d2-ea34-4bee-b518-96e03da96556",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2025-05-03T13:34:31.069Z",
+          "endTime": "2025-05-03T13:34:31.071Z",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        }
+      ],
+      "codeSnippet": "Test defined at: example.spec.js:10:1",
+      "tags": ["new"],
+      "screenshots": [
+        "attachments/dd9b2edffe9b7501040c-0e0b36eff619fc78f6d2/image_1746279271072.svg"
+      ]
+    },
+    {
+      "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b",
+      "runId": "run-1746279264509-73d50c14-5e3e-413b-b010-38ba7e9bd3fb",
+      "name": " > webkit > example.spec.js > authentication in github",
+      "suiteName": "example.spec.js",
+      "status": "skipped",
+      "duration": 6593,
+      "startTime": "2025-05-03T13:34:25.155Z",
+      "endTime": "2025-05-03T13:34:31.748Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:25.160Z-8-40a511ea-1aae-413c-8db1-ff3ddfebf621",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 8,
+          "startTime": "2025-05-03T13:34:25.160Z",
+          "endTime": "2025-05-03T13:34:25.168Z",
+          "isHook": true,
+          "hookType": "before",
+          "steps": []
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:25.169Z-2010-bf3a72a3-d235-4c40-85a7-9fcd370a014f",
+          "title": "Setting up the browser",
+          "status": "passed",
+          "duration": 2010,
+          "startTime": "2025-05-03T13:34:25.169Z",
+          "endTime": "2025-05-03T13:34:27.179Z",
+          "codeLocation": "example.spec.js:12:14",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:25.171Z-1253-dfa6cc23-4442-4495-b2d4-e083790e9df8",
+              "title": "browserType.launch",
+              "status": "passed",
+              "duration": 1253,
+              "startTime": "2025-05-03T13:34:25.171Z",
+              "endTime": "2025-05-03T13:34:26.424Z",
+              "codeLocation": "example.spec.js:13:36",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:26.431Z-21-65357357-fd51-4921-82db-70b72293efef",
+              "title": "browser.newContext",
+              "status": "passed",
+              "duration": 21,
+              "startTime": "2025-05-03T13:34:26.431Z",
+              "endTime": "2025-05-03T13:34:26.452Z",
+              "codeLocation": "example.spec.js:14:22",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:26.455Z-724-802cca1a-ac3e-4878-98b6-d0c4a47898a5",
+              "title": "browserContext.newPage",
+              "status": "passed",
+              "duration": 724,
+              "startTime": "2025-05-03T13:34:26.455Z",
+              "endTime": "2025-05-03T13:34:27.179Z",
+              "codeLocation": "example.spec.js:15:33",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:27.180Z-4572-273af7da-0fe1-468f-b442-09704bb94e19",
+          "title": "Navigating to GitHub login page",
+          "status": "passed",
+          "duration": 4572,
+          "startTime": "2025-05-03T13:34:27.180Z",
+          "endTime": "2025-05-03T13:34:31.752Z",
+          "codeLocation": "example.spec.js:17:14",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:27.183Z-4569-4cd85d25-bfc7-4317-8650-f67a3b8fa5d6",
+              "title": "page.goto(https://www.apple.com/in/)",
+              "status": "passed",
+              "duration": 4569,
+              "startTime": "2025-05-03T13:34:27.183Z",
+              "endTime": "2025-05-03T13:34:31.752Z",
+              "codeLocation": "example.spec.js:18:16",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:31.753Z-1-516a796b-7260-4b0a-aba5-e157172d6ad5",
+          "title": "Filling in the login form",
+          "status": "failed",
+          "duration": 1,
+          "startTime": "2025-05-03T13:34:31.753Z",
+          "endTime": "2025-05-03T13:34:31.754Z",
+          "errorMessage": "Error: Test is skipped: ",
+          "stackTrace": "Error: Test is skipped: \n    at /Users/arghajitsingha/juliaHub/tests/example.spec.js:27:10\n    at /Users/arghajitsingha/juliaHub/tests/example.spec.js:26:14",
+          "codeLocation": "example.spec.js:26:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b_step_2025-05-03T13:34:31.755Z-2-85182340-c599-42a8-941c-150204ad1817",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2025-05-03T13:34:31.755Z",
+          "endTime": "2025-05-03T13:34:31.757Z",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        }
+      ],
+      "codeSnippet": "Test defined at: example.spec.js:10:1",
+      "tags": ["new"],
+      "screenshots": [
+        "attachments/dd9b2edffe9b7501040c-7f0cdfd29dfd3f6e118b/image_1746279271758.svg"
+      ]
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2025-05-03T13:34:31.944Z"
+  }
+}
