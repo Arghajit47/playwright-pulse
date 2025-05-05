@@ -265,7 +265,9 @@ function generateSuitesWidget(suitesData) {
           .replace(")", "")}</span>
         <span class="status-indicator ${suite.status}"></span>
       </div>
-      <h3>${suite.name.split(" (")[0]}</h3>
+      <span class="browser-name">${suite.name
+        .split(" (")[1]
+        .replace(")", "")}</span>
       
       <div class="test-visualization">
         <div class="test-dots">
@@ -288,10 +290,18 @@ function generateSuitesWidget(suitesData) {
     .suites-widget {
       background: white;
       border-radius: 16px;
-      padding: 24px;
+      padding: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       font-family: 'Segoe UI', Roboto, sans-serif;
+      height: 100%;
     }
+    span.browser-name {
+      background-color: #265685;
+      font-size: 0.875rem;
+      color: #fff;
+      padding: 3px;
+      border-radius: 4px;
+    }  
 
     .suites-header {
       display: flex;
@@ -322,7 +332,7 @@ function generateSuitesWidget(suitesData) {
     }
 
     .suite-card {
-      background: white;
+      background: #e6e6e6;
       border-radius: 12px;
       padding: 18px;
       border: 1px solid #f1f5f9;
@@ -357,7 +367,7 @@ function generateSuitesWidget(suitesData) {
     }
 
     .status-indicator.passed {
-      background: #10b981;
+      background: #2a9c68;
       box-shadow: 0 0 0 3px #ecfdf5;
     }
 
@@ -400,15 +410,15 @@ function generateSuitesWidget(suitesData) {
     }
 
     .test-dot.passed {
-      background: #a7f3d0;
+      background: #2a9c68;
     }
 
     .test-dot.failed {
-      background: #fecaca;
+      background: #ef4444;
     }
 
     .test-dot.skipped {
-      background: #fde68a;
+      background: #f59e0b;
     }
 
     .test-count {
@@ -541,7 +551,7 @@ function generateHTML(reportData) {
         }" data-browser="${browser}" data-tags="${(test.tags || []).join(",")}">
           <div class="suite-header" onclick="toggleTestDetails(this)">
             <div>
-              <span class="status-badge ${getStatusClass(
+              <span class="${getStatusClass(
                 test.status
               )}">${test.status.toUpperCase()}</span>
               <span class="test-name">${sanitizeHTML(testName)}</span>
@@ -649,7 +659,7 @@ function generateHTML(reportData) {
         }
         
         .container {
-          max-width: 1200px;
+          width: 100%;
           margin: 20px auto;
           padding: 20px;
           background-color: #fff;
@@ -931,16 +941,25 @@ function generateHTML(reportData) {
           text-transform: uppercase;
         }
 
-        span.status-badge .status-passed  {
+        span.status-passed  {
           background-color: #4CAF50 !important; /* Bright green */
+          color: white;
+          border-radius: 4px;
+          padding: 4px
         }
 
-        span.status-badge .status-failed {
+        span.status-failed {
           background-color: #F44336 !important; /* Bright red */
+          color: white;
+          border-radius: 4px;
+          padding: 4px
         }
 
-        span.status-badge .status-skipped {
+        span.status-skipped {
           background-color: #FFC107 !important; /* Deep yellow */
+          color: white;
+          border-radius: 4px;
+          padding: 4px
         }
 
         /* Enhanced Pie Chart Styles */
@@ -991,21 +1010,175 @@ function generateHTML(reportData) {
         .legend-value {
           font-weight: 500;
         }
-        
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-          .dashboard-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .pie-chart-container {
-            grid-column: span 1;
-          }
-          
-          .filters {
-            flex-direction: column;
-          }
+        .test-name {
+          font-weight: 600;
         }
+        /* Responsive Styles */
+        /* Mobile (up to 480px) and Tablet (481px to 768px) Responsive Styles */
+        @media (max-width: 768px) {
+        /* Base container adjustments */
+        .container {
+          padding: 15px;
+          margin: 10px auto;
+        }
+  
+        /* Header adjustments */
+        .header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 15px;
+          padding-bottom: 15px;
+        }
+  
+        .run-info {
+          font-size: 13px;
+        }
+  
+        /* Tab adjustments */
+        .tabs {
+          overflow-x: auto;
+          white-space: nowrap;
+          padding-bottom: 5px;
+        }
+  
+        .tab-button {
+          padding: 8px 15px;
+          font-size: 14px;
+        }
+  
+        /* Dashboard Grid adjustments */
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+  
+        .summary-card {
+          padding: 15px;
+        }
+  
+        .summary-card .value {
+          font-size: 24px;
+        }
+  
+        .pie-chart-container {
+          padding: 15px;
+        }
+  
+        .pie-chart-container svg {
+          width: 300px;
+          height: 300px;
+        }
+  
+        /* Test Suites Widget adjustments */
+        .suites-widget {
+          padding: 8px;
+        }
+  
+        .suites-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+  
+        .suites-grid {
+          grid-template-columns: 1fr;
+        }
+  
+        /* Test Run Summary adjustments */
+        .filters {
+          flex-direction: column;
+          gap: 8px;
+        }
+  
+        .filters input,
+        .filters select {
+          width: 100%;
+          padding: 8px;
+        }
+  
+        .filters button {
+          width: 100%;
+          margin-top: 5px;
+        }
+  
+        .test-suite {
+          margin-bottom: 10px;
+        }
+  
+        .suite-header {
+          padding: 10px;
+          flex-wrap: wrap;
+        }
+  
+        .test-name {
+          display: block;
+          width: 100%;
+          margin-top: 5px;
+          font-weight: 600;
+        }
+  
+        .test-meta {
+          margin-top: 5px;
+        }
+  
+        .suite-content {
+          padding: 10px;
+        }
+  
+        .steps-list {
+          margin: 10px 0;
+        }
+  
+        .step-header {
+          padding: 6px;
+        }
+  
+        .step-icon {
+          font-size: 14px;
+        }
+  
+        .step-title {
+          font-size: 14px;
+        }
+  
+        .step-duration {
+          font-size: 11px;
+        }
+  
+        .attachments-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+  
+      /* Specific adjustments for mobile only (up to 480px) */
+      @media (max-width: 480px) {
+        .header h1 {
+          font-size: 20px;
+        }
+    
+        .summary-card .value {
+          font-size: 22px;
+        }
+        .pie-chart-container {
+          grid-column: span 1;
+        }
+        .pie-chart-container svg {
+          width: 300px;
+          height: 300px;
+        }
+    
+        .attachments-grid {
+          grid-template-columns: 1fr;
+        }
+    
+        .step-item {
+          padding-left: 0 !important;
+        }
+    
+        .nested-steps {
+          padding-left: 10px;
+        }
+      }
+    }
     </style>
 </head>
 <body>
