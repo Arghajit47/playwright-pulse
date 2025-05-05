@@ -219,18 +219,18 @@ function generatePieChartD3(data, width = 300, height = 300) {
 // Process the JSON data to extract suites information
 function getSuitesData(results) {
   const suitesMap = new Map();
-  
-  results.forEach(test => {
-    const browser = test.name.split(' > ')[1]; // Extract browser (chromium/firefox/webkit)
+
+  results.forEach((test) => {
+    const browser = test.name.split(" > ")[1]; // Extract browser (chromium/firefox/webkit)
     const suiteName = test.suiteName;
     const key = `${suiteName}|${browser}`;
-    
+
     if (!suitesMap.has(key)) {
       suitesMap.set(key, {
         id: test.id,
         name: `${suiteName} (${browser})`,
         status: test.status,
-        count: 0
+        count: 0,
       });
     }
     suitesMap.get(key).count++;
@@ -659,7 +659,6 @@ function generateHTML(reportData) {
         }
         
         .container {
-          width: 100%;
           margin: 20px auto;
           padding: 20px;
           background-color: #fff;
