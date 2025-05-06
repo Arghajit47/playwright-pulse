@@ -263,23 +263,13 @@ function generateSuitesWidget(suitesData) {
           .split("(")
           .pop()
           .replace(")", "")}</span>
-        <span class="status-indicator ${suite.status}"></span>
+          <span class="test-count">${suite.count} test${
+          suite.count !== 1 ? "s" : ""
+        }</span>
       </div>
       <span class="browser-name">${suite.name
         .split(" (")[1]
         .replace(")", "")}</span>
-      
-      <div class="test-visualization">
-        <div class="test-dots">
-          ${Array(suite.count)
-            .fill()
-            .map(() => `<div class="test-dot ${suite.status}"></div>`)
-            .join("")}
-        </div>
-        <span class="test-count">${suite.count} test${
-          suite.count !== 1 ? "s" : ""
-        }</span>
-      </div>
     </div>
     `
       )
