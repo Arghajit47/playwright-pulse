@@ -288,7 +288,7 @@ function generateSuitesWidget(suitesData) {
 
   <style>
     .suites-widget {
-      background: white;
+      background: linear-gradient(to bottom right, #f0f4ff, #ffffff);
       border-radius: 16px;
       padding: 10px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
@@ -397,6 +397,7 @@ function generateSuitesWidget(suitesData) {
     }
 
     .test-dots {
+      padding: 4px;
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -733,16 +734,16 @@ function generateHTML(reportData) {
           display: block;
         }
         
-        /* Dashboard Styles */
-        .dashboard-grid {
+        /* Main dashboard grid layout */
+          .dashboard-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          grid-template-columns: 1fr;
           gap: 20px;
-          margin-bottom: 30px;
+          padding: 16px 0;
         }
         
         .summary-card {
-          background: #fff;
+          background: linear-gradient(to bottom right, #f0f4ff, #ffffff);
           border-radius: 8px;
           padding: 20px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -775,7 +776,7 @@ function generateHTML(reportData) {
         
         .pie-chart-container {
           grid-column: span 2;
-          background: #fff;
+          background: linear-gradient(to bottom right, #f0f4ff, #ffffff);
           border-radius: 8px;
           padding: 20px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.05);
@@ -1012,8 +1013,31 @@ function generateHTML(reportData) {
         .test-name {
           font-weight: 600;
         }
+
+        /* Below summary cards: chart and test suites */
+        .dashboard-bottom {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
         /* Responsive Styles */
         /* Mobile (up to 480px) and Tablet (481px to 768px) Responsive Styles */
+
+        @media (min-width: 768px) {
+          .dashboard-grid {
+            grid-template-columns: repeat(4, 1fr); /* Four summary cards side-by-side */
+          }
+          .dashboard-bottom {
+            flex-direction: row;
+          }
+          .test-distribution {
+            flex: 1;
+          }
+          .test-suites {
+            flex: 2; /* dynamically expand */
+            min-width: 300px;
+          }
+        }
         @media (max-width: 768px) {
         /* Base container adjustments */
         .container {
@@ -1225,12 +1249,27 @@ function generateHTML(reportData) {
                     <div class="value">${runSummary.skipped}</div>
                     <div class="trend">${skipPercentage}%</div>
                 </div>
+              </div>
+                <div class="dashboard-bottom">
                     ${generatePieChartD3([
                       { label: "Passed", value: runSummary.passed },
                       { label: "Failed", value: runSummary.failed },
                       { label: "Skipped", value: runSummary.skipped },
                     ])}
                     ${generateSuitesWidget(suitesData)}
+                    <div class="summary-cards">
+                      <div class="summary-card avg-time">
+                        <h3>Avg. Time</h3>
+                        <div class="value">${avgTestDuration}</div>
+                      </div>
+                      <div class="summary-card avg-time">
+                        <h3>Total Time</h3>
+                        <div class="value">${formatDuration(
+                          runSummary.duration
+                        )}</div>
+                      </div>
+                    </div>
+                </div>
             </div>
         </div>
         
