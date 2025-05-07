@@ -72,7 +72,10 @@ class PlaywrightPulseReporter {
         this.baseOutputFile = (_a = options.outputFile) !== null && _a !== void 0 ? _a : this.baseOutputFile;
         // Determine outputDir relative to config file or rootDir
         // The actual resolution happens in onBegin where config is available
-        this.outputDir = (_b = options.outputDir) !== null && _b !== void 0 ? _b : "pulse-report-output";
+        this.outputDir =
+          (_b = options.outputDir) !== null && _b !== void 0
+            ? _b
+            : "pulse-report";
         this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
         // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
     }
@@ -90,7 +93,12 @@ class PlaywrightPulseReporter {
         const configFileDir = this.config.configFile
             ? path.dirname(this.config.configFile)
             : configDir;
-        this.outputDir = path.resolve(configFileDir, (_a = this.options.outputDir) !== null && _a !== void 0 ? _a : "pulse-report-output");
+        this.outputDir = path.resolve(
+          configFileDir,
+          (_a = this.options.outputDir) !== null && _a !== void 0
+            ? _a
+            : "pulse-report"
+        );
         // Resolve attachmentsDir relative to the final outputDir
         this.attachmentsDir = path.resolve(this.outputDir, ATTACHMENTS_SUBDIR);
         // Update options with the resolved absolute path for internal use

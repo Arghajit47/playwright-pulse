@@ -60,7 +60,7 @@ export class PlaywrightPulseReporter implements Reporter {
   private runStartTime!: number;
   private options: PlaywrightPulseReporterOptions; // Store reporter options
   private outputDir: string; // Resolved final output directory for the report
-  private attachmentsDir: string; // Base directory for attachments (e.g., pulse-report-output/attachments)
+  private attachmentsDir: string; // Base directory for attachments (e.g., pulse-report/attachments)
   private baseOutputFile: string = "playwright-pulse-report.json";
   private isSharded: boolean = false;
   private shardIndex: number | undefined = undefined;
@@ -70,7 +70,7 @@ export class PlaywrightPulseReporter implements Reporter {
     this.baseOutputFile = options.outputFile ?? this.baseOutputFile;
     // Determine outputDir relative to config file or rootDir
     // The actual resolution happens in onBegin where config is available
-    this.outputDir = options.outputDir ?? "pulse-report-output";
+    this.outputDir = options.outputDir ?? "pulse-report";
     this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
     // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
   }
@@ -92,7 +92,7 @@ export class PlaywrightPulseReporter implements Reporter {
       : configDir;
     this.outputDir = path.resolve(
       configFileDir,
-      this.options.outputDir ?? "pulse-report-output"
+      this.options.outputDir ?? "pulse-report"
     );
     // Resolve attachmentsDir relative to the final outputDir
     this.attachmentsDir = path.resolve(this.outputDir, ATTACHMENTS_SUBDIR);
@@ -184,7 +184,6 @@ export class PlaywrightPulseReporter implements Reporter {
       steps: [], // Will be populated recursively
     };
   }
-  
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const testStatus = convertStatus(result.status, test);
@@ -273,7 +272,6 @@ export class PlaywrightPulseReporter implements Reporter {
 
     this.results.push(pulseResult);
   }
-  
 
   onError(error: any): void {
     console.error(

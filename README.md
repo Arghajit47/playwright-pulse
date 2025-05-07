@@ -3,14 +3,25 @@
 
 This project provides both a custom Playwright reporter and a Next.js web dashboard to visualize your Playwright test results, now with support for **Playwright sharding** and an option for a **standalone HTML report**.
 
+## Screenshots
+
+### Desktop View [Click on Images to View full Image]
+<a href="https://postimg.cc/180cym6c" target="_blank"><img src="https://i.postimg.cc/180cym6c/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png" alt="Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html"/></a><br/><br/>
+<a href="https://postimg.cc/V5TFRHmM" target="_blank"><img src="https://i.postimg.cc/V5TFRHmM/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png" alt="Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1"/></a><br/><br/>
+<a href="https://postimg.cc/XXTwFGkk" target="_blank"><img src="https://i.postimg.cc/XXTwFGkk/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png" alt="Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2"/></a><br/><br/>
+
+### Mobile View [Click on Images to View full Image]
+<a href="https://postimg.cc/CzJBLR5N" target="_blank"><img src="https://i.postimg.cc/CzJBLR5N/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max.png" alt="127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max"/></a><br/><br/>
+<a href="https://postimg.cc/G8YTczT8" target="_blank"><img src="https://i.postimg.cc/G8YTczT8/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1.png" alt="127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1"/></a><br/><br/>
+
 ## How it Works
 
 1.  **Reporter (`playwright-pulse-reporter.ts`):**
     *   A custom reporter that collects detailed results during your Playwright test run.
     *   **Sharding Support:** If tests are sharded, each shard process writes its results to a temporary file (`.pulse-shard-results-*.json`) in the specified output directory. The main reporter process then merges these files upon completion.
-2.  **JSON Output:** On completion (`onEnd`), the reporter writes all collected (and potentially merged) data into a single `playwright-pulse-report.json` file in your project's specified output directory (defaults to `pulse-report-output` in the project root).
+2.  **JSON Output:** On completion (`onEnd`), the reporter writes all collected (and potentially merged) data into a single `playwright-pulse-report.json` file in your project's specified output directory (defaults to `pulse-report` in the project root).
 3.  **Next.js Dashboard (Option 2 - Interactive):** A web application built with Next.js that reads the final `playwright-pulse-report.json` file from the *dashboard project's root* and presents the test results in a dynamic, interactive dashboard interface.
-4.  **Standalone HTML Report (Option 1 - Static):** A script (`generate-static-report.mjs`) that reads the `playwright-pulse-report.json` from the *Playwright project's output directory* (e.g., `pulse-report-output`) and generates a single, self-contained `playwright-pulse-static-report.html` file in the *same directory*. This static report mimics the key information and layout of the dashboard, including:
+4.  **Standalone HTML Report (Option 1 - Static):** A script (`generate-static-report.mjs`) that reads the `playwright-pulse-report.json` from the *Playwright project's output directory* (e.g., `pulse-report`) and generates a single, self-contained `playwright-pulse-static-report.html` file in the *same directory*. This static report mimics the key information and layout of the dashboard, including:
     *   Run summary metrics (Total, Passed, Failed, Skipped, Duration).
     *   Filtering controls for test results.
     *   List of individual test results with status, duration, name, suite, and errors.
@@ -42,7 +53,7 @@ import { defineConfig, devices } from '@playwright/test';
 import * as path from 'path';
 
 // Define where the final report JSON and HTML should go
-const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report-output'); // Example: a directory in your project root
+const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report'); // Example: a directory in your project root
 
 export default defineConfig({
   // ... other configurations like projects, testDir, etc.
@@ -77,7 +88,7 @@ export default defineConfig({
 **Explanation:**
 
 *   `outputDir` in the main `defineConfig`: This is where Playwright stores its own artifacts like traces and screenshots.
-*   `outputDir` inside the `@arghajit/playwright-pulse-reporter` options: This tells *our reporter* where to save the final `playwright-pulse-report.json`. Using a dedicated directory like `pulse-report-output` is **required** for the reporter and static report generation to work correctly.
+*   `outputDir` inside the `@arghajit/playwright-pulse-reporter` options: This tells *our reporter* where to save the final `playwright-pulse-report.json`. Using a dedicated directory like `pulse-report` is **required** for the reporter and static report generation to work correctly.
 
 ### 3. Run Your Tests
 
@@ -89,7 +100,7 @@ npx playwright test
 # npx playwright test --project=chromium --shard=1/3
 ```
 
-The `@arghajit/playwright-pulse-reporter` will automatically handle sharding if Playwright is configured to use it. Upon completion, the final `playwright-pulse-report.json` will be generated in the directory you specified (e.g., `pulse-report-output`).
+The `@arghajit/playwright-pulse-reporter` will automatically handle sharding if Playwright is configured to use it. Upon completion, the final `playwright-pulse-report.json` will be generated in the directory you specified (e.g., `pulse-report`).
 
 ### 4. Generate the Static HTML Report (Option 1)
 
@@ -100,8 +111,8 @@ After your tests run and `playwright-pulse-report.json` is created, you can gene
     ```bash
     npx generate-pulse-report
     ```
-    This command executes the `scripts/generate-static-report.mjs` script included in the `@arghajit/playwright-pulse-reporter` package. It reads the `pulse-report-output/playwright-pulse-report.json` file (relative to your current directory) and creates `pulse-report-output/playwright-pulse-static-report.html`.
-3.  **Open the HTML file:** Open the generated `pulse-report-output/playwright-pulse-static-report.html` in your browser.
+    This command executes the `scripts/generate-static-report.mjs` script included in the `@arghajit/playwright-pulse-reporter` package. It reads the `pulse-report/playwright-pulse-report.json` file (relative to your current directory) and creates `pulse-report/playwright-pulse-static-report.html`.
+3.  **Open the HTML file:** Open the generated `pulse-report/playwright-pulse-static-report.html` in your browser.
 
 This HTML file is self-contained and provides a detailed, interactive dashboard-like overview suitable for sharing or archiving.
 
@@ -118,10 +129,10 @@ This HTML file is self-contained and provides a detailed, interactive dashboard-
     npm install
     # or yarn install or pnpm install
     ```
-3.  **Copy the Report File:** Copy the `playwright-pulse-report.json` file generated by your tests (e.g., from your main project's `pulse-report-output` directory) into the **root directory** of *this dashboard project*.
+3.  **Copy the Report File:** Copy the `playwright-pulse-report.json` file generated by your tests (e.g., from your main project's `pulse-report` directory) into the **root directory** of *this dashboard project*.
     ```bash
     # Example: Copying from your main project to the dashboard project directory
-    cp ../my-playwright-project/pulse-report-output/playwright-pulse-report.json ./
+    cp ../my-playwright-project/pulse-report/playwright-pulse-report.json ./
     ```
     **Tip for Development:** You can also use the `sample-report.json` file included in this project for development:
     ```bash
@@ -169,9 +180,9 @@ To work on the reporter or the dashboard itself:
     ```
 5.  **Test static report generation:**
     ```bash
-    # 1. Ensure playwright-pulse-report.json exists in pulse-report-output
-    mkdir -p pulse-report-output
-    cp sample-report.json pulse-report-output/playwright-pulse-report.json
+    # 1. Ensure playwright-pulse-report.json exists in pulse-report
+    mkdir -p pulse-report
+    cp sample-report.json pulse-report/playwright-pulse-report.json
     # 2. Run the generation script directly using node (or via the bin command)
     node ./scripts/generate-static-report.mjs
     # or
@@ -186,7 +197,93 @@ To work on the reporter or the dashboard itself:
 *   `src/lib/data-reader.ts`: Server-side logic for reading the JSON report file (used by Next.js dashboard).
 *   `src/lib/data.ts`: Data fetching functions used by the Next.js dashboard components.
 *   `src/app/`: Contains the Next.js dashboard pages and components.
-*   `pulse-report-output/playwright-pulse-report.json`: (Generated by the reporter in the *user's project*) The primary data source.
-*   `pulse-report-output/playwright-pulse-static-report.html`: (Generated by the script in the *user's project*) The standalone HTML report.
+*   `pulse-report/playwright-pulse-report.json`: (Generated by the reporter in the *user's project*) The primary data source.
+*   `pulse-report/playwright-pulse-static-report.html`: (Generated by the script in the *user's project*) The standalone HTML report.
 *   `playwright-pulse-report.json`: (Manually copied to the *dashboard project root*) Used by the Next.js dashboard.
 *   `sample-report.json`: (Included in this project) Dummy data for development/testing visualization.
+
+
+## 📦 CI/CD: Playwright Pulse Report
+
+*   This project supports Playwright test execution with Pulse Reporting in GitHub Actions. Here's how Pulse reports are managed:
+
+```
+# Upload Pulse report from each shard (per matrix.config.type)
+- name: Upload Pulse Report results
+  if: success() || failure()
+  uses: actions/upload-artifact@v4
+  with:
+    name: pulse-report
+    path: pulse-report/
+
+# Download all pulse-report-* artifacts after all shards complete
+- name: Download Pulse Report artifacts
+  uses: actions/download-artifact@v4
+  with:
+    pattern: pulse-report
+    path: downloaded-artifacts
+
+# Merge all sharded JSON reports into one final output
+- name: Generate Pulse Report
+  run: |
+    npm run script merge-report
+    npm run script generate-report
+
+# Upload final merged report as CI artifact
+- name: Upload Pulse report
+  uses: actions/upload-artifact@v4
+  with:
+    name: pulse-report
+    path: pulse-report/
+```
+
+## 📦 CI/CD: Playwright Pulse Report (with Sharding Support)
+
+*   This project supports sharded Playwright test execution with Pulse Reporting in GitHub Actions. Here's how Pulse reports are managed across shards:
+
+```
+# Upload Pulse report from each shard (per matrix.config.type)
+- name: Upload Pulse Report results
+  if: success() || failure()
+  uses: actions/upload-artifact@v4
+  with:
+    name: pulse-report-${{ matrix.config.type }}
+    path: pulse-report/
+
+# Download all pulse-report-* artifacts after all shards complete
+- name: Download Pulse Report artifacts
+  uses: actions/download-artifact@v4
+  with:
+    pattern: pulse-report-*
+    path: downloaded-artifacts
+
+# Organize reports into a single folder and rename for merging
+- name: Organize Pulse Report
+  run: |
+    mkdir -p pulse-report
+    for dir in downloaded-artifacts/pulse-report-*; do
+      config_type=$(basename "$dir" | sed 's/pulse-report-//')
+      cp -r "$dir/attachments" "pulse-report/attachments"
+      cp "$dir/playwright-pulse-report.json" "pulse-report/playwright-pulse-report-${config_type}.json"
+    done
+
+# Merge all sharded JSON reports into one final output
+- name: Generate Pulse Report
+  run: |
+    npm run script merge-report
+    npm run script generate-report
+
+# Upload final merged report as CI artifact
+- name: Upload Pulse report
+  uses: actions/upload-artifact@v4
+  with:
+    name: pulse-report
+    path: pulse-report/
+```
+##  🧠 Notes:
+
+*   Each shard generates its own playwright-pulse-report.json inside pulse-report/.
+*   Artifacts are named using the shard type (matrix.config.type).
+*   After the test matrix completes, reports are downloaded, renamed, and merged.
+*   merge-report is a custom Node.js script that combines all JSON files into one.
+*   generate-report can build a static HTML dashboard if needed.

@@ -76,33 +76,51 @@ class PlaywrightPulseReporter {
         return this.shardIndex === undefined || this.shardIndex === 0;
     }
     onBegin(config, suite) {
-        this.config = config;
-        this.suite = suite;
-        this.runStartTime = Date.now();
-        // Determine sharding configuration
-        const totalShards = parseInt(process.env.PLAYWRIGHT_SHARD_TOTAL || "1", 10);
-        this.isSharded = totalShards > 1;
-        if (process.env.PLAYWRIGHT_SHARD_INDEX !== undefined) {
-            this.shardIndex = parseInt(process.env.PLAYWRIGHT_SHARD_INDEX, 10);
-        }
-        // Resolve outputDir relative to playwright config directory if possible, otherwise use cwd
-        // This needs the config object, so it's done in onBegin
-        const configDir = this.config.rootDir; // Playwright config directory
-        // Use outputDir from options if provided and resolve it relative to configDir, otherwise default
-        this.outputDir = this.outputDir
-            ? path.resolve(configDir, this.outputDir)
-            : path.resolve(configDir, "pulse-report-output"); // Default to 'pulse-report-output' relative to config
-        console.log(`PlaywrightPulseReporter: Final Output dir resolved to ${this.outputDir}`);
-        if (this.shardIndex === undefined) {
-            // Main process
-            console.log(`PlaywrightPulseReporter: Starting test run with ${suite.allTests().length} tests${this.isSharded ? ` across ${totalShards} shards` : ""}. Outputting to ${this.outputDir}`);
-            // Clean up any leftover temp files from previous runs in the main process
-            this._cleanupTemporaryFiles().catch((err) => console.error("Pulse Reporter: Error cleaning up temp files:", err));
-        }
-        else {
-            // Shard process
-            console.log(`PlaywrightPulseReporter: Shard ${this.shardIndex + 1}/${totalShards} starting. Outputting temp results to ${this.outputDir}`);
-        }
+      this.config = config;
+      this.suite = suite;
+      this.runStartTime = Date.now();
+      // Determine sharding configuration
+      const totalShards = parseInt(
+        process.env.PLAYWRIGHT_SHARD_TOTAL || "1",
+        10
+      );
+      this.isSharded = totalShards > 1;
+      if (process.env.PLAYWRIGHT_SHARD_INDEX !== undefined) {
+        this.shardIndex = parseInt(process.env.PLAYWRIGHT_SHARD_INDEX, 10);
+      }
+      // Resolve outputDir relative to playwright config directory if possible, otherwise use cwd
+      // This needs the config object, so it's done in onBegin
+      const configDir = this.config.rootDir; // Playwright config directory
+      // Use outputDir from options if provided and resolve it relative to configDir, otherwise default
+      this.outputDir = this.outputDir
+        ? path.resolve(configDir, this.outputDir)
+        : path.resolve(configDir, "pulse-report"); // Default to 'pulse-report' relative to config
+      console.log(
+        `PlaywrightPulseReporter: Final Output dir resolved to ${this.outputDir}`
+      );
+      if (this.shardIndex === undefined) {
+        // Main process
+        console.log(
+          `PlaywrightPulseReporter: Starting test run with ${
+            suite.allTests().length
+          } tests${
+            this.isSharded ? ` across ${totalShards} shards` : ""
+          }. Outputting to ${this.outputDir}`
+        );
+        // Clean up any leftover temp files from previous runs in the main process
+        this._cleanupTemporaryFiles().catch((err) =>
+          console.error("Pulse Reporter: Error cleaning up temp files:", err)
+        );
+      } else {
+        // Shard process
+        console.log(
+          `PlaywrightPulseReporter: Shard ${
+            this.shardIndex + 1
+          }/${totalShards} starting. Outputting temp results to ${
+            this.outputDir
+          }`
+        );
+      }
     }
     onTestBegin(test) {
         // Optional: Log test start (maybe only in main process or first shard?)

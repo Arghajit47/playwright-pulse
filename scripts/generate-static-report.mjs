@@ -21,7 +21,7 @@ try {
 }
 
 // Default configuration
-const DEFAULT_OUTPUT_DIR = "pulse-report-output";
+const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
 
@@ -267,9 +267,6 @@ function generateSuitesWidget(suitesData) {
           suite.count !== 1 ? "s" : ""
         }</span>
       </div>
-      <span class="browser-name">${suite.name
-        .split(" (")[1]
-        .replace(")", "")}</span>
     </div>
     `
       )
