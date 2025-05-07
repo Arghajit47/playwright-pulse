@@ -45,11 +45,11 @@ const ATTACHMENTS_SUBDIR = "attachments"; // Consistent subdirectory name
  * @param config The reporter configuration options.
  */
 function attachFiles(testId, pwResult, pulseResult, config) {
-    const baseReportDir = config.outputDir || "pulse-report-output"; // Base output directory
+    const baseReportDir = config.outputDir || "pulse-report"; // Base output directory
     // Ensure attachments are relative to the main outputDir
     const attachmentsBaseDir = path.resolve(baseReportDir, ATTACHMENTS_SUBDIR); // Absolute path for FS operations
     const attachmentsSubFolder = testId.replace(/[^a-zA-Z0-9_-]/g, "_"); // Sanitize testId for folder name
-    const testAttachmentsDir = path.join(attachmentsBaseDir, attachmentsSubFolder); // e.g., pulse-report-output/attachments/test_id_abc
+    const testAttachmentsDir = path.join(attachmentsBaseDir, attachmentsSubFolder); // e.g., pulse-report/attachments/test_id_abc
     try {
         if (!fs.existsSync(testAttachmentsDir)) {
             fs.mkdirSync(testAttachmentsDir, { recursive: true });

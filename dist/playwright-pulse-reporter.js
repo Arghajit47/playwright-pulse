@@ -75,8 +75,8 @@ class PlaywrightPulseReporter {
         }
         const configDir = this.config.rootDir;
         this.outputDir = this.outputDir
-            ? path.resolve(configDir, this.outputDir)
-            : path.resolve(configDir, "pulse-report-output");
+          ? path.resolve(configDir, this.outputDir)
+          : path.resolve(configDir, "pulse-report");
         console.log(`PlaywrightPulseReporter: Final Output dir resolved to ${this.outputDir}`);
         if (this.shardIndex === undefined) {
             // Main process
