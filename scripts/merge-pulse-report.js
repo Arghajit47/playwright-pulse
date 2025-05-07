@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const REPORT_DIR = "."; // Or change this to your reports directory
+const REPORT_DIR = "./pulse-report-output"; // Or change this to your reports directory
 const OUTPUT_FILE = "playwright-pulse-report.json";
 
 function getReportFiles(dir) {
