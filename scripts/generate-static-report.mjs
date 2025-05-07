@@ -267,9 +267,6 @@ function generateSuitesWidget(suitesData) {
           suite.count !== 1 ? "s" : ""
         }</span>
       </div>
-      <span class="browser-name">${suite.name
-        .split(" (")[1]
-        .replace(")", "")}</span>
     </div>
     `
       )
