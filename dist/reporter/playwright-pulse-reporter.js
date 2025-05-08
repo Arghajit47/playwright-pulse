@@ -142,23 +142,27 @@ class PlaywrightPulseReporter {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
         }
         return {
-            id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
-            title: step.title,
-            status: stepStatus,
-            duration: duration,
-            startTime: startTime,
-            endTime: endTime,
-            browser: browserName,
-            errorMessage: errorMessage,
-            stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
-            codeLocation: codeLocation || undefined,
-            isHook: step.category === "hook",
-            hookType: step.category === "hook"
-                ? step.title.toLowerCase().includes("before")
-                    ? "before"
-                    : "after"
-                : undefined,
-            steps: [], // Will be populated recursively
+          id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0,
+          crypto_1.randomUUID)()}--581d5ad8-ce75-4ca5-94a6-ed29c466c815`,
+          title: step.title,
+          status: stepStatus,
+          duration: duration,
+          startTime: startTime,
+          endTime: endTime,
+          browser: browserName,
+          errorMessage: errorMessage,
+          stackTrace:
+            ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) ||
+            undefined,
+          codeLocation: codeLocation || undefined,
+          isHook: step.category === "hook",
+          hookType:
+            step.category === "hook"
+              ? step.title.toLowerCase().includes("before")
+                ? "before"
+                : "after"
+              : undefined,
+          steps: [], // Will be populated recursively
         };
     }
     async onTestEnd(test, result) {

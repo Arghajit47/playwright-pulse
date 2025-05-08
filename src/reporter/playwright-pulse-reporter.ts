@@ -166,7 +166,7 @@ export class PlaywrightPulseReporter implements Reporter {
     }
 
     return {
-      id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}`,
+      id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`,
       title: step.title,
       status: stepStatus,
       duration: duration,

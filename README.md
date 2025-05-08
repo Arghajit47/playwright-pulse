@@ -6,13 +6,20 @@ This project provides both a custom Playwright reporter and a Next.js web dashbo
 ## Screenshots
 
 ### Desktop View [Click on Images to View full Image]
-<a href="https://postimg.cc/180cym6c" target="_blank"><img src="https://i.postimg.cc/180cym6c/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png" alt="Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html"/></a><br/><br/>
-<a href="https://postimg.cc/V5TFRHmM" target="_blank"><img src="https://i.postimg.cc/V5TFRHmM/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png" alt="Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1"/></a><br/><br/>
-<a href="https://postimg.cc/XXTwFGkk" target="_blank"><img src="https://i.postimg.cc/XXTwFGkk/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png" alt="Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2"/></a><br/><br/>
+
+[![Screenshot 1](https://i.postimg.cc/180cym6c/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png)](https://postimg.cc/180cym6c)
+
+[![Screenshot 2](https://i.postimg.cc/V5TFRHmM/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png)](https://postimg.cc/V5TFRHmM)
+
+[![Screenshot 3](https://i.postimg.cc/XXTwFGkk/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png)](https://postimg.cc/XXTwFGkk)
+
 
 ### Mobile View [Click on Images to View full Image]
-<a href="https://postimg.cc/CzJBLR5N" target="_blank"><img src="https://i.postimg.cc/CzJBLR5N/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max.png" alt="127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max"/></a><br/><br/>
-<a href="https://postimg.cc/G8YTczT8" target="_blank"><img src="https://i.postimg.cc/G8YTczT8/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1.png" alt="127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1"/></a><br/><br/>
+
+[![iPhone Preview 1](https://i.postimg.cc/CzJBLR5N/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max.png)](https://postimg.cc/CzJBLR5N)
+
+[![iPhone Preview 2](https://i.postimg.cc/G8YTczT8/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1.png)](https://postimg.cc/G8YTczT8)
+
 
 ## How it Works
 
@@ -289,7 +296,24 @@ To work on the reporter or the dashboard itself:
 *   merge-report is a custom Node.js script that combines all JSON files into one.
 *   generate-report can build a static HTML dashboard if needed.
 
+## Email Report:
+
+- To use the Emailable report option, user should use .env file by installing "dotenv" package into their repository:
+
+✅  Create a .env file in the root of your project:
+```bash
+SENDER_EMAIL_1=recipient1@example.com
+SENDER_EMAIL_2=recipient2@example.com
+SENDER_EMAIL_3=recipient3@example.com
+SENDER_EMAIL_4=recipient4@example.com
+SENDER_EMAIL_5=recipient5@example.com
+```
+Pulse Report by default supports 5 mail recipients, and by running the command `npx send-email` user can send an overall test report with the actual test report html file attached to it. The Final email report will look something like below screenshot:
+
+[![Screenshot-2025-05-09-at-2-31-15-AM.png](https://i.postimg.cc/X7W1VWqr/Screenshot-2025-05-09-at-2-31-15-AM.png)](https://postimg.cc/DmCPgtqh)
+
 ## Fixes:
 
 ### -   "0.1.1" : Added Sharding Support
 ### -  "0.1.2" : Fixed browser filter and Added Browser Tag in Test Suite Card
+### -  "0.1.3" : Added Emailable report option
