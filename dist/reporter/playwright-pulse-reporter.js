@@ -142,7 +142,7 @@ class PlaywrightPulseReporter {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
         }
         return {
-            id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
+            id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`,
             title: step.title,
             status: stepStatus,
             duration: duration,

@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.13-beta.18-f",
+  "version": "0.2.13-beta.19-b",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -11,7 +11,10 @@
     "reporting",
     "nextjs",
     "playwright-pulse",
-    "report"
+    "report",
+    "email-report",
+    "send-report",
+    "email"
   ],
   "main": "dist/reporter/index.js",
   "types": "dist/reporter/index.d.ts",
@@ -22,7 +25,8 @@
   "license": "MIT",
   "bin": {
     "generate-pulse-report": "./scripts/generate-static-report.mjs",
-    "merge-pulse-report": "./scripts/merge-pulse-report.js"
+    "merge-pulse-report": "./scripts/merge-pulse-report.js",
+    "send-email": "./scripts/sendReport.js"
   },
   "exports": {
     ".": {
@@ -41,7 +45,9 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build:reporter",
-    "report:static": "node ./scripts/generate-static-report.mjs"
+    "report:static": "node ./scripts/generate-static-report.mjs",
+    "report:merge": "node ./scripts/merge-pulse-report.js",
+    "report:email": "node ./scripts/sendReport.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.6.2",
@@ -69,15 +75,18 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@tanstack-query-firebase/react": "^1.0.5",
     "@tanstack/react-query": "^5.66.0",
+    "archiver": "^7.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "d3": "^7.9.0",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.5.0",
     "firebase": "^11.3.0",
     "genkit": "^1.6.2",
     "jsdom": "^26.1.0",
     "lucide-react": "^0.475.0",
     "next": "15.2.3",
+    "nodemailer": "^7.0.3",
     "patch-package": "^8.0.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
