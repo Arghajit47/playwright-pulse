@@ -20,7 +20,10 @@ import("node-fetch")
 let projectName;
 
 function getUUID() {
-  const reportPath = path.join(`${reportDir}/playwright-pulse-report.json`);
+  const reportPath = path.join(
+    process.cwd(),
+    `${reportDir}/playwright-pulse-report.json`
+  );
   console.log("Report path:", reportPath);
 
   if (!fileSystem.existsSync(reportPath)) {
@@ -31,7 +34,6 @@ function getUUID() {
   const idString = content.run.id;
   const parts = idString.split("-");
   const uuid = parts.slice(-5).join("-");
-  console.log("UUID:", uuid);
   return uuid;
 }
 
@@ -49,7 +51,10 @@ const formatStartTime = (isoString) => {
 
 // Generate test-data from allure report
 const getPulseReportSummary = () => {
-  const reportPath = path.join(`${reportDir}/playwright-pulse-report.json`);
+  const reportPath = path.join(
+    process.cwd(),
+    `${reportDir}/playwright-pulse-report.json`
+  );
 
   if (!fileSystem.existsSync(reportPath)) {
     throw new Error("Pulse report file not found.");
