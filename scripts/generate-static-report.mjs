@@ -221,7 +221,7 @@ function getSuitesData(results) {
   const suitesMap = new Map();
 
   results.forEach((test) => {
-    const browser = test.name.split(" > ")[1]; // Extract browser (chromium/firefox/webkit)
+    const browser = test.browser; // Extract browser (chromium/firefox/webkit)
     const suiteName = test.suiteName;
     const key = `${suiteName}|${browser}`;
 
@@ -231,6 +231,7 @@ function getSuitesData(results) {
         name: `${suiteName} (${browser})`,
         status: test.status,
         count: 0,
+        browser: browser,
       });
     }
     suitesMap.get(key).count++;
@@ -267,6 +268,7 @@ function generateSuitesWidget(suitesData) {
           suite.count !== 1 ? "s" : ""
         }</span>
       </div>
+      <span class="browser-name">${suite.browser}</span>
     </div>
     `
       )
@@ -469,8 +471,7 @@ function generateHTML(reportData) {
 
     return results
       .map((test, index) => {
-        const browserMatch = test.name.match(/ > (\w+) > /);
-        const browser = browserMatch ? browserMatch[1] : "unknown";
+        const browser = test.browser || "unknown";
         const testName = test.name.split(" > ").pop() || test.name;
 
         // Generate steps HTML recursively
@@ -1272,12 +1273,7 @@ function generateHTML(reportData) {
                 <select id="filter-browser">
                     <option value="">All Browsers</option>
                     ${Array.from(
-                      new Set(
-                        results.map((test) => {
-                          const match = test.name.match(/ > (\w+) > /);
-                          return match ? match[1] : "unknown";
-                        })
-                      )
+                      new Set(results.map((test) => test.browser || "unknown"))
                     )
                       .map(
                         (browser) => `

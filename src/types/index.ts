@@ -9,6 +9,7 @@ export interface TestStep {
   duration: number; // in milliseconds
   startTime: Date;
   endTime: Date;
+  browser: string; // Browser name (e.g., "chromium", "firefox", "webkit")
   errorMessage?: string;
   stackTrace?: string;
   codeLocation?: string;
@@ -33,7 +34,7 @@ export interface TestResult {
   tags?: string[];
   suiteName?: string;
   runId: string; // Identifier for the test run this result belongs to
-
+  browser: string; // Browser name (e.g., "chromium", "firefox", "webkit")
   // New fields for refined attachment handling
   screenshots?: string[]; // Array of paths or base64 data URIs for screenshots
   videoPath?: string; // Relative path to the video file

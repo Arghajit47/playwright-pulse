@@ -72,10 +72,7 @@ class PlaywrightPulseReporter {
         this.baseOutputFile = (_a = options.outputFile) !== null && _a !== void 0 ? _a : this.baseOutputFile;
         // Determine outputDir relative to config file or rootDir
         // The actual resolution happens in onBegin where config is available
-        this.outputDir =
-          (_b = options.outputDir) !== null && _b !== void 0
-            ? _b
-            : "pulse-report";
+        this.outputDir = (_b = options.outputDir) !== null && _b !== void 0 ? _b : "pulse-report";
         this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
         // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
     }
@@ -93,12 +90,7 @@ class PlaywrightPulseReporter {
         const configFileDir = this.config.configFile
             ? path.dirname(this.config.configFile)
             : configDir;
-        this.outputDir = path.resolve(
-          configFileDir,
-          (_a = this.options.outputDir) !== null && _a !== void 0
-            ? _a
-            : "pulse-report"
-        );
+        this.outputDir = path.resolve(configFileDir, (_a = this.options.outputDir) !== null && _a !== void 0 ? _a : "pulse-report");
         // Resolve attachmentsDir relative to the final outputDir
         this.attachmentsDir = path.resolve(this.outputDir, ATTACHMENTS_SUBDIR);
         // Update options with the resolved absolute path for internal use
@@ -129,7 +121,7 @@ class PlaywrightPulseReporter {
         // Optional: Log test start if needed
         // console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId) {
+    async processStep(step, testId, browserName) {
         var _a, _b, _c, _d;
         // Determine actual step status (don't inherit from parent)
         let stepStatus = "passed";
@@ -156,6 +148,7 @@ class PlaywrightPulseReporter {
             duration: duration,
             startTime: startTime,
             endTime: endTime,
+            browser: browserName,
             errorMessage: errorMessage,
             stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
@@ -169,7 +162,10 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        // Get the most accurate browser name
+        const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
+        const browserName = ((_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) || "unknown";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -183,7 +179,7 @@ class PlaywrightPulseReporter {
         const processAllSteps = async (steps, parentTestStatus) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles);
+                const processedStep = await this.processStep(step, testIdForFiles, browserName);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     const nestedSteps = await processAllSteps(step.steps, processedStep.status);
@@ -196,7 +192,7 @@ class PlaywrightPulseReporter {
         // --- Extract Code Snippet ---
         let codeSnippet = undefined;
         try {
-            if (((_a = test.location) === null || _a === void 0 ? void 0 : _a.file) && ((_b = test.location) === null || _b === void 0 ? void 0 : _b.line) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.column)) {
+            if (((_c = test.location) === null || _c === void 0 ? void 0 : _c.file) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.line) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -209,17 +205,18 @@ class PlaywrightPulseReporter {
             id: test.id || `${test.title}-${startTime.toISOString()}-${(0, crypto_1.randomUUID)()}`, // Use the original ID logic here
             runId: "TBD", // Will be set later
             name: test.titlePath().join(" > "),
-            suiteName: ((_d = this.config.projects[0]) === null || _d === void 0 ? void 0 : _d.name) || "Default Suite",
+            suiteName: ((_f = this.config.projects[0]) === null || _f === void 0 ? void 0 : _f.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
+            browser: browserName,
             retries: result.retry,
-            steps: ((_e = result.steps) === null || _e === void 0 ? void 0 : _e.length)
+            steps: ((_g = result.steps) === null || _g === void 0 ? void 0 : _g.length)
                 ? await processAllSteps(result.steps, testStatus)
                 : [],
-            errorMessage: (_f = result.error) === null || _f === void 0 ? void 0 : _f.message,
-            stackTrace: (_g = result.error) === null || _g === void 0 ? void 0 : _g.stack,
+            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
+            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],

@@ -207,7 +207,7 @@ To work on the reporter or the dashboard itself:
 
 *   This project supports Playwright test execution with Pulse Reporting in GitHub Actions. Here's how Pulse reports are managed:
 
-```
+```bash
 # Upload Pulse report from each shard (per matrix.config.type)
 - name: Upload Pulse Report results
   if: success() || failure()
@@ -241,7 +241,7 @@ To work on the reporter or the dashboard itself:
 
 *   This project supports sharded Playwright test execution with Pulse Reporting in GitHub Actions. Here's how Pulse reports are managed across shards:
 
-```
+```bash
 # Upload Pulse report from each shard (per matrix.config.type)
 - name: Upload Pulse Report results
   if: success() || failure()
@@ -280,6 +280,7 @@ To work on the reporter or the dashboard itself:
     name: pulse-report
     path: pulse-report/
 ```
+
 ##  🧠 Notes:
 
 *   Each shard generates its own playwright-pulse-report.json inside pulse-report/.
@@ -287,3 +288,8 @@ To work on the reporter or the dashboard itself:
 *   After the test matrix completes, reports are downloaded, renamed, and merged.
 *   merge-report is a custom Node.js script that combines all JSON files into one.
 *   generate-report can build a static HTML dashboard if needed.
+
+## Fixes:
+
+### -   "0.1.1" : Added Sharding Support
+### -  "0.1.2" : Fixed browser filter and Added Browser Tag in Test Suite Card

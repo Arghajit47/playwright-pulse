@@ -45,100 +45,62 @@ const ATTACHMENTS_SUBDIR = "attachments"; // Consistent subdirectory name
  * @param config The reporter configuration options.
  */
 function attachFiles(testId, pwResult, pulseResult, config) {
-  const baseReportDir = config.outputDir || "pulse-report"; // Base output directory
-  // Ensure attachments are relative to the main outputDir
-  const attachmentsBaseDir = path.resolve(baseReportDir, ATTACHMENTS_SUBDIR); // Absolute path for FS operations
-  const attachmentsSubFolder = testId.replace(/[^a-zA-Z0-9_-]/g, "_"); // Sanitize testId for folder name
-  const testAttachmentsDir = path.join(
-    attachmentsBaseDir,
-    attachmentsSubFolder
-  ); // e.g., pulse-report/attachments/test_id_abc
-  try {
-    if (!fs.existsSync(testAttachmentsDir)) {
-      fs.mkdirSync(testAttachmentsDir, { recursive: true });
+    const baseReportDir = config.outputDir || "pulse-report"; // Base output directory
+    // Ensure attachments are relative to the main outputDir
+    const attachmentsBaseDir = path.resolve(baseReportDir, ATTACHMENTS_SUBDIR); // Absolute path for FS operations
+    const attachmentsSubFolder = testId.replace(/[^a-zA-Z0-9_-]/g, "_"); // Sanitize testId for folder name
+    const testAttachmentsDir = path.join(attachmentsBaseDir, attachmentsSubFolder); // e.g., pulse-report/attachments/test_id_abc
+    try {
+        if (!fs.existsSync(testAttachmentsDir)) {
+            fs.mkdirSync(testAttachmentsDir, { recursive: true });
+        }
     }
-  } catch (error) {
-    console.error(
-      `Pulse Reporter: Failed to create attachments directory: ${testAttachmentsDir}`,
-      error
-    );
-    return; // Stop processing if directory creation fails
-  }
-  if (!pwResult.attachments) return;
-  const { base64Images } = config; // Get base64 embedding option
-  pulseResult.screenshots = []; // Initialize screenshots array
-  pwResult.attachments.forEach((attachment) => {
-    const { contentType, name, path: attachmentPath, body } = attachment;
-    // Skip attachments without path or body
-    if (!attachmentPath && !body) {
-      console.warn(
-        `Pulse Reporter: Attachment "${name}" for test ${testId} has no path or body. Skipping.`
-      );
-      return;
+    catch (error) {
+        console.error(`Pulse Reporter: Failed to create attachments directory: ${testAttachmentsDir}`, error);
+        return; // Stop processing if directory creation fails
     }
-    // Determine filename
-    const safeName = name.replace(/[^a-zA-Z0-9_.-]/g, "_"); // Sanitize original name
-    const extension = attachmentPath
-      ? path.extname(attachmentPath)
-      : `.${getFileExtension(contentType)}`;
-    const baseFilename = attachmentPath
-      ? path.basename(attachmentPath, extension)
-      : safeName;
-    // Ensure unique filename within the test's attachment folder
-    const fileName = `${baseFilename}_${Date.now()}${extension}`;
-    // Relative path for storing in JSON (relative to baseReportDir)
-    const relativePath = path.join(
-      ATTACHMENTS_SUBDIR,
-      attachmentsSubFolder,
-      fileName
-    );
-    // Full path for file system operations
-    const fullPath = path.join(testAttachmentsDir, fileName);
-    if (
-      contentType === null || contentType === void 0
-        ? void 0
-        : contentType.startsWith("image/")
-    ) {
-      // Handle all image types consistently
-      handleImage(
-        attachmentPath,
-        body,
-        base64Images,
-        fullPath,
-        relativePath,
-        pulseResult,
-        name
-      );
-    } else if (
-      name === "video" ||
-      (contentType === null || contentType === void 0
-        ? void 0
-        : contentType.startsWith("video/"))
-    ) {
-      handleAttachment(
-        attachmentPath,
-        body,
-        fullPath,
-        relativePath,
-        "videoPath",
-        pulseResult
-      );
-    } else if (name === "trace" || contentType === "application/zip") {
-      // Trace files are zips
-      handleAttachment(
-        attachmentPath,
-        body,
-        fullPath,
-        relativePath,
-        "tracePath",
-        pulseResult
-      );
-    } else {
-      // Handle other generic attachments if needed (e.g., log files)
-      // console.log(`Pulse Reporter: Processing generic attachment "${name}" (Type: ${contentType}) for test ${testId}`);
-      // handleAttachment(attachmentPath, body, fullPath, relativePath, 'otherAttachments', pulseResult); // Example for storing other types
-    }
-  });
+    if (!pwResult.attachments)
+        return;
+    const { base64Images } = config; // Get base64 embedding option
+    pulseResult.screenshots = []; // Initialize screenshots array
+    pwResult.attachments.forEach((attachment) => {
+        const { contentType, name, path: attachmentPath, body } = attachment;
+        // Skip attachments without path or body
+        if (!attachmentPath && !body) {
+            console.warn(`Pulse Reporter: Attachment "${name}" for test ${testId} has no path or body. Skipping.`);
+            return;
+        }
+        // Determine filename
+        const safeName = name.replace(/[^a-zA-Z0-9_.-]/g, "_"); // Sanitize original name
+        const extension = attachmentPath
+            ? path.extname(attachmentPath)
+            : `.${getFileExtension(contentType)}`;
+        const baseFilename = attachmentPath
+            ? path.basename(attachmentPath, extension)
+            : safeName;
+        // Ensure unique filename within the test's attachment folder
+        const fileName = `${baseFilename}_${Date.now()}${extension}`;
+        // Relative path for storing in JSON (relative to baseReportDir)
+        const relativePath = path.join(ATTACHMENTS_SUBDIR, attachmentsSubFolder, fileName);
+        // Full path for file system operations
+        const fullPath = path.join(testAttachmentsDir, fileName);
+        if (contentType === null || contentType === void 0 ? void 0 : contentType.startsWith("image/")) {
+            // Handle all image types consistently
+            handleImage(attachmentPath, body, base64Images, fullPath, relativePath, pulseResult, name);
+        }
+        else if (name === "video" || (contentType === null || contentType === void 0 ? void 0 : contentType.startsWith("video/"))) {
+            handleAttachment(attachmentPath, body, fullPath, relativePath, "videoPath", pulseResult);
+        }
+        else if (name === "trace" || contentType === "application/zip") {
+            // Trace files are zips
+            handleAttachment(attachmentPath, body, fullPath, relativePath, "tracePath", pulseResult);
+        }
+        else {
+            // Handle other generic attachments if needed (e.g., log files)
+            // console.log(`Pulse Reporter: Processing generic attachment "${name}" (Type: ${contentType}) for test ${testId}`);
+            // handleAttachment(attachmentPath, body, fullPath, relativePath, 'otherAttachments', pulseResult); // Example for storing other types
+        }
+    });
 }
 /**
  * Handles image attachments, either embedding as base64 or copying the file.
