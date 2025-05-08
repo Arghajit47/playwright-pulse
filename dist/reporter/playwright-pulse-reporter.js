@@ -121,7 +121,7 @@ class PlaywrightPulseReporter {
         // Optional: Log test start if needed
         // console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId) {
+    async processStep(step, testId, browserName) {
         var _a, _b, _c, _d;
         // Determine actual step status (don't inherit from parent)
         let stepStatus = "passed";
@@ -148,6 +148,7 @@ class PlaywrightPulseReporter {
             duration: duration,
             startTime: startTime,
             endTime: endTime,
+            browser: browserName,
             errorMessage: errorMessage,
             stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
@@ -161,7 +162,11 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        // Get browser name from project or test annotations
+        const browserName = ((_a = test.annotations.find((a) => a.type === "browser")) === null || _a === void 0 ? void 0 : _a.description) ||
+            ((_c = (_b = test.parent.project()) === null || _b === void 0 ? void 0 : _b.use) === null || _c === void 0 ? void 0 : _c.browserName) ||
+            "unknown";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -175,7 +180,7 @@ class PlaywrightPulseReporter {
         const processAllSteps = async (steps, parentTestStatus) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles);
+                const processedStep = await this.processStep(step, testIdForFiles, browserName);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     const nestedSteps = await processAllSteps(step.steps, processedStep.status);
@@ -188,7 +193,7 @@ class PlaywrightPulseReporter {
         // --- Extract Code Snippet ---
         let codeSnippet = undefined;
         try {
-            if (((_a = test.location) === null || _a === void 0 ? void 0 : _a.file) && ((_b = test.location) === null || _b === void 0 ? void 0 : _b.line) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.column)) {
+            if (((_d = test.location) === null || _d === void 0 ? void 0 : _d.file) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.line) && ((_f = test.location) === null || _f === void 0 ? void 0 : _f.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -201,17 +206,18 @@ class PlaywrightPulseReporter {
             id: test.id || `${test.title}-${startTime.toISOString()}-${(0, crypto_1.randomUUID)()}`, // Use the original ID logic here
             runId: "TBD", // Will be set later
             name: test.titlePath().join(" > "),
-            suiteName: ((_d = this.config.projects[0]) === null || _d === void 0 ? void 0 : _d.name) || "Default Suite",
+            suiteName: ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
+            browser: browserName,
             retries: result.retry,
-            steps: ((_e = result.steps) === null || _e === void 0 ? void 0 : _e.length)
+            steps: ((_h = result.steps) === null || _h === void 0 ? void 0 : _h.length)
                 ? await processAllSteps(result.steps, testStatus)
                 : [],
-            errorMessage: (_f = result.error) === null || _f === void 0 ? void 0 : _f.message,
-            stackTrace: (_g = result.error) === null || _g === void 0 ? void 0 : _g.stack,
+            errorMessage: (_j = result.error) === null || _j === void 0 ? void 0 : _j.message,
+            stackTrace: (_k = result.error) === null || _k === void 0 ? void 0 : _k.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],

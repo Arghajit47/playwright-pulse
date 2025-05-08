@@ -7,6 +7,7 @@ export interface TestStep {
     duration: number;
     startTime: Date;
     endTime: Date;
+    browser: string;
     errorMessage?: string;
     stackTrace?: string;
     codeLocation?: string;
@@ -29,6 +30,7 @@ export interface TestResult {
     tags?: string[];
     suiteName?: string;
     runId: string;
+    browser: string;
     screenshots?: string[];
     videoPath?: string;
     tracePath?: string;

@@ -138,7 +138,8 @@ export class PlaywrightPulseReporter implements Reporter {
 
   private async processStep(
     step: PwStep,
-    testId: string
+    testId: string,
+    browserName: string
   ): Promise<PulseTestStep> {
     // Determine actual step status (don't inherit from parent)
     let stepStatus: PulseTestStatus = "passed";
@@ -171,6 +172,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: duration,
       startTime: startTime,
       endTime: endTime,
+      browser: browserName,
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
@@ -186,6 +188,12 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
+    // Get browser name from project or test annotations
+    const browserName =
+      test.annotations.find((a) => a.type === "browser")?.description ||
+      test.parent.project()?.use?.browserName ||
+      "unknown";
+
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
@@ -205,7 +213,11 @@ export class PlaywrightPulseReporter implements Reporter {
     ): Promise<PulseTestStep[]> => {
       let processed: PulseTestStep[] = [];
       for (const step of steps) {
-        const processedStep = await this.processStep(step, testIdForFiles);
+        const processedStep = await this.processStep(
+          step,
+          testIdForFiles,
+          browserName
+        );
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {
           const nestedSteps = await processAllSteps(
@@ -246,6 +258,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
+      browser: browserName,
       retries: result.retry,
       steps: result.steps?.length
         ? await processAllSteps(result.steps, testStatus)
