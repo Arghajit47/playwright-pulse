@@ -190,19 +190,8 @@ export class PlaywrightPulseReporter implements Reporter {
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     // Get the most accurate browser name
-    const currentConfig = this.config.projects[0]?.use;
-    const deviceName = Object.entries(devices).find(
-      ([, value]) =>
-        JSON.stringify(value.viewport) ===
-          JSON.stringify(currentConfig.viewport) &&
-        value.userAgent === currentConfig.userAgent
-    )?.[0];
-    const browserName =
-      deviceName ||
-      this.config.projects[0]?.use?.channel || // 'msedge'
-      this.config.projects[0]?.use?.browserName || // 'edge'
-      this.config.projects[0]?.name.toLowerCase() || // 'microsoft edge' -> 'microsoft edge'
-      "unknown";
+    const project = test.parent?.project();
+    const browserName = project?.use?.defaultBrowserType || "unknown";
 
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
