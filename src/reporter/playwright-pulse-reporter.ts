@@ -190,9 +190,9 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     // Get the most accurate browser name
     const browserName =
-      test.parent.project()?.use?.channel || // 'msedge'
-      test.parent.project()?.use?.browserName || // 'edge'
-      test.parent.project()?.name.toLowerCase() || // 'microsoft edge' -> 'microsoft edge'
+      this.config.projects[0]?.use?.channel || // 'msedge'
+      this.config.projects[0]?.use?.browserName || // 'edge'
+      this.config.projects[0]?.name.toLowerCase() || // 'microsoft edge' -> 'microsoft edge'
       "unknown";
 
     const testStatus = convertStatus(result.status, test);

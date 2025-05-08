@@ -164,9 +164,9 @@ class PlaywrightPulseReporter {
     async onTestEnd(test, result) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         // Get the most accurate browser name
-        const browserName = ((_b = (_a = test.parent.project()) === null || _a === void 0 ? void 0 : _a.use) === null || _b === void 0 ? void 0 : _b.channel) || // 'msedge'
-            ((_d = (_c = test.parent.project()) === null || _c === void 0 ? void 0 : _c.use) === null || _d === void 0 ? void 0 : _d.browserName) || // 'edge'
-            ((_e = test.parent.project()) === null || _e === void 0 ? void 0 : _e.name.toLowerCase()) || // 'microsoft edge' -> 'microsoft edge'
+        const browserName = ((_b = (_a = this.config.projects[0]) === null || _a === void 0 ? void 0 : _a.use) === null || _b === void 0 ? void 0 : _b.channel) || // 'msedge'
+            ((_d = (_c = this.config.projects[0]) === null || _c === void 0 ? void 0 : _c.use) === null || _d === void 0 ? void 0 : _d.browserName) || // 'edge'
+            ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name.toLowerCase()) || // 'microsoft edge' -> 'microsoft edge'
             "unknown";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
