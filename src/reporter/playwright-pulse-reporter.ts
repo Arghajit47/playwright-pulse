@@ -8,7 +8,6 @@ import type {
   TestResult as PwTestResult,
   TestStep as PwStep,
 } from "@playwright/test/reporter";
-import { devices } from "@playwright/test";
 import * as fs from "fs/promises";
 import * as path from "path";
 import type { PlaywrightPulseReport } from "../lib/report-types"; // Use relative path

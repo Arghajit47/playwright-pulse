@@ -34,7 +34,6 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlaywrightPulseReporter = void 0;
-const test_1 = require("@playwright/test");
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
@@ -163,17 +162,10 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         // Get the most accurate browser name
-        const currentConfig = (_a = this.config.projects[0]) === null || _a === void 0 ? void 0 : _a.use;
-        const deviceName = (_b = Object.entries(test_1.devices).find(([, value]) => JSON.stringify(value.viewport) ===
-            JSON.stringify(currentConfig.viewport) &&
-            value.userAgent === currentConfig.userAgent)) === null || _b === void 0 ? void 0 : _b[0];
-        const browserName = deviceName ||
-            ((_d = (_c = this.config.projects[0]) === null || _c === void 0 ? void 0 : _c.use) === null || _d === void 0 ? void 0 : _d.channel) || // 'msedge'
-            ((_f = (_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.use) === null || _f === void 0 ? void 0 : _f.browserName) || // 'edge'
-            ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name.toLowerCase()) || // 'microsoft edge' -> 'microsoft edge'
-            "unknown";
+        const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
+        const browserName = ((_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) || "unknown";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -200,7 +192,7 @@ class PlaywrightPulseReporter {
         // --- Extract Code Snippet ---
         let codeSnippet = undefined;
         try {
-            if (((_h = test.location) === null || _h === void 0 ? void 0 : _h.file) && ((_j = test.location) === null || _j === void 0 ? void 0 : _j.line) && ((_k = test.location) === null || _k === void 0 ? void 0 : _k.column)) {
+            if (((_c = test.location) === null || _c === void 0 ? void 0 : _c.file) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.line) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -213,18 +205,18 @@ class PlaywrightPulseReporter {
             id: test.id || `${test.title}-${startTime.toISOString()}-${(0, crypto_1.randomUUID)()}`, // Use the original ID logic here
             runId: "TBD", // Will be set later
             name: test.titlePath().join(" > "),
-            suiteName: ((_l = this.config.projects[0]) === null || _l === void 0 ? void 0 : _l.name) || "Default Suite",
+            suiteName: ((_f = this.config.projects[0]) === null || _f === void 0 ? void 0 : _f.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
             browser: browserName,
             retries: result.retry,
-            steps: ((_m = result.steps) === null || _m === void 0 ? void 0 : _m.length)
+            steps: ((_g = result.steps) === null || _g === void 0 ? void 0 : _g.length)
                 ? await processAllSteps(result.steps, testStatus)
                 : [],
-            errorMessage: (_o = result.error) === null || _o === void 0 ? void 0 : _o.message,
-            stackTrace: (_p = result.error) === null || _p === void 0 ? void 0 : _p.stack,
+            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
+            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
