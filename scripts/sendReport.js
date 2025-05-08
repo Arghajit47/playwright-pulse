@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable no-undef */
-/* eslint-disable @typescript-eslint/no-require-imports */
+#!/usr/bin/env node
 const nodemailer = require("nodemailer");
 const path = require("path");
 const archiver = require("archiver");
