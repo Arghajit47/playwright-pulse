@@ -162,10 +162,11 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-        // Get browser name from project or test annotations
-        const browserName = ((_a = test.annotations.find((a) => a.type === "browser")) === null || _a === void 0 ? void 0 : _a.description) ||
-            ((_c = (_b = test.parent.project()) === null || _b === void 0 ? void 0 : _b.use) === null || _c === void 0 ? void 0 : _c.browserName) ||
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+        // Get the most accurate browser name
+        const browserName = ((_b = (_a = test.parent.project()) === null || _a === void 0 ? void 0 : _a.use) === null || _b === void 0 ? void 0 : _b.channel) || // 'msedge'
+            ((_d = (_c = test.parent.project()) === null || _c === void 0 ? void 0 : _c.use) === null || _d === void 0 ? void 0 : _d.browserName) || // 'edge'
+            ((_e = test.parent.project()) === null || _e === void 0 ? void 0 : _e.name.toLowerCase()) || // 'microsoft edge' -> 'microsoft edge'
             "unknown";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
@@ -193,7 +194,7 @@ class PlaywrightPulseReporter {
         // --- Extract Code Snippet ---
         let codeSnippet = undefined;
         try {
-            if (((_d = test.location) === null || _d === void 0 ? void 0 : _d.file) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.line) && ((_f = test.location) === null || _f === void 0 ? void 0 : _f.column)) {
+            if (((_f = test.location) === null || _f === void 0 ? void 0 : _f.file) && ((_g = test.location) === null || _g === void 0 ? void 0 : _g.line) && ((_h = test.location) === null || _h === void 0 ? void 0 : _h.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -206,18 +207,18 @@ class PlaywrightPulseReporter {
             id: test.id || `${test.title}-${startTime.toISOString()}-${(0, crypto_1.randomUUID)()}`, // Use the original ID logic here
             runId: "TBD", // Will be set later
             name: test.titlePath().join(" > "),
-            suiteName: ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
+            suiteName: ((_j = this.config.projects[0]) === null || _j === void 0 ? void 0 : _j.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
             browser: browserName,
             retries: result.retry,
-            steps: ((_h = result.steps) === null || _h === void 0 ? void 0 : _h.length)
+            steps: ((_k = result.steps) === null || _k === void 0 ? void 0 : _k.length)
                 ? await processAllSteps(result.steps, testStatus)
                 : [],
-            errorMessage: (_j = result.error) === null || _j === void 0 ? void 0 : _j.message,
-            stackTrace: (_k = result.error) === null || _k === void 0 ? void 0 : _k.stack,
+            errorMessage: (_l = result.error) === null || _l === void 0 ? void 0 : _l.message,
+            stackTrace: (_m = result.error) === null || _m === void 0 ? void 0 : _m.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
