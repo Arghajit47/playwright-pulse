@@ -1214,6 +1214,7 @@ function generateHTML(reportData) {
         <div class="tabs">
             <button class="tab-button active" data-tab="dashboard">Dashboard</button>
             <button class="tab-button" data-tab="test-runs">Test Run Summary</button>
+            <button class="tab-button" data-tab="test-ai">AI Analysis</button>
         </div>
         
         <div id="dashboard" class="tab-content active">
@@ -1288,6 +1289,14 @@ function generateHTML(reportData) {
             <div class="test-suites">
                 ${generateTestCasesHTML()}
             </div>
+        </div>
+        <div id="test-ai" class="tab-content">
+            <iframe 
+            src="https://ai-test-analyser.netlify.app/" 
+            width="100%" 
+            height="600px" 
+            style="border: none;">
+          </iframe>
         </div>
     </div>
     

@@ -48,8 +48,6 @@ yarn add @arghajit/playwright-pulse-reporter --dev
 pnpm add @arghajit/playwright-pulse-reporter --save-dev
 ```
 
-*(Replace `@arghajit/playwright-pulse-reporter` with the actual published package name if you customized it)*
-
 ### 2. Configure Playwright
 
 In your `playwright.config.ts` (or `.js`) file, add the custom reporter to the `reporter` array:
@@ -317,3 +315,4 @@ Pulse Report by default supports 5 mail recipients, and by running the command `
 ### -   "0.1.1" : Added Sharding Support
 ### -  "0.1.2" : Fixed browser filter and Added Browser Tag in Test Suite Card
 ### -  "0.1.3" : Added Emailable report option
+### -  "0.1.4" : Added AI Analyser into the Report
