@@ -41,11 +41,11 @@ This project provides both a custom Playwright reporter and a Next.js web dashbo
 In your main Playwright project (the one containing your tests), install this reporter package:
 
 ```bash
-npm install @arghajit/playwright-pulse-reporter --save-dev
+npm install @arghajit/playwright-pulse-reporter@latest --save-dev
 # or
-yarn add @arghajit/playwright-pulse-reporter --dev
+yarn add @arghajit/playwright-pulse-reporter@latest --dev
 # or
-pnpm add @arghajit/playwright-pulse-reporter --save-dev
+pnpm add @arghajit/playwright-pulse-reporter@latest --save-dev
 ```
 
 ### 2. Configure Playwright

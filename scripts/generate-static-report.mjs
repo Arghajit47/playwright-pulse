@@ -736,6 +736,14 @@ function generateHTML(reportData) {
           padding: 20px;
           box-shadow: 0 2px 5px rgba(0,0,0,0.05);
           text-align: center;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          cursor: pointer;
+        }
+
+        .summary-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          background: #90e0e3; /* optional light background change */
         }
         
         .summary-card h3 {
@@ -776,6 +784,7 @@ function generateHTML(reportData) {
           gap: 10px;
           margin-bottom: 20px;
           flex-wrap: wrap;
+          padding: 0.75rem;
         }
         
         .filters input, 
@@ -933,21 +942,24 @@ function generateHTML(reportData) {
           background-color: #4CAF50 !important; /* Bright green */
           color: white;
           border-radius: 4px;
-          padding: 4px
+          padding: 4px;
+          font-size: 0.75rem;
         }
 
         span.status-failed {
           background-color: #F44336 !important; /* Bright red */
           color: white;
           border-radius: 4px;
-          padding: 4px
+          padding: 4px;
+          font-size: 0.75rem;
         }
 
         span.status-skipped {
           background-color: #FFC107 !important; /* Deep yellow */
           color: white;
           border-radius: 4px;
-          padding: 4px
+          padding: 4px;
+          font-size: 0.75rem;
         }
 
         /* Enhanced Pie Chart Styles */
@@ -1024,6 +1036,7 @@ function generateHTML(reportData) {
           .test-suites {
             flex: 2; /* dynamically expand */
             min-width: 300px;
+            padding: 0.75rem;
           }
         }
         @media (max-width: 768px) {
@@ -1099,6 +1112,7 @@ function generateHTML(reportData) {
         .filters {
           flex-direction: column;
           gap: 8px;
+          padding: 0.75rem;
         }
   
         .filters input,
