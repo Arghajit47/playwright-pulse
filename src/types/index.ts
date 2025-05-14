@@ -1,6 +1,12 @@
 import type { LucideIcon } from 'lucide-react';
 
-export type TestStatus = 'passed' | 'failed' | 'skipped';
+export type TestStatus =
+  | "passed"
+  | "failed"
+  | "skipped"
+  | "expected-failure"
+  | "unexpected-success"
+  | "explicitly-skipped";
 
 export interface TestStep {
   id: string;
