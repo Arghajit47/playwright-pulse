@@ -1013,6 +1013,10 @@ function generateHTML(reportData) {
         .test-name {
           font-weight: 600;
         }
+        .summary-cards {
+          display: grid;
+          gap: 20px;
+        }  
 
         /* Below summary cards: chart and test suites */
         .dashboard-bottom {
@@ -1308,7 +1312,7 @@ function generateHTML(reportData) {
             <iframe 
             src="https://ai-test-analyser.netlify.app/" 
             width="100%" 
-            height="600px" 
+            height="1200px" 
             style="border: none;">
           </iframe>
         </div>
