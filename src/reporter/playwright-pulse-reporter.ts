@@ -166,7 +166,7 @@ export class PlaywrightPulseReporter implements Reporter {
     }
 
     return {
-      id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`,
+      id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}`,
       title: step.title,
       status: stepStatus,
       duration: duration,
@@ -453,7 +453,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
-    const runId = `run-${this.runStartTime}-${randomUUID()}`;
+    const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`;
 
     const runData: TestRun = {
       id: runId,
