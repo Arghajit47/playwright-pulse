@@ -3,6 +3,8 @@
 ![Playwright Pulse Report](screenshots/image.png)  
 *A powerful custom Playwright reporter with interactive dashboard and standalone HTML reports, now with sharding support!*
 
+<a href="https://pulse-report.netlify.app/" target="_blank"><h3>Live Demo</h3></a>
+
 ## 🌟 Features
 
 - **Custom Playwright Reporter** - Collects detailed test results with rich metadata
@@ -238,4 +240,3 @@ For issues or feature requests, please [Contact Me](mailto:arghajitsingha47@gmai
 ---
 
 <div align="center">Made by Arghajit Singha | MIT Licensed</div>
-
