@@ -142,7 +142,7 @@ class PlaywrightPulseReporter {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
         }
         return {
-            id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`,
+            id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
             title: step.title,
             status: stepStatus,
             duration: duration,
@@ -345,7 +345,7 @@ class PlaywrightPulseReporter {
         }
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
-        const runId = `run-${this.runStartTime}-${(0, crypto_1.randomUUID)()}`;
+        const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`;
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
