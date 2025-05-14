@@ -147,7 +147,7 @@ const generateHtmlTable = (data) => {
     </style>
   </head>
   <body>
-    <h1>${projectName} Statistics Report</h1>
+    <h1>${projectName} Statistics</h1>
     <table>
       <thead>
         <tr>

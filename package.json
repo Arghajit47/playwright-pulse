@@ -1,5 +1,5 @@
 {
-  "name": "@arghajit/playwright-pulse-reporter",
+  "name": "@arghajit/playwright-pulse-report",
   "author": "Arghajit Singha",
   "version": "0.2.13-beta.19-b",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
@@ -95,7 +95,10 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "archiver": "^7.0.1",
+    "dotenv": "^16.5.0",
+    "nodemailer": "^7.0.3"
   },
   "devDependencies": {
     "@types/node": "^20",
