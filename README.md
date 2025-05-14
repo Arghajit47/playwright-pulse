@@ -20,7 +20,7 @@
 
 <div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;"> <a href="https://postimg.cc/180cym6c" target="_blank"> <img src="screenshots/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png" alt="Dashboard Overview" width="300"/> <p align="center"><strong>Dashboard Overview</strong></p> </a> <a href="https://postimg.cc/V5TFRHmM" target="_blank"> <img src="screenshots/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png" alt="Test Details" width="300"/> <p align="center"><strong>Test Details</strong></p> </a> <a href="https://postimg.cc/XXTwFGkk" target="_blank"> <img src="screenshots/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png" alt="Filter View" width="300"/> <p align="center"><strong>Filter View</strong></p> </a> </div>
 
-### 📱 Mobile Responsive View
+### 📱 Mobile View
 
 <div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
 
@@ -71,6 +71,7 @@ pnpm add @arghajit/playwright-pulse-reporter@latest --save-dev
 // playwright.config.ts
 import { defineConfig } from '@playwright/test';
 import * as path from 'path';
+
 
 const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report');
 
@@ -237,3 +238,4 @@ For issues or feature requests, please [Contact Me](mailto:arghajitsingha47@gmai
 ---
 
 <div align="center">Made by Arghajit Singha | MIT Licensed</div>
+
