@@ -27,12 +27,12 @@ const convertStatus = (
 ): PulseTestStatus => {
   // Special case: test was expected to fail (test.fail())
   if (testCase?.expectedStatus === "failed") {
-    return status === "failed" ? "passed" : "failed";
+    return status === "failed" ? "expected-failure" : "unexpected-success";
   }
 
   // Special case: test was expected to skip (test.skip())
   if (testCase?.expectedStatus === "skipped") {
-    return "skipped";
+    return "explicitly-skipped";
   }
 
   switch (status) {
@@ -47,8 +47,6 @@ const convertStatus = (
       return "skipped";
   }
 };
-
-  
 
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
 const ATTACHMENTS_SUBDIR = "attachments"; // Centralized definition
@@ -139,7 +137,8 @@ export class PlaywrightPulseReporter implements Reporter {
   private async processStep(
     step: PwStep,
     testId: string,
-    browserName: string
+    browserName: string,
+    testCase?: TestCase // Add testCase parameter
   ): Promise<PulseTestStep> {
     // Determine actual step status (don't inherit from parent)
     let stepStatus: PulseTestStatus = "passed";
@@ -149,7 +148,8 @@ export class PlaywrightPulseReporter implements Reporter {
       stepStatus = "skipped";
       errorMessage = "Info: Test is skipped:";
     } else {
-      stepStatus = convertStatus(step.error ? "failed" : "passed");
+      // Pass testCase to convertStatus
+      stepStatus = convertStatus(step.error ? "failed" : "passed", testCase);
     }
 
     const duration = step.duration;
@@ -165,9 +165,19 @@ export class PlaywrightPulseReporter implements Reporter {
       )}:${step.location.line}:${step.location.column}`;
     }
 
+    // Modify title only for test steps (not hooks)
+    let stepTitle = step.title;
+    if (step.category === "test" && testCase) {
+      if (testCase.expectedStatus === "failed") {
+        stepTitle = `[EXPECTED FAILURE] ${stepTitle}`;
+      } else if (testCase.expectedStatus === "skipped") {
+        stepTitle = `[EXPLICITLY SKIPPED] ${stepTitle}`;
+      }
+    }
+
     return {
       id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}`,
-      title: step.title,
+      title: stepTitle, // Use modified title
       status: stepStatus,
       duration: duration,
       startTime: startTime,
@@ -214,7 +224,8 @@ export class PlaywrightPulseReporter implements Reporter {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserName
+          browserName,
+          test
         );
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {

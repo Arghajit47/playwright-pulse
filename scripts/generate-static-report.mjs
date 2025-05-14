@@ -260,10 +260,7 @@ function generateSuitesWidget(suitesData) {
         (suite) => `
     <div class="suite-card ${suite.status}">
       <div class="suite-meta">
-        <span class="browser-tag">${suite.name
-          .split("(")
-          .pop()
-          .replace(")", "")}</span>
+        <span class="browser-tag">${suite.name.split(" (")[0]}</span>
           <span class="test-count">${suite.count} test${
           suite.count !== 1 ? "s" : ""
         }</span>

@@ -9,3 +9,5 @@
 ### - "0.1.4" : Added AI Analyzer into the Report
 
 ### - "0.1.5" : Updated a few styling issues
+
+### - "0.1.6" : Fixed email report issue 
