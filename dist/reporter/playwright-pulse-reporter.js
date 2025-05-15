@@ -41,11 +41,11 @@ const attachment_utils_1 = require("./attachment-utils"); // Use relative path
 const convertStatus = (status, testCase) => {
     // Special case: test was expected to fail (test.fail())
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
-        return status === "failed" ? "passed" : "failed";
+        return status === "failed" ? "failed" : "failed"; // Always return failed for unexpected passes
     }
     // Special case: test was expected to skip (test.skip())
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "skipped") {
-        return "skipped";
+        return "skipped"; // Just return skipped status
     }
     switch (status) {
         case "passed":
@@ -121,7 +121,8 @@ class PlaywrightPulseReporter {
         // Optional: Log test start if needed
         // console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId, browserName) {
+    async processStep(step, testId, browserName, testCase // Add testCase parameter
+    ) {
         var _a, _b, _c, _d;
         // Determine actual step status (don't inherit from parent)
         let stepStatus = "passed";
@@ -131,7 +132,8 @@ class PlaywrightPulseReporter {
             errorMessage = "Info: Test is skipped:";
         }
         else {
-            stepStatus = convertStatus(step.error ? "failed" : "passed");
+            // Pass testCase to convertStatus
+            stepStatus = convertStatus(step.error ? "failed" : "passed", testCase);
         }
         const duration = step.duration;
         const startTime = new Date(step.startTime);
@@ -141,9 +143,20 @@ class PlaywrightPulseReporter {
         if (step.location) {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
         }
+        // Modify title only for test steps (not hooks)
+        let stepTitle = step.title;
+        // Add warning/error messages for special cases
+        if (step.category === "test" && testCase) {
+            if (testCase.expectedStatus === "failed" && status === "passed") {
+                errorMessage = "Expected to fail, but passed.";
+            }
+            else if (testCase.expectedStatus === "skipped") {
+                errorMessage = "Test was explicitly skipped";
+            }
+        }
         return {
             id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
-            title: step.title,
+            title: stepTitle, // Use modified title
             status: stepStatus,
             duration: duration,
             startTime: startTime,
@@ -179,7 +192,7 @@ class PlaywrightPulseReporter {
         const processAllSteps = async (steps, parentTestStatus) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles, browserName);
+                const processedStep = await this.processStep(step, testIdForFiles, browserName, test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     const nestedSteps = await processAllSteps(step.steps, processedStep.status);
