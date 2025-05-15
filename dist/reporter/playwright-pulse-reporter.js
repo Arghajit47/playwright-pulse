@@ -41,11 +41,11 @@ const attachment_utils_1 = require("./attachment-utils"); // Use relative path
 const convertStatus = (status, testCase) => {
     // Special case: test was expected to fail (test.fail())
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
-        return status === "failed" ? "expected-failure" : "unexpected-success";
+        return status === "failed" ? "failed" : "failed"; // Always return failed for unexpected passes
     }
     // Special case: test was expected to skip (test.skip())
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "skipped") {
-        return "explicitly-skipped";
+        return "skipped"; // Just return skipped status
     }
     switch (status) {
         case "passed":
@@ -145,12 +145,13 @@ class PlaywrightPulseReporter {
         }
         // Modify title only for test steps (not hooks)
         let stepTitle = step.title;
+        // Add warning/error messages for special cases
         if (step.category === "test" && testCase) {
-            if (testCase.expectedStatus === "failed") {
-                stepTitle = `[EXPECTED FAILURE] ${stepTitle}`;
+            if (testCase.expectedStatus === "failed" && status === "passed") {
+                errorMessage = "Expected to fail, but passed.";
             }
             else if (testCase.expectedStatus === "skipped") {
-                stepTitle = `[EXPLICITLY SKIPPED] ${stepTitle}`;
+                errorMessage = "Test was explicitly skipped";
             }
         }
         return {
