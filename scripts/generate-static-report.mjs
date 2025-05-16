@@ -222,7 +222,7 @@ function getSuitesData(results) {
 
   results.forEach((test) => {
     const browser = test.browser; // Extract browser (chromium/firefox/webkit)
-    const suiteName = test.suiteName;
+    const suiteName = test.name.split(" > ")[1];
     const key = `${suiteName}|${browser}`;
 
     if (!suitesMap.has(key)) {
@@ -1309,8 +1309,10 @@ function generateHTML(reportData) {
             <iframe 
             src="https://ai-test-analyser.netlify.app/" 
             width="100%" 
-            height="1200px" 
-            style="border: none;">
+            height="100%"
+            frameborder="0"
+            allowfullscreen 
+            style="border: none; height: 100vh;">
           </iframe>
         </div>
     </div>
