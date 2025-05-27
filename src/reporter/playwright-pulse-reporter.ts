@@ -20,6 +20,179 @@ import type {
 } from "../types"; // Use relative path
 import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
+import * as csv from "csv-writer";
+
+// Add these interfaces at the top of your file
+interface TrendCSVData {
+  overall: {
+    runId: number;
+    timestamp: number;
+    totalTests: number;
+    passed: number;
+    failed: number;
+    skipped: number;
+    duration: number;
+  }[];
+  testRuns: {
+    [key: string]: {
+      testName: string;
+      duration: number;
+      status: string;
+      timestamp: number;
+    }[];
+  };
+}
+
+interface CSVRecord {
+  sheet: string;
+  runId: string | number;
+  testName: string;
+  duration: number;
+  status: string;
+  timestamp: number;
+  totalTests?: number;
+  passed?: number;
+  failed?: number;
+  skipped?: number;
+}
+
+// Add this helper class to manage CSV operations
+class CSVTrendManager {
+  private csvFilePath: string;
+  private maxRuns: number = 5;
+
+  constructor(outputDir: string) {
+    this.csvFilePath = path.join(outputDir, "trend.csv");
+  }
+  // Add this public getter method
+  public getCSVFilePath(): string {
+    return this.csvFilePath;
+  }
+
+  private async readExistingData(): Promise<TrendCSVData | null> {
+    try {
+      await fs.access(this.csvFilePath);
+      const content = await fs.readFile(this.csvFilePath, "utf8");
+      return JSON.parse(content) as TrendCSVData;
+    } catch {
+      return null;
+    }
+  }
+
+  private shiftRuns(data: TrendCSVData): TrendCSVData {
+    if (data.overall.length >= this.maxRuns) {
+      data.overall.shift();
+      for (let i = 1; i < this.maxRuns; i++) {
+        data.testRuns[`test run ${i}`] =
+          data.testRuns[`test run ${i + 1}`] || [];
+      }
+      delete data.testRuns[`test run ${this.maxRuns}`];
+    }
+    return data;
+  }
+
+  async updateTrendData(
+    runId: number,
+    timestamp: number,
+    results: TestResult[],
+    duration: number
+  ): Promise<void> {
+    let existingData = await this.readExistingData();
+    if (!existingData) {
+      existingData = { overall: [], testRuns: {} };
+    }
+
+    if (existingData.overall.length >= this.maxRuns) {
+      existingData = this.shiftRuns(existingData);
+    }
+
+    existingData.overall.push({
+      runId,
+      timestamp,
+      totalTests: results.length,
+      passed: results.filter((r) => r.status === "passed").length,
+      failed: results.filter((r) => r.status === "failed").length,
+      skipped: results.filter((r) => r.status === "skipped").length,
+      duration,
+    });
+
+    const runKey = `test run ${runId}`;
+    existingData.testRuns[runKey] = results.map((test) => ({
+      testName: test.name,
+      duration: test.duration,
+      status: test.status,
+      timestamp,
+    }));
+
+    await fs.writeFile(this.csvFilePath, JSON.stringify(existingData, null, 2));
+  }
+
+  async generateCSV(): Promise<void> {
+    const data = await this.readExistingData();
+    if (!data) return;
+
+    interface CSVRecord {
+      sheet: string;
+      runId: string | number;
+      testName: string;
+      duration: number;
+      status: string;
+      timestamp: number;
+      totalTests?: number;
+      passed?: number;
+      failed?: number;
+      skipped?: number;
+    }
+
+    const records: CSVRecord[] = [];
+
+    data.overall.forEach((run) => {
+      records.push({
+        sheet: "overall",
+        runId: run.runId,
+        testName: "",
+        duration: run.duration,
+        status: "",
+        timestamp: run.timestamp,
+        totalTests: run.totalTests,
+        passed: run.passed,
+        failed: run.failed,
+        skipped: run.skipped,
+      });
+    });
+
+    for (const [sheetName, tests] of Object.entries(data.testRuns)) {
+      tests.forEach((test) => {
+        records.push({
+          sheet: sheetName,
+          runId: sheetName.split(" ")[2],
+          testName: test.testName,
+          duration: test.duration,
+          status: test.status,
+          timestamp: test.timestamp,
+        });
+      });
+    }
+
+    const csvWriter = csv.createObjectCsvWriter({
+      path: this.csvFilePath,
+      header: [
+        { id: "sheet", title: "SHEET" },
+        { id: "runId", title: "RUN_ID" },
+        { id: "testName", title: "TEST_NAME" },
+        { id: "duration", title: "DURATION" },
+        { id: "status", title: "STATUS" },
+        { id: "timestamp", title: "TIMESTAMP" },
+        { id: "totalTests", title: "TOTAL_TESTS" },
+        { id: "passed", title: "PASSED" },
+        { id: "failed", title: "FAILED" },
+        { id: "skipped", title: "SKIPPED" },
+      ],
+    });
+
+    await csvWriter.writeRecords(records);
+  }
+}
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -62,6 +235,7 @@ export class PlaywrightPulseReporter implements Reporter {
   private baseOutputFile: string = "playwright-pulse-report.json";
   private isSharded: boolean = false;
   private shardIndex: number | undefined = undefined;
+  private csvManager: CSVTrendManager;
 
   constructor(options: PlaywrightPulseReporterOptions = {}) {
     this.options = options; // Store provided options
@@ -71,6 +245,15 @@ export class PlaywrightPulseReporter implements Reporter {
     this.outputDir = options.outputDir ?? "pulse-report";
     this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
     // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
+    this.csvManager = new CSVTrendManager(this.outputDir);
+  }
+
+  // Add this helper method to your PlaywrightPulseReporter class
+  private getNextRunNumber(): number {
+    // Implement logic to determine the next run number
+    // This could be stored in a file or derived from existing data
+    // For simplicity, we'll use a timestamp-based approach here
+    return Math.floor(Date.now() / 1000);
   }
 
   printsToStdio() {
@@ -459,7 +642,6 @@ export class PlaywrightPulseReporter implements Reporter {
   async onEnd(result: FullResult): Promise<void> {
     if (this.shardIndex !== undefined) {
       await this._writeShardResults();
-      // console.log(`PlaywrightPulseReporter: Shard ${this.shardIndex + 1} finished writing results.`);
       return;
     }
 
@@ -470,7 +652,7 @@ export class PlaywrightPulseReporter implements Reporter {
     const runData: TestRun = {
       id: runId,
       timestamp: new Date(this.runStartTime),
-      totalTests: 0, // Will be updated after merging/processing
+      totalTests: 0,
       passed: 0,
       failed: 0,
       skipped: 0,
@@ -478,6 +660,40 @@ export class PlaywrightPulseReporter implements Reporter {
     };
 
     let finalReport: PlaywrightPulseReport;
+
+    if (this.isSharded) {
+      finalReport = await this._mergeShardResults(runData);
+    } else {
+      this.results.forEach((r) => (r.runId = runId));
+      runData.passed = this.results.filter((r) => r.status === "passed").length;
+      runData.failed = this.results.filter((r) => r.status === "failed").length;
+      runData.skipped = this.results.filter(
+        (r) => r.status === "skipped"
+      ).length;
+      runData.totalTests = this.results.length;
+      finalReport = {
+        run: runData,
+        results: this.results,
+        metadata: { generatedAt: new Date().toISOString() },
+      };
+    }
+
+    // Now we can safely use finalReport and duration
+    try {
+      const runNumber = this.getNextRunNumber();
+      await this.csvManager.updateTrendData(
+        runNumber,
+        Date.now(),
+        finalReport.results,
+        duration
+      );
+      await this.csvManager.generateCSV();
+      console.log(
+        `PlaywrightPulseReporter: CSV trend report updated at ${this.csvManager.getCSVFilePath()}`
+      );
+    } catch (error) {
+      console.error("Pulse Reporter: Failed to update CSV trend data:", error);
+    }
 
     if (this.isSharded) {
       // console.log("Pulse Reporter: Run ended, main process merging shard results...");

@@ -41,6 +41,538 @@ function formatDuration(ms) {
   return (ms / 1000).toFixed(1) + "s";
 }
 
+// Add these functions to your existing helper functions
+
+function generateTestTrendsChart(trendData) {
+  const { document } = new JSDOM().window;
+  const body = d3.select(document.body);
+
+  // Set dimensions and margins
+  const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+  const width = 600 - margin.left - margin.right;
+  const height = 300 - margin.top - margin.bottom;
+
+  // Create SVG
+  const svg = body
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Parse dates
+  const parseTime = d3.timeParse("%s");
+
+  // Prepare data
+  const runs = trendData.overall;
+  const testCounts = runs.map((run) => run.totalTests);
+  const passedCounts = runs.map((run) => run.passed);
+  const failedCounts = runs.map((run) => run.failed);
+
+  // Set scales
+  const x = d3.scaleLinear().domain([1, runs.length]).range([0, width]);
+
+  const y = d3
+    .scaleLinear()
+    .domain([0, d3.max(testCounts) * 1.1])
+    .range([height, 0]);
+
+  // Add X axis
+  svg
+    .append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x).tickFormat((d) => `Run ${d}`));
+
+  // Add Y axis
+  svg.append("g").call(d3.axisLeft(y));
+
+  // Add line for total tests
+  svg
+    .append("path")
+    .datum(testCounts)
+    .attr("fill", "none")
+    .attr("stroke", "#3f51b5")
+    .attr("stroke-width", 2)
+    .attr(
+      "d",
+      d3
+        .line()
+        .x((d, i) => x(i + 1))
+        .y((d) => y(d))
+    );
+
+  // Add line for passed tests
+  svg
+    .append("path")
+    .datum(passedCounts)
+    .attr("fill", "none")
+    .attr("stroke", "#4CAF50")
+    .attr("stroke-width", 2)
+    .attr(
+      "d",
+      d3
+        .line()
+        .x((d, i) => x(i + 1))
+        .y((d) => y(d))
+    );
+
+  // Add line for failed tests
+  svg
+    .append("path")
+    .datum(failedCounts)
+    .attr("fill", "none")
+    .attr("stroke", "#F44336")
+    .attr("stroke-width", 2)
+    .attr(
+      "d",
+      d3
+        .line()
+        .x((d, i) => x(i + 1))
+        .y((d) => y(d))
+    );
+
+  // Add dots for hover interactions
+  runs.forEach((run, i) => {
+    const g = svg
+      .append("g")
+      .attr("class", "trend-point")
+      .attr("transform", `translate(${x(i + 1)},${y(run.totalTests)})`);
+
+    g.append("circle").attr("r", 5).attr("fill", "#3f51b5");
+
+    // Tooltip
+    const tooltip = body
+      .append("div")
+      .attr("class", "trend-tooltip")
+      .style("opacity", 0);
+
+    g.on("mouseover", function () {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip
+        .html(
+          `
+        <strong>Run ${i + 1}</strong><br>
+        Date: ${new Date(run.timestamp).toLocaleString()}<br>
+        Total: ${run.totalTests}<br>
+        Passed: ${run.passed}<br>
+        Failed: ${run.failed}<br>
+        Duration: ${formatDuration(run.duration)}
+      `
+        )
+        .style("left", d3.event.pageX + "px")
+        .style("top", d3.event.pageY - 28 + "px");
+    }).on("mouseout", function () {
+      tooltip.transition().duration(500).style("opacity", 0);
+    });
+  });
+
+  // Add legend
+  const legend = svg
+    .append("g")
+    .attr("transform", `translate(${width - 150}, 20)`);
+
+  legend
+    .append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", 150)
+    .attr("height", 80)
+    .attr("fill", "white")
+    .attr("stroke", "#ddd");
+
+  legend
+    .append("text")
+    .attr("x", 10)
+    .attr("y", 20)
+    .text("Test Trends")
+    .style("font-weight", "bold");
+
+  legend
+    .append("line")
+    .attr("x1", 10)
+    .attr("x2", 30)
+    .attr("y1", 40)
+    .attr("y2", 40)
+    .attr("stroke", "#3f51b5")
+    .attr("stroke-width", 2);
+
+  legend.append("text").attr("x", 40).attr("y", 45).text("Total Tests");
+
+  legend
+    .append("line")
+    .attr("x1", 10)
+    .attr("x2", 30)
+    .attr("y1", 60)
+    .attr("y2", 60)
+    .attr("stroke", "#4CAF50")
+    .attr("stroke-width", 2);
+
+  legend.append("text").attr("x", 40).attr("y", 65).text("Passed Tests");
+
+  legend
+    .append("line")
+    .attr("x1", 10)
+    .attr("x2", 30)
+    .attr("y1", 80)
+    .attr("y2", 80)
+    .attr("stroke", "#F44336")
+    .attr("stroke-width", 2);
+
+  legend.append("text").attr("x", 40).attr("y", 85).text("Failed Tests");
+
+  return `
+    <div class="trend-chart-container">
+      ${body.html()}
+      <style>
+        .trend-chart-container {
+          margin: 20px 0;
+        }
+        .trend-tooltip {
+          position: absolute;
+          padding: 8px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          pointer-events: none;
+          font-size: 12px;
+        }
+      </style>
+    </div>
+  `;
+}
+
+function generateDurationTrendChart(trendData) {
+  const { document } = new JSDOM().window;
+  const body = d3.select(document.body);
+
+  // Set dimensions and margins
+  const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+  const width = 600 - margin.left - margin.right;
+  const height = 300 - margin.top - margin.bottom;
+
+  // Create SVG
+  const svg = body
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // Prepare data
+  const runs = trendData.overall;
+  const durations = runs.map((run) => run.duration / 1000); // Convert to seconds
+
+  // Set scales
+  const x = d3.scaleLinear().domain([1, runs.length]).range([0, width]);
+
+  const y = d3
+    .scaleLinear()
+    .domain([0, d3.max(durations) * 1.1])
+    .range([height, 0]);
+
+  // Add X axis
+  svg
+    .append("g")
+    .attr("transform", `translate(0,${height})`)
+    .call(d3.axisBottom(x).tickFormat((d) => `Run ${d}`));
+
+  // Add Y axis
+  svg.append("g").call(d3.axisLeft(y).tickFormat((d) => `${d}s`));
+
+  // Add line
+  svg
+    .append("path")
+    .datum(durations)
+    .attr("fill", "none")
+    .attr("stroke", "#FF9800")
+    .attr("stroke-width", 2)
+    .attr(
+      "d",
+      d3
+        .line()
+        .x((d, i) => x(i + 1))
+        .y((d) => y(d))
+    );
+
+  // Add dots
+  runs.forEach((run, i) => {
+    const g = svg
+      .append("g")
+      .attr("class", "trend-point")
+      .attr("transform", `translate(${x(i + 1)},${y(durations[i])})`);
+
+    g.append("circle").attr("r", 5).attr("fill", "#FF9800");
+
+    // Tooltip
+    const tooltip = body
+      .append("div")
+      .attr("class", "trend-tooltip")
+      .style("opacity", 0);
+
+    g.on("mouseover", function () {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip
+        .html(
+          `
+        <strong>Run ${i + 1}</strong><br>
+        Date: ${new Date(run.timestamp).toLocaleString()}<br>
+        Duration: ${formatDuration(run.duration)}<br>
+        Tests: ${run.totalTests}
+      `
+        )
+        .style("left", d3.event.pageX + "px")
+        .style("top", d3.event.pageY - 28 + "px");
+    }).on("mouseout", function () {
+      tooltip.transition().duration(500).style("opacity", 0);
+    });
+  });
+
+  // Add title
+  svg
+    .append("text")
+    .attr("x", width / 2)
+    .attr("y", -10)
+    .attr("text-anchor", "middle")
+    .style("font-size", "14px")
+    .style("font-weight", "bold")
+    .text("Test Suite Duration Trend");
+
+  return `
+    <div class="trend-chart-container">
+      ${body.html()}
+    </div>
+  `;
+}
+
+// Add this function to generate the Test History tab content
+function generateTestHistoryContent(trendData) {
+  if (!trendData || !trendData.testRuns) {
+    return '<div class="no-data">No historical test data available</div>';
+  }
+
+  // Get all unique test names across all runs
+  const allTestNames = new Set();
+  Object.values(trendData.testRuns).forEach((run) => {
+    run.forEach((test) => allTestNames.add(test.testName));
+  });
+
+  // Prepare data for each test
+  const testHistory = Array.from(allTestNames).map((testName) => {
+    const history = [];
+    trendData.overall.forEach((run, i) => {
+      const runKey = `test run ${i + 1}`;
+      const testRun = trendData.testRuns[runKey]?.find(
+        (t) => t.testName === testName
+      );
+      if (testRun) {
+        history.push({
+          runId: i + 1,
+          status: testRun.status,
+          duration: testRun.duration,
+          timestamp: testRun.timestamp,
+        });
+      }
+    });
+    return { testName, history };
+  });
+
+  return `
+    <div class="test-history-container">
+      <div class="filters">
+        <input type="text" id="history-filter-name" placeholder="Search by test name...">
+        <select id="history-filter-status">
+          <option value="">All Statuses</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Failed</option>
+          <option value="skipped">Skipped</option>
+        </select>
+      </div>
+      
+      <div class="test-history-grid">
+        ${testHistory
+          .map(
+            (test) => `
+          <div class="test-history-card" data-test-name="${sanitizeHTML(
+            test.testName
+          )}" data-status="${
+              test.history[test.history.length - 1]?.status || "unknown"
+            }">
+            <div class="test-history-header">
+              <h3>${sanitizeHTML(test.testName)}</h3>
+              <span class="${getStatusClass(
+                test.history[test.history.length - 1]?.status || "unknown"
+              )}">
+                ${(
+                  test.history[test.history.length - 1]?.status || "unknown"
+                ).toUpperCase()}
+              </span>
+            </div>
+            
+            <div class="test-history-trend">
+              ${generateTestHistoryChart(test.history)}
+            </div>
+            
+            <div class="test-history-details">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Run</th>
+                    <th>Status</th>
+                    <th>Duration</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${test.history
+                    .map(
+                      (run) => `
+                    <tr>
+                      <td>${run.runId}</td>
+                      <td class="${getStatusClass(
+                        run.status
+                      )}">${run.status.toUpperCase()}</td>
+                      <td>${formatDuration(run.duration)}</td>
+                      <td>${formatDate(run.timestamp)}</td>
+                    </tr>
+                  `
+                    )
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+      
+      <style>
+        .test-history-container {
+          padding: 20px;
+        }
+        
+        .test-history-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          gap: 20px;
+          margin-top: 20px;
+        }
+        
+        .test-history-card {
+          border: 1px solid #eee;
+          border-radius: 8px;
+          padding: 15px;
+          background: white;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .test-history-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #eee;
+        }
+        
+        .test-history-header h3 {
+          margin: 0;
+          font-size: 16px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        .test-history-details table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 15px;
+          font-size: 14px;
+        }
+        
+        .test-history-details th {
+          text-align: left;
+          padding: 5px;
+          background: #f5f5f5;
+        }
+        
+        .test-history-details td {
+          padding: 5px;
+          border-bottom: 1px solid #eee;
+        }
+        
+        .test-history-trend {
+          height: 60px;
+          margin-bottom: 10px;
+        }
+      </style>
+    </div>
+  `;
+}
+
+function generateTestHistoryChart(history) {
+  const { document } = new JSDOM().window;
+  const body = d3.select(document.body);
+
+  const width = 300;
+  const height = 60;
+  const margin = { top: 5, right: 5, bottom: 5, left: 5 };
+
+  const svg = body
+    .append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const chartWidth = width - margin.left - margin.right;
+  const chartHeight = height - margin.top - margin.bottom;
+
+  if (history.length === 0) return "";
+
+  // Set scales
+  const x = d3.scaleLinear().domain([1, history.length]).range([0, chartWidth]);
+
+  const y = d3
+    .scaleLinear()
+    .domain([0, d3.max(history, (d) => d.duration) * 1.1])
+    .range([chartHeight, 0]);
+
+  // Add line
+  svg
+    .append("path")
+    .datum(history)
+    .attr("fill", "none")
+    .attr("stroke", "#3f51b5")
+    .attr("stroke-width", 1.5)
+    .attr(
+      "d",
+      d3
+        .line()
+        .x((d, i) => x(i + 1))
+        .y((d) => y(d.duration))
+    );
+
+  // Add dots with colors based on status
+  history.forEach((run, i) => {
+    svg
+      .append("circle")
+      .attr("cx", x(i + 1))
+      .attr("cy", y(run.duration))
+      .attr("r", 3)
+      .attr(
+        "fill",
+        run.status === "passed"
+          ? "#4CAF50"
+          : run.status === "failed"
+          ? "#F44336"
+          : "#FFC107"
+      );
+  });
+
+  return body.html();
+}
+
 function formatDate(dateStrOrDate) {
   if (!dateStrOrDate) return "N/A";
   try {
@@ -222,7 +754,7 @@ function getSuitesData(results) {
 
   results.forEach((test) => {
     const browser = test.browser; // Extract browser (chromium/firefox/webkit)
-    const suiteName = test.suiteName;
+    const suiteName = test.name.split(" > ")[1];
     const key = `${suiteName}|${browser}`;
 
     if (!suitesMap.has(key)) {
@@ -1013,7 +1545,29 @@ function generateHTML(reportData) {
         .summary-cards {
           display: grid;
           gap: 20px;
-        }  
+        }
+        .trend-charts-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+  
+        .trend-chart {
+          flex: 1;
+          min-width: 300px;
+          background: white;
+          padding: 15px;
+          border-radius: 8px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+  
+        .trend-chart h3 {
+          margin-top: 0;
+          margin-bottom: 15px;
+          font-size: 16px;
+          color: #333;
+        }    
 
         /* Below summary cards: chart and test suites */
         .dashboard-bottom {
@@ -1229,6 +1783,7 @@ function generateHTML(reportData) {
         <div class="tabs">
             <button class="tab-button active" data-tab="dashboard">Dashboard</button>
             <button class="tab-button" data-tab="test-runs">Test Run Summary</button>
+            <button class="tab-button" data-tab="test-history">Test History</button>
             <button class="tab-button" data-tab="test-ai">AI Analysis</button>
         </div>
         
@@ -1309,9 +1864,25 @@ function generateHTML(reportData) {
             <iframe 
             src="https://ai-test-analyser.netlify.app/" 
             width="100%" 
-            height="1200px" 
-            style="border: none;">
+            height="100%"
+            frameborder="0"
+            allowfullscreen 
+            style="border: none; height: 100vh;">
           </iframe>
+        </div>
+        <div id="test-history" class="tab-content">
+          <h2>Test History Trends</h2>
+          <div class="trend-charts-row">
+            <div class="trend-chart">
+              <h3>Test Count Trends</h3>
+              ${generateTestTrendsChart(trendData)}
+            </div>
+            <div class="trend-chart">
+              <h3>Duration Trends</h3>
+              ${generateDurationTrendChart(trendData)}
+            </div>
+          </div>
+          ${generateTestHistoryContent(trendData)}
         </div>
     </div>
     
@@ -1519,10 +2090,13 @@ async function main() {
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
+  const trendDataPath = path.resolve(outputDir, "trend.csv");
 
   console.log(chalk.blue(`Generating enhanced static report in: ${outputDir}`));
 
-  let reportData;
+  let reportData, trendData;
+
+  // Read the main report data
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
     reportData = JSON.parse(jsonData);
@@ -1538,8 +2112,19 @@ async function main() {
     process.exit(1);
   }
 
+  // Read trend data if it exists
   try {
-    const htmlContent = generateHTML(reportData);
+    const trendDataContent = await fs.readFile(trendDataPath, "utf-8");
+    trendData = JSON.parse(trendDataContent);
+  } catch (error) {
+    console.warn(
+      chalk.yellow(`Warning: Could not read trend data: ${error.message}`)
+    );
+    trendData = null;
+  }
+
+  try {
+    const htmlContent = generateHTML(reportData, trendData);
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green(`Report generated successfully at: ${reportHtmlPath}`)
