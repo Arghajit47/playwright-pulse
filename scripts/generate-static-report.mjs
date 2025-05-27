@@ -952,7 +952,7 @@ function generateSuitesWidget(suitesData) {
 }
 
 // Enhanced HTML generation with properly integrated CSS and JS
-function generateHTML(reportData) {
+function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results);
   const runSummary = run || {
