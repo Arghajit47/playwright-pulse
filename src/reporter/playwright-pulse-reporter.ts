@@ -93,12 +93,16 @@ class ExcelTrendManager {
     duration: number
   ): Promise<void> {
     let workbook = await this.readExistingData();
-    if (!workbook) {
+
+    // ✅ Initialize workbook if undefined or empty
+    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
       workbook = XLSX.utils.book_new();
+      const defaultSheet = XLSX.utils.json_to_sheet([]);
+      XLSX.utils.book_append_sheet(workbook, defaultSheet, "placeholder");
     }
 
-    // Prepare overall data
-    const overallData = workbook.Sheets["overall"]
+    // ✅ Prepare "overall" data
+    const existingOverallData = workbook.Sheets["overall"]
       ? XLSX.utils.sheet_to_json(workbook.Sheets["overall"])
       : [];
 
@@ -112,10 +116,14 @@ class ExcelTrendManager {
       SKIPPED: results.filter((r) => r.status === "skipped").length,
     };
 
-    const updatedOverallData = this.shiftRuns([...overallData, newOverallRow]);
+    const updatedOverallData = this.shiftRuns([
+      ...existingOverallData,
+      newOverallRow,
+    ]);
     const overallSheet = XLSX.utils.json_to_sheet(updatedOverallData);
+    workbook.Sheets["overall"] = overallSheet;
 
-    // Prepare test run data
+    // ✅ Prepare per-test data sheet
     const runKey = `test run ${runId}`;
     const testRunData = results.map((test) => ({
       "TEST RUN ID": runId,
@@ -126,16 +134,13 @@ class ExcelTrendManager {
     }));
 
     const testRunSheet = XLSX.utils.json_to_sheet(testRunData);
-
-    // Update or add sheets
-    workbook.Sheets["overall"] = overallSheet;
     workbook.Sheets[runKey] = testRunSheet;
 
-    // Ensure we don't exceed max runs
+    // ✅ Maintain max sheet count (excluding "overall")
     const sheetNames = workbook.SheetNames.filter((name) => name !== "overall");
     if (sheetNames.length > this.maxRuns) {
       const oldestRun = Math.min(
-        ...sheetNames.map((name) => parseInt(name.split(" ")[2]))
+        ...sheetNames.map((name) => parseInt(name.split(" ")[2], 10))
       );
       const oldestSheet = `test run ${oldestRun}`;
       delete workbook.Sheets[oldestSheet];
@@ -144,10 +149,19 @@ class ExcelTrendManager {
       );
     }
 
-    // Write the Excel file
+    // ✅ Remove placeholder sheet if it still exists
+    if (workbook.SheetNames.includes("placeholder")) {
+      delete workbook.Sheets["placeholder"];
+      workbook.SheetNames = workbook.SheetNames.filter(
+        (name) => name !== "placeholder"
+      );
+    }
+
+    // ✅ Write workbook to file
     const buffer = XLSX.write(workbook, { bookType: "xls", type: "buffer" });
     await fs.writeFile(this.excelFilePath, buffer);
   }
+  
 
   async generateExcel(): Promise<void> {
     // The file is already generated in updateTrendData
