@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.14.beta-1",
+  "version": "0.2.14.beta-2",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -78,7 +78,6 @@
     "archiver": "^7.0.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "csv-writer": "^1.6.0",
     "d3": "^7.9.0",
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
@@ -96,6 +95,7 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
+    "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {

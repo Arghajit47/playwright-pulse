@@ -11,7 +11,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private baseOutputFile;
     private isSharded;
     private shardIndex;
-    private csvManager;
+    private excelManager;
     constructor(options?: PlaywrightPulseReporterOptions);
     private getNextRunNumber;
     printsToStdio(): boolean;

@@ -38,111 +38,80 @@ const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
-const csv = __importStar(require("csv-writer"));
-// Add this helper class to manage CSV operations
-class CSVTrendManager {
+const XLSX = __importStar(require("xlsx"));
+class ExcelTrendManager {
     constructor(outputDir) {
         this.maxRuns = 5;
-        this.csvFilePath = path.join(outputDir, "trend.csv");
+        this.excelFilePath = path.join(outputDir, "trend.xls");
     }
     // Add this public getter method
-    getCSVFilePath() {
-        return this.csvFilePath;
+    getExcelFilePath() {
+        return this.excelFilePath;
     }
     async readExistingData() {
         try {
-            await fs.access(this.csvFilePath);
-            const content = await fs.readFile(this.csvFilePath, "utf8");
-            return JSON.parse(content);
+            await fs.access(this.excelFilePath);
+            const buffer = await fs.readFile(this.excelFilePath);
+            return XLSX.read(buffer);
         }
         catch (_a) {
             return null;
         }
     }
     shiftRuns(data) {
-        if (data.overall.length >= this.maxRuns) {
-            data.overall.shift();
-            for (let i = 1; i < this.maxRuns; i++) {
-                data.testRuns[`test run ${i}`] =
-                    data.testRuns[`test run ${i + 1}`] || [];
-            }
-            delete data.testRuns[`test run ${this.maxRuns}`];
+        if (data.length >= this.maxRuns) {
+            data.shift();
         }
         return data;
     }
     async updateTrendData(runId, timestamp, results, duration) {
-        let existingData = await this.readExistingData();
-        if (!existingData) {
-            existingData = { overall: [], testRuns: {} };
+        let workbook = await this.readExistingData();
+        if (!workbook) {
+            workbook = XLSX.utils.book_new();
         }
-        if (existingData.overall.length >= this.maxRuns) {
-            existingData = this.shiftRuns(existingData);
-        }
-        existingData.overall.push({
-            runId,
-            timestamp,
-            totalTests: results.length,
-            passed: results.filter((r) => r.status === "passed").length,
-            failed: results.filter((r) => r.status === "failed").length,
-            skipped: results.filter((r) => r.status === "skipped").length,
-            duration,
-        });
+        // Prepare overall data
+        const overallData = workbook.Sheets["overall"]
+            ? XLSX.utils.sheet_to_json(workbook.Sheets["overall"])
+            : [];
+        const newOverallRow = {
+            RUN_ID: runId,
+            DURATION: duration,
+            TIMESTAMP: timestamp,
+            TOTAL_TESTS: results.length,
+            PASSED: results.filter((r) => r.status === "passed").length,
+            FAILED: results.filter((r) => r.status === "failed").length,
+            SKIPPED: results.filter((r) => r.status === "skipped").length,
+        };
+        const updatedOverallData = this.shiftRuns([...overallData, newOverallRow]);
+        const overallSheet = XLSX.utils.json_to_sheet(updatedOverallData);
+        // Prepare test run data
         const runKey = `test run ${runId}`;
-        existingData.testRuns[runKey] = results.map((test) => ({
-            testName: test.name,
-            duration: test.duration,
-            status: test.status,
-            timestamp,
+        const testRunData = results.map((test) => ({
+            "TEST RUN ID": runId,
+            TEST_NAME: test.name,
+            DURATION: test.duration,
+            STATUS: test.status,
+            TIMESTAMP: timestamp,
         }));
-        await fs.writeFile(this.csvFilePath, JSON.stringify(existingData, null, 2));
-    }
-    async generateCSV() {
-        const data = await this.readExistingData();
-        if (!data)
-            return;
-        const records = [];
-        data.overall.forEach((run) => {
-            records.push({
-                sheet: "overall",
-                runId: run.runId,
-                testName: "",
-                duration: run.duration,
-                status: "",
-                timestamp: run.timestamp,
-                totalTests: run.totalTests,
-                passed: run.passed,
-                failed: run.failed,
-                skipped: run.skipped,
-            });
-        });
-        for (const [sheetName, tests] of Object.entries(data.testRuns)) {
-            tests.forEach((test) => {
-                records.push({
-                    sheet: sheetName,
-                    runId: sheetName.split(" ")[2],
-                    testName: test.testName,
-                    duration: test.duration,
-                    status: test.status,
-                    timestamp: test.timestamp,
-                });
-            });
+        const testRunSheet = XLSX.utils.json_to_sheet(testRunData);
+        // Update or add sheets
+        workbook.Sheets["overall"] = overallSheet;
+        workbook.Sheets[runKey] = testRunSheet;
+        // Ensure we don't exceed max runs
+        const sheetNames = workbook.SheetNames.filter((name) => name !== "overall");
+        if (sheetNames.length > this.maxRuns) {
+            const oldestRun = Math.min(...sheetNames.map((name) => parseInt(name.split(" ")[2])));
+            const oldestSheet = `test run ${oldestRun}`;
+            delete workbook.Sheets[oldestSheet];
+            workbook.SheetNames = workbook.SheetNames.filter((name) => name !== oldestSheet);
         }
-        const csvWriter = csv.createObjectCsvWriter({
-            path: this.csvFilePath,
-            header: [
-                { id: "sheet", title: "SHEET" },
-                { id: "runId", title: "RUN_ID" },
-                { id: "testName", title: "TEST_NAME" },
-                { id: "duration", title: "DURATION" },
-                { id: "status", title: "STATUS" },
-                { id: "timestamp", title: "TIMESTAMP" },
-                { id: "totalTests", title: "TOTAL_TESTS" },
-                { id: "passed", title: "PASSED" },
-                { id: "failed", title: "FAILED" },
-                { id: "skipped", title: "SKIPPED" },
-            ],
-        });
-        await csvWriter.writeRecords(records);
+        // Write the Excel file
+        const buffer = XLSX.write(workbook, { bookType: "xls", type: "buffer" });
+        await fs.writeFile(this.excelFilePath, buffer);
+    }
+    async generateExcel() {
+        // The file is already generated in updateTrendData
+        console.log(`Excel trend report updated at ${this.excelFilePath}`);
     }
 }
 const convertStatus = (status, testCase) => {
@@ -182,7 +151,7 @@ class PlaywrightPulseReporter {
         this.outputDir = (_b = options.outputDir) !== null && _b !== void 0 ? _b : "pulse-report";
         this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
         // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
-        this.csvManager = new CSVTrendManager(this.outputDir);
+        this.excelManager = new ExcelTrendManager(this.outputDir);
     }
     // Add this helper method to your PlaywrightPulseReporter class
     getNextRunNumber() {
@@ -498,15 +467,15 @@ class PlaywrightPulseReporter {
                 metadata: { generatedAt: new Date().toISOString() },
             };
         }
-        // Now we can safely use finalReport and duration
+        // Generate Excel trend data
         try {
             const runNumber = this.getNextRunNumber();
-            await this.csvManager.updateTrendData(runNumber, Date.now(), finalReport.results, duration);
-            await this.csvManager.generateCSV();
-            console.log(`PlaywrightPulseReporter: CSV trend report updated at ${this.csvManager.getCSVFilePath()}`);
+            await this.excelManager.updateTrendData(runNumber, Date.now(), finalReport.results, duration);
+            await this.excelManager.generateExcel();
+            console.log(`PlaywrightPulseReporter: Excel trend report updated at ${this.excelManager.getExcelFilePath()}`);
         }
         catch (error) {
-            console.error("Pulse Reporter: Failed to update CSV trend data:", error);
+            console.error("Pulse Reporter: Failed to update Excel trend data:", error);
         }
         if (this.isSharded) {
             // console.log("Pulse Reporter: Run ended, main process merging shard results...");

@@ -2090,7 +2090,7 @@ async function main() {
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
-  const trendDataPath = path.resolve(outputDir, "trend.csv");
+  const trendDataPath = path.resolve(outputDir, "trend.xls");
 
   console.log(chalk.blue(`Generating enhanced static report in: ${outputDir}`));
 
@@ -2114,26 +2114,28 @@ async function main() {
 
   // Read trend data if it exists
   try {
-    const trendDataContent = await fs.readFile(trendDataPath, "utf-8");
-    trendData = JSON.parse(trendDataContent);
+    const excelBuffer = await fs.readFile(trendDataPath);
+    const workbook = XLSX.read(excelBuffer);
+
+    // Convert to the same format as before for compatibility
+    trendData = {
+      overall: XLSX.utils.sheet_to_json(workbook.Sheets["overall"]),
+      testRuns: {},
+    };
+
+    // Get all test run sheets
+    workbook.SheetNames.forEach((sheetName) => {
+      if (sheetName.startsWith("test run ")) {
+        trendData.testRuns[sheetName] = XLSX.utils.sheet_to_json(
+          workbook.Sheets[sheetName]
+        );
+      }
+    });
   } catch (error) {
     console.warn(
       chalk.yellow(`Warning: Could not read trend data: ${error.message}`)
     );
     trendData = null;
-  }
-
-  try {
-    const htmlContent = generateHTML(reportData, trendData);
-    await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
-    console.log(
-      chalk.green(`Report generated successfully at: ${reportHtmlPath}`)
-    );
-    console.log(chalk.blue(`You can open it in your browser with:`));
-    console.log(chalk.blue(`open ${reportHtmlPath}`));
-  } catch (error) {
-    console.error(chalk.red(`Error: ${error.message}`));
-    process.exit(1);
   }
 }
 
