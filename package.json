@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-report",
   "author": "Arghajit Singha",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -20,6 +20,7 @@
   "types": "dist/reporter/index.d.ts",
   "files": [
     "dist",
+    "screenshots",
     "scripts/generate-static-report.mjs"
   ],
   "license": "MIT",
