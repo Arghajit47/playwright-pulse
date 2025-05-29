@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.14.beta-6",
+  "version": "0.2.14.beta-7",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -26,7 +26,8 @@
   "bin": {
     "generate-pulse-report": "./scripts/generate-static-report.mjs",
     "merge-pulse-report": "./scripts/merge-pulse-report.js",
-    "send-email": "./scripts/sendReport.js"
+    "send-email": "./scripts/sendReport.js",
+    "generate-trend": "./scripts/generate-trend-excel.mjs"
   },
   "exports": {
     ".": {
