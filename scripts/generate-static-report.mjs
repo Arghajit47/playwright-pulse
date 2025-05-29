@@ -1291,7 +1291,7 @@ function generateHTML(reportData, trendData = null) {
               ? `
             <div class="console-output-section">
               <h4>Console Output (stdout)</h4>
-              <pre class="console-log stdout-log">${test.stdout
+              <pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
                 .map((line) => sanitizeHTML(line))
                 .join("\n")}</pre>
             </div>`
@@ -1302,7 +1302,7 @@ function generateHTML(reportData, trendData = null) {
               ? `
             <div class="console-output-section">
               <h4>Console Output (stderr)</h4>
-              <pre class="console-log stderr-log">${test.stderr
+              <pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
                 .map((line) => sanitizeHTML(line))
                 .join("\n")}</pre>
             </div>`
@@ -1883,7 +1883,6 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <footer style="
   padding: 0.5rem;
-  // border-top: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   text-align: center;
   font-family: 'Segoe UI', system-ui, sans-serif;
