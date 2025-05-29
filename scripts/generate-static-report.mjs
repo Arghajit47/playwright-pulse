@@ -1523,12 +1523,12 @@ function generateHTML(reportData, trendData = null) {
         .filters button:hover { background-color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.15);}
 
         .test-case {
-          margin-bottom: 20px; border: 1px solid var(--border-color);
+          margin-bottom: 15px; border: 1px solid var(--border-color);
           border-radius: var(--border-radius); background-color: var(--card-background-color);
           box-shadow: var(--box-shadow-light); overflow: hidden; 
         }
         .test-case-header {
-          padding: 15px 20px; background-color: #fff; cursor: pointer;
+          padding: 10px 15px; background-color: #fff; cursor: pointer;
           display: flex; justify-content: space-between; align-items: center;
           border-bottom: 1px solid transparent; 
           transition: background-color 0.2s ease;
@@ -1537,13 +1537,13 @@ function generateHTML(reportData, trendData = null) {
         .test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: #f9fafb; }
         
         .test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
-        .test-case-title { font-weight: 600; color: var(--text-color); font-size: 1.1em; }
+        .test-case-title { font-weight: 600; color: var(--text-color); font-size: 1em; }
         .test-case-browser { font-size: 0.9em; color: var(--text-color-secondary); }
         .test-case-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: var(--text-color-secondary); flex-shrink: 0; }
         .test-duration { background-color: var(--light-gray-color); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;}
         
         .status-badge {
-          padding: 5px 10px; border-radius: 6px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase;
+          padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase;
           min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .status-badge.status-passed { background-color: var(--success-color); }
@@ -1551,7 +1551,7 @@ function generateHTML(reportData, trendData = null) {
         .status-badge.status-skipped { background-color: var(--warning-color); }
         .status-badge.status-unknown { background-color: var(--dark-gray-color); }
         
-        .tag { display: inline-block; background: var(--medium-gray-color); color: var(--text-color-secondary); padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; }
+        .tag { display: inline-block; background: linear-gradient( #fff, #333, #000); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; font-weight: 400; }
         
         .test-case-content { display: none; padding: 20px; border-top: 1px solid var(--border-color); background-color: #fcfdff; }
         .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
