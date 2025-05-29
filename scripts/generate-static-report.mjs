@@ -1169,8 +1169,12 @@ function generateHTML(reportData, trendData = null) {
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
 
-  const generateTestCasesHTML = () => {
+  // Inside generate-static-report.mjs
+
+  function generateTestCasesHTML() {
+    // Make sure this is within the scope where 'results' is defined
     if (!results || results.length === 0) {
+      // Assuming 'results' is accessible here
       return '<div class="no-tests">No test results found in this run.</div>';
     }
 
@@ -1271,15 +1275,40 @@ function generateHTML(reportData, trendData = null) {
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
           ${
-            test.error
+            test.error // This is for the overall test error, not step error
               ? `<div class="test-error-summary"><h4>Test Error:</h4><pre>${sanitizeHTML(
-                  test.error
+                  test.error // Assuming test.error is the message; if it has a stack, that's separate
                 )}</pre></div>`
               : ""
           }
 
           <h4>Steps</h4>
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
+
+          ${/* NEW: stdout and stderr sections START */ ""}
+          ${
+            test.stdout && test.stdout.length > 0
+              ? `
+            <div class="console-output-section">
+              <h4>Console Output (stdout)</h4>
+              <pre class="console-log stdout-log">${test.stdout
+                .map((line) => sanitizeHTML(line))
+                .join("\n")}</pre>
+            </div>`
+              : ""
+          }
+          ${
+            test.stderr && test.stderr.length > 0
+              ? `
+            <div class="console-output-section">
+              <h4>Console Output (stderr)</h4>
+              <pre class="console-log stderr-log">${test.stderr
+                .map((line) => sanitizeHTML(line))
+                .join("\n")}</pre>
+            </div>`
+              : ""
+          }
+          ${/* NEW: stdout and stderr sections END */ ""}
           
           ${
             test.screenshots && test.screenshots.length > 0
@@ -1289,10 +1318,8 @@ function generateHTML(reportData, trendData = null) {
               <div class="attachments-grid">
                 ${test.screenshots
                   .map((screenshot) => {
-                    const imgSrc = sanitizeHTML(
-                      screenshot.path ||
-                        (typeof screenshot === "string" ? screenshot : "")
-                    );
+                    // Ensure screenshot.path and screenshot.name are accessed correctly
+                    const imgSrc = sanitizeHTML(screenshot.path || "");
                     const screenshotName = sanitizeHTML(
                       screenshot.name || "Screenshot"
                     );
@@ -1324,7 +1351,7 @@ function generateHTML(reportData, trendData = null) {
                   <a href="${sanitizeHTML(
                     video.path
                   )}" target="_blank">View Video: ${sanitizeHTML(
-                    video.name || path.basename(video.path)
+                    video.name || path.basename(video.path) // path.basename might not be available if path module not passed/scoped
                   )}</a>
                 </div>`
                 )
@@ -1345,7 +1372,7 @@ function generateHTML(reportData, trendData = null) {
                     <a href="${sanitizeHTML(
                       trace.path
                     )}" target="_blank" download>Download Trace: ${sanitizeHTML(
-                      trace.name || path.basename(trace.path)
+                      trace.name || path.basename(trace.path) // path.basename might not be available if path module not passed/scoped
                     )}</a>
                     (Open with Playwright Trace Viewer)
                   </div>`
@@ -1366,7 +1393,7 @@ function generateHTML(reportData, trendData = null) {
       </div>`;
       })
       .join("");
-  };
+  }
 
   return `
 <!DOCTYPE html>
