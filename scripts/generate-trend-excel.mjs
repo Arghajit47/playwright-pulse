@@ -16,49 +16,38 @@ const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const TREND_EXCEL_FILE_NAME = "trend.xls";
 
 class ExcelTrendManager {
-  // Convention for "private" members in JS often uses an underscore
   _excelFilePath;
-  _maxRuns = 5; // Max history runs to keep in Excel (excluding overall)
+  _maxRuns = 5;
 
   constructor(outputDir, excelFileName = TREND_EXCEL_FILE_NAME) {
     this._excelFilePath = path.join(outputDir, excelFileName);
   }
 
-  // Method to get the Excel file path (was public, still is by default)
   getExcelFilePath() {
     return this._excelFilePath;
   }
 
   async _readExistingData() {
-    // Conventionally "private"
     try {
       await fs.access(this._excelFilePath);
       const buffer = await fs.readFile(this._excelFilePath);
       return XLSX.read(buffer, { type: "buffer" });
     } catch {
-      return null; // File doesn't exist or not accessible
+      return null;
     }
   }
 
   _shiftOverallRuns(data, currentNumericRunId) {
-    // Conventionally "private"
-    // Ensure data is an array
     const validData = Array.isArray(data) ? data : [];
-
-    // Filter out any potential future runs or non-numeric RUN_ID entries
     const pastOrCurrentData = validData.filter(
       (row) =>
         row.hasOwnProperty("RUN_ID") &&
         typeof row.RUN_ID === "number" &&
         row.RUN_ID <= currentNumericRunId
     );
-
-    // Add current run's data (it's already added to the array before calling this)
-    // Sort by RUN_ID to ensure correct order before shifting
     const sortedData = [...pastOrCurrentData].sort(
       (a, b) => a.RUN_ID - b.RUN_ID
     );
-
     if (sortedData.length > this._maxRuns) {
       return sortedData.slice(sortedData.length - this._maxRuns);
     }
@@ -66,8 +55,8 @@ class ExcelTrendManager {
   }
 
   async updateTrendData(
-    runIdFromReport, // This is the string ID from JSON, e.g., "run-timestamp-uuid"
-    timestamp, // JS timestamp (ms since epoch)
+    runIdFromReport,
+    timestamp,
     totalTests,
     passed,
     failed,
@@ -76,12 +65,20 @@ class ExcelTrendManager {
     testResultsForThisRun
   ) {
     let workbook = await this._readExistingData();
-
-    // For Excel sheet naming and internal ID, use a simpler numeric ID.
-    const numericRunId = Math.floor(timestamp / 1000); // Use seconds since epoch
+    const numericRunId = Math.floor(timestamp / 1000);
 
     if (!workbook) {
       workbook = XLSX.utils.book_new();
+      // If the workbook is new, SheetNames will be empty.
+      // We need to initialize it if it doesn't exist
+      if (!workbook.SheetNames) {
+        workbook.SheetNames = [];
+      }
+    } else {
+      // Ensure SheetNames exists even for existing workbooks (should, but defensive)
+      if (!workbook.SheetNames) {
+        workbook.SheetNames = [];
+      }
     }
 
     // --- Overall Data ---
@@ -94,85 +91,76 @@ class ExcelTrendManager {
       } catch (e) {
         console.warn(
           chalk.yellow(
-            "Could not parse existing 'overall' sheet. Starting fresh."
+            "Could not parse existing 'overall' sheet. Starting fresh. Error:",
+            e.message
           )
         );
         existingOverallData = [];
       }
     }
-
-    // Avoid duplicate entries for the same numericRunId
     existingOverallData = existingOverallData.filter(
       (row) => row.RUN_ID !== numericRunId
     );
-
     const newOverallRow = {
-      RUN_ID: numericRunId, // Use numeric ID for sorting and management
+      RUN_ID: numericRunId,
       DURATION: duration,
-      TIMESTAMP: timestamp, // Store the original ms timestamp for potential full-date reconstruction
+      TIMESTAMP: timestamp,
       TOTAL_TESTS: totalTests,
       PASSED: passed,
       FAILED: failed,
       SKIPPED: skipped,
     };
-
     let updatedOverallData = [...existingOverallData, newOverallRow];
-    // Pass numericRunId to _shiftOverallRuns for correct comparison
     updatedOverallData = this._shiftOverallRuns(
       updatedOverallData,
       numericRunId
     );
 
     const overallSheet = XLSX.utils.json_to_sheet(updatedOverallData);
-    // Ensure "overall" sheet is visible and typically first
-    if (workbook.SheetNames.includes("overall")) {
-      workbook.Sheets["overall"] = overallSheet; // Replace existing
-    } else {
+
+    // UPDATED: Use book_append_sheet for new sheets, or replace existing
+    if (!workbook.SheetNames.includes("overall")) {
       XLSX.utils.book_append_sheet(workbook, overallSheet, "overall");
-      // Move "overall" to the beginning if it was just added
+      // Move "overall" to the beginning if it was just added and not already first
       const overallIndex = workbook.SheetNames.indexOf("overall");
       if (overallIndex > 0) {
         const sheetName = workbook.SheetNames.splice(overallIndex, 1)[0];
         workbook.SheetNames.unshift(sheetName);
       }
+    } else {
+      workbook.Sheets["overall"] = overallSheet; // Replace existing
     }
-    XLSX.utils.book_set_sheet_visibility(
-      workbook,
-      "overall",
-      XLSX.utils.SHEET_VISIBLE
-    );
+    XLSX.utils.book_set_sheet_visibility(workbook, "overall", 0);
 
     // --- Per-Test Data Sheet for the Current Run ---
-    const runKey = `test run ${numericRunId}`; // Sheet name based on numeric ID
+    const runKey = `test run ${numericRunId}`;
     const currentRunTestData = testResultsForThisRun.map((test) => ({
       TEST_NAME: test.name,
       DURATION: test.duration,
       STATUS: test.status,
-      TIMESTAMP: timestamp, // Timestamp of the run
+      TIMESTAMP: timestamp,
     }));
-
     const testRunSheet = XLSX.utils.json_to_sheet(currentRunTestData);
-    workbook.Sheets[runKey] = testRunSheet; // Add or replace the sheet
-    XLSX.utils.book_set_sheet_visibility(
-      workbook,
-      runKey,
-      XLSX.utils.SHEET_VISIBLE
-    );
 
-    // Add to SheetNames if new, ensuring no duplicates
+    // UPDATED: Logic to add or replace the sheet and ensure it's in SheetNames
     if (!workbook.SheetNames.includes(runKey)) {
-      workbook.SheetNames.push(runKey);
+      XLSX.utils.book_append_sheet(workbook, testRunSheet, runKey); // This adds to Sheets and SheetNames
+    } else {
+      workbook.Sheets[runKey] = testRunSheet; // Just replace the sheet data
     }
+    // Now that the sheet is guaranteed to be in SheetNames and workbook.Sheets, set visibility
+    XLSX.utils.book_set_sheet_visibility(workbook, runKey, 0);
 
     // --- Maintain Max Sheet Count for Individual Test Runs ---
     let testRunSheetNames = workbook.SheetNames.filter(
       (name) => name.toLowerCase().startsWith("test run ") && name !== "overall"
     );
-
     testRunSheetNames.sort((a, b) => {
-      const idA = parseInt(a.split(" ").pop() || "0", 10);
-      const idB = parseInt(b.split(" ").pop() || "0", 10);
-      return idA - idB; // Sort by the numeric part of "test run X"
+      const matchA = a.match(/test run (\d+)$/i);
+      const matchB = b.match(/test run (\d+)$/i);
+      const idA = matchA && matchA[1] ? parseInt(matchA[1], 10) : 0;
+      const idB = matchB && matchB[1] ? parseInt(matchB[1], 10) : 0;
+      return idA - idB;
     });
 
     if (testRunSheetNames.length > this._maxRuns) {
@@ -180,6 +168,7 @@ class ExcelTrendManager {
       const removedSheetNames = [];
       for (let i = 0; i < sheetsToRemoveCount; i++) {
         const oldestSheetName = testRunSheetNames[i];
+        // Remove from workbook.Sheets
         delete workbook.Sheets[oldestSheetName];
         removedSheetNames.push(oldestSheetName);
       }
@@ -200,9 +189,9 @@ class ExcelTrendManager {
       );
     } catch (writeError) {
       console.error(
-        chalk.red(`Failed to write Excel file at ${this._excelFilePath}`),
-        writeError
+        chalk.red(`Failed to write Excel file at ${this._excelFilePath}`)
       );
+      console.error(chalk.red("Write Error Details:"), writeError);
       throw writeError;
     }
   }
@@ -212,10 +201,18 @@ async function generateTrendExcel() {
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const jsonReportPath = path.join(outputDir, DEFAULT_JSON_FILE);
 
-  await fs.mkdir(outputDir, { recursive: true }); // Ensure output directory exists
+  // Ensure output directory exists before any file operations
+  try {
+    await fs.mkdir(outputDir, { recursive: true });
+  } catch (mkdirError) {
+    console.error(
+      chalk.red(`Failed to create output directory ${outputDir}:`),
+      mkdirError
+    );
+    process.exit(1);
+  }
 
   console.log(chalk.blue(`Reading JSON report from: ${jsonReportPath}`));
-
   let reportData;
   try {
     const jsonData = await fs.readFile(jsonReportPath, "utf-8");
@@ -229,10 +226,17 @@ async function generateTrendExcel() {
     console.error(
       chalk.red(`Error reading or parsing JSON report: ${error.message}`)
     );
+    console.error(chalk.red("JSON Read/Parse Error Details:"), error);
     process.exit(1);
   }
 
   const { run, results } = reportData;
+  if (!run.timestamp || isNaN(new Date(run.timestamp).getTime())) {
+    console.error(
+      chalk.red(`Invalid or missing run.timestamp in JSON: ${run.timestamp}`)
+    );
+    process.exit(1);
+  }
   const runTimestamp = new Date(run.timestamp).getTime();
 
   const testResultsForExcel = results.map((r) => ({
@@ -244,7 +248,7 @@ async function generateTrendExcel() {
   const excelManager = new ExcelTrendManager(outputDir);
   try {
     await excelManager.updateTrendData(
-      run.id, // The original string run ID from JSON
+      run.id,
       runTimestamp,
       run.totalTests,
       run.passed,
@@ -255,11 +259,11 @@ async function generateTrendExcel() {
     );
   } catch (excelError) {
     console.error(chalk.red("Aborting due to error during Excel generation."));
+    console.error(chalk.red("Excel Generation Error Details:"), excelError);
     process.exit(1);
   }
 }
 
-// Main execution
 generateTrendExcel().catch((error) => {
   console.error(
     chalk.red("An unexpected error occurred in generate-trend-excel:"),

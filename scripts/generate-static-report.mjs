@@ -943,7 +943,7 @@ function generateTestHistoryContent(trendData) {
       <div class="filters" style="border-color: black; border-style: groove;">
         <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
         <select id="history-filter-status">
-          <option value="">All Statuses (Latest Run)</option>
+          <option value="">All Statuses</option>
           <option value="passed">Passed</option>
           <option value="failed">Failed</option>
           <option value="skipped">Skipped</option>
@@ -1374,6 +1374,8 @@ function generateHTML(reportData, trendData = null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <title>Playwright Pulse Report</title>
     <style>
         :root {
@@ -1513,7 +1515,7 @@ function generateHTML(reportData, trendData = null) {
         .filters {
           display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px;
           padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius);
-          box-shadow: var(--box-shadow-inset);
+          box-shadow: var(--box-shadow-inset); border-color: black; border-style: groove;
         }
         .filters input, .filters select, .filters button {
           padding: 11px 15px; border: 1px solid var(--border-color);
@@ -1781,7 +1783,7 @@ function generateHTML(reportData, trendData = null) {
         
         <div id="test-runs" class="tab-content">
             <div class="filters">
-                <input type="text" id="filter-name" placeholder="Filter by test name/path...">
+                <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
                 <select id="filter-status">
                     <option value="">All Statuses</option>
                     <option value="passed">Passed</option>
@@ -1851,7 +1853,49 @@ function generateHTML(reportData, trendData = null) {
             style="border: none; height: 100vh;">
           </iframe>
         </div>
+        <footer style="
+  padding: 0.5rem;
+  // border-top: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+">
+  <div style="
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  ">
+    <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
+    <span>Created by</span>
+    <a href="https://github.com/Arghajit47"
+       target="_blank"
+       rel="noopener noreferrer"
+       style="
+         color: #7737BF;
+         font-weight: 700;
+         font-style: italic;
+         text-decoration: none;
+         transition: all 0.2s ease;
+       "
+       onmouseover="this.style.color='#BF5C37'"
+       onmouseout="this.style.color='#7737BF'">
+      Arghajit Singha
+    </a>
+  </div>
+  <div style="
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #666;
+  ">
+    Crafted with precision
+  </div>
+</footer>
     </div>
+    
     
     <script>
     function initializeReportInteractivity() {
