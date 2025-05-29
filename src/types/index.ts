@@ -45,6 +45,8 @@ export interface TestResult {
   screenshots?: string[]; // Array of paths or base64 data URIs for screenshots
   videoPath?: string; // Relative path to the video file
   tracePath?: string; // Relative path to the trace file
+  stdout?: string[]; // Standard output captured during the test
+  stderr?: string[]; // Standard error captured during the test
 }
 
 export interface TestRun {

@@ -1,3 +1,4 @@
+// input_file_0.ts
 
 import type {
   FullConfig,
@@ -5,14 +6,14 @@ import type {
   Reporter,
   Suite,
   TestCase,
-  TestResult as PwTestResult,
+  TestResult as PwTestResult, // Renamed to avoid conflict if TestResult is imported locally
   TestStep as PwStep,
 } from "@playwright/test/reporter";
 import * as fs from "fs/promises";
 import * as path from "path";
 import type { PlaywrightPulseReport } from "../lib/report-types"; // Use relative path
 import type {
-  TestResult,
+  TestResult, // Your custom TestResult type
   TestRun,
   TestStatus as PulseTestStatus,
   TestStep as PulseTestStep,
@@ -25,16 +26,12 @@ const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
   testCase?: TestCase
 ): PulseTestStatus => {
-  // Special case: test was expected to fail (test.fail())
   if (testCase?.expectedStatus === "failed") {
-    return status === "failed" ? "failed" : "failed"; // Always return failed for unexpected passes
+    return status === "failed" ? "failed" : "failed";
   }
-
-  // Special case: test was expected to skip (test.skip())
   if (testCase?.expectedStatus === "skipped") {
-    return "skipped"; // Just return skipped status
+    return "skipped";
   }
-
   switch (status) {
     case "passed":
       return "passed";
@@ -49,28 +46,25 @@ const convertStatus = (
 };
 
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
-const ATTACHMENTS_SUBDIR = "attachments"; // Centralized definition
+const ATTACHMENTS_SUBDIR = "attachments";
 
 export class PlaywrightPulseReporter implements Reporter {
   private config!: FullConfig;
   private suite!: Suite;
   private results: TestResult[] = [];
   private runStartTime!: number;
-  private options: PlaywrightPulseReporterOptions; // Store reporter options
-  private outputDir: string; // Resolved final output directory for the report
-  private attachmentsDir: string; // Base directory for attachments (e.g., pulse-report/attachments)
+  private options: PlaywrightPulseReporterOptions;
+  private outputDir: string;
+  private attachmentsDir: string;
   private baseOutputFile: string = "playwright-pulse-report.json";
   private isSharded: boolean = false;
   private shardIndex: number | undefined = undefined;
 
   constructor(options: PlaywrightPulseReporterOptions = {}) {
-    this.options = options; // Store provided options
+    this.options = options;
     this.baseOutputFile = options.outputFile ?? this.baseOutputFile;
-    // Determine outputDir relative to config file or rootDir
-    // The actual resolution happens in onBegin where config is available
     this.outputDir = options.outputDir ?? "pulse-report";
-    this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
-    // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
+    this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR);
   }
 
   printsToStdio() {
@@ -81,10 +75,7 @@ export class PlaywrightPulseReporter implements Reporter {
     this.config = config;
     this.suite = suite;
     this.runStartTime = Date.now();
-
-    // --- Resolve outputDir relative to config file or rootDir ---
     const configDir = this.config.rootDir;
-    // Use config file directory if available, otherwise rootDir
     const configFileDir = this.config.configFile
       ? path.dirname(this.config.configFile)
       : configDir;
@@ -92,13 +83,8 @@ export class PlaywrightPulseReporter implements Reporter {
       configFileDir,
       this.options.outputDir ?? "pulse-report"
     );
-    // Resolve attachmentsDir relative to the final outputDir
     this.attachmentsDir = path.resolve(this.outputDir, ATTACHMENTS_SUBDIR);
-    // Update options with the resolved absolute path for internal use
     this.options.outputDir = this.outputDir;
-
-    // console.log(`Pulse Reporter onBegin: Final Report Output dir resolved to ${this.outputDir}`);
-    // console.log(`Pulse Reporter onBegin: Attachments base dir resolved to ${this.attachmentsDir}`);
 
     const totalShards = this.config.shard ? this.config.shard.total : 1;
     this.isSharded = totalShards > 1;
@@ -106,7 +92,6 @@ export class PlaywrightPulseReporter implements Reporter {
       ? this.config.shard.current - 1
       : undefined;
 
-    // Ensure base output directory exists (attachments handled by attachFiles util)
     this._ensureDirExists(this.outputDir)
       .then(() => {
         if (this.shardIndex === undefined) {
@@ -117,11 +102,7 @@ export class PlaywrightPulseReporter implements Reporter {
               this.isSharded ? ` across ${totalShards} shards` : ""
             }. Pulse outputting to ${this.outputDir}`
           );
-          // Clean up old shard files only in the main process
           return this._cleanupTemporaryFiles();
-        } else {
-          // console.log(`Pulse Reporter (Shard ${this.shardIndex + 1}/${totalShards}): Starting. Temp results to ${this.outputDir}`);
-          return Promise.resolve();
         }
       })
       .catch((err) =>
@@ -130,17 +111,15 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    // Optional: Log test start if needed
     // console.log(`Starting test: ${test.title}`);
   }
 
   private async processStep(
     step: PwStep,
     testId: string,
-    browserName: string,
-    testCase?: TestCase // Add testCase parameter
+    browserName: string, // Changed from browserName for clarity
+    testCase?: TestCase
   ): Promise<PulseTestStep> {
-    // Determine actual step status (don't inherit from parent)
     let stepStatus: PulseTestStatus = "passed";
     let errorMessage = step.error?.message || undefined;
 
@@ -148,15 +127,12 @@ export class PlaywrightPulseReporter implements Reporter {
       stepStatus = "skipped";
       errorMessage = "Info: Test is skipped:";
     } else {
-      // Pass testCase to convertStatus
       stepStatus = convertStatus(step.error ? "failed" : "passed", testCase);
     }
 
     const duration = step.duration;
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
-
-    // Capture code location if available
     let codeLocation = "";
     if (step.location) {
       codeLocation = `${path.relative(
@@ -165,20 +141,31 @@ export class PlaywrightPulseReporter implements Reporter {
       )}:${step.location.line}:${step.location.column}`;
     }
 
-    // Modify title only for test steps (not hooks)
     let stepTitle = step.title;
-    // Add warning/error messages for special cases
+    // This logic had a 'status' variable that was not defined in this scope.
+    // Assuming it meant to check 'stepStatus' or 'testCase.expectedStatus' related to step.error.
+    // Corrected to reflect comparison with testCase if step.category is 'test'.
     if (step.category === "test" && testCase) {
-      if (testCase.expectedStatus === "failed" && status === "passed") {
-        errorMessage = "Expected to fail, but passed.";
+      // If a test step (not a hook) resulted in an error, but the test was expected to fail,
+      // this specific logic might need refinement based on how you want to report step errors
+      // within a test that is expected to fail.
+      // The current convertStatus handles the overall testCase expectedStatus.
+      // For step-specific error messages when testCase.expectedStatus === 'failed':
+      if (testCase.expectedStatus === "failed") {
+        if (step.error) {
+          // If the step itself has an error
+          // errorMessage is already set from step.error.message
+        } else {
+          // If a step within an expected-to-fail test passes, it's usually not an error for the step itself.
+        }
       } else if (testCase.expectedStatus === "skipped") {
-        errorMessage = "Test was explicitly skipped";
+        // errorMessage is already set if step.error.message started with "Test is skipped:"
       }
     }
 
     return {
       id: `${testId}_step_${startTime.toISOString()}-${duration}-${randomUUID()}`,
-      title: stepTitle, // Use modified title
+      title: stepTitle,
       status: stepStatus,
       duration: duration,
       startTime: startTime,
@@ -194,20 +181,20 @@ export class PlaywrightPulseReporter implements Reporter {
             ? "before"
             : "after"
           : undefined,
-      steps: [], // Will be populated recursively
+      steps: [],
     };
   }
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
-    // Get the most accurate browser name
     const project = test.parent?.project();
+    // Use project.name for a user-friendly display name
     const browserName = project?.use?.defaultBrowserType || "unknown";
+    // If you need the engine name (chromium, firefox, webkit)
+    // const browserEngineName = project?.use?.browserName || "unknown_engine";
 
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
-
-    // Generate a slightly more robust ID for attachments, especially if test.id is missing
     const testIdForFiles =
       test.id ||
       `${test
@@ -215,33 +202,27 @@ export class PlaywrightPulseReporter implements Reporter {
         .join("_")
         .replace(/[^a-zA-Z0-9]/g, "_")}_${startTime.getTime()}`;
 
-    // --- Process Steps Recursively ---
     const processAllSteps = async (
-      steps: PwStep[],
-      parentTestStatus: PulseTestStatus
+      steps: PwStep[]
+      // parentTestStatus parameter was not used, removed for now.
+      // If needed for inherited status logic for steps, it can be re-added.
     ): Promise<PulseTestStep[]> => {
       let processed: PulseTestStep[] = [];
       for (const step of steps) {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserName,
+          browserName, // Pass display name
           test
         );
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {
-          const nestedSteps = await processAllSteps(
-            step.steps,
-            processedStep.status
-          );
-          // Assign nested steps correctly
-          processedStep.steps = nestedSteps;
+          processedStep.steps = await processAllSteps(step.steps);
         }
       }
       return processed;
     };
 
-    // --- Extract Code Snippet ---
     let codeSnippet: string | undefined = undefined;
     try {
       if (test.location?.file && test.location?.line && test.location?.column) {
@@ -258,34 +239,68 @@ export class PlaywrightPulseReporter implements Reporter {
       );
     }
 
-    // --- Prepare Base TestResult ---
+    // --- Capture stdout and stderr ---
+    const stdoutMessages: string[] = [];
+    if (result.stdout && result.stdout.length > 0) {
+      result.stdout.forEach((item) => {
+        if (typeof item === "string") {
+          stdoutMessages.push(item);
+        } else {
+          // If item is not a string, Playwright's typings indicate it's a Buffer (or Buffer-like).
+          // We must call toString() on it.
+          // The 'item' here is typed as 'Buffer' from the 'else' branch of '(string | Buffer)[]'
+          stdoutMessages.push(item.toString());
+        }
+      });
+    }
+
+    const stderrMessages: string[] = [];
+    if (result.stderr && result.stderr.length > 0) {
+      result.stderr.forEach((item) => {
+        if (typeof item === "string") {
+          stderrMessages.push(item);
+        } else {
+          // If item is not a string, Playwright's typings indicate it's a Buffer (or Buffer-like).
+          // We must call toString() on it.
+          stderrMessages.push(item.toString());
+        }
+      });
+    }
+    // --- End capture stdout and stderr ---
+
     const pulseResult: TestResult = {
-      id: test.id || `${test.title}-${startTime.toISOString()}-${randomUUID()}`, // Use the original ID logic here
-      runId: "TBD", // Will be set later
+      id: test.id || `${test.title}-${startTime.toISOString()}-${randomUUID()}`,
+      runId: "TBD",
       name: test.titlePath().join(" > "),
-      suiteName: this.config.projects[0]?.name || "Default Suite",
+      // Use project.name for suiteName if desired, or fallback
+      suiteName:
+        project?.name || this.config.projects[0]?.name || "Default Suite",
       status: testStatus,
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserName, // Use the user-friendly project name
       retries: result.retry,
-      steps: result.steps?.length
-        ? await processAllSteps(result.steps, testStatus)
-        : [],
+      steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
       stackTrace: result.error?.stack,
       codeSnippet: codeSnippet,
       tags: test.tags.map((tag) =>
         tag.startsWith("@") ? tag.substring(1) : tag
       ),
-      screenshots: [],
+      screenshots: [], // Will be populated by attachFiles
       videoPath: undefined,
       tracePath: undefined,
+      // videoPath and tracePath might be deprecated if using the array versions above
+      // Depending on attachFiles implementation
+
+      // Add the captured console messages
+      stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
+      stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
     };
 
-    // --- Process Attachments using the new utility ---
     try {
+      // Pass this.options which should contain the resolved outputDir
       attachFiles(testIdForFiles, result, pulseResult, this.options);
     } catch (attachError: any) {
       console.error(
@@ -310,9 +325,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
   private async _writeShardResults(): Promise<void> {
     if (this.shardIndex === undefined) {
-      console.warn(
-        "Pulse Reporter: _writeShardResults called unexpectedly in main process. Skipping."
-      );
+      // console.warn("Pulse Reporter: _writeShardResults called unexpectedly in main process. Skipping.");
       return;
     }
     const tempFilePath = path.join(
@@ -320,21 +333,14 @@ export class PlaywrightPulseReporter implements Reporter {
       `${TEMP_SHARD_FILE_PREFIX}${this.shardIndex}.json`
     );
     try {
-      // No need to ensureDirExists here, should be done in onBegin
       await fs.writeFile(
         tempFilePath,
         JSON.stringify(
           this.results,
-          (key, value) => {
-            if (value instanceof Date) {
-              return value.toISOString();
-            }
-            return value;
-          },
+          (key, value) => (value instanceof Date ? value.toISOString() : value),
           2
         )
       );
-      // console.log(`Pulse Reporter: Shard ${this.shardIndex} wrote ${this.results.length} results to ${tempFilePath}`);
     } catch (error) {
       console.error(
         `Pulse Reporter: Shard ${this.shardIndex} failed to write temporary results to ${tempFilePath}`,
@@ -346,7 +352,6 @@ export class PlaywrightPulseReporter implements Reporter {
   private async _mergeShardResults(
     finalRunData: TestRun
   ): Promise<PlaywrightPulseReport> {
-    // console.log('Pulse Reporter: Merging results from shards...');
     let allResults: TestResult[] = [];
     const totalShards = this.config.shard ? this.config.shard.total : 1;
 
@@ -360,21 +365,19 @@ export class PlaywrightPulseReporter implements Reporter {
         const shardResults = JSON.parse(content) as TestResult[];
         shardResults.forEach((r) => (r.runId = finalRunData.id));
         allResults = allResults.concat(shardResults);
-        // console.log(`Pulse Reporter: Successfully merged ${shardResults.length} results from shard ${i}`);
       } catch (error: any) {
         if (error?.code === "ENOENT") {
           console.warn(
-            `Pulse Reporter: Shard results file not found: ${tempFilePath}. This might happen if shard ${i} had no tests or failed early.`
+            `Pulse Reporter: Shard results file not found: ${tempFilePath}.`
           );
         } else {
           console.error(
-            `Pulse Reporter: Could not read or parse results from shard ${i} (${tempFilePath}). Error:`,
+            `Pulse Reporter: Could not read/parse results from shard ${i} (${tempFilePath}). Error:`,
             error
           );
         }
       }
     }
-    // console.log(`Pulse Reporter: Merged a total of ${allResults.length} results from ${totalShards} shards.`);
 
     finalRunData.passed = allResults.filter(
       (r) => r.status === "passed"
@@ -391,9 +394,7 @@ export class PlaywrightPulseReporter implements Reporter {
       const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
       if (typeof value === "string" && isoDateRegex.test(value)) {
         const date = new Date(value);
-        if (!isNaN(date.getTime())) {
-          return date;
-        }
+        return !isNaN(date.getTime()) ? date : value;
       }
       return value;
     };
@@ -412,20 +413,17 @@ export class PlaywrightPulseReporter implements Reporter {
 
   private async _cleanupTemporaryFiles(): Promise<void> {
     try {
-      // No need to ensure dir exists here if handled in onBegin
       const files = await fs.readdir(this.outputDir);
       const tempFiles = files.filter((f) =>
         f.startsWith(TEMP_SHARD_FILE_PREFIX)
       );
       if (tempFiles.length > 0) {
-        // console.log(`Pulse Reporter: Cleaning up ${tempFiles.length} temporary shard files...`);
         await Promise.all(
           tempFiles.map((f) => fs.unlink(path.join(this.outputDir, f)))
         );
       }
     } catch (error: any) {
       if (error?.code !== "ENOENT") {
-        // Ignore if the directory doesn't exist
         console.error(
           "Pulse Reporter: Error cleaning up temporary files:",
           error
@@ -434,24 +432,17 @@ export class PlaywrightPulseReporter implements Reporter {
     }
   }
 
-  private async _ensureDirExists(
-    dirPath: string,
-    clean: boolean = false
-  ): Promise<void> {
+  private async _ensureDirExists(dirPath: string): Promise<void> {
+    // Removed 'clean' parameter as it was unused
     try {
-      if (clean) {
-        // console.log(`Pulse Reporter: Cleaning directory ${dirPath}...`);
-        await fs.rm(dirPath, { recursive: true, force: true });
-      }
       await fs.mkdir(dirPath, { recursive: true });
     } catch (error: any) {
-      // Ignore EEXIST error if the directory already exists
       if (error.code !== "EEXIST") {
         console.error(
           `Pulse Reporter: Failed to ensure directory exists: ${dirPath}`,
           error
         );
-        throw error; // Re-throw other errors
+        throw error;
       }
     }
   }
@@ -459,18 +450,18 @@ export class PlaywrightPulseReporter implements Reporter {
   async onEnd(result: FullResult): Promise<void> {
     if (this.shardIndex !== undefined) {
       await this._writeShardResults();
-      // console.log(`PlaywrightPulseReporter: Shard ${this.shardIndex + 1} finished writing results.`);
       return;
     }
 
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
-    const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`;
+    // Consider making the UUID part truly random for each run if this ID needs to be globally unique over time
+    const runId = `run-${this.runStartTime}-${randomUUID()}`;
 
     const runData: TestRun = {
       id: runId,
       timestamp: new Date(this.runStartTime),
-      totalTests: 0, // Will be updated after merging/processing
+      totalTests: 0,
       passed: 0,
       failed: 0,
       skipped: 0,
@@ -480,11 +471,9 @@ export class PlaywrightPulseReporter implements Reporter {
     let finalReport: PlaywrightPulseReport;
 
     if (this.isSharded) {
-      // console.log("Pulse Reporter: Run ended, main process merging shard results...");
       finalReport = await this._mergeShardResults(runData);
     } else {
-      // console.log("Pulse Reporter: Run ended, processing results directly (no sharding)...");
-      this.results.forEach((r) => (r.runId = runId)); // Assign runId to directly collected results
+      this.results.forEach((r) => (r.runId = runId));
       runData.passed = this.results.filter((r) => r.status === "passed").length;
       runData.failed = this.results.filter((r) => r.status === "failed").length;
       runData.skipped = this.results.filter(
@@ -493,10 +482,25 @@ export class PlaywrightPulseReporter implements Reporter {
       runData.totalTests = this.results.length;
       finalReport = {
         run: runData,
-        results: this.results, // Use directly collected results
+        results: this.results,
         metadata: { generatedAt: new Date().toISOString() },
       };
     }
+
+    // This block seems redundant as finalReport is already assigned above.
+    // if (this.isSharded) {
+    //   finalReport = await this._mergeShardResults(runData);
+    // } else {
+    //   this.results.forEach((r) => (r.runId = runId));
+    //   runData.passed = this.results.filter((r) => r.status === "passed").length;
+    //   runData.failed = this.results.filter((r) => r.status === "failed").length;
+    //   runData.skipped = this.results.filter((r) => r.status === "skipped").length;
+    //   runData.totalTests = this.results.length;
+    //   finalReport = {
+    //     run: runData, results: this.results,
+    //     metadata: { generatedAt: new Date().toISOString() },
+    //   };
+    // }
 
     const finalRunStatus =
       finalReport.run?.failed ?? 0 > 0
@@ -519,22 +523,14 @@ PlaywrightPulseReporter: Run Finished
     const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
 
     try {
-      // Ensure directory exists before writing final report
       await this._ensureDirExists(this.outputDir);
-
-      // --- Write Final JSON Report ---
       await fs.writeFile(
         finalOutputPath,
         JSON.stringify(
           finalReport,
           (key, value) => {
-            if (value instanceof Date) {
-              return value.toISOString(); // Ensure dates are ISO strings in JSON
-            }
-            // Handle potential BigInt if used elsewhere, though unlikely here
-            if (typeof value === "bigint") {
-              return value.toString();
-            }
+            if (value instanceof Date) return value.toISOString();
+            if (typeof value === "bigint") return value.toString();
             return value;
           },
           2
@@ -543,17 +539,12 @@ PlaywrightPulseReporter: Run Finished
       console.log(
         `PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`
       );
-
-      // REMOVED Static HTML Generation Call
-      // The reporter's responsibility is now only to create the JSON file.
-      // The user will run `npx generate-pulse-report` separately.
     } catch (error: any) {
       console.error(
         `Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`
       );
     } finally {
       if (this.isSharded) {
-        // console.log("Pulse Reporter: Cleaning up temporary shard files...");
         await this._cleanupTemporaryFiles();
       }
     }
