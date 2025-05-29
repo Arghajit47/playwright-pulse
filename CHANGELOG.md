@@ -11,3 +11,5 @@
 ### - "0.1.5" : Updated a few styling issues
 
 ### - "0.1.6" : Fixed email report issue 
+
+### - "0.1.7" : Fixed Project Name components inside test suite
