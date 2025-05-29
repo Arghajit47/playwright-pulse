@@ -5,6 +5,8 @@ import path from "path";
 import * as d3 from "d3";
 import { JSDOM } from "jsdom";
 import * as XLSX from "xlsx";
+import { fork } from "child_process"; // Add this
+import { fileURLToPath } from "url"; // Add this for resolving path in ESM
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -1962,13 +1964,61 @@ function generateHTML(reportData, trendData = null) {
   `;
 }
 
+// Add this helper function somewhere in generate-static-report.mjs,
+// possibly before your main() function.
+
+async function runScript(scriptPath) {
+  return new Promise((resolve, reject) => {
+    console.log(chalk.blue(`Executing script: ${scriptPath}...`));
+    const process = fork(scriptPath, [], {
+      stdio: "inherit", // This will pipe the child process's stdio to the parent
+    });
+
+    process.on("error", (err) => {
+      console.error(chalk.red(`Failed to start script: ${scriptPath}`), err);
+      reject(err);
+    });
+
+    process.on("exit", (code) => {
+      if (code === 0) {
+        console.log(chalk.green(`Script ${scriptPath} finished successfully.`));
+        resolve();
+      } else {
+        const errorMessage = `Script ${scriptPath} exited with code ${code}.`;
+        console.error(chalk.red(errorMessage));
+        reject(new Error(errorMessage));
+      }
+    });
+  });
+}
+
 async function main() {
+  const __filename = fileURLToPath(import.meta.url); // Get current file path
+  const __dirname = path.dirname(__filename); // Get current directory
+  const trendExcelScriptPath = path.resolve(
+    __dirname,
+    "generate-trend-excel.mjs"
+  ); // generate-trend-excel.mjs is in the SAME directory as generate-static-report.mjs
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
   const trendDataPath = path.resolve(outputDir, "trend.xls");
 
-  console.log(chalk.blue(`Generating enhanced static report in: ${outputDir}`));
+  console.log(chalk.blue(`Starting static HTML report generation...`));
+  console.log(chalk.blue(`Output directory set to: ${outputDir}`));
+
+  // --- Step 1: Ensure Excel trend data is generated/updated FIRST ---
+  try {
+    await runScript(trendExcelScriptPath);
+    console.log(chalk.green("Excel trend generation completed."));
+  } catch (error) {
+    console.error(
+      chalk.red(
+        "Failed to generate/update Excel trend data. HTML report might use stale or no trend data."
+      ),
+      error
+    );
+  }
 
   let reportData;
   try {

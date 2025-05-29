@@ -38,96 +38,6 @@ const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
-const XLSX = __importStar(require("xlsx"));
-class ExcelTrendManager {
-    constructor(outputDir) {
-        this.maxRuns = 5;
-        this.excelFilePath = path.join(outputDir, "trend.xls");
-    }
-    // Add this public getter method
-    getExcelFilePath() {
-        return this.excelFilePath;
-    }
-    async readExistingData() {
-        try {
-            await fs.access(this.excelFilePath);
-            const buffer = await fs.readFile(this.excelFilePath);
-            return XLSX.read(buffer);
-        }
-        catch (_a) {
-            return null;
-        }
-    }
-    shiftRuns(data) {
-        if (data.length >= this.maxRuns) {
-            data.shift();
-        }
-        return data;
-    }
-    async updateTrendData(runId, timestamp, results, duration) {
-        let workbook = await this.readExistingData();
-        // Initialize workbook if it doesn't exist or is empty
-        if (!workbook) {
-            workbook = XLSX.utils.book_new();
-            // Create initial sheets with empty data
-            const overallSheet = XLSX.utils.json_to_sheet([]);
-            XLSX.utils.book_append_sheet(workbook, overallSheet, "overall");
-        }
-        // Ensure the workbook has at least the "overall" sheet
-        if (!workbook.Sheets["overall"]) {
-            const overallSheet = XLSX.utils.json_to_sheet([]);
-            XLSX.utils.book_append_sheet(workbook, overallSheet, "overall");
-        }
-        // Prepare "overall" data
-        const existingOverallData = workbook.Sheets["overall"]
-            ? XLSX.utils.sheet_to_json(workbook.Sheets["overall"])
-            : [];
-        const newOverallRow = {
-            RUN_ID: runId,
-            DURATION: duration,
-            TIMESTAMP: timestamp,
-            TOTAL_TESTS: results.length,
-            PASSED: results.filter((r) => r.status === "passed").length,
-            FAILED: results.filter((r) => r.status === "failed").length,
-            SKIPPED: results.filter((r) => r.status === "skipped").length,
-        };
-        const updatedOverallData = this.shiftRuns([
-            ...existingOverallData,
-            newOverallRow,
-        ]);
-        const overallSheet = XLSX.utils.json_to_sheet(updatedOverallData);
-        workbook.Sheets["overall"] = overallSheet;
-        // Prepare per-test data sheet
-        const runKey = `test run ${runId}`;
-        const testRunData = results.map((test) => ({
-            "TEST RUN ID": runId,
-            TEST_NAME: test.name,
-            DURATION: test.duration,
-            STATUS: test.status,
-            TIMESTAMP: timestamp,
-        }));
-        const testRunSheet = XLSX.utils.json_to_sheet(testRunData);
-        workbook.Sheets[runKey] = testRunSheet;
-        if (!workbook.SheetNames.includes(runKey)) {
-            workbook.SheetNames.push(runKey);
-        }
-        // Maintain max sheet count (excluding "overall")
-        const sheetNames = workbook.SheetNames.filter((name) => name !== "overall");
-        if (sheetNames.length > this.maxRuns) {
-            const oldestRun = Math.min(...sheetNames.map((name) => parseInt(name.split(" ")[2], 10)));
-            const oldestSheet = `test run ${oldestRun}`;
-            delete workbook.Sheets[oldestSheet];
-            workbook.SheetNames = workbook.SheetNames.filter((name) => name !== oldestSheet);
-        }
-        // Write workbook to file
-        const buffer = XLSX.write(workbook, { bookType: "xls", type: "buffer" });
-        await fs.writeFile(this.excelFilePath, buffer);
-    }
-    async generateExcel() {
-        // The file is already generated in updateTrendData
-        console.log(`Excel trend report updated at ${this.excelFilePath}`);
-    }
-}
 const convertStatus = (status, testCase) => {
     // Special case: test was expected to fail (test.fail())
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
@@ -165,14 +75,6 @@ class PlaywrightPulseReporter {
         this.outputDir = (_b = options.outputDir) !== null && _b !== void 0 ? _b : "pulse-report";
         this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR); // Initial path, resolved fully in onBegin
         // console.log(`Pulse Reporter Init: Configured outputDir option: ${options.outputDir}, Base file: ${this.baseOutputFile}`);
-        this.excelManager = new ExcelTrendManager(this.outputDir);
-    }
-    // Add this helper method to your PlaywrightPulseReporter class
-    getNextRunNumber() {
-        // Implement logic to determine the next run number
-        // This could be stored in a file or derived from existing data
-        // For simplicity, we'll use a timestamp-based approach here
-        return Math.floor(Date.now() / 1000);
     }
     printsToStdio() {
         return this.shardIndex === undefined || this.shardIndex === 0;
@@ -480,16 +382,6 @@ class PlaywrightPulseReporter {
                 results: this.results,
                 metadata: { generatedAt: new Date().toISOString() },
             };
-        }
-        // Generate Excel trend data
-        try {
-            const runNumber = this.getNextRunNumber();
-            await this.excelManager.updateTrendData(runNumber, Date.now(), finalReport.results, duration);
-            await this.excelManager.generateExcel();
-            console.log(`PlaywrightPulseReporter: Excel trend report updated at ${this.excelManager.getExcelFilePath()}`);
-        }
-        catch (error) {
-            console.error("Pulse Reporter: Failed to update Excel trend data:", error);
         }
         if (this.isSharded) {
             // console.log("Pulse Reporter: Run ended, main process merging shard results...");
