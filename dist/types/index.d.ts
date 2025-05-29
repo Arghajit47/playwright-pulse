@@ -34,6 +34,8 @@ export interface TestResult {
     screenshots?: string[];
     videoPath?: string;
     tracePath?: string;
+    stdout?: string[];
+    stderr?: string[];
 }
 export interface TestRun {
     id: string;
