@@ -117,7 +117,7 @@ export class PlaywrightPulseReporter implements Reporter {
   private async processStep(
     step: PwStep,
     testId: string,
-    browserDisplayName: string, // Changed from browserName for clarity
+    browserName: string, // Changed from browserName for clarity
     testCase?: TestCase
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
@@ -170,7 +170,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserDisplayName,
+      browser: browserName,
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
@@ -188,7 +188,7 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
     // Use project.name for a user-friendly display name
-    const browserDisplayName = project?.name || "unknown_project";
+    const browserName = project?.use?.defaultBrowserType || "unknown";
     // If you need the engine name (chromium, firefox, webkit)
     // const browserEngineName = project?.use?.browserName || "unknown_engine";
 
@@ -212,7 +212,7 @@ export class PlaywrightPulseReporter implements Reporter {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserDisplayName, // Pass display name
+          browserName, // Pass display name
           test
         );
         processed.push(processedStep);
@@ -279,7 +279,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserDisplayName, // Use the user-friendly project name
+      browser: browserName, // Use the user-friendly project name
       retries: result.retry,
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,

@@ -1687,7 +1687,8 @@ function generateHTML(reportData, trendData = null) {
         
         #test-ai iframe { border: 1px solid var(--border-color); width: 100%; height: 85vh; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); }
         #test-ai p {margin-bottom: 18px; font-size: 1em; color: var(--text-color-secondary);}
-
+        pre .stdout-log { background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
+        pre .stderr-log { background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
         /* Responsive Enhancements */
         @media (max-width: 1200px) {
             .trend-charts-row { grid-template-columns: 1fr; } /* Stack trend charts earlier */

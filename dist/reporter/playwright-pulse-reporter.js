@@ -104,7 +104,7 @@ class PlaywrightPulseReporter {
     onTestBegin(test) {
         // console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId, browserDisplayName, // Changed from browserName for clarity
+    async processStep(step, testId, browserName, // Changed from browserName for clarity
     testCase) {
         var _a, _b, _c, _d;
         let stepStatus = "passed";
@@ -153,7 +153,7 @@ class PlaywrightPulseReporter {
             duration: duration,
             startTime: startTime,
             endTime: endTime,
-            browser: browserDisplayName,
+            browser: browserName,
             errorMessage: errorMessage,
             stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
@@ -167,10 +167,10 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         // Use project.name for a user-friendly display name
-        const browserDisplayName = (project === null || project === void 0 ? void 0 : project.name) || "unknown_project";
+        const browserName = ((_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) || "unknown";
         // If you need the engine name (chromium, firefox, webkit)
         // const browserEngineName = project?.use?.browserName || "unknown_engine";
         const testStatus = convertStatus(result.status, test);
@@ -187,7 +187,7 @@ class PlaywrightPulseReporter {
         ) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles, browserDisplayName, // Pass display name
+                const processedStep = await this.processStep(step, testIdForFiles, browserName, // Pass display name
                 test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
@@ -198,7 +198,7 @@ class PlaywrightPulseReporter {
         };
         let codeSnippet = undefined;
         try {
-            if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
+            if (((_c = test.location) === null || _c === void 0 ? void 0 : _c.file) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.line) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -240,16 +240,16 @@ class PlaywrightPulseReporter {
             runId: "TBD",
             name: test.titlePath().join(" > "),
             // Use project.name for suiteName if desired, or fallback
-            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
+            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_f = this.config.projects[0]) === null || _f === void 0 ? void 0 : _f.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
-            browser: browserDisplayName, // Use the user-friendly project name
+            browser: browserName, // Use the user-friendly project name
             retries: result.retry,
-            steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
-            stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
+            steps: ((_g = result.steps) === null || _g === void 0 ? void 0 : _g.length) ? await processAllSteps(result.steps) : [],
+            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
+            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [], // Will be populated by attachFiles
