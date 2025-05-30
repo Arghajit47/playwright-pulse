@@ -5,7 +5,6 @@ import path from "path";
 import * as XLSX from "xlsx";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
-import ApexCharts from "apexcharts";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -55,43 +54,49 @@ function generateTestTrendsChart(trendData) {
     return '<div class="no-data">No overall trend data available for test counts.</div>';
   }
 
-  const categories = trendData.overall.map((_, i) => `Run ${i + 1}`);
-  const series = [
-    {
-      name: "Total",
-      data: trendData.overall.map((r) => r.totalTests),
-    },
-    {
-      name: "Passed",
-      data: trendData.overall.map((r) => r.passed),
-    },
-    {
-      name: "Failed",
-      data: trendData.overall.map((r) => r.failed),
-    },
-    {
-      name: "Skipped",
-      data: trendData.overall.map((r) => r.skipped || 0),
-    },
-  ];
+  const chartData = [["Run", "Total", "Passed", "Failed", "Skipped"]];
+  trendData.overall.forEach((r, i) => {
+    chartData.push([
+      `Run ${i + 1}`,
+      r.totalTests || 0,
+      r.passed || 0,
+      r.failed || 0,
+      r.skipped || 0,
+    ]);
+  });
 
-  const chartId = `test-trends-apex-${Date.now()}`;
+  const chartId = `test-trends-google-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}`;
+
+  // Using the hex codes directly as it's simpler than CSS variables within Google Charts options
+  const colors = ["#3f51b5", "#4CAF50", "#F44336", "#FFC107"]; // Corresponds to Total, Passed, Failed, Skipped
 
   return `
     <div class="trend-chart">
       <h3>Test Count Trends</h3>
-      <div id="${chartId}"></div>
-      <script>
-        new ApexCharts(document.getElementById("${chartId}"), {
-          chart: { type: "area", height: 350, toolbar: { show: false } },
-          dataLabels: { enabled: false },
-          stroke: { curve: "smooth" },
-          markers: { size: 4 },
-          tooltip: { shared: true, intersect: false },
-          colors: ["#3f51b5", "#4CAF50", "#F44336", "#FFC107"],
-          series: ${JSON.stringify(series)},
-          xaxis: { categories: ${JSON.stringify(categories)} },
-        }).render();
+      <div id="${chartId}" style="width: 100%; height: 350px;"></div>
+      <script type="text/javascript">
+        google.charts.setOnLoadCallback(drawTestTrendsChart);
+        function drawTestTrendsChart() {
+          var data = google.visualization.arrayToDataTable(${JSON.stringify(
+            chartData
+          )});
+          var options = {
+            title: 'Test Volume & Outcome Trends',
+            titleTextStyle: { fontSize: 16, bold: false },
+            curveType: 'function', // for smooth curves
+            legend: { position: 'bottom' },
+            pointSize: 5, // marker size
+            seriesType: 'area',
+            colors: ${JSON.stringify(colors)},
+            chartArea: {left:60,top:30,width:'85%',height:'65%'},
+            hAxis: { title: 'Test Runs' },
+            vAxis: { title: 'Number of Tests', minValue: 0 }
+          };
+          var chart = new google.visualization.AreaChart(document.getElementById('${chartId}'));
+          chart.draw(data, options);
+        }
       </script>
     </div>`;
 }
@@ -101,28 +106,40 @@ function generateDurationTrendChart(trendData) {
     return '<div class="no-data">No duration trend data available.</div>';
   }
 
-  const durations = trendData.overall.map((r) => (r.duration || 0) / 1000);
-  const categories = trendData.overall.map((_, i) => `Run ${i + 1}`);
-  const chartId = `duration-trend-apex-${Date.now()}`;
+  const chartData = [["Run", "Duration (s)"]];
+  trendData.overall.forEach((r, i) => {
+    chartData.push([`Run ${i + 1}`, (r.duration || 0) / 1000]);
+  });
+
+  const chartId = `duration-trend-google-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}`;
+  const color = "#FF9800"; // Orange for duration
 
   return `
     <div class="trend-chart">
       <h3>Duration Trend</h3>
-      <div id="${chartId}"></div>
-      <script>
-        new ApexCharts(document.getElementById("${chartId}"), {
-          chart: { type: "area", height: 350, toolbar: { show: false } },
-          dataLabels: { enabled: false },
-          stroke: { curve: "smooth" },
-          markers: { size: 4 },
-          tooltip: { shared: true },
-          colors: ["#FF9800"],
-          series: [{ name: "Duration (s)", data: ${JSON.stringify(
-            durations
-          )} }],
-          xaxis: { categories: ${JSON.stringify(categories)} },
-          yaxis: { labels: { formatter: val => val + "s" } }
-        }).render();
+      <div id="${chartId}" style="width: 100%; height: 350px;"></div>
+      <script type="text/javascript">
+        google.charts.setOnLoadCallback(drawDurationTrendChart);
+        function drawDurationTrendChart() {
+          var data = google.visualization.arrayToDataTable(${JSON.stringify(
+            chartData
+          )});
+          var options = {
+            title: 'Execution Duration Trends',
+            titleTextStyle: { fontSize: 16, bold: false },
+            curveType: 'function',
+            legend: { position: 'none' }, // Only one series, legend not critical
+            pointSize: 5,
+            colors: ['${color}'],
+            chartArea: {left:60,top:30,width:'85%',height:'65%'},
+            hAxis: { title: 'Test Runs' },
+            vAxis: { title: 'Duration (seconds)', format: '#,##0.0s', minValue: 0 }
+          };
+          var chart = new google.visualization.AreaChart(document.getElementById('${chartId}'));
+          chart.draw(data, options);
+        }
       </script>
     </div>`;
 }
@@ -148,86 +165,111 @@ function formatDate(dateStrOrDate) {
 }
 
 function generateTestHistoryChart(history) {
+  // history is an array of { duration: number, ... }
   if (!history || history.length === 0) {
     return '<div class="no-data-chart">No data for chart</div>';
   }
+  if (history.length < 2) {
+    // Area chart needs at least 2 points to draw an area
+    return '<div class="no-data-chart">Not enough data for trend chart (needs at least 2 runs).</div>';
+  }
 
-  const durations = history.map((h) => (h.duration || 0) / 1000);
-  const categories = history.map((_, i) => `R${i + 1}`);
-  const chartId = `history-chart-${Date.now()}`;
+  const chartData = [["Run", "Duration (s)"]];
+  history.forEach((h, i) => {
+    chartData.push([`R${i + 1}`, (h.duration || 0) / 1000]);
+  });
+
+  const chartId = `history-google-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}`;
+  const color = "#673ab7"; // accent-color (Deep Purple)
 
   return `
-    <div class="test-history-chart">
-      <div id="${chartId}"></div>
-      <script>
-        new ApexCharts(document.getElementById("${chartId}"), {
-          chart: { type: "area", height: 120, toolbar: { show: false }, sparkline: { enabled: true } },
-          stroke: { curve: "smooth" },
-          markers: { size: 2 },
-          tooltip: {
-            x: { formatter: (_, { dataPointIndex }) => "Run " + (dataPointIndex + 1) },
-            y: { formatter: val => val + "s" }
-          },
-          series: [{ name: "Duration", data: ${JSON.stringify(durations)} }],
-          xaxis: { categories: ${JSON.stringify(categories)} }
-        }).render();
+    <div class="test-history-chart" style="width: 100%; height: 120px;">
+      <div id="${chartId}" style="width: 100%; height: 100%;"></div>
+      <script type="text/javascript">
+        google.charts.setOnLoadCallback(drawTestHistoryChart_${chartId.replace(
+          /-/g,
+          "_"
+        )}); 
+        function drawTestHistoryChart_${chartId.replace(
+          /-/g,
+          "_"
+        )}() { // Unique function name
+          var data = google.visualization.arrayToDataTable(${JSON.stringify(
+            chartData
+          )});
+          var options = {
+            curveType: 'function',
+            legend: { position: 'none' },
+            pointSize: 3,
+            colors: ['${color}'],
+            chartArea: {left:35,top:10,width:'90%',height:'70%'}, // Adjusted for smaller chart
+            hAxis: { textPosition: 'none' }, // Like a sparkline, hide hAxis labels
+            vAxis: { textPosition: 'none', gridlines: { count: 0 } }, // Hide vAxis labels and gridlines
+            tooltip: { trigger: 'focus', showColorCode: false } // Simpler tooltip
+          };
+          var chart = new google.visualization.AreaChart(document.getElementById('${chartId}'));
+          chart.draw(data, options);
+        }
       </script>
     </div>`;
 }
 
-function generatePieChartApex(data) {
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  if (total === 0) {
-    return '<div class="no-data">No data for Test Distribution chart.</div>';
+function generatePieChartGoogle(data) {
+  // Renamed to avoid confusion
+  // data is expected to be like: [{ label: "Passed", value: X }, { label: "Failed", value: Y }, { label: "Skipped", value: Z }]
+  const filteredData = data.filter((d) => d.value > 0); // Only include series with data
+
+  if (filteredData.length === 0) {
+    return `
+    <div class="pie-chart-wrapper">
+      <h3>Test Distribution</h3>
+      <div class="no-data">No data for Test Distribution chart.</div>
+    </div>`;
   }
 
-  const passed = data.find((d) => d.label === "Passed")?.value || 0;
-  const passedPercentage = Math.round((passed / total) * 100);
-  const chartId = `pie-multicircle-${Date.now()}`;
+  const chartData = [["Status", "Count"]];
+  const sliceColors = [];
+
+  filteredData.forEach((d) => {
+    chartData.push([d.label, d.value]);
+    if (d.label === "Passed")
+      sliceColors.push("#4CAF50"); // var(--success-color)
+    else if (d.label === "Failed")
+      sliceColors.push("#F44336"); // var(--danger-color)
+    else if (d.label === "Skipped")
+      sliceColors.push("#FFC107"); // var(--warning-color)
+    else sliceColors.push("#cccccc"); // Default
+  });
+
+  const chartId = `pie-google-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}`;
 
   return `
     <div class="pie-chart-wrapper">
       <h3>Test Distribution</h3>
-      <div id="${chartId}"></div>
-      <script>
-        new ApexCharts(document.getElementById("${chartId}"), {
-          chart: { type: "radialBar", height: 300 },
-          series: ${JSON.stringify(data.map((d) => d.value))},
-          labels: ${JSON.stringify(data.map((d) => d.label))},
-          colors: ${JSON.stringify(
-            data.map((d) => {
-              return d.label === "Passed"
-                ? "#4CAF50"
-                : d.label === "Failed"
-                ? "#F44336"
-                : d.label === "Skipped"
-                ? "#FFC107"
-                : "#ccc";
-            })
-          )},
-          plotOptions: {
-            radialBar: {
-              dataLabels: {
-                name: { fontSize: "14px" },
-                value: { fontSize: "16px" },
-                total: {
-                  show: true,
-                  label: "Passed",
-                  formatter: () => "${passedPercentage}%"
-                }
-              }
-            }
-          },
-          tooltip: {
-            y: {
-              formatter: function(val, opts) {
-                const total = ${total};
-                const pct = Math.round((val / total) * 100);
-                return val + " (" + pct + "%)";
-              }
-            }
-          }
-        }).render();
+      <div id="${chartId}" style="width: 100%; height: 350px; min-height: 300px;"></div>
+      <script type="text/javascript">
+        google.charts.setOnLoadCallback(drawPieChart);
+        function drawPieChart() {
+          var data = google.visualization.arrayToDataTable(${JSON.stringify(
+            chartData
+          )});
+          var options = {
+            title: 'Test Outcome Distribution',
+            titleTextStyle: { fontSize: 16, bold: false },
+            is3D: true,
+            pieSliceText: 'percentage', // Show percentage on slices
+            legend: { position: 'right', alignment: 'center', textStyle: {fontSize: 12} },
+            colors: ${JSON.stringify(sliceColors)},
+            chartArea: {left:20,top:40,width:'90%',height:'80%'},
+            tooltip: { text: 'percentage', showColorCode: true } // Shows 'Status: Value (Percentage%)'
+          };
+          var chart = new google.visualization.PieChart(document.getElementById('${chartId}'));
+          chart.draw(data, options);
+        }
       </script>
     </div>`;
 }
@@ -749,7 +791,10 @@ function generateHTML(reportData, trendData = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+      google.charts.load('current', {'packages':['corechart']});
+    </script>
     <title>Playwright Pulse Report</title>
     <style>
         :root {
@@ -1143,7 +1188,7 @@ function generateHTML(reportData, trendData = null) {
                 </div>
             </div>
             <div class="dashboard-bottom-row">
-                ${generatePieChartApex(
+                ${generatePieChartGoogle(
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
