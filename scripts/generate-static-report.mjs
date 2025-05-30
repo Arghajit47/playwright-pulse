@@ -62,7 +62,7 @@ function generateTestTrendsChart(trendData) {
       label: "Total",
       data: trendData.overall.map((r) => r.totalTests || 0),
       borderColor: "var(--primary-color)", // Blue
-      backgroundColor: "rgba(63, 81, 181, 0.2)", // Lighter blue fill
+      backgroundColor: "rgba(47, 72, 211, 0.89)", // Lighter blue fill
       fill: true,
       tension: 0.4, // for smooth curves
       pointRadius: 3,
@@ -72,7 +72,7 @@ function generateTestTrendsChart(trendData) {
       label: "Passed",
       data: trendData.overall.map((r) => r.passed || 0),
       borderColor: "var(--success-color)", // Green
-      backgroundColor: "rgba(76, 175, 80, 0.2)", // Lighter green fill
+      backgroundColor: "rgba(49, 228, 55, 0.83)", // Lighter green fill
       fill: true,
       tension: 0.4,
       pointRadius: 3,
@@ -82,7 +82,7 @@ function generateTestTrendsChart(trendData) {
       label: "Failed",
       data: trendData.overall.map((r) => r.failed || 0),
       borderColor: "var(--danger-color)", // Red
-      backgroundColor: "rgba(244, 67, 54, 0.2)", // Lighter red fill
+      backgroundColor: "rgba(244, 67, 54, 0.81)", // Lighter red fill
       fill: true,
       tension: 0.4,
       pointRadius: 3,
@@ -92,7 +92,7 @@ function generateTestTrendsChart(trendData) {
       label: "Skipped",
       data: trendData.overall.map((r) => r.skipped || 0),
       borderColor: "var(--warning-color)", // Amber
-      backgroundColor: "rgba(255, 193, 7, 0.2)", // Lighter amber fill
+      backgroundColor: "rgba(255, 193, 7, 0.71)", // Lighter amber fill
       fill: true,
       tension: 0.4,
       pointRadius: 3,
@@ -106,7 +106,6 @@ function generateTestTrendsChart(trendData) {
 
   return `
     <div class="trend-chart" style="height:350px;">
-      <h3>Test Count Trends</h3>
       <canvas id="${chartId}"></canvas>
       <script>
         (function() {
@@ -162,7 +161,7 @@ function generateDurationTrendChart(trendData) {
       label: "Duration (s)",
       data: durationsData,
       borderColor: "var(--accent-color-alt)", // Orange
-      backgroundColor: "rgba(255, 152, 0, 0.2)", // Lighter orange fill
+      backgroundColor: "rgba(0, 255, 229, 0.61)", // Lighter cyan fill
       fill: true,
       tension: 0.4,
       pointRadius: 3,
@@ -176,7 +175,6 @@ function generateDurationTrendChart(trendData) {
 
   return `
     <div class="trend-chart" style="height:350px;">
-      <h3>Duration Trend</h3>
       <canvas id="${chartId}"></canvas>
       <script>
         (function() {
@@ -253,8 +251,8 @@ function generateTestHistoryChart(history) {
     {
       label: "Duration (s)",
       data: durationsData,
-      borderColor: "var(--accent-color)", // Deep Purple
-      backgroundColor: "rgba(103, 58, 183, 0.2)",
+      borderColor: "var(--accent-color)", // Light Purple
+      backgroundColor: "rgba(112, 50, 218, 0.72)",
       fill: history.length >= 2 ? true : false, // Only fill if there's an area to fill
       tension: 0.4,
       pointRadius: history.length > 5 ? 2 : 3, // Smaller points for more data
@@ -315,7 +313,7 @@ function generateTestHistoryChart(history) {
 
 function generatePieChartChartJs(data) {
   // data is expected to be like: [{ label: "Passed", value: X }, { label: "Failed", value: Y }, { label: "Skipped", value: Z }]
-  const filteredData = data.filter((d) => d.value > 0);
+  const filteredData = data.filter((d) => d.value > 0); // Only include series with data
 
   if (filteredData.length === 0) {
     return `
@@ -325,61 +323,47 @@ function generatePieChartChartJs(data) {
     </div>`;
   }
 
-  const labels = filteredData.map((d) => d.label);
-  const values = filteredData.map((d) => d.value);
-  const backgroundColors = filteredData.map((d) => {
-    if (d.label === "Passed") return "var(--success-color)";
-    if (d.label === "Failed") return "var(--danger-color)";
-    if (d.label === "Skipped") return "var(--warning-color)";
-    return "#cccccc"; // Default
+  const chartData = [["Status", "Count"]];
+  const sliceColors = [];
+
+  filteredData.forEach((d) => {
+    chartData.push([d.label, d.value]);
+    if (d.label === "Passed")
+      sliceColors.push("#4CAF50"); // var(--success-color)
+    else if (d.label === "Failed")
+      sliceColors.push("#F44336"); // var(--danger-color)
+    else if (d.label === "Skipped")
+      sliceColors.push("#FFC107"); // var(--warning-color)
+    else sliceColors.push("#cccccc"); // Default
   });
 
-  const chartId = `pie-chartjs-${Date.now()}-${Math.random()
+  const chartId = `pie-google-${Date.now()}-${Math.random()
     .toString(36)
     .substring(7)}`;
-  const totalSum = values.reduce((a, b) => a + b, 0); // For calculating percentages in tooltip
 
   return `
-    <div class="pie-chart-wrapper" style="height:350px; min-height: 300px;">
+    <div class="pie-chart-wrapper">
       <h3>Test Distribution</h3>
-      <canvas id="${chartId}"></canvas>
-      <script>
-        (function() {
-          const ctx = document.getElementById('${chartId}').getContext('2d');
-          new Chart(ctx, {
-            type: 'doughnut', // Can also be 'pie'
-            data: {
-              labels: ${JSON.stringify(labels)},
-              datasets: [{
-                label: 'Test Distribution',
-                data: ${JSON.stringify(values)},
-                backgroundColor: ${JSON.stringify(backgroundColors)},
-                hoverOffset: 8
-              }]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              cutout: '60%', // For doughnut chart, adjust for pie-like look if needed (e.g., '0%')
-              plugins: {
-                legend: {
-                  position: 'bottom',
-                  labels: { padding: 15 }
-                },
-                tooltip: {
-                  callbacks: {
-                    label: function(context) {
-                      const label = context.label || '';
-                      const value = context.parsed;
-                      const percentage = totalSum > 0 ? ((value / totalSum) * 100).toFixed(1) : 0;
-                      return \` \${label}: \${value} (\${percentage}%)\`; // Added space for icon
-                    }
-                  }
-                }
-              }
-            }
-          });
-        })();
+      <div id="${chartId}" style="width: 100%; height: 350px; min-height: 300px;"></div>
+      <script type="text/javascript">
+        google.charts.setOnLoadCallback(drawPieChart);
+        function drawPieChart() {
+          var data = google.visualization.arrayToDataTable(${JSON.stringify(
+            chartData
+          )});
+          var options = {
+            title: 'Test Outcome Distribution',
+            titleTextStyle: { fontSize: 16, bold: false },
+            is3D: true,
+            pieSliceText: 'percentage', // Show percentage on slices
+            legend: { position: 'right', alignment: 'center', textStyle: {fontSize: 12} },
+            colors: ${JSON.stringify(sliceColors)},
+            chartArea: {left:20,top:40,width:'90%',height:'80%'},
+            tooltip: { text: 'percentage', showColorCode: true } // Shows 'Status: Value (Percentage%)'
+          };
+          var chart = new google.visualization.PieChart(document.getElementById('${chartId}'));
+          chart.draw(data, options);
+        }
       </script>
     </div>`;
 }
@@ -901,6 +885,7 @@ function generateHTML(reportData, trendData = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <title>Playwright Pulse Report</title>
@@ -1000,6 +985,8 @@ function generateHTML(reportData, trendData = null) {
             border-radius: var(--border-radius); box-shadow: var(--box-shadow-light);
             display: flex; flex-direction: column; /* For internal alignment */
         }
+        .pie-chart-wrapper, .suites-widget { padding: 28px; }
+        .trend-chart { padding-bottom: 2em; }    
         .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .main-chart-title { 
             text-align: center; margin-top: 0; margin-bottom: 25px; 
             font-size: 1.25em; font-weight: 600; color: var(--text-color);
