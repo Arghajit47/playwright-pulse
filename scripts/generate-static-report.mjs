@@ -2,11 +2,10 @@
 // Using Node.js syntax compatible with `.mjs`
 import * as fs from "fs/promises";
 import path from "path";
-import * as d3 from "d3";
-import { JSDOM } from "jsdom";
 import * as XLSX from "xlsx";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
+import ApexCharts from "apexcharts";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -56,483 +55,76 @@ function generateTestTrendsChart(trendData) {
     return '<div class="no-data">No overall trend data available for test counts.</div>';
   }
 
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const legendHeight = 60;
-  const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 350 - margin.top - margin.bottom;
-
-  const svg = body
-    .append("svg")
-    .attr(
-      "viewBox",
-      `0 0 ${width + margin.left + margin.right} ${
-        height + margin.top + margin.bottom
-      }`
-    )
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const runs = trendData.overall;
-  const testCounts = runs.map((r) => r.totalTests);
-  const passedCounts = runs.map((r) => r.passed);
-  const failedCounts = runs.map((r) => r.failed);
-  const skippedCounts = runs.map((r) => r.skipped || 0);
-
-  const yMax = d3.max(
-    [testCounts, passedCounts, failedCounts, skippedCounts].flat()
-  );
-  const x = d3
-    .scalePoint()
-    .domain(runs.map((_, i) => i + 1))
-    .range([0, width])
-    .padding(0.5);
-  const y = d3
-    .scaleLinear()
-    .domain([0, yMax > 0 ? yMax * 1.1 : 10])
-    .range([height, 0]);
-
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `Run ${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(xAxis);
-  chart.append("g").attr("class", "chart-axis y-axis").call(d3.axisLeft(y));
-
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d))
-    .curve(d3.curveMonotoneX);
-  const areaGenerator = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(height)
-    .curve(d3.curveMonotoneX);
-
-  // ✅ Add gradient defs
-  const defs = svg.append("defs");
-
-  const gradients = [
-    { id: "totalGradient", color: "var(--primary-color)" },
-    { id: "passedGradient", color: "var(--success-color)" },
-    { id: "failedGradient", color: "var(--danger-color)" },
-    { id: "skippedGradient", color: "var(--warning-color)" },
-  ];
-
-  gradients.forEach(({ id, color }) => {
-    const gradient = defs
-      .append("linearGradient")
-      .attr("id", id)
-      .attr("x1", "0%")
-      .attr("y1", "0%")
-      .attr("x2", "0%")
-      .attr("y2", "100%");
-    gradient
-      .append("stop")
-      .attr("offset", "0%")
-      .attr("stop-color", color)
-      .attr("stop-opacity", 0.4);
-    gradient
-      .append("stop")
-      .attr("offset", "100%")
-      .attr("stop-color", color)
-      .attr("stop-opacity", 0);
-  });
-
-  // ✅ Render area fills
-  chart
-    .append("path")
-    .datum(testCounts)
-    .attr("fill", "url(#totalGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(passedCounts)
-    .attr("fill", "url(#passedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(failedCounts)
-    .attr("fill", "url(#failedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(skippedCounts)
-    .attr("fill", "url(#skippedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-
-  // ✅ Render lines
-  chart
-    .append("path")
-    .datum(testCounts)
-    .attr("class", "chart-line total-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(passedCounts)
-    .attr("class", "chart-line passed-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(failedCounts)
-    .attr("class", "chart-line failed-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(skippedCounts)
-    .attr("class", "chart-line skipped-line")
-    .attr("d", lineGenerator);
-
-  // ✅ Tooltip
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0)
-    .style("position", "absolute");
-
-  runs.forEach((run, i) => {
-    const categories = [
-      { type: "Total", count: run.totalTests, color: "var(--primary-color)" },
-      { type: "Passed", count: run.passed, color: "var(--success-color)" },
-      { type: "Failed", count: run.failed, color: "var(--danger-color)" },
-      {
-        type: "Skipped",
-        count: run.skipped || 0,
-        color: "var(--warning-color)",
-      },
-    ];
-
-    categories.forEach((category) => {
-      if (typeof category.count !== "number") return;
-
-      chart
-        .append("circle")
-        .attr("class", `hover-point hover-point-${category.type.toLowerCase()}`)
-        .attr("cx", x(i + 1))
-        .attr("cy", y(category.count))
-        .attr("r", 7)
-        .style("fill", "transparent")
-        .style("pointer-events", "all")
-        .on("mouseover", function (event) {
-          tooltip.transition().duration(150).style("opacity", 0.95);
-          tooltip
-            .html(
-              `
-            <strong>Run ${run.runId || i + 1} (${category.type})</strong><br>
-            Date: ${new Date(run.timestamp).toLocaleString()}<br>
-            ${category.type}: ${category.count}<br>
-            ---<br>
-            Total: ${run.totalTests} | Passed: ${run.passed}<br>
-            Failed: ${run.failed} | Skipped: ${run.skipped || 0}<br>
-            Duration: ${formatDuration(run.duration)}`
-            )
-            .style("left", `${event.pageX + 15}px`)
-            .style("top", `${event.pageY - 28}px`);
-
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 5.5)
-            .style("opacity", 1);
-        })
-        .on("mouseout", function () {
-          tooltip.transition().duration(300).style("opacity", 0);
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 4)
-            .style("opacity", 0.8);
-        });
-
-      chart
-        .append("circle")
-        .attr(
-          "class",
-          `visible-point visible-point-${category.type.toLowerCase()}`
-        )
-        .attr("data-run-index", i)
-        .attr("cx", x(i + 1))
-        .attr("cy", y(category.count))
-        .attr("r", 4)
-        .style("fill", category.color)
-        .style("opacity", 0.8)
-        .style("pointer-events", "none");
-    });
-  });
-
-  // ✅ Legend
-  const legendData = [
+  const categories = trendData.overall.map((_, i) => `Run ${i + 1}`);
+  const series = [
     {
-      label: "Total",
-      colorClass: "total-line",
-      dotColor: "var(--primary-color)",
+      name: "Total",
+      data: trendData.overall.map((r) => r.totalTests),
     },
     {
-      label: "Passed",
-      colorClass: "passed-line",
-      dotColor: "var(--success-color)",
+      name: "Passed",
+      data: trendData.overall.map((r) => r.passed),
     },
     {
-      label: "Failed",
-      colorClass: "failed-line",
-      dotColor: "var(--danger-color)",
+      name: "Failed",
+      data: trendData.overall.map((r) => r.failed),
     },
     {
-      label: "Skipped",
-      colorClass: "skipped-line",
-      dotColor: "var(--warning-color)",
+      name: "Skipped",
+      data: trendData.overall.map((r) => r.skipped || 0),
     },
   ];
 
-  const legend = chart
-    .append("g")
-    .attr("class", "chart-legend-d3 chart-legend-bottom")
-    .attr(
-      "transform",
-      `translate(${width / 2 - (legendData.length * 80) / 2}, ${height + 40})`
-    );
+  const chartId = `test-trends-apex-${Date.now()}`;
 
-  legendData.forEach((item, i) => {
-    const row = legend.append("g").attr("transform", `translate(${i * 80}, 0)`);
-    row
-      .append("line")
-      .attr("x1", 0)
-      .attr("x2", 15)
-      .attr("y1", 5)
-      .attr("y2", 5)
-      .attr("class", `chart-line ${item.colorClass}`)
-      .style("stroke-width", 2.5);
-    row
-      .append("circle")
-      .attr("cx", 7.5)
-      .attr("cy", 5)
-      .attr("r", 3.5)
-      .style("fill", item.dotColor);
-    row
-      .append("text")
-      .attr("x", 22)
-      .attr("y", 10)
-      .text(item.label)
-      .style("font-size", "12px");
-  });
-
-  return `<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+    <div class="trend-chart">
+      <h3>Test Count Trends</h3>
+      <div id="${chartId}"></div>
+      <script>
+        new ApexCharts(document.getElementById("${chartId}"), {
+          chart: { type: "area", height: 350, toolbar: { show: false } },
+          dataLabels: { enabled: false },
+          stroke: { curve: "smooth" },
+          markers: { size: 4 },
+          tooltip: { shared: true, intersect: false },
+          colors: ["#3f51b5", "#4CAF50", "#F44336", "#FFC107"],
+          series: ${JSON.stringify(series)},
+          xaxis: { categories: ${JSON.stringify(categories)} },
+        }).render();
+      </script>
+    </div>`;
 }
 
 function generateDurationTrendChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
-    return '<div class="no-data">No overall trend data available for durations.</div>';
+    return '<div class="no-data">No duration trend data available.</div>';
   }
 
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
+  const durations = trendData.overall.map((r) => (r.duration || 0) / 1000);
+  const categories = trendData.overall.map((_, i) => `Run ${i + 1}`);
+  const chartId = `duration-trend-apex-${Date.now()}`;
 
-  const legendHeight = 30;
-  const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 350 - margin.top - margin.bottom;
-
-  const svg = body
-    .append("svg")
-    .attr(
-      "viewBox",
-      `0 0 ${width + margin.left + margin.right} ${
-        height + margin.top + margin.bottom
-      }`
-    )
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const runs = trendData.overall;
-  const durations = runs.map((run) => run.duration / 1000);
-
-  const x = d3
-    .scalePoint()
-    .domain(runs.map((_, i) => i + 1))
-    .range([0, width])
-    .padding(0.5);
-
-  const yMax = d3.max(durations);
-  const y = d3
-    .scaleLinear()
-    .domain([0, yMax > 0 ? yMax * 1.1 : 10])
-    .range([height, 0]);
-
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `Run ${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(xAxis)
-    .selectAll("text")
-    .text((d) => `Run ${d}`);
-
-  chart
-    .append("g")
-    .attr("class", "chart-axis y-axis")
-    .call(d3.axisLeft(y).tickFormat((d) => `${d}s`));
-
-  // ✅ Gradient fill for area under the line
-  const defs = svg.append("defs");
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "durationGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0);
-
-  // ✅ Line + area generators
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d_val) => y(d_val))
-    .curve(d3.curveMonotoneX);
-
-  const areaGenerator = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(height)
-    .y1((d_val) => y(d_val))
-    .curve(d3.curveMonotoneX);
-
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("fill", "url(#durationGradient)")
-    .attr("d", areaGenerator);
-
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("class", "chart-line duration-line")
-    .attr("d", lineGenerator);
-
-  // ✅ Tooltip handling
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  runs.forEach((run, i) => {
-    chart
-      .append("circle")
-      .attr("class", "hover-point")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 7)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        tooltip.transition().duration(150).style("opacity", 0.95);
-        tooltip
-          .html(
-            `
-          <strong>Run ${run.runId || i + 1}</strong><br>
-          Date: ${new Date(run.timestamp).toLocaleString()}<br>
-          Duration: ${formatDuration(run.duration)}<br>
-          Tests: ${run.totalTests}`
-          )
-          .style("left", `${event.pageX + 15}px`)
-          .style("top", `${event.pageY - 28}px`);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 5.5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 4)
-          .style("opacity", 0.8);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point visible-point-duration")
-      .attr("data-run-index", i)
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 4)
-      .style("fill", "var(--accent-color-alt)")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none");
-  });
-
-  const legend = chart
-    .append("g")
-    .attr("class", "chart-legend-d3 chart-legend-bottom")
-    .attr("transform", `translate(${width / 2 - 50}, ${height + 40})`);
-
-  const legendRow = legend.append("g");
-  legendRow
-    .append("line")
-    .attr("x1", 0)
-    .attr("x2", 15)
-    .attr("y1", 5)
-    .attr("y2", 5)
-    .attr("class", "chart-line duration-line")
-    .style("stroke-width", 2.5);
-  legendRow
-    .append("circle")
-    .attr("cx", 7.5)
-    .attr("cy", 5)
-    .attr("r", 3.5)
-    .style("fill", "var(--accent-color-alt)");
-  legendRow
-    .append("text")
-    .attr("x", 22)
-    .attr("y", 10)
-    .text("Duration")
-    .style("font-size", "12px");
-
-  chart
-    .append("text")
-    .attr("class", "chart-title main-chart-title")
-    .attr("x", width / 2)
-    .attr("y", -margin.top / 2 + 10)
-    .attr("text-anchor", "middle");
-
-  return `<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+    <div class="trend-chart">
+      <h3>Duration Trend</h3>
+      <div id="${chartId}"></div>
+      <script>
+        new ApexCharts(document.getElementById("${chartId}"), {
+          chart: { type: "area", height: 350, toolbar: { show: false } },
+          dataLabels: { enabled: false },
+          stroke: { curve: "smooth" },
+          markers: { size: 4 },
+          tooltip: { shared: true },
+          colors: ["#FF9800"],
+          series: [{ name: "Duration (s)", data: ${JSON.stringify(
+            durations
+          )} }],
+          xaxis: { categories: ${JSON.stringify(categories)} },
+          yaxis: { labels: { formatter: val => val + "s" } }
+        }).render();
+      </script>
+    </div>`;
 }
 
 function formatDate(dateStrOrDate) {
@@ -556,333 +148,87 @@ function formatDate(dateStrOrDate) {
 }
 
 function generateTestHistoryChart(history) {
-  if (!history || history.length === 0)
+  if (!history || history.length === 0) {
     return '<div class="no-data-chart">No data for chart</div>';
-
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const width = 320;
-  const height = 100;
-  const margin = { top: 10, right: 10, bottom: 30, left: 40 };
-
-  const svg = body
-    .append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const chartWidth = width - margin.left - margin.right;
-  const chartHeight = height - margin.top - margin.bottom;
-
-  const validHistory = history.filter(
-    (h) => h && typeof h.duration === "number" && h.duration >= 0
-  );
-  if (validHistory.length === 0)
-    return '<div class="no-data-chart">No valid data for chart</div>';
-
-  const maxDuration = d3.max(validHistory, (d) => d.duration);
-
-  const x = d3
-    .scalePoint()
-    .domain(validHistory.map((_, i) => i + 1))
-    .range([0, chartWidth])
-    .padding(0.5);
-
-  const y = d3
-    .scaleLinear()
-    .domain([0, maxDuration > 0 ? maxDuration * 1.1 : 1])
-    .range([chartHeight, 0]);
-
-  // Axes
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `R${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis small-axis")
-    .attr("transform", `translate(0,${chartHeight})`)
-    .call(xAxis)
-    .selectAll("text")
-    .text((d) => `R${d}`);
-
-  chart
-    .append("g")
-    .attr("class", "chart-axis y-axis small-axis")
-    .call(
-      d3
-        .axisLeft(y)
-        .ticks(3)
-        .tickFormat((d) => formatDuration(d))
-    );
-
-  // Gradient
-  const defs = svg.append("defs");
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "historyLineGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0);
-
-  // Line generator with smoothing
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d.duration))
-    .curve(d3.curveMonotoneX);
-
-  if (validHistory.length > 1) {
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("class", "chart-line history-duration-line")
-      .attr("d", lineGenerator)
-      .style("stroke", "var(--accent-color)");
-
-    // Gradient area fill under line
-    const area = d3
-      .area()
-      .x((_, i) => x(i + 1))
-      .y0(chartHeight)
-      .y1((d) => y(d.duration))
-      .curve(d3.curveMonotoneX);
-
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("d", area)
-      .attr("fill", "url(#historyLineGradient)");
   }
 
-  // Tooltip
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
+  const durations = history.map((h) => (h.duration || 0) / 1000);
+  const categories = history.map((_, i) => `R${i + 1}`);
+  const chartId = `history-chart-${Date.now()}`;
 
-  validHistory.forEach((run, i) => {
-    chart
-      .append("circle")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 6)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        tooltip.transition().duration(150).style("opacity", 0.95);
-        tooltip
-          .html(
-            `
-          <strong>Run ${run.runId || i + 1}</strong><br>
-          Status: <span class="status-badge-small-tooltip ${getStatusClass(
-            run.status
-          )}">${run.status.toUpperCase()}</span><br>
-          Duration: ${formatDuration(run.duration)}`
-          )
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY - 15}px`);
-        d3.select(this.nextSibling)
-          .transition()
-          .duration(100)
-          .attr("r", 4.5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(this.nextSibling)
-          .transition()
-          .duration(100)
-          .attr("r", 3)
-          .style("opacity", 0.8);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 3)
-      .style(
-        "fill",
-        run.status === "passed"
-          ? "var(--success-color)"
-          : run.status === "failed"
-          ? "var(--danger-color)"
-          : "var(--warning-color)"
-      )
-      .style("stroke", "#fff")
-      .style("stroke-width", "0.5px")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none");
-  });
-
-  return body.html();
+  return `
+    <div class="test-history-chart">
+      <div id="${chartId}"></div>
+      <script>
+        new ApexCharts(document.getElementById("${chartId}"), {
+          chart: { type: "area", height: 120, toolbar: { show: false }, sparkline: { enabled: true } },
+          stroke: { curve: "smooth" },
+          markers: { size: 2 },
+          tooltip: {
+            x: { formatter: (_, { dataPointIndex }) => "Run " + (dataPointIndex + 1) },
+            y: { formatter: val => val + "s" }
+          },
+          series: [{ name: "Duration", data: ${JSON.stringify(durations)} }],
+          xaxis: { categories: ${JSON.stringify(categories)} }
+        }).render();
+      </script>
+    </div>`;
 }
 
-function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
+function generatePieChartApex(data) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) {
     return '<div class="no-data">No data for Test Distribution chart.</div>';
   }
-  const passedPercentage = Math.round(
-    ((data.find((d) => d.label === "Passed")?.value || 0) / total) * 100
-  );
 
-  const legendItemHeight = 22;
-  const legendAreaHeight =
-    data.filter((d) => d.value > 0).length * legendItemHeight;
-  const effectiveChartHeight = chartHeight - legendAreaHeight - 10; // Space for legend below
-
-  const outerRadius = Math.min(chartWidth, effectiveChartHeight) / 2 - 10; // Adjusted radius for legend space
-  const innerRadius = outerRadius * 0.55;
-
-  const pie = d3
-    .pie()
-    .value((d) => d.value)
-    .sort(null);
-  const arcGenerator = d3
-    .arc()
-    .innerRadius(innerRadius)
-    .outerRadius(outerRadius);
-
-  const colorMap = {
-    Passed: "var(--success-color)",
-    Failed: "var(--danger-color)",
-    Skipped: "var(--warning-color)",
-  };
-  const color = d3
-    .scaleOrdinal()
-    .domain(data.map((d) => d.label))
-    .range(data.map((d) => colorMap[d.label] || "#ccc"));
-
-  const svg = body
-    .append("svg")
-    .attr("width", chartWidth) // SVG width is just for the chart
-    .attr("height", chartHeight) // Full height including legend
-    .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chartGroup = svg
-    .append("g")
-    .attr(
-      "transform",
-      `translate(${chartWidth / 2}, ${effectiveChartHeight / 2 + 5})`
-    ); // Centered in available chart area
-
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  chartGroup
-    .selectAll(".arc-path")
-    .data(pie(data.filter((d) => d.value > 0))) // Filter out zero-value slices for cleaner chart
-    .enter()
-    .append("path")
-    .attr("class", "arc-path")
-    .attr("d", arcGenerator)
-    .attr("fill", (d) => color(d.data.label))
-    .style("stroke", "var(--card-background-color)")
-    .style("stroke-width", 3)
-    .on("mouseover", function (event, d) {
-      d3.select(this)
-        .transition()
-        .duration(150)
-        .attr(
-          "d",
-          d3
-            .arc()
-            .innerRadius(innerRadius)
-            .outerRadius(outerRadius + 6)
-        );
-      tooltip.transition().duration(150).style("opacity", 0.95);
-      tooltip
-        .html(
-          `${d.data.label}: ${d.data.value} (${Math.round(
-            (d.data.value / total) * 100
-          )}%)`
-        )
-        .style("left", event.pageX + 15 + "px")
-        .style("top", event.pageY - 28 + "px");
-    })
-    .on("mouseout", function (event, d) {
-      d3.select(this).transition().duration(150).attr("d", arcGenerator);
-      tooltip.transition().duration(300).style("opacity", 0);
-    });
-
-  chartGroup
-    .append("text")
-    .attr("class", "pie-center-percentage")
-    .attr("text-anchor", "middle")
-    .attr("dy", "0.05em")
-    .text(`${passedPercentage}%`);
-
-  chartGroup
-    .append("text")
-    .attr("class", "pie-center-label")
-    .attr("text-anchor", "middle")
-    .attr("dy", "1.3em")
-    .text("Passed");
-
-  const legend = svg
-    .append("g")
-    .attr("class", "pie-chart-legend-d3 chart-legend-bottom")
-    .attr(
-      "transform",
-      `translate(${chartWidth / 2}, ${effectiveChartHeight + 20})`
-    ); // Position legend below chart
-
-  const legendItems = legend
-    .selectAll(".legend-item")
-    .data(data.filter((d) => d.value > 0))
-    .enter()
-    .append("g")
-    .attr("class", "legend-item")
-    // Position items horizontally, centering the block
-    .attr("transform", (d, i, nodes) => {
-      const numItems = nodes.length;
-      const totalLegendWidth = numItems * 90 - 10; // Approx width of all legend items
-      const startX = -totalLegendWidth / 2;
-      return `translate(${startX + i * 90}, 0)`; // 90 is approx width per item
-    });
-
-  legendItems
-    .append("rect")
-    .attr("width", 12)
-    .attr("height", 12)
-    .style("fill", (d) => color(d.label))
-    .attr("rx", 3)
-    .attr("ry", 3)
-    .attr("y", -6); // Align with text
-
-  legendItems
-    .append("text")
-    .attr("x", 18)
-    .attr("y", 0)
-    .text((d) => `${d.label} (${d.value})`)
-    .style("font-size", "12px")
-    .attr("dominant-baseline", "middle");
+  const passed = data.find((d) => d.label === "Passed")?.value || 0;
+  const passedPercentage = Math.round((passed / total) * 100);
+  const chartId = `pie-multicircle-${Date.now()}`;
 
   return `
     <div class="pie-chart-wrapper">
       <h3>Test Distribution</h3>
-      ${body.html()}
+      <div id="${chartId}"></div>
+      <script>
+        new ApexCharts(document.getElementById("${chartId}"), {
+          chart: { type: "radialBar", height: 300 },
+          series: ${JSON.stringify(data.map((d) => d.value))},
+          labels: ${JSON.stringify(data.map((d) => d.label))},
+          colors: ${JSON.stringify(
+            data.map((d) => {
+              return d.label === "Passed"
+                ? "#4CAF50"
+                : d.label === "Failed"
+                ? "#F44336"
+                : d.label === "Skipped"
+                ? "#FFC107"
+                : "#ccc";
+            })
+          )},
+          plotOptions: {
+            radialBar: {
+              dataLabels: {
+                name: { fontSize: "14px" },
+                value: { fontSize: "16px" },
+                total: {
+                  show: true,
+                  label: "Passed",
+                  formatter: () => "${passedPercentage}%"
+                }
+              }
+            }
+          },
+          tooltip: {
+            y: {
+              formatter: function(val, opts) {
+                const total = ${total};
+                const pct = Math.round((val / total) * 100);
+                return val + " (" + pct + "%)";
+              }
+            }
+          }
+        }).render();
+      </script>
     </div>`;
 }
 
@@ -1403,6 +749,7 @@ function generateHTML(reportData, trendData = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <title>Playwright Pulse Report</title>
     <style>
         :root {
@@ -1796,7 +1143,7 @@ function generateHTML(reportData, trendData = null) {
                 </div>
             </div>
             <div class="dashboard-bottom-row">
-                ${generatePieChartD3(
+                ${generatePieChartApex(
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
