@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-// Using Node.js syntax compatible with `.mjs`
+
 import * as fs from "fs/promises";
 import path from "path";
-// import * as d3 from "d3"; // Removed D3
-import { JSDOM } from "jsdom"; // JSDOM still used by other parts, but not directly in chart string generation
 import * as XLSX from "xlsx";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
@@ -43,6 +41,105 @@ function sanitizeHTML(str) {
 function capitalize(str) {
   if (!str) return ""; // Handle empty string
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function formatPlaywrightError(error) {
+  // Get the error message and clean ANSI codes
+  const rawMessage = error.stack || error.message || error.toString();
+  const cleanMessage = rawMessage.replace(/\x1B\[[0-9;]*[mGKH]/g, "");
+
+  // Parse error components
+  const timeoutMatch = cleanMessage.match(/Timed out (\d+)ms waiting for/);
+  const assertionMatch = cleanMessage.match(/expect\((.*?)\)\.(.*?)\(/);
+  const expectedMatch = cleanMessage.match(
+    /Expected (?:pattern|string|regexp|value): (.*?)(?:\n|Call log|$)/s
+  );
+  const actualMatch = cleanMessage.match(
+    /Received (?:string|value): (.*?)(?:\n|Call log|$)/s
+  );
+
+  // HTML escape function
+  const escapeHtml = (str) => {
+    if (!str) return "";
+    return str.replace(
+      /[&<>'"]/g,
+      (tag) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "'": "&#39;",
+          '"': "&quot;",
+        }[tag])
+    );
+  };
+
+  // Build HTML output
+  let html = `<div class="playwright-error">
+    <div class="error-header">Test Error</div>`;
+
+  if (timeoutMatch) {
+    html += `<div class="error-timeout">⏱ Timeout: ${escapeHtml(
+      timeoutMatch[1]
+    )}ms</div>`;
+  }
+
+  if (assertionMatch) {
+    html += `<div class="error-assertion">🔍 Assertion: expect(${escapeHtml(
+      assertionMatch[1]
+    )}).${escapeHtml(assertionMatch[2])}()</div>`;
+  }
+
+  if (expectedMatch) {
+    html += `<div class="error-expected">✅ Expected: ${escapeHtml(
+      expectedMatch[1]
+    )}</div>`;
+  }
+
+  if (actualMatch) {
+    html += `<div class="error-actual">❌ Actual: ${escapeHtml(
+      actualMatch[1]
+    )}</div>`;
+  }
+
+  // Add call log if present
+  const callLogStart = cleanMessage.indexOf("Call log:");
+  if (callLogStart !== -1) {
+    const callLogEnd =
+      cleanMessage.indexOf("\n\n", callLogStart) || cleanMessage.length;
+    const callLogSection = cleanMessage
+      .slice(callLogStart + 9, callLogEnd)
+      .trim();
+
+    html += `<div class="error-call-log">
+      <div class="call-log-header">📜 Call Log:</div>
+      <ul class="call-log-items">${callLogSection
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line)
+        .map((line) => `<li>${escapeHtml(line.replace(/^-\s*/, ""))}</li>`)
+        .join("")}</ul>
+    </div>`;
+  }
+
+  // Add stack trace if present
+  const stackTraceMatch = cleanMessage.match(/\n\s*at\s.*/gs);
+  if (stackTraceMatch) {
+    html += `<div class="error-stack-trace">
+      <div class="stack-trace-header">🔎 Stack Trace:</div>
+      <ul class="stack-trace-items">${stackTraceMatch[0]
+        .trim()
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line)
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("")}</ul>
+    </div>`;
+  }
+
+  html += `</div>`;
+
+  return html;
 }
 
 // User-provided formatDuration function
@@ -611,7 +708,7 @@ function generateTestHistoryContent(trendData) {
         <option value="failed">Failed</option>
         <option value="skipped">Skipped</option>
     </select>
-    <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button> {/* <!-- ADDED THIS BUTTON --> */}
+    <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button>
 </div>
       
       <div class="test-history-grid">
@@ -875,7 +972,6 @@ function generateHTML(reportData, trendData = null) {
                 step.errorMessage
                   ? `
                 <div class="step-error">
-                  <strong>Error:</strong> ${sanitizeHTML(step.errorMessage)}
                   ${
                     step.stackTrace
                       ? `<pre class="stack-trace">${sanitizeHTML(
@@ -931,9 +1027,9 @@ function generateHTML(reportData, trendData = null) {
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
           ${
             test.error
-              ? `<div class="test-error-summary"><h4>Test Error:</h4><pre>${sanitizeHTML(
-                  test.error
-                )}</pre></div>`
+              ? `<div class="test-error-summary">
+  ${formatPlaywrightError(test.error)}
+</div>`
               : ""
           }
 
@@ -975,7 +1071,8 @@ function generateHTML(reportData, trendData = null) {
                   <div class="attachment-item">
                     <img src="${screenshot}" alt="Screenshot">
                     <div class="attachment-info">
-                      <a href="${screenshot}" target="_blank">View Full Size</a>
+                    <div class="trace-actions">
+                      <a href="${screenshot}" target="_blank">View Full Size</a></div>
                     </div>
                   </div>
                 `
@@ -1027,10 +1124,11 @@ function generateHTML(reportData, trendData = null) {
                           Your browser does not support the video tag.
                         </video>
                         <div class="attachment-info">
-                          <span class="video-name">${videoName}</span>
+                          <div class="trace-actions">
                           <a href="${videoUrl}" target="_blank" download="${videoName}.${fileExtension}">
                             Download
                           </a>
+                          </div>
                         </div>
                       </div>
                     `;
@@ -1064,9 +1162,6 @@ function generateHTML(reportData, trendData = null) {
                 ? trace.name || `Trace ${index + 1}`
                 : `Trace ${index + 1}`;
             const traceFileName = traceUrl.split("/").pop();
-            const traceViewerUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(
-              traceUrl
-            )}&traceFileName=${encodeURIComponent(traceFileName)}`;
 
             return `
             <div class="attachment-item">
@@ -1594,7 +1689,7 @@ function generateHTML(reportData, trendData = null) {
     </select>
     <button id="expand-all-tests">Expand All</button>
     <button id="collapse-all-tests">Collapse All</button>
-    <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button> {/* <!-- ADDED THIS BUTTON --> */}
+    <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
 </div>
             <div class="test-cases-list">
                 ${generateTestCasesHTML()}
