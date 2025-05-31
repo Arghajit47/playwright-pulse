@@ -100,9 +100,7 @@ function generateTestTrendsChart(trendData) {
       chart: { type: "line", height: 350, backgroundColor: "transparent" },
       title: { text: null },
       xAxis: {
-          categories: ${JSON.stringify(
-            runs.map((run, i) => `Run ${run.runId || i + 1}`)
-          )},
+          categories: ${JSON.stringify(runs.map((run, i) => `Run ${i + 1}`))},
           crosshair: true,
           labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}
       },
@@ -205,9 +203,7 @@ function generateDurationTrendChart(trendData) {
       chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
       title: { text: null },
       xAxis: {
-          categories: ${JSON.stringify(
-            runs.map((run, i) => `Run ${run.runId || i + 1}`)
-          )},
+          categories: ${JSON.stringify(runs.map((run, i) => `Run ${i + 1}`))},
           crosshair: true,
           labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' } }
       },
@@ -529,8 +525,8 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   `;
 
   return `
-      <div class="pie-chart-wrapper">
-          <h3>Test Distribution</h3>
+      <div class="pie-chart-wrapper" style="align-items: center">
+          <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
           <div id="${chartId}" style="width: ${chartWidth}px; height: ${
     chartHeight - 40
   }px;"></div>
@@ -1084,10 +1080,7 @@ function generateHTML(reportData, trendData = null) {
           --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05);
           --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
         }
-        .highcharts-color-0 { fill: var(--primary-color); stroke: var(--primary-color); }
-        .highcharts-color-1 { fill: var(--success-color); stroke: var(--success-color); }
-        .highcharts-color-2 { fill: var(--danger-color); stroke: var(--danger-color); }
-        .highcharts-color-3 { fill: var(--warning-color); stroke: var(--warning-color); }
+
         /* General Highcharts styling */
         .highcharts-background { fill: transparent; }
         .highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
@@ -1166,6 +1159,7 @@ function generateHTML(reportData, trendData = null) {
             border-radius: var(--border-radius); box-shadow: var(--box-shadow-light);
             display: flex; flex-direction: column; 
         }
+
         .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { 
             text-align: center; margin-top: 0; margin-bottom: 25px; 
             font-size: 1.25em; font-weight: 600; color: var(--text-color);
