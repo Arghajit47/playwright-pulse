@@ -604,14 +604,15 @@ function generateTestHistoryContent(trendData) {
   return `
     <div class="test-history-container">
       <div class="filters" style="border-color: black; border-style: groove;">
-        <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
-        <select id="history-filter-status">
-          <option value="">All Statuses</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="skipped">Skipped</option>
-        </select>
-      </div>
+    <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
+    <select id="history-filter-status">
+        <option value="">All Statuses</option>
+        <option value="passed">Passed</option>
+        <option value="failed">Failed</option>
+        <option value="skipped">Skipped</option>
+    </select>
+    <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button> {/* <!-- ADDED THIS BUTTON --> */}
+</div>
       
       <div class="test-history-grid">
         ${testHistory
@@ -1443,6 +1444,17 @@ function generateHTML(reportData, trendData = null) {
 .download-trace:hover {
   background: #cbd5e0;
 }
+
+.filters button.clear-filters-btn {
+    background-color: var(--medium-gray-color); /* Or any other suitable color */
+    color: var(--text-color);
+    /* Add other styling as per your .filters button style if needed */
+}
+
+.filters button.clear-filters-btn:hover {
+    background-color: var(--dark-gray-color); /* Darker on hover */
+    color: #fff;
+}
         @media (max-width: 1200px) {
             .trend-charts-row { grid-template-columns: 1fr; } 
         }
@@ -1559,31 +1571,31 @@ function generateHTML(reportData, trendData = null) {
         
         <div id="test-runs" class="tab-content">
             <div class="filters">
-                <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-                <select id="filter-status">
-                    <option value="">All Statuses</option>
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="skipped">Skipped</option>
-                </select>
-                <select id="filter-browser">
-                    <option value="">All Browsers</option>
-                    ${Array.from(
-                      new Set(
-                        (results || []).map((test) => test.browser || "unknown")
-                      )
-                    )
-                      .map(
-                        (browser) =>
-                          `<option value="${sanitizeHTML(
-                            browser
-                          )}">${sanitizeHTML(browser)}</option>`
-                      )
-                      .join("")}
-                </select>
-                <button id="expand-all-tests">Expand All</button>
-                <button id="collapse-all-tests">Collapse All</button>
-            </div>
+    <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
+    <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="passed">Passed</option>
+        <option value="failed">Failed</option>
+        <option value="skipped">Skipped</option>
+    </select>
+    <select id="filter-browser">
+        <option value="">All Browsers</option>
+        {/* Dynamically generated options will be here */}
+        ${Array.from(
+          new Set((results || []).map((test) => test.browser || "unknown"))
+        )
+          .map(
+            (browser) =>
+              `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
+                browser
+              )}</option>`
+          )
+          .join("")}
+    </select>
+    <button id="expand-all-tests">Expand All</button>
+    <button id="collapse-all-tests">Collapse All</button>
+    <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button> {/* <!-- ADDED THIS BUTTON --> */}
+</div>
             <div class="test-cases-list">
                 ${generateTestCasesHTML()}
             </div>
@@ -1673,10 +1685,7 @@ function generateHTML(reportData, trendData = null) {
     
     
     <script>
-    // Ensure formatDuration is globally available for Highcharts formatters
-    // It's defined in the Node script, but needs to be available client-side.
-    // The original script structure implies it might be defined elsewhere or this script itself is embedded.
-    // For safety, re-define it here or ensure it's globally accessible.
+    // Ensure formatDuration is globally available
     if (typeof formatDuration === 'undefined') {
         function formatDuration(ms) {
             if (ms === undefined || ms === null || ms < 0) return "0.0s";
@@ -1698,9 +1707,11 @@ function generateHTML(reportData, trendData = null) {
             });
         });
 
+        // --- Test Run Summary Filters ---
         const nameFilter = document.getElementById('filter-name');
         const statusFilter = document.getElementById('filter-status');
         const browserFilter = document.getElementById('filter-browser');
+        const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); // Get the new button
 
         function filterTestCases() {
             const nameValue = nameFilter ? nameFilter.value.toLowerCase() : "";
@@ -1724,8 +1735,21 @@ function generateHTML(reportData, trendData = null) {
         if(statusFilter) statusFilter.addEventListener('change', filterTestCases);
         if(browserFilter) browserFilter.addEventListener('change', filterTestCases);
 
+        // Event listener for clearing Test Run Summary filters
+        if (clearRunSummaryFiltersBtn) {
+            clearRunSummaryFiltersBtn.addEventListener('click', () => {
+                if (nameFilter) nameFilter.value = '';
+                if (statusFilter) statusFilter.value = '';
+                if (browserFilter) browserFilter.value = '';
+                filterTestCases(); // Re-apply filters (which will show all)
+            });
+        }
+
+        // --- Test History Filters ---
         const historyNameFilter = document.getElementById('history-filter-name');
         const historyStatusFilter = document.getElementById('history-filter-status');
+        const clearHistoryFiltersBtn = document.getElementById('clear-history-filters'); // Get the new button
+
 
         function filterTestHistoryCards() {
             const nameValue = historyNameFilter ? historyNameFilter.value.toLowerCase() : "";
@@ -1744,6 +1768,16 @@ function generateHTML(reportData, trendData = null) {
         if(historyNameFilter) historyNameFilter.addEventListener('input', filterTestHistoryCards);
         if(historyStatusFilter) historyStatusFilter.addEventListener('change', filterTestHistoryCards);
 
+        // Event listener for clearing Test History filters
+        if (clearHistoryFiltersBtn) {
+            clearHistoryFiltersBtn.addEventListener('click', () => {
+                if (historyNameFilter) historyNameFilter.value = '';
+                if (historyStatusFilter) historyStatusFilter.value = '';
+                filterTestHistoryCards(); // Re-apply filters (which will show all)
+            });
+        }
+
+        // --- Expand/Collapse and Toggle Details Logic (remains the same) ---
         function toggleElementDetails(headerElement, contentSelector) {
             let contentElement;
             if (headerElement.classList.contains('test-case-header')) {
@@ -1783,7 +1817,7 @@ function generateHTML(reportData, trendData = null) {
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
     }
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
-    </script>
+</script>
 </body>
 </html>
   `;
