@@ -7,6 +7,8 @@ import { JSDOM } from "jsdom";
 import * as XLSX from "xlsx";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
+import tippy from "tippy.js";
+import "tippy.js/dist/tippy.css";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -236,21 +238,6 @@ function generateTestTrendsChart(trendData) {
     .attr("fill", "none")
     .attr("d", line);
 
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip chart-tooltip-arrow")
-    .style("opacity", 0)
-    .style("position", "absolute")
-    .style("pointer-events", "none")
-    .style("background", "#333")
-    .style("color", "#fff")
-    .style("padding", "10px 14px")
-    .style("font-size", "13px")
-    .style("border-radius", "6px")
-    .style("max-width", "260px")
-    .style("z-index", "1000")
-    .style("transition", "opacity 0.2s ease");
-
   let tooltipLocked = false;
 
   function formatTooltipHTML(run, category, i) {
@@ -263,25 +250,6 @@ function generateTestTrendsChart(trendData) {
       Failed: ${run.failed} | Skipped: ${run.skipped || 0}<br>
       Duration: ${formatDuration(run.duration)}
     `;
-  }
-
-  function positionTooltip(event) {
-    const tooltipWidth = 220;
-    const tooltipHeight = 120;
-    const padding = 15;
-    const { pageX, pageY } = event;
-
-    let left = pageX + padding;
-    let top = pageY - tooltipHeight;
-
-    if (typeof window !== "undefined") {
-      if (left + tooltipWidth > window.innerWidth) {
-        left = pageX - tooltipWidth - padding;
-      }
-      if (top < 0) top = pageY + padding;
-    }
-
-    return { left, top };
   }
 
   runs.forEach((run, i) => {
@@ -299,54 +267,13 @@ function generateTestTrendsChart(trendData) {
     categories.forEach((category) => {
       if (typeof category.count !== "number") return;
 
-      chart
+      const circle = chart
         .append("circle")
         .attr("cx", x(i + 1))
         .attr("cy", y(category.count))
         .attr("r", 7)
         .style("fill", "transparent")
-        .style("pointer-events", "all")
-        .on("mouseover", function (event) {
-          if (tooltipLocked) return;
-          const { left, top } = positionTooltip(event);
-          tooltip
-            .style("opacity", 1)
-            .style("left", `${left}px`)
-            .style("top", `${top}px`)
-            .html(formatTooltipHTML(run, category, i));
-
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 6)
-            .style("opacity", 1);
-        })
-        .on("mouseout", function () {
-          if (tooltipLocked) return;
-          tooltip.transition().duration(300).style("opacity", 0);
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 4)
-            .style("opacity", 0.8);
-        })
-        .on("click", function (event) {
-          tooltipLocked = !tooltipLocked;
-          if (!tooltipLocked) {
-            tooltip.transition().duration(200).style("opacity", 0);
-          } else {
-            const { left, top } = positionTooltip(event);
-            tooltip
-              .style("opacity", 1)
-              .style("left", `${left}px`)
-              .style("top", `${top}px`)
-              .html(formatTooltipHTML(run, category, i));
-          }
-        });
+        .style("pointer-events", "all");
 
       chart
         .append("circle")
@@ -359,35 +286,36 @@ function generateTestTrendsChart(trendData) {
         .style("opacity", 0.8)
         .style("pointer-events", "none")
         .style("filter", "url(#glow)");
+
+      // Add tippy tooltip
+      const node = circle.node();
+      if (node) {
+        tippy(node, {
+          content: formatTooltipHTML(run, category, i),
+          allowHTML: true,
+          placement: "top",
+          animation: "shift-away",
+          theme: "light-border",
+          interactive: true,
+          trigger: "mouseenter focus",
+          appendTo: () => document.body,
+        });
+      }
     });
   });
 
   return `${tooltipArrowCSS}<div class="trend-chart-container">${body.html()}</div>`;
 }
 
-function generateDurationTrendChart(trendData) {
+function generateTestTrendsChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
-    return '<div style="text-align:center; color: #999;">No overall trend data available for durations.</div>';
+    return '<div style="text-align:center; color: #999;">No overall trend data available for test counts.</div>';
   }
 
   const { document } = new JSDOM().window;
   const body = d3.select(document.body);
 
-  const tooltipArrowCSS = `
-    <style>
-      .chart-tooltip-arrow::after {
-        content: "";
-        position: absolute;
-        bottom: -6px;
-        left: 15px;
-        border-width: 6px;
-        border-style: solid;
-        border-color: #333 transparent transparent transparent;
-      }
-    </style>
-  `;
-
-  const legendHeight = 30;
+  const legendHeight = 60;
   const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
   const width = 600 - margin.left - margin.right;
   const height = 350 - margin.top - margin.bottom;
@@ -408,14 +336,21 @@ function generateDurationTrendChart(trendData) {
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   const runs = trendData.overall;
-  const durations = runs.map((run) => run.duration / 1000);
+  const testCounts = runs.map((r) => r.totalTests);
+  const passedCounts = runs.map((r) => r.passed);
+  const failedCounts = runs.map((r) => r.failed);
+  const skippedCounts = runs.map((r) => r.skipped || 0);
+
+  const yMax = d3.max(
+    [testCounts, passedCounts, failedCounts, skippedCounts].flat()
+  );
 
   const x = d3
     .scalePoint()
     .domain(runs.map((_, i) => i + 1))
     .range([0, width])
     .padding(0.5);
-  const yMax = d3.max(durations);
+
   const y = d3
     .scaleLinear()
     .domain([0, yMax > 0 ? yMax * 1.1 : 10])
@@ -430,7 +365,7 @@ function generateDurationTrendChart(trendData) {
 
   chart
     .append("g")
-    .call(d3.axisLeft(y).tickFormat((d) => `${d}s`))
+    .call(d3.axisLeft(y))
     .selectAll("text")
     .style("font-size", "12px");
 
@@ -445,193 +380,146 @@ function generateDurationTrendChart(trendData) {
     .attr("stdDeviation", 2)
     .attr("flood-color", "white");
 
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "durationGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
+  const gradients = [
+    { id: "totalGradient", color: "var(--primary-color)" },
+    { id: "passedGradient", color: "var(--success-color)" },
+    { id: "failedGradient", color: "var(--danger-color)" },
+    { id: "skippedGradient", color: "var(--warning-color)" },
+  ];
 
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0.4);
+  gradients.forEach(({ id, color }) => {
+    const gradient = defs
+      .append("linearGradient")
+      .attr("id", id)
+      .attr("x1", "0%")
+      .attr("y1", "0%")
+      .attr("x2", "0%")
+      .attr("y2", "100%");
+    gradient
+      .append("stop")
+      .attr("offset", "0%")
+      .attr("stop-color", color)
+      .attr("stop-opacity", 0.4);
+    gradient
+      .append("stop")
+      .attr("offset", "100%")
+      .attr("stop-color", color)
+      .attr("stop-opacity", 0);
+  });
 
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0);
-
-  const lineGenerator = d3
+  const line = d3
     .line()
     .x((_, i) => x(i + 1))
     .y((d) => y(d))
     .curve(d3.curveMonotoneX);
 
-  const areaGenerator = d3
+  const area = d3
     .area()
     .x((_, i) => x(i + 1))
     .y0(height)
-    .y1((d) => y(d))
     .curve(d3.curveMonotoneX);
 
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("fill", "url(#durationGradient)")
-    .attr("d", areaGenerator);
+  const categories = [
+    {
+      key: "Total",
+      data: testCounts,
+      color: "var(--primary-color)",
+      gradient: "totalGradient",
+    },
+    {
+      key: "Passed",
+      data: passedCounts,
+      color: "var(--success-color)",
+      gradient: "passedGradient",
+    },
+    {
+      key: "Failed",
+      data: failedCounts,
+      color: "var(--danger-color)",
+      gradient: "failedGradient",
+    },
+    {
+      key: "Skipped",
+      data: skippedCounts,
+      color: "var(--warning-color)",
+      gradient: "skippedGradient",
+    },
+  ];
 
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("stroke", "var(--accent-color-alt)")
-    .attr("stroke-width", 2)
-    .attr("fill", "none")
-    .attr("d", lineGenerator);
-
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip chart-tooltip-arrow")
-    .style("opacity", 0)
-    .style("position", "absolute")
-    .style("pointer-events", "none")
-    .style("background", "#333")
-    .style("color", "#fff")
-    .style("padding", "10px 14px")
-    .style("font-size", "13px")
-    .style("border-radius", "6px")
-    .style("max-width", "260px")
-    .style("z-index", "1000")
-    .style("transition", "opacity 0.2s ease");
-
-  let tooltipLocked = false;
-
-  function formatTooltipHTML(run, i) {
-    return `
-      <strong>Run ${run.runId || i + 1}</strong><br>
-      Date: ${new Date(run.timestamp).toLocaleString()}<br>
-      Duration: ${formatDuration(run.duration)}<br>
-      Tests: ${run.totalTests}
-    `;
-  }
-
-  function positionTooltip(event) {
-    const tooltipWidth = 220;
-    const tooltipHeight = 100;
-    const padding = 15;
-    const { pageX, pageY } = event;
-
-    let left = pageX + padding;
-    let top = pageY - tooltipHeight;
-
-    if (typeof window !== "undefined") {
-      if (left + tooltipWidth > window.innerWidth) {
-        left = pageX - tooltipWidth - padding;
-      }
-      if (top < 0) top = pageY + padding;
-    }
-
-    return { left, top };
-  }
-
-  runs.forEach((run, i) => {
+  categories.forEach(({ key, data, color, gradient }) => {
     chart
-      .append("circle")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 7)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        if (tooltipLocked) return;
-        const { left, top } = positionTooltip(event);
-        tooltip
-          .style("opacity", 1)
-          .style("left", `${left}px`)
-          .style("top", `${top}px`)
-          .html(formatTooltipHTML(run, i));
-
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 6)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        if (tooltipLocked) return;
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 4)
-          .style("opacity", 0.8);
-      })
-      .on("click", function (event) {
-        tooltipLocked = !tooltipLocked;
-        if (!tooltipLocked) {
-          tooltip.transition().duration(200).style("opacity", 0);
-        } else {
-          const { left, top } = positionTooltip(event);
-          tooltip
-            .style("opacity", 1)
-            .style("left", `${left}px`)
-            .style("top", `${top}px`)
-            .html(formatTooltipHTML(run, i));
-        }
-      });
-
+      .append("path")
+      .datum(data)
+      .attr("fill", `url(#${gradient})`)
+      .attr(
+        "d",
+        area.y1((d) => y(d))
+      );
     chart
-      .append("circle")
-      .attr("class", "visible-point-duration")
-      .attr("data-run-index", i)
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 4)
-      .style("fill", "var(--accent-color-alt)")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none")
-      .style("filter", "url(#glow)");
+      .append("path")
+      .datum(data)
+      .attr("stroke", color)
+      .attr("stroke-width", 2)
+      .attr("fill", "none")
+      .attr("d", line);
   });
 
-  chart
-    .append("g")
-    .attr("transform", `translate(${width / 2 - 50}, ${height + 40})`)
-    .append("g")
-    .each(function () {
-      const legend = d3.select(this);
-      legend
-        .append("line")
-        .attr("x1", 0)
-        .attr("x2", 15)
-        .attr("y1", 5)
-        .attr("y2", 5)
-        .attr("stroke", "var(--accent-color-alt)")
-        .attr("stroke-width", 2.5);
-      legend
+  const tooltipPoints = [];
+
+  runs.forEach((run, i) => {
+    categories.forEach(({ key, color }) => {
+      const value =
+        run[key.toLowerCase()] || (key === "Skipped" ? 0 : undefined);
+      if (value === undefined) return;
+
+      const cx = x(i + 1);
+      const cy = y(value);
+      const tooltipId = `tooltip-${key.toLowerCase()}-${i}`;
+      const htmlContent = `
+        <strong>Run ${run.runId || i + 1} (${key})</strong><br>
+        Date: ${new Date(run.timestamp).toLocaleString()}<br>
+        ${key}: ${value}<br>
+        ---<br>
+        Total: ${run.totalTests} | Passed: ${run.passed}<br>
+        Failed: ${run.failed} | Skipped: ${run.skipped || 0}<br>
+        Duration: ${formatDuration(run.duration)}
+      `.trim();
+
+      const circle = chart
         .append("circle")
-        .attr("cx", 7.5)
-        .attr("cy", 5)
-        .attr("r", 3.5)
-        .style("fill", "var(--accent-color-alt)");
-      legend
-        .append("text")
-        .attr("x", 22)
-        .attr("y", 10)
-        .text("Duration")
-        .style("font-size", "12px");
+        .attr("cx", cx)
+        .attr("cy", cy)
+        .attr("r", 6)
+        .attr("fill", color)
+        .attr("class", "tooltip-circle")
+        .attr("data-tippy-content", htmlContent)
+        .style("filter", "url(#glow)");
+
+      tooltipPoints.push(circle);
     });
+  });
 
-  chart
-    .append("text")
-    .attr("x", width / 2)
-    .attr("y", -margin.top / 2 + 10)
-    .attr("text-anchor", "middle")
-    .style("font-size", "14px");
+  // Generate script to activate Tippy.js
+  const tippyScript = `
+    <script>
+      document.querySelectorAll('.tooltip-circle').forEach(el => {
+        tippy(el, {
+          allowHTML: true,
+          theme: 'light-border',
+          animation: 'scale',
+          interactive: true,
+          trigger: 'mouseenter click',
+          placement: 'top',
+          arrow: true,
+        });
+      });
+    </script>
+  `;
 
-  return `${tooltipArrowCSS}<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+    <div class="trend-chart-container">${body.html()}</div>
+    ${tippyScript}
+  `;
 }
 
 function formatDate(dateStrOrDate) {
@@ -655,216 +543,103 @@ function formatDate(dateStrOrDate) {
 }
 
 // ✅ Enhanced `generateTestHistoryChart`
-function generateTestHistoryChart(history) {
-  if (!history || history.length === 0)
-    return '<div class="no-data-chart">No data for chart</div>';
+function generateTestHistoryChart(historyData) {
+  const categories = historyData.map((d) => d.name);
+  const passedSeries = historyData.map((d) => d.passed);
+  const failedSeries = historyData.map((d) => d.failed);
+  const skippedSeries = historyData.map((d) => d.skipped);
 
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const width = 320;
-  const height = 100;
-  const margin = { top: 10, right: 10, bottom: 30, left: 40 };
-
-  const svg = body
-    .append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRatio", "xMidYMid meet")
-    .style("font-family", "sans-serif");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-  const chartWidth = width - margin.left - margin.right;
-  const chartHeight = height - margin.top - margin.bottom;
-
-  const validHistory = history.filter(
-    (h) => h && typeof h.duration === "number" && h.duration >= 0
-  );
-  if (validHistory.length === 0)
-    return '<div class="no-data-chart">No valid data for chart</div>';
-
-  const maxDuration = d3.max(validHistory, (d) => d.duration);
-  const x = d3
-    .scalePoint()
-    .domain(validHistory.map((_, i) => i + 1))
-    .range([0, chartWidth])
-    .padding(0.5);
-  const y = d3
-    .scaleLinear()
-    .domain([0, maxDuration > 0 ? maxDuration * 1.1 : 1])
-    .range([chartHeight, 0]);
-
-  chart
-    .append("g")
-    .attr("transform", `translate(0,${chartHeight})`)
-    .call(d3.axisBottom(x).tickFormat((d) => `R${d}`))
-    .selectAll("text")
-    .style("font-size", "10px");
-
-  chart
-    .append("g")
-    .call(d3.axisLeft(y).ticks(3).tickFormat(formatDuration))
-    .selectAll("text")
-    .style("font-size", "10px");
-
-  const defs = svg.append("defs");
-  defs
-    .append("filter")
-    .attr("id", "glow")
-    .append("feDropShadow")
-    .attr("dx", 0)
-    .attr("dy", 0)
-    .attr("stdDeviation", 2)
-    .attr("flood-color", "white");
-
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "historyLineGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0);
-
-  const line = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d.duration))
-    .curve(d3.curveMonotoneX);
-
-  const area = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(chartHeight)
-    .y1((d) => y(d.duration))
-    .curve(d3.curveMonotoneX);
-
-  if (validHistory.length > 1) {
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("d", area)
-      .attr("fill", "url(#historyLineGradient)");
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("d", line)
-      .attr("stroke", "var(--accent-color)")
-      .attr("stroke-width", 2)
-      .attr("fill", "none");
-  }
-
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip chart-tooltip-arrow")
-    .style("opacity", 0)
-    .style("position", "absolute")
-    .style("pointer-events", "none")
-    .style("background", "#333")
-    .style("color", "#fff")
-    .style("padding", "8px 12px")
-    .style("font-size", "12px")
-    .style("border-radius", "6px")
-    .style("max-width", "240px")
-    .style("z-index", "1000");
-
-  let tooltipLocked = false;
-
-  validHistory.forEach((run, i) => {
-    const color =
-      run.status === "passed"
-        ? "var(--success-color)"
-        : run.status === "failed"
-        ? "var(--danger-color)"
-        : "var(--warning-color)";
-
-    chart
-      .append("circle")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 6)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        if (tooltipLocked) return;
-        tooltip
-          .style("opacity", 1)
-          .style("left", `${event.pageX + 12}px`)
-          .style("top", `${event.pageY - 28}px`).html(`
-            <strong>Run ${run.runId || i + 1}</strong><br>
-            Status: <span style="color: ${color}; font-weight: 600; text-transform: uppercase">${run.status}</span><br>
-            Duration: ${formatDuration(run.duration)}
-          `);
-        d3.select(`.visible-point[data-run-index='${i}']`)
-          .transition()
-          .duration(100)
-          .attr("r", 5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        if (tooltipLocked) return;
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(`.visible-point[data-run-index='${i}']`)
-          .transition()
-          .duration(100)
-          .attr("r", 3)
-          .style("opacity", 0.8);
-      })
-      .on("click", function (event) {
-        tooltipLocked = !tooltipLocked;
-        if (!tooltipLocked)
-          tooltip.transition().duration(200).style("opacity", 0);
-        else
-          tooltip
-            .style("opacity", 1)
-            .style("left", `${event.pageX + 12}px`)
-            .style("top", `${event.pageY - 28}px`).html(`
-            <strong>Run ${run.runId || i + 1}</strong><br>
-            Status: <span style="color: ${color}; font-weight: 600; text-transform: uppercase">${
-            run.status
-          }</span><br>
-            Duration: ${formatDuration(run.duration)}
-          `);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point")
-      .attr("data-run-index", i)
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 3)
-      .style("fill", color)
-      .style("stroke", "#fff")
-      .style("stroke-width", "0.5px")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none")
-      .style("filter", "url(#glow)");
-  });
-
-  return `
-    <style>
-      .chart-tooltip-arrow::after {
-        content: "";
-        position: absolute;
-        bottom: -6px;
-        left: 15px;
-        border-width: 6px;
-        border-style: solid;
-        border-color: #333 transparent transparent transparent;
-      }
-    </style>
-    ${body.html()}`;
+  return {
+    chart: {
+      type: "bar",
+      height: 350,
+      stacked: true,
+      animations: {
+        enabled: true,
+        easing: "easeinout",
+        speed: 600,
+      },
+      toolbar: { show: false },
+      zoom: { enabled: false },
+      foreColor: "var(--text-color)",
+    },
+    series: [
+      {
+        name: "Passed",
+        data: passedSeries,
+      },
+      {
+        name: "Failed",
+        data: failedSeries,
+      },
+      {
+        name: "Skipped",
+        data: skippedSeries,
+      },
+    ],
+    xaxis: {
+      categories,
+      title: { text: "Tests", style: { color: "var(--text-color)" } },
+      labels: {
+        rotate: -45,
+        style: { fontSize: "12px" },
+      },
+    },
+    yaxis: {
+      title: { text: "Count", style: { color: "var(--text-color)" } },
+    },
+    tooltip: {
+      theme: "dark",
+      style: {
+        fontSize: "12px",
+      },
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const name = w.globals.categoryLabels[dataPointIndex];
+        const passed = series[0][dataPointIndex];
+        const failed = series[1][dataPointIndex];
+        const skipped = series[2][dataPointIndex];
+        return `
+          <div class="chart-tooltip chart-tooltip-arrow">
+            <strong>${name}</strong><br>
+            ✅ Passed: ${passed}<br>
+            ❌ Failed: ${failed}<br>
+            ⏭️ Skipped: ${skipped}
+          </div>
+        `;
+      },
+    },
+    colors: [
+      "var(--success-color)",
+      "var(--danger-color)",
+      "var(--warning-color)",
+    ],
+    legend: {
+      position: "top",
+      horizontalAlign: "center",
+      labels: {
+        colors: "var(--text-color)",
+      },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        borderRadius: 4,
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    grid: {
+      borderColor: "var(--border-color)",
+      row: {
+        colors: ["transparent"],
+        opacity: 0.5,
+      },
+    },
+  };
 }
 
 function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
@@ -875,6 +650,7 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
   if (total === 0) {
     return '<div class="no-data">No data for Test Distribution chart.</div>';
   }
+
   const passedPercentage = Math.round(
     ((data.find((d) => d.label === "Passed")?.value || 0) / total) * 100
   );
@@ -882,9 +658,9 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
   const legendItemHeight = 22;
   const legendAreaHeight =
     data.filter((d) => d.value > 0).length * legendItemHeight;
-  const effectiveChartHeight = chartHeight - legendAreaHeight - 10; // Space for legend below
+  const effectiveChartHeight = chartHeight - legendAreaHeight - 10;
 
-  const outerRadius = Math.min(chartWidth, effectiveChartHeight) / 2 - 10; // Adjusted radius for legend space
+  const outerRadius = Math.min(chartWidth, effectiveChartHeight) / 2 - 10;
   const innerRadius = outerRadius * 0.55;
 
   const pie = d3
@@ -908,26 +684,46 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
 
   const svg = body
     .append("svg")
-    .attr("width", chartWidth) // SVG width is just for the chart
-    .attr("height", chartHeight) // Full height including legend
+    .attr("width", chartWidth)
+    .attr("height", chartHeight)
     .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("font-family", "sans-serif");
+
+  const defs = svg.append("defs");
+  defs
+    .append("filter")
+    .attr("id", "pie-glow")
+    .append("feDropShadow")
+    .attr("dx", 0)
+    .attr("dy", 0)
+    .attr("stdDeviation", 1.5)
+    .attr("flood-color", "white");
 
   const chartGroup = svg
     .append("g")
     .attr(
       "transform",
       `translate(${chartWidth / 2}, ${effectiveChartHeight / 2 + 5})`
-    ); // Centered in available chart area
+    );
 
   const tooltip = body
     .append("div")
     .attr("class", "chart-tooltip")
-    .style("opacity", 0);
+    .style("position", "absolute")
+    .style("pointer-events", "none")
+    .style("z-index", 10)
+    .style("background", "#333")
+    .style("color", "#fff")
+    .style("padding", "6px 10px")
+    .style("font-size", "12px")
+    .style("border-radius", "4px")
+    .style("opacity", 0)
+    .style("transition", "opacity 0.2s ease-in-out");
 
   chartGroup
     .selectAll(".arc-path")
-    .data(pie(data.filter((d) => d.value > 0))) // Filter out zero-value slices for cleaner chart
+    .data(pie(data.filter((d) => d.value > 0)))
     .enter()
     .append("path")
     .attr("class", "arc-path")
@@ -935,6 +731,8 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
     .attr("fill", (d) => color(d.data.label))
     .style("stroke", "var(--card-background-color)")
     .style("stroke-width", 3)
+    .style("filter", "url(#pie-glow)")
+    .style("cursor", "pointer")
     .on("mouseover", function (event, d) {
       d3.select(this)
         .transition()
@@ -946,26 +744,35 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
             .innerRadius(innerRadius)
             .outerRadius(outerRadius + 6)
         );
-      tooltip.transition().duration(150).style("opacity", 0.95);
       tooltip
         .html(
-          `${d.data.label}: ${d.data.value} (${Math.round(
+          `<strong>${d.data.label}</strong><br>${d.data.value} (${Math.round(
             (d.data.value / total) * 100
           )}%)`
         )
-        .style("left", event.pageX + 15 + "px")
-        .style("top", event.pageY - 28 + "px");
+        .style("opacity", 1)
+        .style("left", `${event.pageX + 15}px`)
+        .style("top", `${event.pageY - 28}px`);
     })
-    .on("mouseout", function (event, d) {
+    .on("mousemove", function (event) {
+      tooltip
+        .style("left", `${event.pageX + 15}px`)
+        .style("top", `${event.pageY - 28}px`);
+    })
+    .on("mouseout", function () {
       d3.select(this).transition().duration(150).attr("d", arcGenerator);
       tooltip.transition().duration(300).style("opacity", 0);
     });
 
+  // Center label
   chartGroup
     .append("text")
     .attr("class", "pie-center-percentage")
     .attr("text-anchor", "middle")
     .attr("dy", "0.05em")
+    .style("font-size", "16px")
+    .style("font-weight", "600")
+    .style("fill", "var(--text-primary)")
     .text(`${passedPercentage}%`);
 
   chartGroup
@@ -973,15 +780,18 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
     .attr("class", "pie-center-label")
     .attr("text-anchor", "middle")
     .attr("dy", "1.3em")
+    .style("font-size", "11px")
+    .style("fill", "var(--text-secondary)")
     .text("Passed");
 
+  // Legend
   const legend = svg
     .append("g")
     .attr("class", "pie-chart-legend-d3 chart-legend-bottom")
     .attr(
       "transform",
       `translate(${chartWidth / 2}, ${effectiveChartHeight + 20})`
-    ); // Position legend below chart
+    );
 
   const legendItems = legend
     .selectAll(".legend-item")
@@ -989,36 +799,40 @@ function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
     .enter()
     .append("g")
     .attr("class", "legend-item")
-    // Position items horizontally, centering the block
     .attr("transform", (d, i, nodes) => {
       const numItems = nodes.length;
-      const totalLegendWidth = numItems * 90 - 10; // Approx width of all legend items
+      const totalLegendWidth = numItems * 90 - 10;
       const startX = -totalLegendWidth / 2;
-      return `translate(${startX + i * 90}, 0)`; // 90 is approx width per item
+      return `translate(${startX + i * 90}, 0)`;
     });
 
   legendItems
     .append("rect")
     .attr("width", 12)
     .attr("height", 12)
-    .style("fill", (d) => color(d.label))
-    .attr("rx", 3)
-    .attr("ry", 3)
-    .attr("y", -6); // Align with text
+    .attr("fill", (d) => color(d.label));
 
   legendItems
     .append("text")
-    .attr("x", 18)
-    .attr("y", 0)
     .text((d) => `${d.label} (${d.value})`)
-    .style("font-size", "12px")
-    .attr("dominant-baseline", "middle");
+    .attr("x", 16)
+    .attr("y", 10)
+    .style("font-size", "11px")
+    .style("fill", "var(--text-primary)");
 
   return `
-    <div class="pie-chart-wrapper">
-      <h3>Test Distribution</h3>
-      ${body.html()}
-    </div>`;
+    <style>
+      .chart-tooltip-arrow::after {
+        content: "";
+        position: absolute;
+        bottom: -6px;
+        left: 15px;
+        border-width: 6px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+      }
+    </style>
+    ${body.html()}`;
 }
 
 function generateTestHistoryContent(trendData) {
@@ -1538,6 +1352,9 @@ function generateHTML(reportData, trendData = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
     <title>Playwright Pulse Report</title>
     <style>
         :root {
