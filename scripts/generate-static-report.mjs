@@ -962,74 +962,132 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           
-          ${
-            test.screenshots && test.screenshots.length > 0
-              ? `
+                    ${
+                      test.screenshots && test.screenshots.length > 0
+                        ? `
             <div class="attachments-section">
               <h4>Screenshots</h4>
               <div class="attachments-grid">
                 ${test.screenshots
-                  .map((screenshot) => {
-                    const imgSrc = sanitizeHTML(screenshot.path || "");
-                    const screenshotName = sanitizeHTML(
-                      screenshot.name || "Screenshot"
-                    );
-                    return imgSrc
-                      ? `
-                  <div class="attachment-item screenshot-item">
-                    <a href="${imgSrc}" target="_blank" title="Click to view ${screenshotName} (full size)">
-                      <img src="${imgSrc}" alt="${screenshotName}" loading="lazy">
-                    </a>
-                    <div class="attachment-caption">${screenshotName}</div>
-                  </div>`
-                      : "";
-                  })
+                  .map(
+                    (screenshot) => `
+                  <div class="attachment-item">
+                    <img src="${screenshot}" alt="Screenshot">
+                    <div class="attachment-info">
+                      <a href="${screenshot}" target="_blank">View Full Size</a>
+                    </div>
+                  </div>
+                `
+                  )
                   .join("")}
               </div>
-            </div>`
-              : ""
-          }
+            </div>
+          `
+                        : ""
+                    }
             
           ${
-            test.videos && test.videos.length > 0
+            test.videoPath
               ? `
             <div class="attachments-section">
               <h4>Videos</h4>
-              ${test.videos
-                .map(
-                  (video) => `
-                <div class="video-item">
-                  <a href="${sanitizeHTML(
-                    video.path
-                  )}" target="_blank">View Video: ${sanitizeHTML(
-                    video.name || path.basename(video.path)
-                  )}</a>
-                </div>`
-                )
-                .join("")}
-            </div>`
+              <div class="attachments-grid">
+                ${(() => {
+                  // Handle both string and array cases
+                  const videos = Array.isArray(test.videoPath)
+                    ? test.videoPath
+                    : [test.videoPath];
+                  const mimeTypes = {
+                    mp4: "video/mp4",
+                    webm: "video/webm",
+                    ogg: "video/ogg",
+                    mov: "video/quicktime",
+                    avi: "video/x-msvideo",
+                  };
+
+                  return videos
+                    .map((video, index) => {
+                      const videoUrl =
+                        typeof video === "object" ? video.url || "" : video;
+                      const videoName =
+                        typeof video === "object"
+                          ? video.name || `Video ${index + 1}`
+                          : `Video ${index + 1}`;
+                      const fileExtension = videoUrl
+                        .split(".")
+                        .pop()
+                        .toLowerCase();
+                      const mimeType = mimeTypes[fileExtension] || "video/mp4";
+
+                      return `
+                      <div class="attachment-item">
+                        <video controls width="100%" height="auto" title="${videoName}">
+                          <source src="${videoUrl}" type="${mimeType}">
+                          Your browser does not support the video tag.
+                        </video>
+                        <div class="attachment-info">
+                          <span class="video-name">${videoName}</span>
+                          <a href="${videoUrl}" target="_blank" download="${videoName}.${fileExtension}">
+                            Download
+                          </a>
+                        </div>
+                      </div>
+                    `;
+                    })
+                    .join("");
+                })()}
+              </div>
+            </div>
+          `
               : ""
           }
-
+          
           ${
-            test.traces && test.traces.length > 0
+            test.tracePath
               ? `
-            <div class="attachments-section">
-                <h4>Traces</h4>
-                ${test.traces
-                  .map(
-                    (trace) => `
-                  <div class="trace-item">
-                    <a href="${sanitizeHTML(
-                      trace.path
-                    )}" target="_blank" download>Download Trace: ${sanitizeHTML(
-                      trace.name || path.basename(trace.path)
-                    )}</a>
-                    (Open with Playwright Trace Viewer)
-                  </div>`
-                  )
-                  .join("")}
-            </div>`
+  <div class="attachments-section">
+    <h4>Trace Files</h4>
+    <div class="attachments-grid">
+      ${(() => {
+        // Handle both string and array cases
+        const traces = Array.isArray(test.tracePath)
+          ? test.tracePath
+          : [test.tracePath];
+
+        return traces
+          .map((trace, index) => {
+            const traceUrl =
+              typeof trace === "object" ? trace.url || "" : trace;
+            const traceName =
+              typeof trace === "object"
+                ? trace.name || `Trace ${index + 1}`
+                : `Trace ${index + 1}`;
+            const traceFileName = traceUrl.split("/").pop();
+            const traceViewerUrl = `https://trace.playwright.dev/?trace=${encodeURIComponent(
+              traceUrl
+            )}&traceFileName=${encodeURIComponent(traceFileName)}`;
+
+            return `
+            <div class="attachment-item">
+              <div class="trace-preview">
+                <span class="trace-icon">📄</span>
+                <span class="trace-name">${traceName}</span>
+              </div>
+              <div class="attachment-info">
+                <div class="trace-actions">
+                  <a href="${traceUrl}" target="_blank" download="${traceFileName}" class="download-trace">
+                    Download
+                  </a>
+                </div>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      })()}
+    </div>
+  </div>
+`
               : ""
           }
 
@@ -1336,6 +1394,55 @@ function generateHTML(reportData, trendData = null) {
         pre .stdout-log { background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
         pre .stderr-log { background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
         
+        .trace-preview {
+  padding: 1rem;
+  text-align: center;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+.trace-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.trace-name {
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.trace-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.trace-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.view-trace {
+  background: #3182ce;
+  color: white;
+}
+
+.view-trace:hover {
+  background: #2c5282;
+}
+
+.download-trace {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.download-trace:hover {
+  background: #cbd5e0;
+}
         @media (max-width: 1200px) {
             .trend-charts-row { grid-template-columns: 1fr; } 
         }
@@ -1709,7 +1816,7 @@ async function runScript(scriptPath) {
 
 async function main() {
   const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename); 
+  const __dirname = path.dirname(__filename);
   const trendExcelScriptPath = path.resolve(
     __dirname,
     "generate-trend-excel.mjs"
@@ -1884,7 +1991,7 @@ async function main() {
         `🎉 Enhanced report generated successfully at: ${reportHtmlPath}`
       )
     );
-    console.log(chalk.gray(`   (You can open this file in your browser)`));
+    console.log(chalk.gray(`(You can open this file in your browser)`));
   } catch (error) {
     console.error(chalk.red(`Error generating HTML report: ${error.message}`));
     console.error(chalk.red(error.stack));
