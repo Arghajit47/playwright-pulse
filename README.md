@@ -227,20 +227,21 @@ playwright-pulse-reporter/
 │   └── app/                 # Next.js dashboard
 ├── scripts/
 │   └── generate-static-report.mjs  # HTML generator
+|   └── generate-trend.mjs  # Generate Trends
 |   └── merge-pulse-report.mjs  # merge sharded reports
 |   └── sendReport.mjs  # Send email report
 ├── pulse-report/            # Generated reports
 └── sample-report.json       # Example data
 ```
 
-## 🎉 What's New in v0.2.0
+## 🎉 What's New in v0.2.1
 
 ### ✨ **Key Improvements**  
 
 | Feature | Description |
 |---------|-------------|
 | **🎨 Refined UI** | Completely redesigned static HTML reports for better readability and navigation |
-| **📊 History Trends** | Visual analytics for:<br>• Test History for last 5 runs<br>• Test suite pass/fail rates<br>• Duration trends<br>• Individual test flakiness |
+| **📊 History Trends** | Visual analytics for:<br>• Test History for last 15 runs<br>• Test suite pass/fail rates<br>• Duration trends<br>• Individual test flakiness |
 | **🛠️ Project Fixes** | Corrected project name display in test suite components |
 
 ### 🚀 **Upgrade Now**
