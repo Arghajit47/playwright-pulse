@@ -1,7 +1,7 @@
 {
-  "name": "@arghajit/playwright-pulse-report",
+  "name": "@arghajit/playwright-pulse-reporter",
   "author": "Arghajit Singha",
-  "version": "0.2.0",
+  "version": "0.2.1-4.beta-20",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -28,7 +28,7 @@
     "generate-pulse-report": "./scripts/generate-static-report.mjs",
     "merge-pulse-report": "./scripts/merge-pulse-report.js",
     "send-email": "./scripts/sendReport.js",
-    "generate-trend": "./scripts/generate-trend-excel.mjs"
+    "generate-trend": "./scripts/generate-trend.mjs"
   },
   "exports": {
     ".": {
@@ -85,6 +85,7 @@
     "dotenv": "^16.5.0",
     "firebase": "^11.3.0",
     "genkit": "^1.6.2",
+    "highcharts": "^12.2.0",
     "jsdom": "^26.1.0",
     "lucide-react": "^0.475.0",
     "next": "15.2.3",
@@ -97,7 +98,6 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {

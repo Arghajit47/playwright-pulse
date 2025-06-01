@@ -1,10 +1,7 @@
 #!/usr/bin/env node
-// Using Node.js syntax compatible with `.mjs`
+
 import * as fs from "fs/promises";
 import path from "path";
-import * as d3 from "d3";
-import { JSDOM } from "jsdom";
-import * as XLSX from "xlsx";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
 
@@ -31,7 +28,7 @@ const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
 
 // Helper functions
 function sanitizeHTML(str) {
-  // CORRECTED VERSION
+  // User's provided version (note: this doesn't escape HTML special chars correctly)
   if (str === null || str === undefined) return "";
   return String(str)
     .replace(/&/g, "&")
@@ -45,6 +42,105 @@ function capitalize(str) {
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 
+function formatPlaywrightError(error) {
+  // Get the error message and clean ANSI codes
+  const rawMessage = error.stack || error.message || error.toString();
+  const cleanMessage = rawMessage.replace(/\x1B\[[0-9;]*[mGKH]/g, "");
+
+  // Parse error components
+  const timeoutMatch = cleanMessage.match(/Timed out (\d+)ms waiting for/);
+  const assertionMatch = cleanMessage.match(/expect\((.*?)\)\.(.*?)\(/);
+  const expectedMatch = cleanMessage.match(
+    /Expected (?:pattern|string|regexp|value): (.*?)(?:\n|Call log|$)/s
+  );
+  const actualMatch = cleanMessage.match(
+    /Received (?:string|value): (.*?)(?:\n|Call log|$)/s
+  );
+
+  // HTML escape function
+  const escapeHtml = (str) => {
+    if (!str) return "";
+    return str.replace(
+      /[&<>'"]/g,
+      (tag) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          "'": "&#39;",
+          '"': "&quot;",
+        }[tag])
+    );
+  };
+
+  // Build HTML output
+  let html = `<div class="playwright-error">
+    <div class="error-header">Test Error</div>`;
+
+  if (timeoutMatch) {
+    html += `<div class="error-timeout">⏱ Timeout: ${escapeHtml(
+      timeoutMatch[1]
+    )}ms</div>`;
+  }
+
+  if (assertionMatch) {
+    html += `<div class="error-assertion">🔍 Assertion: expect(${escapeHtml(
+      assertionMatch[1]
+    )}).${escapeHtml(assertionMatch[2])}()</div>`;
+  }
+
+  if (expectedMatch) {
+    html += `<div class="error-expected">✅ Expected: ${escapeHtml(
+      expectedMatch[1]
+    )}</div>`;
+  }
+
+  if (actualMatch) {
+    html += `<div class="error-actual">❌ Actual: ${escapeHtml(
+      actualMatch[1]
+    )}</div>`;
+  }
+
+  // Add call log if present
+  const callLogStart = cleanMessage.indexOf("Call log:");
+  if (callLogStart !== -1) {
+    const callLogEnd =
+      cleanMessage.indexOf("\n\n", callLogStart) || cleanMessage.length;
+    const callLogSection = cleanMessage
+      .slice(callLogStart + 9, callLogEnd)
+      .trim();
+
+    html += `<div class="error-call-log">
+      <div class="call-log-header">📜 Call Log:</div>
+      <ul class="call-log-items">${callLogSection
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line)
+        .map((line) => `<li>${escapeHtml(line.replace(/^-\s*/, ""))}</li>`)
+        .join("")}</ul>
+    </div>`;
+  }
+
+  // Add stack trace if present
+  const stackTraceMatch = cleanMessage.match(/\n\s*at\s.*/gs);
+  if (stackTraceMatch) {
+    html += `<div class="error-stack-trace">
+      <div class="stack-trace-header">🔎 Stack Trace:</div>
+      <ul class="stack-trace-items">${stackTraceMatch[0]
+        .trim()
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line)
+        .map((line) => `<li>${escapeHtml(line)}</li>`)
+        .join("")}</ul>
+    </div>`;
+  }
+
+  html += `</div>`;
+
+  return html;
+}
+
 // User-provided formatDuration function
 function formatDuration(ms) {
   if (ms === undefined || ms === null || ms < 0) return "0.0s";
@@ -56,483 +152,218 @@ function generateTestTrendsChart(trendData) {
     return '<div class="no-data">No overall trend data available for test counts.</div>';
   }
 
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const legendHeight = 60;
-  const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 350 - margin.top - margin.bottom;
-
-  const svg = body
-    .append("svg")
-    .attr(
-      "viewBox",
-      `0 0 ${width + margin.left + margin.right} ${
-        height + margin.top + margin.bottom
-      }`
-    )
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  const chartId = `testTrendsChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
   const runs = trendData.overall;
-  const testCounts = runs.map((r) => r.totalTests);
-  const passedCounts = runs.map((r) => r.passed);
-  const failedCounts = runs.map((r) => r.failed);
-  const skippedCounts = runs.map((r) => r.skipped || 0);
 
-  const yMax = d3.max(
-    [testCounts, passedCounts, failedCounts, skippedCounts].flat()
-  );
-  const x = d3
-    .scalePoint()
-    .domain(runs.map((_, i) => i + 1))
-    .range([0, width])
-    .padding(0.5);
-  const y = d3
-    .scaleLinear()
-    .domain([0, yMax > 0 ? yMax * 1.1 : 10])
-    .range([height, 0]);
-
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `Run ${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(xAxis);
-  chart.append("g").attr("class", "chart-axis y-axis").call(d3.axisLeft(y));
-
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d))
-    .curve(d3.curveMonotoneX);
-  const areaGenerator = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(height)
-    .curve(d3.curveMonotoneX);
-
-  // ✅ Add gradient defs
-  const defs = svg.append("defs");
-
-  const gradients = [
-    { id: "totalGradient", color: "var(--primary-color)" },
-    { id: "passedGradient", color: "var(--success-color)" },
-    { id: "failedGradient", color: "var(--danger-color)" },
-    { id: "skippedGradient", color: "var(--warning-color)" },
+  const series = [
+    {
+      name: "Total",
+      data: runs.map((r) => r.totalTests),
+      color: "var(--primary-color)", // Blue
+      marker: { symbol: "circle" },
+    },
+    {
+      name: "Passed",
+      data: runs.map((r) => r.passed),
+      color: "var(--success-color)", // Green
+      marker: { symbol: "circle" },
+    },
+    {
+      name: "Failed",
+      data: runs.map((r) => r.failed),
+      color: "var(--danger-color)", // Red
+      marker: { symbol: "circle" },
+    },
+    {
+      name: "Skipped",
+      data: runs.map((r) => r.skipped || 0),
+      color: "var(--warning-color)", // Yellow
+      marker: { symbol: "circle" },
+    },
   ];
 
-  gradients.forEach(({ id, color }) => {
-    const gradient = defs
-      .append("linearGradient")
-      .attr("id", id)
-      .attr("x1", "0%")
-      .attr("y1", "0%")
-      .attr("x2", "0%")
-      .attr("y2", "100%");
-    gradient
-      .append("stop")
-      .attr("offset", "0%")
-      .attr("stop-color", color)
-      .attr("stop-opacity", 0.4);
-    gradient
-      .append("stop")
-      .attr("offset", "100%")
-      .attr("stop-color", color)
-      .attr("stop-opacity", 0);
-  });
+  // Data needed by the tooltip formatter, stringified to be embedded in the client-side script
+  const runsForTooltip = runs.map((r) => ({
+    runId: r.runId,
+    timestamp: r.timestamp,
+    duration: r.duration,
+  }));
 
-  // ✅ Render area fills
-  chart
-    .append("path")
-    .datum(testCounts)
-    .attr("fill", "url(#totalGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(passedCounts)
-    .attr("fill", "url(#passedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(failedCounts)
-    .attr("fill", "url(#failedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(skippedCounts)
-    .attr("fill", "url(#skippedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-
-  // ✅ Render lines
-  chart
-    .append("path")
-    .datum(testCounts)
-    .attr("class", "chart-line total-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(passedCounts)
-    .attr("class", "chart-line passed-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(failedCounts)
-    .attr("class", "chart-line failed-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(skippedCounts)
-    .attr("class", "chart-line skipped-line")
-    .attr("d", lineGenerator);
-
-  // ✅ Tooltip
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0)
-    .style("position", "absolute");
-
-  runs.forEach((run, i) => {
-    const categories = [
-      { type: "Total", count: run.totalTests, color: "var(--primary-color)" },
-      { type: "Passed", count: run.passed, color: "var(--success-color)" },
-      { type: "Failed", count: run.failed, color: "var(--danger-color)" },
-      {
-        type: "Skipped",
-        count: run.skipped || 0,
-        color: "var(--warning-color)",
+  const optionsObjectString = `
+  {
+      chart: { type: "line", height: 350, backgroundColor: "transparent" },
+      title: { text: null },
+      xAxis: {
+          categories: ${JSON.stringify(runs.map((run, i) => `Run ${i + 1}`))},
+          crosshair: true,
+          labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}
       },
-    ];
+      yAxis: {
+          title: { text: "Test Count", style: { color: 'var(--text-color)'} },
+          min: 0,
+          labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}
+      },
+      legend: {
+          layout: "horizontal", align: "center", verticalAlign: "bottom",
+          itemStyle: { fontSize: "12px", color: 'var(--text-color)' }
+      },
+      plotOptions: {
+          series: { marker: { radius: 4, states: { hover: { radius: 6 }}}, states: { hover: { halo: { size: 5, opacity: 0.1 }}}},
+          line: { lineWidth: 2.5 } // fillOpacity was 0.1, but for line charts, area fill is usually separate (area chart type)
+      },
+      tooltip: {
+          shared: true, useHTML: true,
+          backgroundColor: 'rgba(10,10,10,0.92)',
+          borderColor: 'rgba(10,10,10,0.92)',
+          style: { color: '#f5f5f5' },
+          formatter: function () {
+              const runsData = ${JSON.stringify(runsForTooltip)};
+              const pointIndex = this.points[0].point.x; // Get index from point
+              const run = runsData[pointIndex];
+              let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' +
+                            'Date: ' + new Date(run.timestamp).toLocaleString() + '<br><br>';
+              this.points.forEach(point => {
+                  tooltip += '<span style="color:' + point.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b><br>';
+              });
+              tooltip += '<br>Duration: ' + formatDuration(run.duration);
+              return tooltip;
+          }
+      },
+      series: ${JSON.stringify(series)},
+      credits: { enabled: false }
+  }
+  `;
 
-    categories.forEach((category) => {
-      if (typeof category.count !== "number") return;
-
-      chart
-        .append("circle")
-        .attr("class", `hover-point hover-point-${category.type.toLowerCase()}`)
-        .attr("cx", x(i + 1))
-        .attr("cy", y(category.count))
-        .attr("r", 7)
-        .style("fill", "transparent")
-        .style("pointer-events", "all")
-        .on("mouseover", function (event) {
-          tooltip.transition().duration(150).style("opacity", 0.95);
-          tooltip
-            .html(
-              `
-            <strong>Run ${run.runId || i + 1} (${category.type})</strong><br>
-            Date: ${new Date(run.timestamp).toLocaleString()}<br>
-            ${category.type}: ${category.count}<br>
-            ---<br>
-            Total: ${run.totalTests} | Passed: ${run.passed}<br>
-            Failed: ${run.failed} | Skipped: ${run.skipped || 0}<br>
-            Duration: ${formatDuration(run.duration)}`
-            )
-            .style("left", `${event.pageX + 15}px`)
-            .style("top", `${event.pageY - 28}px`);
-
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 5.5)
-            .style("opacity", 1);
-        })
-        .on("mouseout", function () {
-          tooltip.transition().duration(300).style("opacity", 0);
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 4)
-            .style("opacity", 0.8);
-        });
-
-      chart
-        .append("circle")
-        .attr(
-          "class",
-          `visible-point visible-point-${category.type.toLowerCase()}`
-        )
-        .attr("data-run-index", i)
-        .attr("cx", x(i + 1))
-        .attr("cy", y(category.count))
-        .attr("r", 4)
-        .style("fill", category.color)
-        .style("opacity", 0.8)
-        .style("pointer-events", "none");
-    });
-  });
-
-  // ✅ Legend
-  const legendData = [
-    {
-      label: "Total",
-      colorClass: "total-line",
-      dotColor: "var(--primary-color)",
-    },
-    {
-      label: "Passed",
-      colorClass: "passed-line",
-      dotColor: "var(--success-color)",
-    },
-    {
-      label: "Failed",
-      colorClass: "failed-line",
-      dotColor: "var(--danger-color)",
-    },
-    {
-      label: "Skipped",
-      colorClass: "skipped-line",
-      dotColor: "var(--warning-color)",
-    },
-  ];
-
-  const legend = chart
-    .append("g")
-    .attr("class", "chart-legend-d3 chart-legend-bottom")
-    .attr(
-      "transform",
-      `translate(${width / 2 - (legendData.length * 80) / 2}, ${height + 40})`
-    );
-
-  legendData.forEach((item, i) => {
-    const row = legend.append("g").attr("transform", `translate(${i * 80}, 0)`);
-    row
-      .append("line")
-      .attr("x1", 0)
-      .attr("x2", 15)
-      .attr("y1", 5)
-      .attr("y2", 5)
-      .attr("class", `chart-line ${item.colorClass}`)
-      .style("stroke-width", 2.5);
-    row
-      .append("circle")
-      .attr("cx", 7.5)
-      .attr("cy", 5)
-      .attr("r", 3.5)
-      .style("fill", item.dotColor);
-    row
-      .append("text")
-      .attr("x", 22)
-      .attr("y", 10)
-      .text(item.label)
-      .style("font-size", "12px");
-  });
-
-  return `<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+      <div id="${chartId}" class="trend-chart-container"></div>
+      <script>
+          document.addEventListener('DOMContentLoaded', function() {
+              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                  try {
+                      const chartOptions = ${optionsObjectString};
+                      Highcharts.chart('${chartId}', chartOptions);
+                  } catch (e) {
+                      console.error("Error rendering chart ${chartId}:", e);
+                      document.getElementById('${chartId}').innerHTML = '<div class="no-data">Error rendering test trends chart.</div>';
+                  }
+              } else {
+                  document.getElementById('${chartId}').innerHTML = '<div class="no-data">Charting library not available.</div>';
+              }
+          });
+      </script>
+  `;
 }
 
 function generateDurationTrendChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for durations.</div>';
   }
-
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const legendHeight = 30;
-  const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 350 - margin.top - margin.bottom;
-
-  const svg = body
-    .append("svg")
-    .attr(
-      "viewBox",
-      `0 0 ${width + margin.left + margin.right} ${
-        height + margin.top + margin.bottom
-      }`
-    )
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  const chartId = `durationTrendChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
   const runs = trendData.overall;
-  const durations = runs.map((run) => run.duration / 1000);
 
-  const x = d3
-    .scalePoint()
-    .domain(runs.map((_, i) => i + 1))
-    .range([0, width])
-    .padding(0.5);
+  // Assuming var(--accent-color-alt) is Orange #FF9800
+  const accentColorAltRGB = "255, 152, 0";
 
-  const yMax = d3.max(durations);
-  const y = d3
-    .scaleLinear()
-    .domain([0, yMax > 0 ? yMax * 1.1 : 10])
-    .range([height, 0]);
+  const seriesString = `[{
+      name: 'Duration',
+      data: ${JSON.stringify(runs.map((run) => run.duration))},
+      color: 'var(--accent-color-alt)',
+      type: 'area',
+      marker: {
+          symbol: 'circle', enabled: true, radius: 4,
+          states: { hover: { radius: 6, lineWidthPlus: 0 } }
+      },
+      fillColor: {
+          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+          stops: [
+              [0, 'rgba(${accentColorAltRGB}, 0.4)'],
+              [1, 'rgba(${accentColorAltRGB}, 0.05)']
+          ]
+      },
+      lineWidth: 2.5
+  }]`;
 
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `Run ${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(xAxis)
-    .selectAll("text")
-    .text((d) => `Run ${d}`);
+  const runsForTooltip = runs.map((r) => ({
+    runId: r.runId,
+    timestamp: r.timestamp,
+    duration: r.duration,
+    totalTests: r.totalTests,
+  }));
 
-  chart
-    .append("g")
-    .attr("class", "chart-axis y-axis")
-    .call(d3.axisLeft(y).tickFormat((d) => `${d}s`));
+  const optionsObjectString = `
+  {
+      chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
+      title: { text: null },
+      xAxis: {
+          categories: ${JSON.stringify(runs.map((run, i) => `Run ${i + 1}`))},
+          crosshair: true,
+          labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' } }
+      },
+      yAxis: {
+          title: { text: 'Duration', style: { color: 'var(--text-color)' } },
+          labels: {
+              formatter: function() { return formatDuration(this.value); },
+              style: { color: 'var(--text-color-secondary)', fontSize: '12px' }
+          },
+          min: 0
+      },
+      legend: {
+          layout: 'horizontal', align: 'center', verticalAlign: 'bottom',
+          itemStyle: { fontSize: '12px', color: 'var(--text-color)' }
+      },
+      plotOptions: {
+          area: {
+              lineWidth: 2.5,
+              states: { hover: { lineWidthPlus: 0 } },
+              threshold: null 
+          }
+      },
+      tooltip: {
+          shared: true, useHTML: true,
+          backgroundColor: 'rgba(10,10,10,0.92)',
+          borderColor: 'rgba(10,10,10,0.92)',
+          style: { color: '#f5f5f5' },
+          formatter: function () {
+              const runsData = ${JSON.stringify(runsForTooltip)};
+              const pointIndex = this.points[0].point.x;
+              const run = runsData[pointIndex];
+              let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' +
+                            'Date: ' + new Date(run.timestamp).toLocaleString() + '<br>';
+              this.points.forEach(point => {
+                  tooltip += '<span style="color:' + point.series.color + '">●</span> ' +
+                             point.series.name + ': <b>' + formatDuration(point.y) + '</b><br>';
+              });
+              tooltip += '<br>Tests: ' + run.totalTests;
+              return tooltip;
+          }
+      },
+      series: ${seriesString},
+      credits: { enabled: false }
+  }
+  `;
 
-  // ✅ Gradient fill for area under the line
-  const defs = svg.append("defs");
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "durationGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0);
-
-  // ✅ Line + area generators
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d_val) => y(d_val))
-    .curve(d3.curveMonotoneX);
-
-  const areaGenerator = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(height)
-    .y1((d_val) => y(d_val))
-    .curve(d3.curveMonotoneX);
-
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("fill", "url(#durationGradient)")
-    .attr("d", areaGenerator);
-
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("class", "chart-line duration-line")
-    .attr("d", lineGenerator);
-
-  // ✅ Tooltip handling
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  runs.forEach((run, i) => {
-    chart
-      .append("circle")
-      .attr("class", "hover-point")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 7)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        tooltip.transition().duration(150).style("opacity", 0.95);
-        tooltip
-          .html(
-            `
-          <strong>Run ${run.runId || i + 1}</strong><br>
-          Date: ${new Date(run.timestamp).toLocaleString()}<br>
-          Duration: ${formatDuration(run.duration)}<br>
-          Tests: ${run.totalTests}`
-          )
-          .style("left", `${event.pageX + 15}px`)
-          .style("top", `${event.pageY - 28}px`);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 5.5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 4)
-          .style("opacity", 0.8);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point visible-point-duration")
-      .attr("data-run-index", i)
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 4)
-      .style("fill", "var(--accent-color-alt)")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none");
-  });
-
-  const legend = chart
-    .append("g")
-    .attr("class", "chart-legend-d3 chart-legend-bottom")
-    .attr("transform", `translate(${width / 2 - 50}, ${height + 40})`);
-
-  const legendRow = legend.append("g");
-  legendRow
-    .append("line")
-    .attr("x1", 0)
-    .attr("x2", 15)
-    .attr("y1", 5)
-    .attr("y2", 5)
-    .attr("class", "chart-line duration-line")
-    .style("stroke-width", 2.5);
-  legendRow
-    .append("circle")
-    .attr("cx", 7.5)
-    .attr("cy", 5)
-    .attr("r", 3.5)
-    .style("fill", "var(--accent-color-alt)");
-  legendRow
-    .append("text")
-    .attr("x", 22)
-    .attr("y", 10)
-    .text("Duration")
-    .style("font-size", "12px");
-
-  chart
-    .append("text")
-    .attr("class", "chart-title main-chart-title")
-    .attr("x", width / 2)
-    .attr("y", -margin.top / 2 + 10)
-    .attr("text-anchor", "middle");
-
-  return `<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+      <div id="${chartId}" class="trend-chart-container"></div>
+      <script>
+          document.addEventListener('DOMContentLoaded', function() {
+              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                  try {
+                      const chartOptions = ${optionsObjectString};
+                      Highcharts.chart('${chartId}', chartOptions);
+                  } catch (e) {
+                      console.error("Error rendering chart ${chartId}:", e);
+                      document.getElementById('${chartId}').innerHTML = '<div class="no-data">Error rendering duration trend chart.</div>';
+                  }
+              } else {
+                   document.getElementById('${chartId}').innerHTML = '<div class="no-data">Charting library not available.</div>';
+              }
+          });
+      </script>
+  `;
 }
 
 function formatDate(dateStrOrDate) {
@@ -540,7 +371,6 @@ function formatDate(dateStrOrDate) {
   try {
     const date = new Date(dateStrOrDate);
     if (isNaN(date.getTime())) return "Invalid Date";
-    // Using a more common and less verbose format
     return (
       date.toLocaleDateString(undefined, {
         year: "2-digit",
@@ -559,331 +389,260 @@ function generateTestHistoryChart(history) {
   if (!history || history.length === 0)
     return '<div class="no-data-chart">No data for chart</div>';
 
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const width = 320;
-  const height = 100;
-  const margin = { top: 10, right: 10, bottom: 30, left: 40 };
-
-  const svg = body
-    .append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const chartWidth = width - margin.left - margin.right;
-  const chartHeight = height - margin.top - margin.bottom;
-
   const validHistory = history.filter(
     (h) => h && typeof h.duration === "number" && h.duration >= 0
   );
   if (validHistory.length === 0)
     return '<div class="no-data-chart">No valid data for chart</div>';
 
-  const maxDuration = d3.max(validHistory, (d) => d.duration);
+  const chartId = `testHistoryChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
 
-  const x = d3
-    .scalePoint()
-    .domain(validHistory.map((_, i) => i + 1))
-    .range([0, chartWidth])
-    .padding(0.5);
-
-  const y = d3
-    .scaleLinear()
-    .domain([0, maxDuration > 0 ? maxDuration * 1.1 : 1])
-    .range([chartHeight, 0]);
-
-  // Axes
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `R${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis small-axis")
-    .attr("transform", `translate(0,${chartHeight})`)
-    .call(xAxis)
-    .selectAll("text")
-    .text((d) => `R${d}`);
-
-  chart
-    .append("g")
-    .attr("class", "chart-axis y-axis small-axis")
-    .call(
-      d3
-        .axisLeft(y)
-        .ticks(3)
-        .tickFormat((d) => formatDuration(d))
-    );
-
-  // Gradient
-  const defs = svg.append("defs");
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "historyLineGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0);
-
-  // Line generator with smoothing
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d.duration))
-    .curve(d3.curveMonotoneX);
-
-  if (validHistory.length > 1) {
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("class", "chart-line history-duration-line")
-      .attr("d", lineGenerator)
-      .style("stroke", "var(--accent-color)");
-
-    // Gradient area fill under line
-    const area = d3
-      .area()
-      .x((_, i) => x(i + 1))
-      .y0(chartHeight)
-      .y1((d) => y(d.duration))
-      .curve(d3.curveMonotoneX);
-
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("d", area)
-      .attr("fill", "url(#historyLineGradient)");
-  }
-
-  // Tooltip
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  validHistory.forEach((run, i) => {
-    chart
-      .append("circle")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 6)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        tooltip.transition().duration(150).style("opacity", 0.95);
-        tooltip
-          .html(
-            `
-          <strong>Run ${run.runId || i + 1}</strong><br>
-          Status: <span class="status-badge-small-tooltip ${getStatusClass(
-            run.status
-          )}">${run.status.toUpperCase()}</span><br>
-          Duration: ${formatDuration(run.duration)}`
-          )
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY - 15}px`);
-        d3.select(this.nextSibling)
-          .transition()
-          .duration(100)
-          .attr("r", 4.5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(this.nextSibling)
-          .transition()
-          .duration(100)
-          .attr("r", 3)
-          .style("opacity", 0.8);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 3)
-      .style(
-        "fill",
-        run.status === "passed"
-          ? "var(--success-color)"
-          : run.status === "failed"
-          ? "var(--danger-color)"
-          : "var(--warning-color)"
-      )
-      .style("stroke", "#fff")
-      .style("stroke-width", "0.5px")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none");
+  const seriesDataPoints = validHistory.map((run) => {
+    let color;
+    switch (String(run.status).toLowerCase()) {
+      case "passed":
+        color = "var(--success-color)";
+        break;
+      case "failed":
+        color = "var(--danger-color)";
+        break;
+      case "skipped":
+        color = "var(--warning-color)";
+        break;
+      default:
+        color = "var(--dark-gray-color)";
+    }
+    return {
+      y: run.duration,
+      marker: {
+        fillColor: color,
+        symbol: "circle",
+        radius: 3.5,
+        states: { hover: { radius: 5 } },
+      },
+      status: run.status,
+      runId: run.runId,
+    };
   });
 
-  return body.html();
+  // Assuming var(--accent-color) is Deep Purple #673ab7 -> RGB 103, 58, 183
+  const accentColorRGB = "103, 58, 183";
+
+  const optionsObjectString = `
+  {
+      chart: { type: 'area', height: 100, width: 320, backgroundColor: 'transparent', spacing: [10,10,15,35] },
+      title: { text: null },
+      xAxis: {
+          categories: ${JSON.stringify(
+            validHistory.map((_, i) => `R${i + 1}`)
+          )},
+          labels: { style: { fontSize: '10px', color: 'var(--text-color-secondary)' } }
+      },
+      yAxis: {
+          title: { text: null },
+          labels: {
+              formatter: function() { return formatDuration(this.value); },
+              style: { fontSize: '10px', color: 'var(--text-color-secondary)' },
+              align: 'left', x: -35, y: 3
+          },
+          min: 0,
+          gridLineWidth: 0,
+          tickAmount: 4
+      },
+      legend: { enabled: false },
+      plotOptions: {
+          area: {
+              lineWidth: 2,
+              lineColor: 'var(--accent-color)',
+              fillColor: {
+                  linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                  stops: [
+                      [0, 'rgba(${accentColorRGB}, 0.4)'],
+                      [1, 'rgba(${accentColorRGB}, 0)']
+                  ]
+              },
+              marker: { enabled: true },
+              threshold: null
+          }
+      },
+      tooltip: {
+          useHTML: true,
+          backgroundColor: 'rgba(10,10,10,0.92)',
+          borderColor: 'rgba(10,10,10,0.92)',
+          style: { color: '#f5f5f5', padding: '8px' },
+          formatter: function() {
+              const pointData = this.point;
+              let statusBadgeHtml = '<span style="padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; background-color: ';
+              switch(String(pointData.status).toLowerCase()) {
+                  case 'passed': statusBadgeHtml += 'var(--success-color)'; break;
+                  case 'failed': statusBadgeHtml += 'var(--danger-color)'; break;
+                  case 'skipped': statusBadgeHtml += 'var(--warning-color)'; break;
+                  default: statusBadgeHtml += 'var(--dark-gray-color)';
+              }
+              statusBadgeHtml += ';">' + String(pointData.status).toUpperCase() + '</span>';
+
+              return '<strong>Run ' + (pointData.runId || (this.point.index + 1)) + '</strong><br>' +
+                     'Status: ' + statusBadgeHtml + '<br>' +
+                     'Duration: ' + formatDuration(pointData.y);
+          }
+      },
+      series: [{
+          data: ${JSON.stringify(seriesDataPoints)},
+          showInLegend: false
+      }],
+      credits: { enabled: false }
+  }
+  `;
+  return `
+      <div id="${chartId}" style="width: 320px; height: 100px;"></div>
+      <script>
+          document.addEventListener('DOMContentLoaded', function() {
+              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                  try {
+                      const chartOptions = ${optionsObjectString};
+                      Highcharts.chart('${chartId}', chartOptions);
+                  } catch (e) {
+                      console.error("Error rendering chart ${chartId}:", e);
+                      document.getElementById('${chartId}').innerHTML = '<div class="no-data-chart">Error rendering history chart.</div>';
+                  }
+              } else {
+                  document.getElementById('${chartId}').innerHTML = '<div class="no-data-chart">Charting library not available.</div>';
+              }
+          });
+      </script>
+  `;
 }
 
-function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
+function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) {
-    return '<div class="no-data">No data for Test Distribution chart.</div>';
+    return '<div class="pie-chart-wrapper"><h3>Test Distribution</h3><div class="no-data">No data for Test Distribution chart.</div></div>';
   }
+  const passedEntry = data.find((d) => d.label === "Passed");
   const passedPercentage = Math.round(
-    ((data.find((d) => d.label === "Passed")?.value || 0) / total) * 100
+    ((passedEntry ? passedEntry.value : 0) / total) * 100
   );
 
-  const legendItemHeight = 22;
-  const legendAreaHeight =
-    data.filter((d) => d.value > 0).length * legendItemHeight;
-  const effectiveChartHeight = chartHeight - legendAreaHeight - 10; // Space for legend below
+  const chartId = `pieChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
 
-  const outerRadius = Math.min(chartWidth, effectiveChartHeight) / 2 - 10; // Adjusted radius for legend space
-  const innerRadius = outerRadius * 0.55;
+  const seriesData = [
+    {
+      name: "Tests", // Changed from 'Test Distribution' for tooltip clarity
+      data: data
+        .filter((d) => d.value > 0)
+        .map((d) => {
+          let color;
+          switch (d.label) {
+            case "Passed":
+              color = "var(--success-color)";
+              break;
+            case "Failed":
+              color = "var(--danger-color)";
+              break;
+            case "Skipped":
+              color = "var(--warning-color)";
+              break;
+            default:
+              color = "#CCCCCC"; // A neutral default color
+          }
+          return { name: d.label, y: d.value, color: color };
+        }),
+      size: "100%",
+      innerSize: "55%",
+      dataLabels: { enabled: false },
+      showInLegend: true,
+    },
+  ];
 
-  const pie = d3
-    .pie()
-    .value((d) => d.value)
-    .sort(null);
-  const arcGenerator = d3
-    .arc()
-    .innerRadius(innerRadius)
-    .outerRadius(outerRadius);
+  // Approximate font size for center text, can be adjusted or made dynamic with more client-side JS
+  const centerTitleFontSize =
+    Math.max(12, Math.min(chartWidth, chartHeight) / 12) + "px";
+  const centerSubtitleFontSize =
+    Math.max(10, Math.min(chartWidth, chartHeight) / 18) + "px";
 
-  const colorMap = {
-    Passed: "var(--success-color)",
-    Failed: "var(--danger-color)",
-    Skipped: "var(--warning-color)",
-  };
-  const color = d3
-    .scaleOrdinal()
-    .domain(data.map((d) => d.label))
-    .range(data.map((d) => colorMap[d.label] || "#ccc"));
-
-  const svg = body
-    .append("svg")
-    .attr("width", chartWidth) // SVG width is just for the chart
-    .attr("height", chartHeight) // Full height including legend
-    .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chartGroup = svg
-    .append("g")
-    .attr(
-      "transform",
-      `translate(${chartWidth / 2}, ${effectiveChartHeight / 2 + 5})`
-    ); // Centered in available chart area
-
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  chartGroup
-    .selectAll(".arc-path")
-    .data(pie(data.filter((d) => d.value > 0))) // Filter out zero-value slices for cleaner chart
-    .enter()
-    .append("path")
-    .attr("class", "arc-path")
-    .attr("d", arcGenerator)
-    .attr("fill", (d) => color(d.data.label))
-    .style("stroke", "var(--card-background-color)")
-    .style("stroke-width", 3)
-    .on("mouseover", function (event, d) {
-      d3.select(this)
-        .transition()
-        .duration(150)
-        .attr(
-          "d",
-          d3
-            .arc()
-            .innerRadius(innerRadius)
-            .outerRadius(outerRadius + 6)
-        );
-      tooltip.transition().duration(150).style("opacity", 0.95);
-      tooltip
-        .html(
-          `${d.data.label}: ${d.data.value} (${Math.round(
-            (d.data.value / total) * 100
-          )}%)`
-        )
-        .style("left", event.pageX + 15 + "px")
-        .style("top", event.pageY - 28 + "px");
-    })
-    .on("mouseout", function (event, d) {
-      d3.select(this).transition().duration(150).attr("d", arcGenerator);
-      tooltip.transition().duration(300).style("opacity", 0);
-    });
-
-  chartGroup
-    .append("text")
-    .attr("class", "pie-center-percentage")
-    .attr("text-anchor", "middle")
-    .attr("dy", "0.05em")
-    .text(`${passedPercentage}%`);
-
-  chartGroup
-    .append("text")
-    .attr("class", "pie-center-label")
-    .attr("text-anchor", "middle")
-    .attr("dy", "1.3em")
-    .text("Passed");
-
-  const legend = svg
-    .append("g")
-    .attr("class", "pie-chart-legend-d3 chart-legend-bottom")
-    .attr(
-      "transform",
-      `translate(${chartWidth / 2}, ${effectiveChartHeight + 20})`
-    ); // Position legend below chart
-
-  const legendItems = legend
-    .selectAll(".legend-item")
-    .data(data.filter((d) => d.value > 0))
-    .enter()
-    .append("g")
-    .attr("class", "legend-item")
-    // Position items horizontally, centering the block
-    .attr("transform", (d, i, nodes) => {
-      const numItems = nodes.length;
-      const totalLegendWidth = numItems * 90 - 10; // Approx width of all legend items
-      const startX = -totalLegendWidth / 2;
-      return `translate(${startX + i * 90}, 0)`; // 90 is approx width per item
-    });
-
-  legendItems
-    .append("rect")
-    .attr("width", 12)
-    .attr("height", 12)
-    .style("fill", (d) => color(d.label))
-    .attr("rx", 3)
-    .attr("ry", 3)
-    .attr("y", -6); // Align with text
-
-  legendItems
-    .append("text")
-    .attr("x", 18)
-    .attr("y", 0)
-    .text((d) => `${d.label} (${d.value})`)
-    .style("font-size", "12px")
-    .attr("dominant-baseline", "middle");
+  const optionsObjectString = `
+  {
+      chart: {
+          type: 'pie',
+          width: ${chartWidth},
+          height: ${
+            chartHeight - 40
+          }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
+          backgroundColor: 'transparent',
+          plotShadow: false,
+          spacingBottom: 40 // Ensure space for legend
+      },
+      title: {
+          text: '${passedPercentage}%',
+          align: 'center',
+          verticalAlign: 'middle',
+          y: 5, 
+          style: { fontSize: '${centerTitleFontSize}', fontWeight: 'bold', color: 'var(--primary-color)' }
+      },
+      subtitle: {
+          text: 'Passed',
+          align: 'center',
+          verticalAlign: 'middle',
+          y: 25, 
+          style: { fontSize: '${centerSubtitleFontSize}', color: 'var(--text-color-secondary)' }
+      },
+      tooltip: {
+          pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
+          backgroundColor: 'rgba(10,10,10,0.92)',
+          borderColor: 'rgba(10,10,10,0.92)',
+          style: { color: '#f5f5f5' }
+      },
+      legend: {
+          layout: 'horizontal',
+          align: 'center',
+          verticalAlign: 'bottom',
+          itemStyle: { color: 'var(--text-color)', fontWeight: 'normal', fontSize: '12px' }
+      },
+      plotOptions: {
+          pie: {
+              allowPointSelect: true,
+              cursor: 'pointer',
+              borderWidth: 3,
+              borderColor: 'var(--card-background-color)', // Match D3 style
+              states: {
+                  hover: {
+                      // Using default Highcharts halo which is generally good
+                  }
+              }
+          }
+      },
+      series: ${JSON.stringify(seriesData)},
+      credits: { enabled: false }
+  }
+  `;
 
   return `
-    <div class="pie-chart-wrapper">
-      <h3>Test Distribution</h3>
-      ${body.html()}
-    </div>`;
+      <div class="pie-chart-wrapper" style="align-items: center">
+          <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
+          <div id="${chartId}" style="width: ${chartWidth}px; height: ${
+    chartHeight - 40
+  }px;"></div>
+          <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                  if (typeof Highcharts !== 'undefined') {
+                      try {
+                          const chartOptions = ${optionsObjectString};
+                          Highcharts.chart('${chartId}', chartOptions);
+                      } catch (e) {
+                          console.error("Error rendering chart ${chartId}:", e);
+                          document.getElementById('${chartId}').innerHTML = '<div class="no-data">Error rendering pie chart.</div>';
+                      }
+                  } else {
+                      document.getElementById('${chartId}').innerHTML = '<div class="no-data">Charting library not available.</div>';
+                  }
+              });
+          </script>
+      </div>
+  `;
 }
 
 function generateTestHistoryContent(trendData) {
@@ -895,7 +654,7 @@ function generateTestHistoryContent(trendData) {
     return '<div class="no-data">No historical test data available.</div>';
   }
 
-  const allTestNamesAndPaths = new Map(); // Store {path: name, title: title}
+  const allTestNamesAndPaths = new Map();
   Object.values(trendData.testRuns).forEach((run) => {
     if (Array.isArray(run)) {
       run.forEach((test) => {
@@ -941,14 +700,15 @@ function generateTestHistoryContent(trendData) {
   return `
     <div class="test-history-container">
       <div class="filters" style="border-color: black; border-style: groove;">
-        <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
-        <select id="history-filter-status">
-          <option value="">All Statuses</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="skipped">Skipped</option>
-        </select>
-      </div>
+    <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
+    <select id="history-filter-status">
+        <option value="">All Statuses</option>
+        <option value="passed">Passed</option>
+        <option value="failed">Failed</option>
+        <option value="skipped">Skipped</option>
+    </select>
+    <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button>
+</div>
       
       <div class="test-history-grid">
         ${testHistory
@@ -957,7 +717,6 @@ function generateTestHistoryContent(trendData) {
               test.history.length > 0
                 ? test.history[test.history.length - 1]
                 : { status: "unknown" };
-            // For data-test-name, use the title for filtering as per input placeholder
             return `
             <div class="test-history-card" data-test-name="${sanitizeHTML(
               test.testTitle.toLowerCase()
@@ -967,7 +726,7 @@ function generateTestHistoryContent(trendData) {
               sanitizeHTML(test.testTitle)
             )}</p>
                 <span class="status-badge ${getStatusClass(latestRun.status)}">
-                  ${latestRun.status.toUpperCase()}
+                  ${String(latestRun.status).toUpperCase()}
                 </span>
               </div>
               <div class="test-history-trend">
@@ -988,7 +747,7 @@ function generateTestHistoryContent(trendData) {
                           <td>${run.runId}</td>
                           <td><span class="status-badge-small ${getStatusClass(
                             run.status
-                          )}">${run.status.toUpperCase()}</span></td>
+                          )}">${String(run.status).toUpperCase()}</span></td>
                           <td>${formatDuration(run.duration)}</td>
                           <td>${formatDate(run.timestamp)}</td>
                         </tr>`
@@ -1039,19 +798,15 @@ function getSuitesData(results) {
   results.forEach((test) => {
     const browser = test.browser || "unknown";
     const suiteParts = test.name.split(" > ");
-    // More robust suite name extraction: use file name if no clear suite, or parent dir if too generic
     let suiteNameCandidate = "Default Suite";
     if (suiteParts.length > 2) {
-      // e.g. file > suite > test
       suiteNameCandidate = suiteParts[1];
     } else if (suiteParts.length > 1) {
-      // e.g. file > test
       suiteNameCandidate = suiteParts[0]
         .split(path.sep)
         .pop()
         .replace(/\.(spec|test)\.(ts|js|mjs|cjs)$/, "");
     } else {
-      // Just file name or malformed
       suiteNameCandidate = test.name
         .split(path.sep)
         .pop()
@@ -1158,7 +913,7 @@ function generateHTML(reportData, trendData = null) {
     timestamp: new Date().toISOString(),
   };
 
-  const totalTestsOr1 = runSummary.totalTests || 1;
+  const totalTestsOr1 = runSummary.totalTests || 1; // Avoid division by zero
   const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
   const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
   const skipPercentage = Math.round(
@@ -1169,12 +924,8 @@ function generateHTML(reportData, trendData = null) {
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
 
-  // Inside generate-static-report.mjs
-
   function generateTestCasesHTML() {
-    // Make sure this is within the scope where 'results' is defined
     if (!results || results.length === 0) {
-      // Assuming 'results' is accessible here
       return '<div class="no-tests">No test results found in this run.</div>';
     }
 
@@ -1220,7 +971,6 @@ function generateHTML(reportData, trendData = null) {
                 step.errorMessage
                   ? `
                 <div class="step-error">
-                  <strong>Error:</strong> ${sanitizeHTML(step.errorMessage)}
                   ${
                     step.stackTrace
                       ? `<pre class="stack-trace">${sanitizeHTML(
@@ -1275,17 +1025,16 @@ function generateHTML(reportData, trendData = null) {
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
           ${
-            test.error // This is for the overall test error, not step error
-              ? `<div class="test-error-summary"><h4>Test Error:</h4><pre>${sanitizeHTML(
-                  test.error // Assuming test.error is the message; if it has a stack, that's separate
-                )}</pre></div>`
+            test.error
+              ? `<div class="test-error-summary">
+  ${formatPlaywrightError(test.error)}
+</div>`
               : ""
           }
 
           <h4>Steps</h4>
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
 
-          ${/* NEW: stdout and stderr sections START */ ""}
           ${
             test.stdout && test.stdout.length > 0
               ? `
@@ -1308,77 +1057,132 @@ function generateHTML(reportData, trendData = null) {
             </div>`
               : ""
           }
-          ${/* NEW: stdout and stderr sections END */ ""}
           
-          ${
-            test.screenshots && test.screenshots.length > 0
-              ? `
+                    ${
+                      test.screenshots && test.screenshots.length > 0
+                        ? `
             <div class="attachments-section">
               <h4>Screenshots</h4>
               <div class="attachments-grid">
                 ${test.screenshots
-                  .map((screenshot) => {
-                    // Ensure screenshot.path and screenshot.name are accessed correctly
-                    const imgSrc = sanitizeHTML(screenshot.path || "");
-                    const screenshotName = sanitizeHTML(
-                      screenshot.name || "Screenshot"
-                    );
-                    return imgSrc
-                      ? `
-                  <div class="attachment-item screenshot-item">
-                    <a href="${imgSrc}" target="_blank" title="Click to view ${screenshotName} (full size)">
-                      <img src="${imgSrc}" alt="${screenshotName}" loading="lazy">
-                    </a>
-                    <div class="attachment-caption">${screenshotName}</div>
-                  </div>`
-                      : "";
-                  })
+                  .map(
+                    (screenshot) => `
+                  <div class="attachment-item">
+                    <img src="${screenshot}" alt="Screenshot">
+                    <div class="attachment-info">
+                    <div class="trace-actions">
+                      <a href="${screenshot}" target="_blank">View Full Size</a></div>
+                    </div>
+                  </div>
+                `
+                  )
                   .join("")}
               </div>
-            </div>`
-              : ""
-          }
+            </div>
+          `
+                        : ""
+                    }
             
           ${
-            test.videos && test.videos.length > 0
+            test.videoPath
               ? `
             <div class="attachments-section">
               <h4>Videos</h4>
-              ${test.videos
-                .map(
-                  (video) => `
-                <div class="video-item">
-                  <a href="${sanitizeHTML(
-                    video.path
-                  )}" target="_blank">View Video: ${sanitizeHTML(
-                    video.name || path.basename(video.path) // path.basename might not be available if path module not passed/scoped
-                  )}</a>
-                </div>`
-                )
-                .join("")}
-            </div>`
+              <div class="attachments-grid">
+                ${(() => {
+                  // Handle both string and array cases
+                  const videos = Array.isArray(test.videoPath)
+                    ? test.videoPath
+                    : [test.videoPath];
+                  const mimeTypes = {
+                    mp4: "video/mp4",
+                    webm: "video/webm",
+                    ogg: "video/ogg",
+                    mov: "video/quicktime",
+                    avi: "video/x-msvideo",
+                  };
+
+                  return videos
+                    .map((video, index) => {
+                      const videoUrl =
+                        typeof video === "object" ? video.url || "" : video;
+                      const videoName =
+                        typeof video === "object"
+                          ? video.name || `Video ${index + 1}`
+                          : `Video ${index + 1}`;
+                      const fileExtension = videoUrl
+                        .split(".")
+                        .pop()
+                        .toLowerCase();
+                      const mimeType = mimeTypes[fileExtension] || "video/mp4";
+
+                      return `
+                      <div class="attachment-item">
+                        <video controls width="100%" height="auto" title="${videoName}">
+                          <source src="${videoUrl}" type="${mimeType}">
+                          Your browser does not support the video tag.
+                        </video>
+                        <div class="attachment-info">
+                          <div class="trace-actions">
+                          <a href="${videoUrl}" target="_blank" download="${videoName}.${fileExtension}">
+                            Download
+                          </a>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                    })
+                    .join("");
+                })()}
+              </div>
+            </div>
+          `
               : ""
           }
-
+          
           ${
-            test.traces && test.traces.length > 0
+            test.tracePath
               ? `
-            <div class="attachments-section">
-                <h4>Traces</h4>
-                ${test.traces
-                  .map(
-                    (trace) => `
-                  <div class="trace-item">
-                    <a href="${sanitizeHTML(
-                      trace.path
-                    )}" target="_blank" download>Download Trace: ${sanitizeHTML(
-                      trace.name || path.basename(trace.path) // path.basename might not be available if path module not passed/scoped
-                    )}</a>
-                    (Open with Playwright Trace Viewer)
-                  </div>`
-                  )
-                  .join("")}
-            </div>`
+  <div class="attachments-section">
+    <h4>Trace Files</h4>
+    <div class="attachments-grid">
+      ${(() => {
+        // Handle both string and array cases
+        const traces = Array.isArray(test.tracePath)
+          ? test.tracePath
+          : [test.tracePath];
+
+        return traces
+          .map((trace, index) => {
+            const traceUrl =
+              typeof trace === "object" ? trace.url || "" : trace;
+            const traceName =
+              typeof trace === "object"
+                ? trace.name || `Trace ${index + 1}`
+                : `Trace ${index + 1}`;
+            const traceFileName = traceUrl.split("/").pop();
+
+            return `
+            <div class="attachment-item">
+              <div class="trace-preview">
+                <span class="trace-icon">📄</span>
+                <span class="trace-name">${traceName}</span>
+              </div>
+              <div class="attachment-info">
+                <div class="trace-actions">
+                  <a href="${traceUrl}" target="_blank" download="${traceFileName}" class="download-trace">
+                    Download
+                  </a>
+                </div>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+      })()}
+    </div>
+  </div>
+`
               : ""
           }
 
@@ -1403,6 +1207,7 @@ function generateHTML(reportData, trendData = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
     <title>Playwright Pulse Report</title>
     <style>
         :root {
@@ -1420,27 +1225,34 @@ function generateHTML(reportData, trendData = null) {
           --text-color: #333;
           --text-color-secondary: #555;
           --border-color: #ddd;
-          --background-color: #f8f9fa; /* Even lighter gray */
+          --background-color: #f8f9fa; 
           --card-background-color: #fff;
           --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
           --border-radius: 8px;
-          --box-shadow: 0 5px 15px rgba(0,0,0,0.08); /* Softer shadow */
+          --box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
           --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05);
           --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
         }
+
+        /* General Highcharts styling */
+        .highcharts-background { fill: transparent; }
+        .highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
+        .highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
+        .highcharts-axis-title { fill: var(--text-color) !important; }
+        .highcharts-tooltip > span { background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }
         
         body {
           font-family: var(--font-family);
           margin: 0;
           background-color: var(--background-color);
           color: var(--text-color);
-          line-height: 1.65; /* Increased line height */
+          line-height: 1.65; 
           font-size: 16px;
         }
         
         .container {
           max-width: 1600px; 
-          padding: 30px; /* Increased padding */
+          padding: 30px; 
           border-radius: var(--border-radius);
           box-shadow: var(--box-shadow);
           background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec);
@@ -1492,27 +1304,27 @@ function generateHTML(reportData, trendData = null) {
         .status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
         
         .dashboard-bottom-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Increased minmax */
-            gap: 28px; align-items: stretch; /* Stretch for same height cards */
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+            gap: 28px; align-items: stretch; 
         }
         .pie-chart-wrapper, .suites-widget, .trend-chart {
-            background-color: var(--card-background-color); padding: 28px; /* Increased padding */
+            background-color: var(--card-background-color); padding: 28px; 
             border-radius: var(--border-radius); box-shadow: var(--box-shadow-light);
-            display: flex; flex-direction: column; /* For internal alignment */
+            display: flex; flex-direction: column; 
         }
-        .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .main-chart-title { 
+
+        .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { 
             text-align: center; margin-top: 0; margin-bottom: 25px; 
             font-size: 1.25em; font-weight: 600; color: var(--text-color);
         }
-        .pie-chart-wrapper svg, .trend-chart-container svg { display: block; margin: 0 auto; max-width: 100%; height: auto; flex-grow: 1;}
-        
-        .chart-tooltip {
-          position: absolute; padding: 10px 15px; background: rgba(10,10,10,0.92); color: #f5f5f5; /* Slightly lighter text on dark */
-          border: none; border-radius: 6px; pointer-events: none;
-          font-size: 13px; line-height: 1.5; white-space: nowrap; z-index: 10000;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.15s ease-in-out;
+         .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { /* For Highcharts containers */
+            flex-grow: 1;
+            min-height: 250px; /* Ensure charts have some min height */
         }
-        .chart-tooltip strong { color: #fff; font-weight: 600;}
+        
+        .chart-tooltip { /* This class was for D3, Highcharts has its own tooltip styling via JS/SVG */
+          /* Basic styling for Highcharts HTML tooltips can be done via .highcharts-tooltip span */
+        }
         .status-badge-small-tooltip { padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }
         .status-badge-small-tooltip.status-passed { background-color: var(--success-color); }
         .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
@@ -1564,7 +1376,7 @@ function generateHTML(reportData, trendData = null) {
           border-bottom: 1px solid transparent; 
           transition: background-color 0.2s ease;
         }
-        .test-case-header:hover { background-color: #f4f6f8; } /* Lighter hover */
+        .test-case-header:hover { background-color: #f4f6f8; } 
         .test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: #f9fafb; }
         
         .test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
@@ -1634,24 +1446,10 @@ function generateHTML(reportData, trendData = null) {
         .code-section pre { background-color: #2d2d2d; color: #f0f0f0; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
 
         .trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
-        .trend-chart-container svg .chart-axis path, .trend-chart-container svg .chart-axis line { stroke: var(--border-color); shape-rendering: crispEdges;}
-        .trend-chart-container svg .chart-axis text { fill: var(--text-color-secondary); font-size: 12px; }
-        .trend-chart-container svg .main-chart-title { font-size: 1.1em; font-weight: 600; fill: var(--text-color); }
-        .chart-line { fill: none; stroke-width: 2.5px; }
-        .chart-line.total-line { stroke: var(--primary-color); }
-        .chart-line.passed-line { stroke: var(--success-color); }
-        .chart-line.failed-line { stroke: var(--danger-color); }
-        .chart-line.skipped-line { stroke: var(--warning-color); }
-        .chart-line.duration-line { stroke: var(--accent-color-alt); }
-        .chart-line.history-duration-line { stroke: var(--accent-color); stroke-width: 2px;}
+        /* Removed D3 specific .chart-axis, .main-chart-title, .chart-line.* rules */
+        /* Highcharts styles its elements with classes like .highcharts-axis, .highcharts-title etc. */
         
-        .pie-center-percentage { font-size: calc(var(--outer-radius, 100px) / 3.5); font-weight: bold; fill: var(--primary-color); } /* Use CSS var if possible */
-        .pie-center-label { font-size: calc(var(--outer-radius, 100px) / 7); fill: var(--text-color-secondary); }
-        .pie-chart-legend-d3 text, .chart-legend-d3 text { fill: var(--text-color); font-size: 12px;}
-        .chart-legend-bottom {font-size: 12px;}
-
-
-        .test-history-container h2 { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
+        .test-history-container h2.tab-main-title { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
         .test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
         .test-history-card {
             background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius);
@@ -1661,8 +1459,10 @@ function generateHTML(reportData, trendData = null) {
         .test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .test-history-header p { font-weight: 500 }
         .test-history-trend { margin-bottom: 20px; min-height: 110px; }
-        .test-history-trend svg { display: block; margin: 0 auto; max-width:100%; height: auto;}
-        .test-history-trend .small-axis text {font-size: 11px;}
+        .test-history-trend div[id^="testHistoryChart-"] { /* Highcharts container for history */
+            display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; /* Match JS config */
+        }
+        /* .test-history-trend .small-axis text {font-size: 11px;} Removed D3 specific */
         .test-history-details-collapsible summary { cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }
         .test-history-details-collapsible summary:hover {text-decoration: underline;}
         .test-history-details table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
@@ -1677,7 +1477,6 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small.status-skipped { background-color: var(--warning-color); }
         .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
 
-
         .no-data, .no-tests, .no-steps, .no-data-chart { 
           padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em;
           background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0;
@@ -1689,19 +1488,79 @@ function generateHTML(reportData, trendData = null) {
         #test-ai p {margin-bottom: 18px; font-size: 1em; color: var(--text-color-secondary);}
         pre .stdout-log { background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
         pre .stderr-log { background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
-        /* Responsive Enhancements */
+        
+        .trace-preview {
+  padding: 1rem;
+  text-align: center;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e1e1e1;
+}
+
+.trace-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.trace-name {
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.trace-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.trace-actions a {
+  flex: 1;
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.view-trace {
+  background: #3182ce;
+  color: white;
+}
+
+.view-trace:hover {
+  background: #2c5282;
+}
+
+.download-trace {
+  background: #e2e8f0;
+  color: #2d3748;
+}
+
+.download-trace:hover {
+  background: #cbd5e0;
+}
+
+.filters button.clear-filters-btn {
+    background-color: var(--medium-gray-color); /* Or any other suitable color */
+    color: var(--text-color);
+    /* Add other styling as per your .filters button style if needed */
+}
+
+.filters button.clear-filters-btn:hover {
+    background-color: var(--dark-gray-color); /* Darker on hover */
+    color: #fff;
+}
         @media (max-width: 1200px) {
-            .trend-charts-row { grid-template-columns: 1fr; } /* Stack trend charts earlier */
+            .trend-charts-row { grid-template-columns: 1fr; } 
         }
         @media (max-width: 992px) { 
             .dashboard-bottom-row { grid-template-columns: 1fr; }
-            .pie-chart-wrapper svg { max-width: 350px; }
+            .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; }
             .filters input { min-width: 180px; }
             .filters select { min-width: 150px; }
         }
         @media (max-width: 768px) { 
           body { font-size: 15px; }
-          .container { margin: 10px; padding: 20px; } /* Adjusted padding */
+          .container { margin: 10px; padding: 20px; } 
           .header { flex-direction: column; align-items: flex-start; gap: 15px; }
           .header h1 { font-size: 1.6em; }
           .run-info { text-align: left; font-size:0.9em; }
@@ -1718,9 +1577,7 @@ function generateHTML(reportData, trendData = null) {
           .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;}
           .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;}
           .test-history-grid {grid-template-columns: 1fr;}
-          .pie-chart-wrapper {min-height: auto;} /* Allow pie chart to shrink */
-          .pie-chart-legend-d3 { transform: translate(calc(50% - 50px), calc(100% - 50px));} /* Adjust legend for mobile for pie */
-
+          .pie-chart-wrapper {min-height: auto;} 
         }
         @media (max-width: 480px) { 
             body {font-size: 14px;}
@@ -1730,14 +1587,10 @@ function generateHTML(reportData, trendData = null) {
             .tab-button {padding: 10px 15px; font-size: 1em;}
             .summary-card .value {font-size: 1.8em;}
             .attachments-grid {grid-template-columns: 1fr;}
-            .step-item {padding-left: calc(var(--depth, 0) * 18px);} /* Reduced indent */
+            .step-item {padding-left: calc(var(--depth, 0) * 18px);} 
             .test-case-content, .step-details {padding: 15px;}
             .trend-charts-row {gap: 20px;}
             .trend-chart {padding: 20px;}
-            .chart-legend-bottom { transform: translate(10px, calc(100% - 50px));} /* Adjust general bottom legend for small screens */
-            .chart-legend-bottom g { transform: translate(0,0) !important;} /* Stack legend items vertically */
-            .chart-legend-bottom g text {font-size: 11px;}
-            .chart-legend-bottom g line, .chart-legend-bottom g circle {transform: scale(0.9);}
         }
     </style>
 </head>
@@ -1796,14 +1649,15 @@ function generateHTML(reportData, trendData = null) {
                 </div>
             </div>
             <div class="dashboard-bottom-row">
-                ${generatePieChartD3(
+                ${generatePieChart(
+                  // Changed from generatePieChartD3
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
                     { label: "Skipped", value: runSummary.skipped || 0 },
                   ],
-                  400,
-                  350
+                  400, // Default width
+                  390 // Default height (adjusted for legend + title)
                 )} 
                 ${generateSuitesWidget(suitesData)}
             </div>
@@ -1811,31 +1665,31 @@ function generateHTML(reportData, trendData = null) {
         
         <div id="test-runs" class="tab-content">
             <div class="filters">
-                <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-                <select id="filter-status">
-                    <option value="">All Statuses</option>
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="skipped">Skipped</option>
-                </select>
-                <select id="filter-browser">
-                    <option value="">All Browsers</option>
-                    ${Array.from(
-                      new Set(
-                        (results || []).map((test) => test.browser || "unknown")
-                      )
-                    )
-                      .map(
-                        (browser) =>
-                          `<option value="${sanitizeHTML(
-                            browser
-                          )}">${sanitizeHTML(browser)}</option>`
-                      )
-                      .join("")}
-                </select>
-                <button id="expand-all-tests">Expand All</button>
-                <button id="collapse-all-tests">Collapse All</button>
-            </div>
+    <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
+    <select id="filter-status">
+        <option value="">All Statuses</option>
+        <option value="passed">Passed</option>
+        <option value="failed">Failed</option>
+        <option value="skipped">Skipped</option>
+    </select>
+    <select id="filter-browser">
+        <option value="">All Browsers</option>
+        {/* Dynamically generated options will be here */}
+        ${Array.from(
+          new Set((results || []).map((test) => test.browser || "unknown"))
+        )
+          .map(
+            (browser) =>
+              `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
+                browser
+              )}</option>`
+          )
+          .join("")}
+    </select>
+    <button id="expand-all-tests">Expand All</button>
+    <button id="collapse-all-tests">Collapse All</button>
+    <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
+</div>
             <div class="test-cases-list">
                 ${generateTestCasesHTML()}
             </div>
@@ -1925,6 +1779,14 @@ function generateHTML(reportData, trendData = null) {
     
     
     <script>
+    // Ensure formatDuration is globally available
+    if (typeof formatDuration === 'undefined') {
+        function formatDuration(ms) {
+            if (ms === undefined || ms === null || ms < 0) return "0.0s";
+            return (ms / 1000).toFixed(1) + "s";
+        }
+    }
+
     function initializeReportInteractivity() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -1939,9 +1801,11 @@ function generateHTML(reportData, trendData = null) {
             });
         });
 
+        // --- Test Run Summary Filters ---
         const nameFilter = document.getElementById('filter-name');
         const statusFilter = document.getElementById('filter-status');
         const browserFilter = document.getElementById('filter-browser');
+        const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); // Get the new button
 
         function filterTestCases() {
             const nameValue = nameFilter ? nameFilter.value.toLowerCase() : "";
@@ -1950,7 +1814,6 @@ function generateHTML(reportData, trendData = null) {
             
             document.querySelectorAll('#test-runs .test-case').forEach(testCaseElement => {
                 const titleElement = testCaseElement.querySelector('.test-case-title');
-                // Use the 'title' attribute of .test-case-title for full path filtering
                 const fullTestName = titleElement ? titleElement.getAttribute('title').toLowerCase() : "";
                 const status = testCaseElement.getAttribute('data-status');
                 const browser = testCaseElement.getAttribute('data-browser');
@@ -1966,15 +1829,27 @@ function generateHTML(reportData, trendData = null) {
         if(statusFilter) statusFilter.addEventListener('change', filterTestCases);
         if(browserFilter) browserFilter.addEventListener('change', filterTestCases);
 
+        // Event listener for clearing Test Run Summary filters
+        if (clearRunSummaryFiltersBtn) {
+            clearRunSummaryFiltersBtn.addEventListener('click', () => {
+                if (nameFilter) nameFilter.value = '';
+                if (statusFilter) statusFilter.value = '';
+                if (browserFilter) browserFilter.value = '';
+                filterTestCases(); // Re-apply filters (which will show all)
+            });
+        }
+
+        // --- Test History Filters ---
         const historyNameFilter = document.getElementById('history-filter-name');
         const historyStatusFilter = document.getElementById('history-filter-status');
+        const clearHistoryFiltersBtn = document.getElementById('clear-history-filters'); // Get the new button
+
 
         function filterTestHistoryCards() {
             const nameValue = historyNameFilter ? historyNameFilter.value.toLowerCase() : "";
             const statusValue = historyStatusFilter ? historyStatusFilter.value : "";
 
             document.querySelectorAll('.test-history-card').forEach(card => {
-                // data-test-name now holds the test title (last part of full name)
                 const testTitle = card.getAttribute('data-test-name').toLowerCase(); 
                 const latestStatus = card.getAttribute('data-latest-status');
 
@@ -1987,15 +1862,22 @@ function generateHTML(reportData, trendData = null) {
         if(historyNameFilter) historyNameFilter.addEventListener('input', filterTestHistoryCards);
         if(historyStatusFilter) historyStatusFilter.addEventListener('change', filterTestHistoryCards);
 
+        // Event listener for clearing Test History filters
+        if (clearHistoryFiltersBtn) {
+            clearHistoryFiltersBtn.addEventListener('click', () => {
+                if (historyNameFilter) historyNameFilter.value = '';
+                if (historyStatusFilter) historyStatusFilter.value = '';
+                filterTestHistoryCards(); // Re-apply filters (which will show all)
+            });
+        }
+
+        // --- Expand/Collapse and Toggle Details Logic (remains the same) ---
         function toggleElementDetails(headerElement, contentSelector) {
             let contentElement;
-            // For test cases, content is a child of the header's parent.
-            // For steps, content is the direct next sibling.
             if (headerElement.classList.contains('test-case-header')) {
                 contentElement = headerElement.parentElement.querySelector('.test-case-content');
             } else if (headerElement.classList.contains('step-header')) {
                 contentElement = headerElement.nextElementSibling;
-                // Verify it's the correct details div
                 if (!contentElement || !contentElement.matches(contentSelector || '.step-details')) {
                      contentElement = null;
                 }
@@ -2029,20 +1911,17 @@ function generateHTML(reportData, trendData = null) {
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
     }
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
-    </script>
+</script>
 </body>
 </html>
   `;
 }
 
-// Add this helper function somewhere in generate-static-report.mjs,
-// possibly before your main() function.
-
 async function runScript(scriptPath) {
   return new Promise((resolve, reject) => {
     console.log(chalk.blue(`Executing script: ${scriptPath}...`));
     const process = fork(scriptPath, [], {
-      stdio: "inherit", // This will pipe the child process's stdio to the parent
+      stdio: "inherit",
     });
 
     process.on("error", (err) => {
@@ -2064,191 +1943,199 @@ async function runScript(scriptPath) {
 }
 
 async function main() {
-  const __filename = fileURLToPath(import.meta.url); // Get current file path
-  const __dirname = path.dirname(__filename); // Get current directory
-  const trendExcelScriptPath = path.resolve(
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  // Script to archive current run to JSON history (this is your modified "generate-trend.mjs")
+  const archiveRunScriptPath = path.resolve(
     __dirname,
-    "generate-trend-excel.mjs"
-  ); // generate-trend-excel.mjs is in the SAME directory as generate-static-report.mjs
+    "generate-trend.mjs" // Keeping the filename as per your request
+  );
+
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
-  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
+  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
-  const trendDataPath = path.resolve(outputDir, "trend.xls");
+
+  const historyDir = path.join(outputDir, "history"); // Directory for historical JSON files
+  const HISTORY_FILE_PREFIX = "trend-"; // Match prefix used in archiving script
+  const MAX_HISTORY_FILES_TO_LOAD_FOR_REPORT = 15; // How many historical runs to show in the report
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
 
-  // --- Step 1: Ensure Excel trend data is generated/updated FIRST ---
+  // Step 1: Ensure current run data is archived to the history folder
   try {
-    await runScript(trendExcelScriptPath);
-    console.log(chalk.green("Excel trend generation completed."));
+    await runScript(archiveRunScriptPath); // This script now handles JSON history
+    console.log(
+      chalk.green("Current run data archiving to history completed.")
+    );
   } catch (error) {
     console.error(
       chalk.red(
-        "Failed to generate/update Excel trend data. HTML report might use stale or no trend data."
+        "Failed to archive current run data. Report might use stale or incomplete historical trends."
       ),
       error
     );
+    // You might decide to proceed or exit depending on the importance of historical data
   }
 
-  let reportData;
+  // Step 2: Load current run's data (for non-trend sections of the report)
+  let currentRunReportData; // Data for the run being reported
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
-    reportData = JSON.parse(jsonData);
-    if (!reportData || typeof reportData !== "object" || !reportData.results) {
+    currentRunReportData = JSON.parse(jsonData);
+    if (
+      !currentRunReportData ||
+      typeof currentRunReportData !== "object" ||
+      !currentRunReportData.results
+    ) {
       throw new Error(
         "Invalid report JSON structure. 'results' field is missing or invalid."
       );
     }
-    if (!Array.isArray(reportData.results)) {
-      reportData.results = [];
+    if (!Array.isArray(currentRunReportData.results)) {
+      currentRunReportData.results = [];
       console.warn(
         chalk.yellow(
-          "Warning: 'results' field in JSON was not an array. Treated as empty."
+          "Warning: 'results' field in current run JSON was not an array. Treated as empty."
         )
       );
     }
   } catch (error) {
     console.error(
-      chalk.red(`Error reading or parsing main report JSON: ${error.message}`)
+      chalk.red(
+        `Critical Error: Could not read or parse main report JSON at ${reportJsonPath}: ${error.message}`
+      )
     );
-    process.exit(1);
+    process.exit(1); // Exit if the main report for the current run is missing/invalid
   }
 
-  let trendData = { overall: [], testRuns: {} };
+  // Step 3: Load historical data for trends
+  let historicalRuns = []; // Array of past PlaywrightPulseReport objects
   try {
-    await fs.access(trendDataPath);
-    const excelBuffer = await fs.readFile(trendDataPath);
-    const workbook = XLSX.read(excelBuffer, { type: "buffer" });
+    await fs.access(historyDir); // Check if history directory exists
+    const allHistoryFiles = await fs.readdir(historyDir);
 
-    if (workbook.Sheets["overall"]) {
-      trendData.overall = XLSX.utils
-        .sheet_to_json(workbook.Sheets["overall"])
-        .map((row) => {
-          let timestamp;
-          if (typeof row.TIMESTAMP === "number") {
-            if (XLSX.SSF && typeof XLSX.SSF.parse_date_code === "function") {
-              try {
-                timestamp = XLSX.SSF.parse_date_code(row.TIMESTAMP);
-              } catch (e) {
-                console.warn(
-                  chalk.yellow(
-                    ` - Could not parse Excel date number ${row.TIMESTAMP} for RUN_ID ${row.RUN_ID}. Using current time. Error: ${e.message}`
-                  )
-                );
-                timestamp = new Date(Date.now());
-              }
-            } else {
-              console.warn(
-                chalk.yellow(
-                  ` - XLSX.SSF.parse_date_code is unavailable for RUN_ID ${row.RUN_ID}. Numeric TIMESTAMP ${row.TIMESTAMP} treated as direct JS timestamp or fallback.`
-                )
-              );
-              timestamp = new Date(
-                row.TIMESTAMP > 0 && row.TIMESTAMP < 3000000000000
-                  ? row.TIMESTAMP
-                  : Date.now()
-              ); // Heuristic for JS timestamp
-            }
-          } else if (row.TIMESTAMP) {
-            timestamp = new Date(row.TIMESTAMP);
-          } else {
-            timestamp = new Date(Date.now());
-          }
+    const jsonHistoryFiles = allHistoryFiles
+      .filter(
+        (file) => file.startsWith(HISTORY_FILE_PREFIX) && file.endsWith(".json")
+      )
+      .map((file) => {
+        const timestampPart = file
+          .replace(HISTORY_FILE_PREFIX, "")
+          .replace(".json", "");
+        return {
+          name: file,
+          path: path.join(historyDir, file),
+          timestamp: parseInt(timestampPart, 10),
+        };
+      })
+      .filter((file) => !isNaN(file.timestamp))
+      .sort((a, b) => b.timestamp - a.timestamp); // Sort newest first to easily pick the latest N
 
-          return {
-            runId: Number(row.RUN_ID) || 0,
-            duration: Number(row.DURATION) || 0,
-            timestamp: timestamp,
-            totalTests: Number(row.TOTAL_TESTS) || 0,
-            passed: Number(row.PASSED) || 0,
-            failed: Number(row.FAILED) || 0,
-            skipped: Number(row.SKIPPED) || 0, // Ensure skipped is always a number
-          };
-        })
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    }
+    const filesToLoadForTrend = jsonHistoryFiles.slice(
+      0,
+      MAX_HISTORY_FILES_TO_LOAD_FOR_REPORT
+    );
 
-    workbook.SheetNames.forEach((sheetName) => {
-      if (sheetName.toLowerCase().startsWith("test run ")) {
-        trendData.testRuns[sheetName] = XLSX.utils
-          .sheet_to_json(workbook.Sheets[sheetName])
-          .map((test) => {
-            let timestamp;
-            if (typeof test.TIMESTAMP === "number") {
-              if (XLSX.SSF && typeof XLSX.SSF.parse_date_code === "function") {
-                try {
-                  timestamp = XLSX.SSF.parse_date_code(test.TIMESTAMP);
-                } catch (e) {
-                  timestamp = new Date(Date.now());
-                }
-              } else {
-                timestamp = new Date(
-                  test.TIMESTAMP > 0 && test.TIMESTAMP < 3000000000000
-                    ? test.TIMESTAMP
-                    : Date.now()
-                );
-              } // Heuristic
-            } else if (test.TIMESTAMP) {
-              timestamp = new Date(test.TIMESTAMP);
-            } else {
-              timestamp = new Date(Date.now());
-            }
-            return {
-              testName: String(test.TEST_NAME || "Unknown Test"),
-              duration: Number(test.DURATION) || 0,
-              status: String(test.STATUS || "unknown").toLowerCase(),
-              timestamp: timestamp,
-            };
-          });
+    for (const fileMeta of filesToLoadForTrend) {
+      try {
+        const fileContent = await fs.readFile(fileMeta.path, "utf-8");
+        const runJsonData = JSON.parse(fileContent); // Each file IS a PlaywrightPulseReport
+        historicalRuns.push(runJsonData);
+      } catch (fileReadError) {
+        console.warn(
+          chalk.yellow(
+            `Could not read/parse history file ${fileMeta.name}: ${fileReadError.message}`
+          )
+        );
       }
-    });
-    if (
-      trendData.overall.length > 0 ||
-      Object.keys(trendData.testRuns).length > 0
-    ) {
-      console.log(
-        chalk.green(`Trend data loaded successfully from: ${trendDataPath}`)
-      );
-    } else {
-      console.warn(
-        chalk.yellow(
-          `Trend data file found at ${trendDataPath}, but no data was loaded from 'overall' or 'test run' sheets.`
-        )
-      );
     }
+    // Reverse to have oldest first for chart data series (if charts expect chronological)
+    historicalRuns.reverse();
+    console.log(
+      chalk.green(
+        `Loaded ${historicalRuns.length} historical run(s) for trend analysis.`
+      )
+    );
   } catch (error) {
     if (error.code === "ENOENT") {
       console.warn(
         chalk.yellow(
-          `Warning: Trend data file not found at ${trendDataPath}. Report will be generated without historical trends.`
+          `History directory '${historyDir}' not found. No historical trends will be displayed.`
         )
       );
     } else {
       console.warn(
         chalk.yellow(
-          `Warning: Could not read or process trend data from ${trendDataPath}. Report will be generated without historical trends. Error: ${error.message}`
+          `Error loading historical data from '${historyDir}': ${error.message}`
         )
       );
     }
   }
 
+  // Step 4: Prepare trendData object in the format expected by chart functions
+  const trendData = {
+    overall: [], // For overall run summaries (passed, failed, skipped, duration over time)
+    testRuns: {}, // For individual test history (key: "test run <run_timestamp_ms>", value: array of test result summaries)
+  };
+
+  if (historicalRuns.length > 0) {
+    historicalRuns.forEach((histRunReport) => {
+      // histRunReport is a full PlaywrightPulseReport object from a past run
+      if (histRunReport.run) {
+        // Ensure timestamp is a Date object for correct sorting/comparison later if needed by charts
+        const runTimestamp = new Date(histRunReport.run.timestamp);
+        trendData.overall.push({
+          runId: runTimestamp.getTime(), // Use timestamp as a unique ID for this context
+          timestamp: runTimestamp,
+          duration: histRunReport.run.duration,
+          totalTests: histRunReport.run.totalTests,
+          passed: histRunReport.run.passed,
+          failed: histRunReport.run.failed,
+          skipped: histRunReport.run.skipped || 0,
+        });
+
+        // For generateTestHistoryContent
+        if (histRunReport.results && Array.isArray(histRunReport.results)) {
+          const runKeyForTestHistory = `test run ${runTimestamp.getTime()}`; // Use timestamp to key test runs
+          trendData.testRuns[runKeyForTestHistory] = histRunReport.results.map(
+            (test) => ({
+              testName: test.name, // Full test name path
+              duration: test.duration,
+              status: test.status,
+              timestamp: new Date(test.startTime), // Assuming test.startTime exists and is what you need
+            })
+          );
+        }
+      }
+    });
+    // Ensure trendData.overall is sorted by timestamp if not already
+    trendData.overall.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+    );
+  }
+
+  // Step 5: Generate and write HTML
   try {
-    const htmlContent = generateHTML(reportData, trendData);
+    // currentRunReportData is for the main content (test list, summary cards of *this* run)
+    // trendData is for the historical charts and test history section
+    const htmlContent = generateHTML(currentRunReportData, trendData);
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Enhanced report generated successfully at: ${reportHtmlPath}`
+        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`
       )
     );
-    console.log(chalk.gray(`   (You can open this file in your browser)`));
+    console.log(chalk.gray(`(You can open this file in your browser)`));
   } catch (error) {
     console.error(chalk.red(`Error generating HTML report: ${error.message}`));
-    console.error(chalk.red(error.stack));
+    console.error(chalk.red(error.stack)); // Log full stack for HTML generation errors
     process.exit(1);
   }
 }
 
+// Make sure main() is called at the end of your script
 main().catch((err) => {
   console.error(
     chalk.red.bold(`Unhandled error during script execution: ${err.message}`)
