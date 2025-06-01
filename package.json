@@ -28,7 +28,7 @@
     "generate-pulse-report": "./scripts/generate-static-report.mjs",
     "merge-pulse-report": "./scripts/merge-pulse-report.js",
     "send-email": "./scripts/sendReport.js",
-    "generate-trend": "./scripts/generate-trend-excel.mjs"
+    "generate-trend": "./scripts/generate-trend.mjs"
   },
   "exports": {
     ".": {
@@ -98,7 +98,6 @@
     "recharts": "^2.15.1",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {

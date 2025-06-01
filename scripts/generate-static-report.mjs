@@ -2,7 +2,6 @@
 
 import * as fs from "fs/promises";
 import path from "path";
-import * as XLSX from "xlsx";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
 
@@ -1946,188 +1945,197 @@ async function runScript(scriptPath) {
 async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
-  const trendExcelScriptPath = path.resolve(
+
+  // Script to archive current run to JSON history (this is your modified "generate-trend.mjs")
+  const archiveRunScriptPath = path.resolve(
     __dirname,
-    "generate-trend-excel.mjs"
+    "generate-trend.mjs" // Keeping the filename as per your request
   );
+
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
-  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
+  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
-  const trendDataPath = path.resolve(outputDir, "trend.xls");
+
+  const historyDir = path.join(outputDir, "history"); // Directory for historical JSON files
+  const HISTORY_FILE_PREFIX = "trend-"; // Match prefix used in archiving script
+  const MAX_HISTORY_FILES_TO_LOAD_FOR_REPORT = 15; // How many historical runs to show in the report
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
 
+  // Step 1: Ensure current run data is archived to the history folder
   try {
-    await runScript(trendExcelScriptPath);
-    console.log(chalk.green("Excel trend generation completed."));
+    await runScript(archiveRunScriptPath); // This script now handles JSON history
+    console.log(
+      chalk.green("Current run data archiving to history completed.")
+    );
   } catch (error) {
     console.error(
       chalk.red(
-        "Failed to generate/update Excel trend data. HTML report might use stale or no trend data."
+        "Failed to archive current run data. Report might use stale or incomplete historical trends."
       ),
       error
     );
+    // You might decide to proceed or exit depending on the importance of historical data
   }
 
-  let reportData;
+  // Step 2: Load current run's data (for non-trend sections of the report)
+  let currentRunReportData; // Data for the run being reported
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
-    reportData = JSON.parse(jsonData);
-    if (!reportData || typeof reportData !== "object" || !reportData.results) {
+    currentRunReportData = JSON.parse(jsonData);
+    if (
+      !currentRunReportData ||
+      typeof currentRunReportData !== "object" ||
+      !currentRunReportData.results
+    ) {
       throw new Error(
         "Invalid report JSON structure. 'results' field is missing or invalid."
       );
     }
-    if (!Array.isArray(reportData.results)) {
-      reportData.results = [];
+    if (!Array.isArray(currentRunReportData.results)) {
+      currentRunReportData.results = [];
       console.warn(
         chalk.yellow(
-          "Warning: 'results' field in JSON was not an array. Treated as empty."
+          "Warning: 'results' field in current run JSON was not an array. Treated as empty."
         )
       );
     }
   } catch (error) {
     console.error(
-      chalk.red(`Error reading or parsing main report JSON: ${error.message}`)
+      chalk.red(
+        `Critical Error: Could not read or parse main report JSON at ${reportJsonPath}: ${error.message}`
+      )
     );
-    process.exit(1);
+    process.exit(1); // Exit if the main report for the current run is missing/invalid
   }
 
-  let trendData = { overall: [], testRuns: {} };
+  // Step 3: Load historical data for trends
+  let historicalRuns = []; // Array of past PlaywrightPulseReport objects
   try {
-    await fs.access(trendDataPath);
-    const excelBuffer = await fs.readFile(trendDataPath);
-    const workbook = XLSX.read(excelBuffer, { type: "buffer" });
+    await fs.access(historyDir); // Check if history directory exists
+    const allHistoryFiles = await fs.readdir(historyDir);
 
-    if (workbook.Sheets["overall"]) {
-      trendData.overall = XLSX.utils
-        .sheet_to_json(workbook.Sheets["overall"])
-        .map((row) => {
-          let timestamp;
-          if (typeof row.TIMESTAMP === "number") {
-            if (XLSX.SSF && typeof XLSX.SSF.parse_date_code === "function") {
-              try {
-                timestamp = XLSX.SSF.parse_date_code(row.TIMESTAMP);
-              } catch (e) {
-                console.warn(
-                  chalk.yellow(
-                    ` - Could not parse Excel date number ${row.TIMESTAMP} for RUN_ID ${row.RUN_ID}. Using current time. Error: ${e.message}`
-                  )
-                );
-                timestamp = new Date(Date.now());
-              }
-            } else {
-              console.warn(
-                chalk.yellow(
-                  ` - XLSX.SSF.parse_date_code is unavailable for RUN_ID ${row.RUN_ID}. Numeric TIMESTAMP ${row.TIMESTAMP} treated as direct JS timestamp or fallback.`
-                )
-              );
-              timestamp = new Date(
-                row.TIMESTAMP > 0 && row.TIMESTAMP < 3000000000000
-                  ? row.TIMESTAMP
-                  : Date.now()
-              );
-            }
-          } else if (row.TIMESTAMP) {
-            timestamp = new Date(row.TIMESTAMP);
-          } else {
-            timestamp = new Date(Date.now());
-          }
+    const jsonHistoryFiles = allHistoryFiles
+      .filter(
+        (file) => file.startsWith(HISTORY_FILE_PREFIX) && file.endsWith(".json")
+      )
+      .map((file) => {
+        const timestampPart = file
+          .replace(HISTORY_FILE_PREFIX, "")
+          .replace(".json", "");
+        return {
+          name: file,
+          path: path.join(historyDir, file),
+          timestamp: parseInt(timestampPart, 10),
+        };
+      })
+      .filter((file) => !isNaN(file.timestamp))
+      .sort((a, b) => b.timestamp - a.timestamp); // Sort newest first to easily pick the latest N
 
-          return {
-            runId: Number(row.RUN_ID) || 0,
-            duration: Number(row.DURATION) || 0,
-            timestamp: timestamp,
-            totalTests: Number(row.TOTAL_TESTS) || 0,
-            passed: Number(row.PASSED) || 0,
-            failed: Number(row.FAILED) || 0,
-            skipped: Number(row.SKIPPED) || 0,
-          };
-        })
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    }
+    const filesToLoadForTrend = jsonHistoryFiles.slice(
+      0,
+      MAX_HISTORY_FILES_TO_LOAD_FOR_REPORT
+    );
 
-    workbook.SheetNames.forEach((sheetName) => {
-      if (sheetName.toLowerCase().startsWith("test run ")) {
-        trendData.testRuns[sheetName] = XLSX.utils
-          .sheet_to_json(workbook.Sheets[sheetName])
-          .map((test) => {
-            let timestamp;
-            if (typeof test.TIMESTAMP === "number") {
-              if (XLSX.SSF && typeof XLSX.SSF.parse_date_code === "function") {
-                try {
-                  timestamp = XLSX.SSF.parse_date_code(test.TIMESTAMP);
-                } catch (e) {
-                  timestamp = new Date(Date.now());
-                }
-              } else {
-                timestamp = new Date(
-                  test.TIMESTAMP > 0 && test.TIMESTAMP < 3000000000000
-                    ? test.TIMESTAMP
-                    : Date.now()
-                );
-              }
-            } else if (test.TIMESTAMP) {
-              timestamp = new Date(test.TIMESTAMP);
-            } else {
-              timestamp = new Date(Date.now());
-            }
-            return {
-              testName: String(test.TEST_NAME || "Unknown Test"),
-              duration: Number(test.DURATION) || 0,
-              status: String(test.STATUS || "unknown").toLowerCase(),
-              timestamp: timestamp,
-            };
-          });
+    for (const fileMeta of filesToLoadForTrend) {
+      try {
+        const fileContent = await fs.readFile(fileMeta.path, "utf-8");
+        const runJsonData = JSON.parse(fileContent); // Each file IS a PlaywrightPulseReport
+        historicalRuns.push(runJsonData);
+      } catch (fileReadError) {
+        console.warn(
+          chalk.yellow(
+            `Could not read/parse history file ${fileMeta.name}: ${fileReadError.message}`
+          )
+        );
       }
-    });
-    if (
-      trendData.overall.length > 0 ||
-      Object.keys(trendData.testRuns).length > 0
-    ) {
-      console.log(
-        chalk.green(`Trend data loaded successfully from: ${trendDataPath}`)
-      );
-    } else {
-      console.warn(
-        chalk.yellow(
-          `Trend data file found at ${trendDataPath}, but no data was loaded from 'overall' or 'test run' sheets.`
-        )
-      );
     }
+    // Reverse to have oldest first for chart data series (if charts expect chronological)
+    historicalRuns.reverse();
+    console.log(
+      chalk.green(
+        `Loaded ${historicalRuns.length} historical run(s) for trend analysis.`
+      )
+    );
   } catch (error) {
     if (error.code === "ENOENT") {
       console.warn(
         chalk.yellow(
-          `Warning: Trend data file not found at ${trendDataPath}. Report will be generated without historical trends.`
+          `History directory '${historyDir}' not found. No historical trends will be displayed.`
         )
       );
     } else {
       console.warn(
         chalk.yellow(
-          `Warning: Could not read or process trend data from ${trendDataPath}. Report will be generated without historical trends. Error: ${error.message}`
+          `Error loading historical data from '${historyDir}': ${error.message}`
         )
       );
     }
   }
 
+  // Step 4: Prepare trendData object in the format expected by chart functions
+  const trendData = {
+    overall: [], // For overall run summaries (passed, failed, skipped, duration over time)
+    testRuns: {}, // For individual test history (key: "test run <run_timestamp_ms>", value: array of test result summaries)
+  };
+
+  if (historicalRuns.length > 0) {
+    historicalRuns.forEach((histRunReport) => {
+      // histRunReport is a full PlaywrightPulseReport object from a past run
+      if (histRunReport.run) {
+        // Ensure timestamp is a Date object for correct sorting/comparison later if needed by charts
+        const runTimestamp = new Date(histRunReport.run.timestamp);
+        trendData.overall.push({
+          runId: runTimestamp.getTime(), // Use timestamp as a unique ID for this context
+          timestamp: runTimestamp,
+          duration: histRunReport.run.duration,
+          totalTests: histRunReport.run.totalTests,
+          passed: histRunReport.run.passed,
+          failed: histRunReport.run.failed,
+          skipped: histRunReport.run.skipped || 0,
+        });
+
+        // For generateTestHistoryContent
+        if (histRunReport.results && Array.isArray(histRunReport.results)) {
+          const runKeyForTestHistory = `test run ${runTimestamp.getTime()}`; // Use timestamp to key test runs
+          trendData.testRuns[runKeyForTestHistory] = histRunReport.results.map(
+            (test) => ({
+              testName: test.name, // Full test name path
+              duration: test.duration,
+              status: test.status,
+              timestamp: new Date(test.startTime), // Assuming test.startTime exists and is what you need
+            })
+          );
+        }
+      }
+    });
+    // Ensure trendData.overall is sorted by timestamp if not already
+    trendData.overall.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+    );
+  }
+
+  // Step 5: Generate and write HTML
   try {
-    const htmlContent = generateHTML(reportData, trendData);
+    // currentRunReportData is for the main content (test list, summary cards of *this* run)
+    // trendData is for the historical charts and test history section
+    const htmlContent = generateHTML(currentRunReportData, trendData);
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Enhanced report generated successfully at: ${reportHtmlPath}`
+        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`
       )
     );
     console.log(chalk.gray(`(You can open this file in your browser)`));
   } catch (error) {
     console.error(chalk.red(`Error generating HTML report: ${error.message}`));
-    console.error(chalk.red(error.stack));
+    console.error(chalk.red(error.stack)); // Log full stack for HTML generation errors
     process.exit(1);
   }
 }
 
+// Make sure main() is called at the end of your script
 main().catch((err) => {
   console.error(
     chalk.red.bold(`Unhandled error during script execution: ${err.message}`)
