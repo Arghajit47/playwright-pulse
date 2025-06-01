@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import * as fs from "fs/promises";
+import { readFileSync, existsSync as fsExistsSync } from "fs"; // ADD THIS LINE
 import path from "path";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
@@ -28,14 +29,17 @@ const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
 
 // Helper functions
 function sanitizeHTML(str) {
-  // User's provided version (note: this doesn't escape HTML special chars correctly)
   if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, `"`)
-    .replace(/'/g, "'");
+  return String(str).replace(/[&<>"']/g, (match) => {
+    const replacements = {
+      "&": "&",
+      "<": "<",
+      ">": ">",
+      '"': '"',
+      "'": "'", // or '
+    };
+    return replacements[match] || match;
+  });
 }
 function capitalize(str) {
   if (!str) return ""; // Handle empty string
@@ -1058,30 +1062,158 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           
-                    ${
-                      test.screenshots && test.screenshots.length > 0
-                        ? `
-            <div class="attachments-section">
-              <h4>Screenshots</h4>
-              <div class="attachments-grid">
-                ${test.screenshots
-                  .map(
-                    (screenshot) => `
-                  <div class="attachment-item">
-                    <img src="${screenshot}" alt="Screenshot">
-                    <div class="attachment-info">
-                    <div class="trace-actions">
-                      <a href="${screenshot}" target="_blank">View Full Size</a></div>
+                          ${(() => {
+                            if (
+                              !test.screenshots ||
+                              test.screenshots.length === 0
+                            )
+                              return "";
+
+                            // Define base output directory to resolve relative screenshot paths
+                            // This assumes screenshot paths in your JSON are relative to DEFAULT_OUTPUT_DIR
+                            const baseOutputDir = path.resolve(
+                              process.cwd(),
+                              DEFAULT_OUTPUT_DIR
+                            );
+
+                            // Helper to escape HTML special characters (safer than the global sanitizeHTML)
+                            const escapeHTML = (str) => {
+                              if (str === null || str === undefined) return "";
+                              return String(str).replace(
+                                /[&<>"']/g,
+                                (match) => {
+                                  const replacements = {
+                                    "&": "&",
+                                    "<": "<",
+                                    ">": ">",
+                                    '"': '"',
+                                    "'": "'",
+                                  };
+                                  return replacements[match] || match;
+                                }
+                              );
+                            };
+
+                            const renderScreenshot = (
+                              screenshotPathOrData,
+                              index
+                            ) => {
+                              let base64ImageData = "";
+                              const uniqueSuffix = `${Date.now()}-${index}-${Math.random()
+                                .toString(36)
+                                .substring(2, 7)}`;
+
+                              try {
+                                if (
+                                  typeof screenshotPathOrData === "string" &&
+                                  !screenshotPathOrData.startsWith("data:image")
+                                ) {
+                                  // It's likely a file path, try to read and convert
+                                  const imagePath = path.resolve(
+                                    baseOutputDir,
+                                    screenshotPathOrData
+                                  );
+
+                                  if (fsExistsSync(imagePath)) {
+                                    // Use imported fsExistsSync
+                                    const imageBuffer = readFileSync(imagePath); // Use imported readFileSync
+                                    base64ImageData =
+                                      imageBuffer.toString("base64");
+                                  } else {
+                                    console.warn(
+                                      chalk.yellow(
+                                        `[Reporter] Screenshot file not found: ${imagePath}`
+                                      )
+                                    );
+                                    return `<div class="attachment-item error" style="padding:10px; color:red;">Screenshot not found: ${escapeHTML(
+                                      screenshotPathOrData
+                                    )}</div>`;
+                                  }
+                                } else if (
+                                  typeof screenshotPathOrData === "string" &&
+                                  screenshotPathOrData.startsWith(
+                                    "data:image/png;base64,"
+                                  )
+                                ) {
+                                  // It's already a data URI, extract base64 part
+                                  base64ImageData =
+                                    screenshotPathOrData.substring(
+                                      "data:image/png;base64,".length
+                                    );
+                                } else if (
+                                  typeof screenshotPathOrData === "string"
+                                ) {
+                                  // Assume it's raw Base64 data if it's a string but not a known path or full data URI
+                                  base64ImageData = screenshotPathOrData;
+                                } else {
+                                  console.warn(
+                                    chalk.yellow(
+                                      `[Reporter] Invalid screenshot data type for item at index ${index}.`
+                                    )
+                                  );
+                                  return `<div class="attachment-item error" style="padding:10px; color:red;">Invalid screenshot data</div>`;
+                                }
+
+                                if (!base64ImageData) {
+                                  // This case should ideally be caught above, but as a fallback:
+                                  console.warn(
+                                    chalk.yellow(
+                                      `[Reporter] Could not obtain base64 data for screenshot: ${escapeHTML(
+                                        String(screenshotPathOrData)
+                                      )}`
+                                    )
+                                  );
+                                  return `<div class="attachment-item error" style="padding:10px; color:red;">Error loading screenshot: ${escapeHTML(
+                                    String(screenshotPathOrData)
+                                  )}</div>`;
+                                }
+
+                                return `
+                        <div class="attachment-item">
+                          <img src="data:image/png;base64,${base64ImageData}" 
+                               alt="Screenshot ${index + 1}" 
+                               loading="lazy"
+                               onerror="this.alt='Error displaying embedded image'; this.style.display='none'; this.parentElement.innerHTML='<p style=\\'color:red;padding:10px;\\'>Error displaying screenshot ${
+                                 index + 1
+                               }.</p>';">
+                          <div class="attachment-info">
+                            <div class="trace-actions">
+                              <a href="data:image/png;base64,${base64ImageData}" 
+                                target="_blank"
+                                class="view-full">
+                                View Full Image
+                              </a>
+                              <a href="data:image/png;base64,${base64ImageData}" 
+                                 target="_blank" 
+                                 download="screenshot-${uniqueSuffix}.png">
+                                Download
+                              </a>
+                            </div>
+                          </div>
+                        </div>`;
+                              } catch (e) {
+                                console.error(
+                                  chalk.red(
+                                    `[Reporter] Error processing screenshot ${escapeHTML(
+                                      String(screenshotPathOrData)
+                                    )}: ${e.message}`
+                                  )
+                                );
+                                return `<div class="attachment-item error" style="padding:10px; color:red;">Failed to load screenshot: ${escapeHTML(
+                                  String(screenshotPathOrData)
+                                )}</div>`;
+                              }
+                            }; // end of renderScreenshot
+
+                            return `
+                    <div class="attachments-section">
+                      <h4>Screenshots (${test.screenshots.length})</h4>
+                      <div class="attachments-grid">
+                        ${test.screenshots.map(renderScreenshot).join("")}
+                      </div>
                     </div>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>
-            </div>
-          `
-                        : ""
-                    }
+                  `;
+                          })()}
             
           ${
             test.videoPath
@@ -1519,6 +1651,8 @@ function generateHTML(reportData, trendData = null) {
   font-size: 0.85rem;
   border-radius: 4px;
   text-decoration: none;
+  background: cornflowerblue;
+  color: aliceblue;
 }
 
 .view-trace {
