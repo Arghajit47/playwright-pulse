@@ -17,7 +17,7 @@ const TREND_EXCEL_FILE_NAME = "trend.xls";
 
 class ExcelTrendManager {
   _excelFilePath;
-  _maxRuns = 5;
+  _maxRuns = 15;
 
   constructor(outputDir, excelFileName = TREND_EXCEL_FILE_NAME) {
     this._excelFilePath = path.join(outputDir, excelFileName);
