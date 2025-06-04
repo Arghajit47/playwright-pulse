@@ -20,13 +20,5 @@
   },
   // Include all necessary source files relative to the new rootDir ('src')
   "include": ["src/reporter/**/*", "src/types/**/*", "src/lib/report-types.ts"],
-  "exclude": [
-    "node_modules",
-    "src/app",
-    "src/components",
-    "src/ai",
-    "src/hooks",
-    "src/lib/data*.ts", // Exclude Next.js data fetching logic
-    "src/lib/utils.ts" // Exclude client-side utils if not needed by reporter
-  ]
+  "exclude": ["node_modules"]
 }
