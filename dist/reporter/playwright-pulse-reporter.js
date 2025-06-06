@@ -177,10 +177,9 @@ class PlaywrightPulseReporter {
         }
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const ua = (_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.userAgent;
-        const browserName = ((_c = project === null || project === void 0 ? void 0 : project.use) === null || _c === void 0 ? void 0 : _c.defaultBrowserType) || (project === null || project === void 0 ? void 0 : project.name) || "unknown";
+        const browserName = await this.getBrowserInfo(test);
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -202,7 +201,7 @@ class PlaywrightPulseReporter {
         };
         let codeSnippet = undefined;
         try {
-            if (((_d = test.location) === null || _d === void 0 ? void 0 : _d.file) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.line) && ((_f = test.location) === null || _f === void 0 ? void 0 : _f.column)) {
+            if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -227,16 +226,16 @@ class PlaywrightPulseReporter {
             id: uniqueTestId,
             runId: "TBD",
             name: test.titlePath().join(" > "),
-            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
+            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
             browser: browserName,
             retries: result.retry,
-            steps: ((_h = result.steps) === null || _h === void 0 ? void 0 : _h.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_j = result.error) === null || _j === void 0 ? void 0 : _j.message,
-            stackTrace: (_k = result.error) === null || _k === void 0 ? void 0 : _k.stack,
+            steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
+            errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
+            stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
