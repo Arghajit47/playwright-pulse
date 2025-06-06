@@ -146,40 +146,113 @@ class PlaywrightPulseReporter {
             steps: [],
         };
     }
-    async getBrowserInfo(test) {
-        var _a, _b, _c;
+    getBrowserInfo(test) {
+        var _a, _b, _c, _d, _e, _f, _g, _h;
+        // Changed return type to string
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const userAgent = (_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.userAgent;
-        const ua = userAgent || "Unknown User Agent";
-        const browserName = (_c = project === null || project === void 0 ? void 0 : project.use) === null || _c === void 0 ? void 0 : _c.defaultBrowserType;
-        try {
-            const parser = new ua_parser_js_1.UAParser(ua);
-            const result = parser.getResult();
-            // 1. Determine browser name
-            let browser = result.browser.name || browserName;
-            // 2. Handle mobile webviews
-            if (result.engine.name === "WebKit" && result.device.type === "mobile") {
-                browser = "Mobile Safari";
+        const configuredBrowserType = (_c = (_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) === null || _c === void 0 ? void 0 : _c.toLowerCase(); // e.g., "chromium", "firefox", "webkit"
+        const userAgentString = (_d = project === null || project === void 0 ? void 0 : project.use) === null || _d === void 0 ? void 0 : _d.userAgent;
+        let finalBrowserName = configuredBrowserType || "unknown"; // Start with the configured type or "unknown"
+        let version = "";
+        let osName = "";
+        let osVersion = "";
+        let deviceType = "";
+        if (userAgentString) {
+            try {
+                const parser = new ua_parser_js_1.UAParser(userAgentString);
+                const uaResult = parser.getResult();
+                deviceType = uaResult.device.type || ""; // e.g., "mobile", "tablet", "console", "smarttv"
+                // 1. Try UAParser's browser name
+                if (uaResult.browser.name) {
+                    finalBrowserName = uaResult.browser.name;
+                    if (uaResult.browser.version) {
+                        // Get major version, or full version if no dot
+                        version = ` v${uaResult.browser.version.split(".")[0]}`;
+                    }
+                }
+                // If UAParser didn't find a browser name, but we have an engine,
+                // it might be more informative than just the configuredBrowserType.
+                else if (uaResult.engine.name &&
+                    configuredBrowserType !== uaResult.engine.name.toLowerCase()) {
+                    // Prefer engine name if it's more specific and different from default (e.g. WebKit for a generic device)
+                    finalBrowserName = uaResult.engine.name;
+                }
+                // 2. Specific Overrides / Refinements
+                // Handling for mobile devices, especially if UAParser provides generic browser names
+                if (deviceType === "mobile" || deviceType === "tablet") {
+                    if (((_e = uaResult.os.name) === null || _e === void 0 ? void 0 : _e.toLowerCase().includes("ios")) ||
+                        uaResult.browser.name === "Mobile Safari") {
+                        finalBrowserName = "Mobile Safari";
+                    }
+                    else if ((_f = uaResult.os.name) === null || _f === void 0 ? void 0 : _f.toLowerCase().includes("android")) {
+                        if ((_g = uaResult.browser.name) === null || _g === void 0 ? void 0 : _g.toLowerCase().includes("chrome")) {
+                            finalBrowserName = "Chrome Mobile";
+                        }
+                        else if ((_h = uaResult.browser.name) === null || _h === void 0 ? void 0 : _h.toLowerCase().includes("firefox")) {
+                            finalBrowserName = "Firefox Mobile";
+                        }
+                        else if (uaResult.engine.name === "Blink" &&
+                            !uaResult.browser.name) {
+                            // Generic Android Webview
+                            finalBrowserName = "Android WebView";
+                        }
+                        else if (uaResult.browser.name) {
+                            finalBrowserName = `${uaResult.browser.name} Mobile`; // Generic, e.g., "Opera Mobile"
+                        }
+                        else {
+                            finalBrowserName = "Android Browser"; // Fallback for Android
+                        }
+                    }
+                }
+                else if (uaResult.browser.name === "Electron") {
+                    finalBrowserName = "Electron App"; // More descriptive for Electron
+                    // For Electron, version might be app's version, not Chromium's.
+                    // You might need custom logic if you want the underlying Chromium version.
+                }
+                // 3. OS Information
+                if (uaResult.os.name) {
+                    osName = ` on ${uaResult.os.name}`;
+                    if (uaResult.os.version) {
+                        osVersion = ` ${uaResult.os.version.split(".")[0]}`; // Major OS version
+                    }
+                }
             }
-            // 3. Clean version string
-            const version = result.browser.version
-                ? ` v${result.browser.version.split(".")[0]}`
-                : "";
-            // 4. OS information
-            const osInfo = result.os.name ? ` on ${result.os.name}` : "";
-            const osVersion = result.os.version
-                ? ` ${result.os.version.split(".")[0]}`
-                : "";
-            return `${browser}${version}${osInfo}${osVersion}`.trim();
+            catch (error) {
+                console.warn(`Pulse Reporter: Error parsing User-Agent string "${userAgentString}":`, error);
+                // Fallback to configuredBrowserType already set in finalBrowserName
+            }
         }
-        catch (error) {
-            return browserName || "Unknown Browser";
+        // If after UA parsing, we still have a generic engine name like "Blink" or "WebKit"
+        // and a more specific configuredBrowserType exists (like "chromium"), prefer the configured one.
+        if ((finalBrowserName.toLowerCase() === "blink" ||
+            finalBrowserName.toLowerCase() === "webkit" ||
+            finalBrowserName.toLowerCase() === "gecko") &&
+            configuredBrowserType &&
+            configuredBrowserType !== "unknown") {
+            finalBrowserName =
+                configuredBrowserType.charAt(0).toUpperCase() +
+                    configuredBrowserType.slice(1); // Capitalize
         }
+        // Construct the display string
+        // Prioritize showing device type for mobile/tablet if it adds clarity
+        let displayString = finalBrowserName;
+        if (version)
+            displayString += version;
+        // Add device type if it's mobile/tablet and not already obvious from browser name
+        if ((deviceType === "mobile" || deviceType === "tablet") &&
+            !finalBrowserName.toLowerCase().includes(deviceType)) {
+            // displayString += ` (${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)})`;
+        }
+        if (osName)
+            displayString += osName;
+        if (osVersion && osName)
+            displayString += osVersion; // Only add osVersion if osName is present
+        return displayString.trim();
     }
     async onTestEnd(test, result) {
         var _a, _b, _c, _d, _e, _f, _g, _h;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const browserName = await this.getBrowserInfo(test);
+        const browserName = this.getBrowserInfo(test);
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
