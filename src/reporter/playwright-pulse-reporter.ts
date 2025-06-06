@@ -291,7 +291,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
-    const browserName = this.getBrowserInfo(test);
+    const browserDisplayInfo = this.getBrowserInfo(test);
 
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
@@ -311,7 +311,7 @@ export class PlaywrightPulseReporter implements Reporter {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserName,
+          browserDisplayInfo,
           test
         );
         processed.push(processedStep);
@@ -364,7 +364,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserDisplayInfo,
       retries: result.retry,
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
