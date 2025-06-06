@@ -39,6 +39,7 @@ const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
+const ua_parser_js_1 = require("ua-parser-js");
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return "failed";
@@ -145,10 +146,41 @@ class PlaywrightPulseReporter {
             steps: [],
         };
     }
-    async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+    async getBrowserInfo(test) {
+        var _a, _b, _c;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const browserName = ((_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) || (project === null || project === void 0 ? void 0 : project.name) || "unknown";
+        const userAgent = (_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.userAgent;
+        const ua = userAgent || "Unknown User Agent";
+        const browserName = (_c = project === null || project === void 0 ? void 0 : project.use) === null || _c === void 0 ? void 0 : _c.defaultBrowserType;
+        try {
+            const parser = new ua_parser_js_1.UAParser(ua);
+            const result = parser.getResult();
+            // 1. Determine browser name
+            let browser = result.browser.name || browserName;
+            // 2. Handle mobile webviews
+            if (result.engine.name === "WebKit" && result.device.type === "mobile") {
+                browser = "Mobile Safari";
+            }
+            // 3. Clean version string
+            const version = result.browser.version
+                ? ` v${result.browser.version.split(".")[0]}`
+                : "";
+            // 4. OS information
+            const osInfo = result.os.name ? ` on ${result.os.name}` : "";
+            const osVersion = result.os.version
+                ? ` ${result.os.version.split(".")[0]}`
+                : "";
+            return `${browser}${version}${osInfo}${osVersion}`.trim();
+        }
+        catch (error) {
+            return browserName || "Unknown Browser";
+        }
+    }
+    async onTestEnd(test, result) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
+        const ua = (_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.userAgent;
+        const browserName = ((_c = project === null || project === void 0 ? void 0 : project.use) === null || _c === void 0 ? void 0 : _c.defaultBrowserType) || (project === null || project === void 0 ? void 0 : project.name) || "unknown";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -170,7 +202,7 @@ class PlaywrightPulseReporter {
         };
         let codeSnippet = undefined;
         try {
-            if (((_c = test.location) === null || _c === void 0 ? void 0 : _c.file) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.line) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.column)) {
+            if (((_d = test.location) === null || _d === void 0 ? void 0 : _d.file) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.line) && ((_f = test.location) === null || _f === void 0 ? void 0 : _f.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -195,16 +227,16 @@ class PlaywrightPulseReporter {
             id: uniqueTestId,
             runId: "TBD",
             name: test.titlePath().join(" > "),
-            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_f = this.config.projects[0]) === null || _f === void 0 ? void 0 : _f.name) || "Default Suite",
+            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
             browser: browserName,
             retries: result.retry,
-            steps: ((_g = result.steps) === null || _g === void 0 ? void 0 : _g.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
-            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
+            steps: ((_h = result.steps) === null || _h === void 0 ? void 0 : _h.length) ? await processAllSteps(result.steps) : [],
+            errorMessage: (_j = result.error) === null || _j === void 0 ? void 0 : _j.message,
+            stackTrace: (_k = result.error) === null || _k === void 0 ? void 0 : _k.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],

@@ -21,6 +21,7 @@ import type {
 } from "../types"; // Use relative path
 import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
+import { UAParser } from "ua-parser-js";
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -169,8 +170,44 @@ export class PlaywrightPulseReporter implements Reporter {
     };
   }
 
+  async getBrowserInfo(test: TestCase) {
+    const project = test.parent?.project();
+    const userAgent = project?.use?.userAgent;
+    const ua = userAgent || "Unknown User Agent";
+    const browserName = project?.use?.defaultBrowserType;
+
+    try {
+      const parser = new UAParser(ua);
+      const result = parser.getResult();
+
+      // 1. Determine browser name
+      let browser = result.browser.name || browserName;
+
+      // 2. Handle mobile webviews
+      if (result.engine.name === "WebKit" && result.device.type === "mobile") {
+        browser = "Mobile Safari";
+      }
+
+      // 3. Clean version string
+      const version = result.browser.version
+        ? ` v${result.browser.version.split(".")[0]}`
+        : "";
+
+      // 4. OS information
+      const osInfo = result.os.name ? ` on ${result.os.name}` : "";
+      const osVersion = result.os.version
+        ? ` ${result.os.version.split(".")[0]}`
+        : "";
+
+      return `${browser}${version}${osInfo}${osVersion}`.trim();
+    } catch (error) {
+      return browserName || "Unknown Browser";
+    }
+  }
+
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
+    const ua = project?.use?.userAgent;
     const browserName =
       project?.use?.defaultBrowserType || project?.name || "unknown";
 
