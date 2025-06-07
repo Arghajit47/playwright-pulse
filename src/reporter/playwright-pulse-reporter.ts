@@ -85,7 +85,7 @@ export class PlaywrightPulseReporter implements Reporter {
       this.options.outputDir ?? "pulse-report"
     );
     this.attachmentsDir = path.resolve(this.outputDir, ATTACHMENTS_SUBDIR);
-    this.options.outputDir = this.outputDir;
+    this.options.outputDir = this.outputDir; // Ensure options has the resolved path
 
     const totalShards = this.config.shard ? this.config.shard.total : 1;
     this.isSharded = totalShards > 1;
@@ -94,6 +94,7 @@ export class PlaywrightPulseReporter implements Reporter {
       : undefined;
 
     this._ensureDirExists(this.outputDir)
+      .then(() => this._ensureDirExists(this.attachmentsDir)) // Also ensure attachmentsDir exists
       .then(() => {
         if (this.shardIndex === undefined || this.shardIndex === 0) {
           console.log(
@@ -117,13 +118,13 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    // console.log(`Starting test: ${test.title}`);
+    // Optional: console.log(`Starting test: ${test.titlePath().join(' > ')} for project ${test.parent?.project()?.name}`);
   }
 
   private async processStep(
     step: PwStep,
     testId: string,
-    browserName: string,
+    browserName: string, // This will be the detailed browser info string
     testCase?: TestCase
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
@@ -139,7 +140,8 @@ export class PlaywrightPulseReporter implements Reporter {
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
     let codeLocation = "";
-    if (step.location) {
+    if (step.location?.file) {
+      // Check if file path exists
       codeLocation = `${path.relative(
         this.config.rootDir,
         step.location.file
@@ -155,7 +157,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserName, // Store the detailed browser string for the step
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
@@ -166,127 +168,107 @@ export class PlaywrightPulseReporter implements Reporter {
             ? "before"
             : "after"
           : undefined,
-      steps: [],
+      steps: [], // Will be populated by recursive calls in onTestEnd
     };
   }
 
   getBrowserInfo(test: TestCase): string {
-    // Changed return type to string
     const project = test.parent?.project();
     const configuredBrowserType =
-      project?.use?.defaultBrowserType?.toLowerCase(); // e.g., "chromium", "firefox", "webkit"
+      project?.use?.defaultBrowserType?.toLowerCase();
     const userAgentString = project?.use?.userAgent;
 
-    let finalBrowserName = configuredBrowserType || "unknown"; // Start with the configured type or "unknown"
-    let version = "";
-    let osName = "";
-    let osVersion = "";
-    let deviceType = "";
+    // --- DEBUG LOGS (IMPORTANT! Check these in your console output) ---
+    console.log(`[PulseReporter DEBUG] Project: ${project?.name || "N/A"}`);
+    console.log(
+      `[PulseReporter DEBUG] Configured Browser Type: "${configuredBrowserType}"`
+    );
+    console.log(
+      `[PulseReporter DEBUG] User Agent String for UAParser: "${userAgentString}"`
+    );
+    // --- END DEBUG LOGS ---
+
+    let parsedBrowserName: string | undefined;
+    let parsedVersion: string | undefined;
+    let parsedOsName: string | undefined;
+    let parsedOsVersion: string | undefined;
+    let deviceModel: string | undefined;
+    let deviceType: string | undefined;
 
     if (userAgentString) {
       try {
         const parser = new UAParser(userAgentString);
         const uaResult = parser.getResult();
 
-        deviceType = uaResult.device.type || ""; // e.g., "mobile", "tablet", "console", "smarttv"
+        // --- DEBUG LOGS (IMPORTANT! Check these in your console output) ---
+        console.log(
+          "[PulseReporter DEBUG] UAParser Result:",
+          JSON.stringify(uaResult, null, 2)
+        );
+        // --- END DEBUG LOGS ---
 
-        // 1. Try UAParser's browser name
-        if (uaResult.browser.name) {
-          finalBrowserName = uaResult.browser.name;
-          if (uaResult.browser.version) {
-            // Get major version, or full version if no dot
-            version = ` v${uaResult.browser.version.split(".")[0]}`;
-          }
-        }
-        // If UAParser didn't find a browser name, but we have an engine,
-        // it might be more informative than just the configuredBrowserType.
-        else if (
-          uaResult.engine.name &&
-          configuredBrowserType !== uaResult.engine.name.toLowerCase()
-        ) {
-          // Prefer engine name if it's more specific and different from default (e.g. WebKit for a generic device)
-          finalBrowserName = uaResult.engine.name;
-        }
+        parsedBrowserName = uaResult.browser.name;
+        parsedVersion = uaResult.browser.version;
+        parsedOsName = uaResult.os.name;
+        parsedOsVersion = uaResult.os.version;
+        deviceModel = uaResult.device.model;
+        deviceType = uaResult.device.type;
 
-        // 2. Specific Overrides / Refinements
-        // Handling for mobile devices, especially if UAParser provides generic browser names
         if (deviceType === "mobile" || deviceType === "tablet") {
-          if (
-            uaResult.os.name?.toLowerCase().includes("ios") ||
-            uaResult.browser.name === "Mobile Safari"
-          ) {
-            finalBrowserName = "Mobile Safari";
-          } else if (uaResult.os.name?.toLowerCase().includes("android")) {
-            if (uaResult.browser.name?.toLowerCase().includes("chrome")) {
-              finalBrowserName = "Chrome Mobile";
-            } else if (
-              uaResult.browser.name?.toLowerCase().includes("firefox")
-            ) {
-              finalBrowserName = "Firefox Mobile";
-            } else if (
-              uaResult.engine.name === "Blink" &&
-              !uaResult.browser.name
-            ) {
-              // Generic Android Webview
-              finalBrowserName = "Android WebView";
-            } else if (uaResult.browser.name) {
-              finalBrowserName = `${uaResult.browser.name} Mobile`; // Generic, e.g., "Opera Mobile"
+          if (parsedOsName?.toLowerCase().includes("android")) {
+            if (parsedBrowserName?.toLowerCase().includes("chrome")) {
+              parsedBrowserName = "Chrome Mobile";
+            } else if (parsedBrowserName?.toLowerCase().includes("firefox")) {
+              parsedBrowserName = "Firefox Mobile";
+            } else if (uaResult.engine.name === "Blink" && !parsedBrowserName) {
+              parsedBrowserName = "Android WebView";
+            } else if (parsedBrowserName) {
+              // Parsed name is likely okay
             } else {
-              finalBrowserName = "Android Browser"; // Fallback for Android
+              parsedBrowserName = "Android Browser";
             }
+          } else if (parsedOsName?.toLowerCase().includes("ios")) {
+            parsedBrowserName = "Mobile Safari";
           }
-        } else if (uaResult.browser.name === "Electron") {
-          finalBrowserName = "Electron App"; // More descriptive for Electron
-          // For Electron, version might be app's version, not Chromium's.
-          // You might need custom logic if you want the underlying Chromium version.
-        }
-
-        // 3. OS Information
-        if (uaResult.os.name) {
-          osName = ` on ${uaResult.os.name}`;
-          if (uaResult.os.version) {
-            osVersion = ` ${uaResult.os.version.split(".")[0]}`; // Major OS version
-          }
+        } else if (parsedBrowserName === "Electron") {
+          parsedBrowserName = "Electron App";
         }
       } catch (error) {
         console.warn(
           `Pulse Reporter: Error parsing User-Agent string "${userAgentString}":`,
           error
         );
-        // Fallback to configuredBrowserType already set in finalBrowserName
       }
     }
-    // If after UA parsing, we still have a generic engine name like "Blink" or "WebKit"
-    // and a more specific configuredBrowserType exists (like "chromium"), prefer the configured one.
-    if (
-      (finalBrowserName.toLowerCase() === "blink" ||
-        finalBrowserName.toLowerCase() === "webkit" ||
-        finalBrowserName.toLowerCase() === "gecko") &&
-      configuredBrowserType &&
-      configuredBrowserType !== "unknown"
-    ) {
-      finalBrowserName =
+
+    let finalDisplayName: string;
+
+    if (parsedBrowserName) {
+      finalDisplayName = parsedBrowserName;
+      if (parsedVersion) {
+        finalDisplayName += ` v${parsedVersion.split(".")[0]}`;
+      }
+    } else if (configuredBrowserType && configuredBrowserType !== "unknown") {
+      finalDisplayName =
         configuredBrowserType.charAt(0).toUpperCase() +
-        configuredBrowserType.slice(1); // Capitalize
+        configuredBrowserType.slice(1);
+    } else {
+      finalDisplayName = "Unknown Browser";
     }
 
-    // Construct the display string
-    // Prioritize showing device type for mobile/tablet if it adds clarity
-    let displayString = finalBrowserName;
-    if (version) displayString += version;
-
-    // Add device type if it's mobile/tablet and not already obvious from browser name
-    if (
-      (deviceType === "mobile" || deviceType === "tablet") &&
-      !finalBrowserName.toLowerCase().includes(deviceType)
-    ) {
-      // displayString += ` (${deviceType.charAt(0).toUpperCase() + deviceType.slice(1)})`;
+    if (parsedOsName) {
+      finalDisplayName += ` on ${parsedOsName}`;
+      if (parsedOsVersion) {
+        finalDisplayName += ` ${parsedOsVersion.split(".")[0]}`;
+      }
     }
 
-    if (osName) displayString += osName;
-    if (osVersion && osName) displayString += osVersion; // Only add osVersion if osName is present
+    // Example: Append device model if it's a mobile/tablet and model exists
+    // if ((deviceType === "mobile" || deviceType === "tablet") && deviceModel && !finalDisplayName.includes(deviceModel)) {
+    //   finalDisplayName += ` (${deviceModel})`;
+    // }
 
-    return displayString.trim();
+    return finalDisplayName.trim();
   }
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
@@ -297,7 +279,7 @@ export class PlaywrightPulseReporter implements Reporter {
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
     const testIdForFiles =
-      test.id ||
+      test.id || // Playwright's internal unique ID for the test case
       `${test
         .titlePath()
         .join("_")
@@ -311,12 +293,12 @@ export class PlaywrightPulseReporter implements Reporter {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserDisplayInfo,
+          browserDisplayInfo, // Pass the detailed browser info string
           test
         );
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {
-          processedStep.steps = await processAllSteps(step.steps);
+          processedStep.steps = await processAllSteps(step.steps); // Recursive call
         }
       }
       return processed;
@@ -324,7 +306,11 @@ export class PlaywrightPulseReporter implements Reporter {
 
     let codeSnippet: string | undefined = undefined;
     try {
-      if (test.location?.file && test.location?.line && test.location?.column) {
+      if (
+        test.location?.file &&
+        test.location?.line !== undefined &&
+        test.location?.column !== undefined
+      ) {
         const relativePath = path.relative(
           this.config.rootDir,
           test.location.file
@@ -332,31 +318,23 @@ export class PlaywrightPulseReporter implements Reporter {
         codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
       }
     } catch (e) {
-      console.warn(
-        `Pulse Reporter: Could not extract code snippet for ${test.title}`,
-        e
-      );
+      // console.warn(`Pulse Reporter: Could not extract code snippet for ${test.title}`, e);
     }
 
-    const stdoutMessages: string[] = [];
-    if (result.stdout && result.stdout.length > 0) {
-      result.stdout.forEach((item) => {
-        stdoutMessages.push(typeof item === "string" ? item : item.toString());
-      });
-    }
+    const stdoutMessages: string[] =
+      result.stdout?.map((item) =>
+        typeof item === "string" ? item : item.toString()
+      ) || [];
+    const stderrMessages: string[] =
+      result.stderr?.map((item) =>
+        typeof item === "string" ? item : item.toString()
+      ) || [];
 
-    const stderrMessages: string[] = [];
-    if (result.stderr && result.stderr.length > 0) {
-      result.stderr.forEach((item) => {
-        stderrMessages.push(typeof item === "string" ? item : item.toString());
-      });
-    }
-
-    const uniqueTestId = test.id;
+    const uniqueTestId = test.id; // test.id is Playwright's unique ID for a test case instance
 
     const pulseResult: TestResult = {
       id: uniqueTestId,
-      runId: "TBD",
+      runId: "TBD", // Will be set during final report generation
       name: test.titlePath().join(" > "),
       suiteName:
         project?.name || this.config.projects[0]?.name || "Default Suite",
@@ -364,7 +342,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserDisplayInfo,
+      browser: browserDisplayInfo, // Use the detailed browser string
       retries: result.retry,
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
@@ -373,14 +351,15 @@ export class PlaywrightPulseReporter implements Reporter {
       tags: test.tags.map((tag) =>
         tag.startsWith("@") ? tag.substring(1) : tag
       ),
-      screenshots: [],
-      videoPath: undefined,
-      tracePath: undefined,
+      screenshots: [], // To be populated by attachFiles
+      videoPath: undefined, // To be populated by attachFiles
+      tracePath: undefined, // To be populated by attachFiles
       stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
       stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
     };
 
     try {
+      // IMPORTANT: attachFiles logic
       attachFiles(testIdForFiles, result, pulseResult, this.options);
     } catch (attachError: any) {
       console.error(
@@ -439,10 +418,10 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   private async _mergeShardResults(
-    finalRunData: TestRun
+    finalRunData: TestRun // Pass the TestRun object to populate
   ): Promise<PlaywrightPulseReport> {
     let allShardProcessedResults: TestResult[] = [];
-    const totalShards = this.config.shard ? this.config.shard.total : 1;
+    const totalShards = this.config.shard?.total ?? 1;
 
     for (let i = 0; i < totalShards; i++) {
       const tempFilePath = path.join(
@@ -451,14 +430,11 @@ export class PlaywrightPulseReporter implements Reporter {
       );
       try {
         const content = await fs.readFile(tempFilePath, "utf-8");
-        const shardResults = JSON.parse(content) as TestResult[];
-        allShardProcessedResults =
-          allShardProcessedResults.concat(shardResults);
+        const shardResults = JSON.parse(content) as TestResult[]; // Dates are already ISO strings
+        allShardProcessedResults.push(...shardResults);
       } catch (error: any) {
         if (error?.code === "ENOENT") {
-          console.warn(
-            `Pulse Reporter: Shard results file not found: ${tempFilePath}. This might be normal if a shard had no tests or failed early.`
-          );
+          // console.warn(`Pulse Reporter: Shard results file not found: ${tempFilePath}.`);
         } else {
           console.error(
             `Pulse Reporter: Could not read/parse results from shard ${i} (${tempFilePath}). Error:`,
@@ -468,7 +444,7 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     }
 
-    let finalUniqueResultsMap = new Map<string, TestResult>();
+    const finalUniqueResultsMap = new Map<string, TestResult>();
     for (const result of allShardProcessedResults) {
       const existing = finalUniqueResultsMap.get(result.id);
       if (!existing || result.retries >= existing.retries) {
@@ -477,8 +453,9 @@ export class PlaywrightPulseReporter implements Reporter {
     }
     const finalResultsList = Array.from(finalUniqueResultsMap.values());
 
-    finalResultsList.forEach((r) => (r.runId = finalRunData.id));
+    finalResultsList.forEach((r) => (r.runId = finalRunData.id)); // Assign runId to each test result
 
+    // Update the passed finalRunData object with aggregated stats
     finalRunData.passed = finalResultsList.filter(
       (r) => r.status === "passed"
     ).length;
@@ -490,23 +467,9 @@ export class PlaywrightPulseReporter implements Reporter {
     ).length;
     finalRunData.totalTests = finalResultsList.length;
 
-    const reviveDates = (key: string, value: any): any => {
-      const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-      if (typeof value === "string" && isoDateRegex.test(value)) {
-        const date = new Date(value);
-        return !isNaN(date.getTime()) ? date : value;
-      }
-      return value;
-    };
-
-    const properlyTypedResults = JSON.parse(
-      JSON.stringify(finalResultsList),
-      reviveDates
-    );
-
     return {
-      run: finalRunData,
-      results: properlyTypedResults,
+      run: finalRunData, // Contains Date object for timestamp
+      results: finalResultsList, // Contains ISO strings for dates from shards
       metadata: { generatedAt: new Date().toISOString() },
     };
   }
@@ -524,10 +487,7 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     } catch (error: any) {
       if (error?.code !== "ENOENT") {
-        console.warn(
-          "Pulse Reporter: Warning during cleanup of temporary files:",
-          error.message
-        );
+        // console.warn("Pulse Reporter: Warning during cleanup of temporary files:", error.message);
       }
     }
   }
@@ -557,8 +517,9 @@ export class PlaywrightPulseReporter implements Reporter {
     const runId = `run-${this.runStartTime}-${randomUUID()}`;
 
     const runData: TestRun = {
+      // This is the single source of truth for current run's data
       id: runId,
-      timestamp: new Date(this.runStartTime),
+      timestamp: new Date(this.runStartTime), // Stored as Date object
       totalTests: 0,
       passed: 0,
       failed: 0,
@@ -566,9 +527,10 @@ export class PlaywrightPulseReporter implements Reporter {
       duration,
     };
 
-    let finalReport: PlaywrightPulseReport | undefined = undefined; // Initialize as undefined
+    let finalReport: PlaywrightPulseReport;
 
     if (this.isSharded) {
+      // _mergeShardResults will populate the runData object passed to it
       finalReport = await this._mergeShardResults(runData);
     } else {
       this.results.forEach((r) => (r.runId = runId));
@@ -579,45 +541,23 @@ export class PlaywrightPulseReporter implements Reporter {
       ).length;
       runData.totalTests = this.results.length;
 
-      const reviveDates = (key: string, value: any): any => {
-        const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-        if (typeof value === "string" && isoDateRegex.test(value)) {
-          const date = new Date(value);
-          return !isNaN(date.getTime()) ? date : value;
-        }
-        return value;
-      };
-      const properlyTypedResults = JSON.parse(
-        JSON.stringify(this.results),
-        reviveDates
-      );
-
       finalReport = {
-        run: runData,
-        results: properlyTypedResults,
+        run: runData, // runData contains a Date object for timestamp
+        results: this.results, // results contain Date objects for startTime, endTime
         metadata: { generatedAt: new Date().toISOString() },
       };
     }
 
-    if (!finalReport) {
+    // This check should be robust now
+    if (
+      !finalReport ||
+      !finalReport.run ||
+      typeof finalReport.run.totalTests !== "number"
+    ) {
       console.error(
-        "PlaywrightPulseReporter: CRITICAL - finalReport object was not generated. Cannot create summary."
+        "PlaywrightPulseReporter: CRITICAL - finalReport object or its run data was malformed. Cannot create summary."
       );
-      const errorSummary = `
-PlaywrightPulseReporter: Run Finished
------------------------------------------
-  Overall Status: ERROR (Report data missing)
-  Total Tests:    N/A
-  Passed:         N/A
-  Failed:         N/A
-  Skipped:        N/A
-  Duration:       N/A
------------------------------------------`;
-      if (this.printsToStdio()) {
-        console.log(errorSummary);
-      }
-
-      const errorReport: PlaywrightPulseReport = {
+      const errorReportMinimal: PlaywrightPulseReport = {
         run: {
           id: runId,
           timestamp: new Date(this.runStartTime),
@@ -625,40 +565,45 @@ PlaywrightPulseReporter: Run Finished
           passed: 0,
           failed: 0,
           skipped: 0,
-          duration: duration,
+          duration,
         },
         results: [],
         metadata: {
           generatedAt: new Date().toISOString(),
         },
       };
-      const finalOutputPathOnError = path.join(
-        this.outputDir,
-        this.baseOutputFile
-      );
       try {
+        const errorPath = path.join(this.outputDir, this.baseOutputFile);
         await this._ensureDirExists(this.outputDir);
+        // Stringify with Date conversion for the minimal error report
         await fs.writeFile(
-          finalOutputPathOnError,
-          JSON.stringify(errorReport, null, 2)
+          errorPath,
+          JSON.stringify(
+            errorReportMinimal,
+            (key, value) =>
+              value instanceof Date ? value.toISOString() : value,
+            2
+          )
         );
         console.warn(
-          `PlaywrightPulseReporter: Wrote an error report to ${finalOutputPathOnError} as finalReport was missing.`
+          `PlaywrightPulseReporter: Wrote a minimal error report to ${errorPath}.`
         );
-      } catch (writeError: any) {
+      } catch (e) {
         console.error(
-          `PlaywrightPulseReporter: Failed to write error report: ${writeError.message}`
+          "PlaywrightPulseReporter: Failed to write minimal error report.",
+          e
         );
       }
       return;
     }
 
+    // At this point, finalReport.run is guaranteed to be populated by either _mergeShardResults or the non-sharded path.
     const reportRunData = finalReport.run;
 
     const finalRunStatus =
-      (reportRunData?.failed ?? 0) > 0
+      (reportRunData.failed ?? 0) > 0
         ? "failed"
-        : (reportRunData?.totalTests ?? 0) === 0 && result.status !== "passed"
+        : (reportRunData.totalTests ?? 0) === 0 && result.status !== "passed"
         ? result.status === "interrupted"
           ? "interrupted"
           : "no tests or error"
@@ -668,11 +613,11 @@ PlaywrightPulseReporter: Run Finished
 PlaywrightPulseReporter: Run Finished
 -----------------------------------------
   Overall Status: ${finalRunStatus.toUpperCase()}
-  Total Tests:    ${reportRunData?.totalTests || 0}
-  Passed:         ${reportRunData?.passed}
-  Failed:         ${reportRunData?.failed}
-  Skipped:        ${reportRunData?.skipped}
-  Duration:       ${((reportRunData?.duration ?? 0) / 1000).toFixed(2)}s 
+  Total Tests:    ${reportRunData.totalTests}
+  Passed:         ${reportRunData.passed}
+  Failed:         ${reportRunData.failed}
+  Skipped:        ${reportRunData.skipped}
+  Duration:       ${(reportRunData.duration / 1000).toFixed(2)}s 
 -----------------------------------------`;
 
     if (this.printsToStdio()) {
@@ -683,13 +628,15 @@ PlaywrightPulseReporter: Run Finished
 
     try {
       await this._ensureDirExists(this.outputDir);
+      // Custom replacer for JSON.stringify to handle Date objects correctly
       await fs.writeFile(
         finalOutputPath,
         JSON.stringify(
           finalReport,
           (key, value) => {
-            if (value instanceof Date) return value.toISOString();
-            if (typeof value === "bigint") return value.toString();
+            if (value instanceof Date) {
+              return value.toISOString();
+            }
             return value;
           },
           2
