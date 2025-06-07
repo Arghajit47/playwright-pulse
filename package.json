@@ -1,7 +1,7 @@
 {
-  "name": "@arghajit/playwright-pulse-report",
+  "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.2.1",
+  "version": "0.1.0-beta-8",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -37,14 +37,7 @@
     }
   },
   "scripts": {
-    "dev": "next dev --turbopack -p 9002",
-    "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
-    "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
     "build:reporter": "tsc -p tsconfig.reporter.json",
-    "build:next": "next build",
-    "build": "npm run build:reporter && npm run build:next",
-    "start": "next start",
-    "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build:reporter",
     "report:static": "node ./scripts/generate-static-report.mjs",

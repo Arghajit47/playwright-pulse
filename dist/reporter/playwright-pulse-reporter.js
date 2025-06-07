@@ -39,6 +39,7 @@ const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
+const ua_parser_js_1 = require("ua-parser-js"); // Added UAParser import
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return "failed";
@@ -105,9 +106,88 @@ class PlaywrightPulseReporter {
             .catch((err) => console.error("Pulse Reporter: Error during initialization:", err));
     }
     onTestBegin(test) {
-        // console.log(`Starting test: ${test.title}`);
+        console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId, browserName, testCase) {
+    getBrowserDetails(test) {
+        var _a, _b, _c, _d;
+        const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project(); // project() can return undefined if not in a project context
+        const projectConfig = project === null || project === void 0 ? void 0 : project.use; // This is where options like userAgent, defaultBrowserType are
+        const userAgent = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.userAgent;
+        const configuredBrowserType = (_b = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.defaultBrowserType) === null || _b === void 0 ? void 0 : _b.toLowerCase();
+        // --- DEBUG LOGS (Uncomment if needed for diagnosing) ---
+        // console.log(`[PulseReporter DEBUG] Project: ${test.info().project.name}`);
+        // console.log(`[PulseReporter DEBUG] Configured Browser Type: "${configuredBrowserType}"`);
+        // console.log(`[PulseReporter DEBUG] User Agent for UAParser: "${userAgent}"`);
+        // --- END DEBUG LOGS ---
+        // if (!userAgent) {
+        //   // Fallback if no user agent is available
+        //   return configuredBrowserType
+        //     ? configuredBrowserType.charAt(0).toUpperCase() +
+        //         configuredBrowserType.slice(1)
+        //     : "Unknown Browser";
+        // }
+        // try {
+        const parser = new ua_parser_js_1.UAParser(userAgent);
+        const result = parser.getResult();
+        // --- DEBUG LOGS (Uncomment if needed for diagnosing) ---
+        // console.log("[PulseReporter DEBUG] UAParser Result:", JSON.stringify(result, null, 2));
+        // --- END DEBUG LOGS ---
+        let browserName = result.browser.name;
+        const browserVersion = result.browser.version
+            ? ` v${result.browser.version.split(".")[0]}`
+            : ""; // Major version
+        const osName = result.os.name ? ` on ${result.os.name}` : "";
+        const osVersion = result.os.version
+            ? ` ${result.os.version.split(".")[0]}`
+            : ""; // Major version
+        const deviceType = result.device.type; // "mobile", "tablet", etc.
+        // If UAParser couldn't determine browser name, fallback to configured type
+        if (!browserName) {
+            browserName = configuredBrowserType
+                ? configuredBrowserType.charAt(0).toUpperCase() +
+                    configuredBrowserType.slice(1)
+                : "Unknown";
+        }
+        else {
+            // Specific refinements for mobile based on parsed OS and device type
+            if (deviceType === "mobile" || deviceType === "tablet") {
+                if ((_c = result.os.name) === null || _c === void 0 ? void 0 : _c.toLowerCase().includes("android")) {
+                    if (browserName.toLowerCase().includes("chrome"))
+                        browserName = "Chrome Mobile";
+                    else if (browserName.toLowerCase().includes("firefox"))
+                        browserName = "Firefox Mobile";
+                    else if (result.engine.name === "Blink" && !result.browser.name)
+                        browserName = "Android WebView";
+                    else if (browserName &&
+                        !browserName.toLowerCase().includes("mobile")) {
+                        // Keep it as is, e.g. "Samsung Browser" is specific enough
+                    }
+                    else {
+                        browserName = "Android Browser"; // default for android if not specific
+                    }
+                }
+                else if ((_d = result.os.name) === null || _d === void 0 ? void 0 : _d.toLowerCase().includes("ios")) {
+                    browserName = "Mobile Safari";
+                }
+            }
+            else if (browserName === "Electron") {
+                browserName = "Electron App";
+            }
+        }
+        let finalString = `${browserName}${browserVersion}${osName}${osVersion}`;
+        return finalString.trim() || "Unknown Browser";
+        // } catch (error) {
+        //   console.warn(
+        //     `Pulse Reporter: Error parsing User-Agent string "${userAgent}":`,
+        //     error
+        //   );
+        //   return configuredBrowserType
+        //     ? configuredBrowserType.charAt(0).toUpperCase() +
+        //         configuredBrowserType.slice(1)
+        //     : "Unknown Browser";
+        // }
+    }
+    async processStep(step, testId, browserDetails, testCase) {
         var _a, _b, _c, _d;
         let stepStatus = "passed";
         let errorMessage = ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined;
@@ -132,7 +212,7 @@ class PlaywrightPulseReporter {
             duration: duration,
             startTime: startTime,
             endTime: endTime,
-            browser: browserName,
+            browser: browserDetails,
             errorMessage: errorMessage,
             stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
@@ -146,9 +226,9 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const browserName = ((_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) || (project === null || project === void 0 ? void 0 : project.name) || "unknown";
+        const browserDetails = this.getBrowserDetails(test);
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -160,7 +240,7 @@ class PlaywrightPulseReporter {
         const processAllSteps = async (steps) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles, browserName, test);
+                const processedStep = await this.processStep(step, testIdForFiles, browserDetails, test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     processedStep.steps = await processAllSteps(step.steps);
@@ -170,7 +250,7 @@ class PlaywrightPulseReporter {
         };
         let codeSnippet = undefined;
         try {
-            if (((_c = test.location) === null || _c === void 0 ? void 0 : _c.file) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.line) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.column)) {
+            if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -195,16 +275,16 @@ class PlaywrightPulseReporter {
             id: uniqueTestId,
             runId: "TBD",
             name: test.titlePath().join(" > "),
-            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_f = this.config.projects[0]) === null || _f === void 0 ? void 0 : _f.name) || "Default Suite",
+            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
-            browser: browserName,
+            browser: browserDetails,
             retries: result.retry,
-            steps: ((_g = result.steps) === null || _g === void 0 ? void 0 : _g.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
-            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
+            steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
+            errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
+            stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
