@@ -113,7 +113,7 @@ class PlaywrightPulseReporter {
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project(); // project() can return undefined if not in a project context
         const projectConfig = project === null || project === void 0 ? void 0 : project.use; // This is where options like userAgent, defaultBrowserType are
         const userAgent = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.userAgent;
-        const configuredBrowserType = (_b = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.defaultBrowserType) === null || _b === void 0 ? void 0 : _b.toLowerCase();
+        const configuredBrowserType = (_b = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.browserName) === null || _b === void 0 ? void 0 : _b.toLowerCase();
         const parser = new ua_parser_js_1.UAParser(userAgent);
         const result = parser.getResult();
         let browserName = result.browser.name;

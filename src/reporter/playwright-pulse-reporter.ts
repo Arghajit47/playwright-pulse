@@ -126,8 +126,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const projectConfig = project?.use; // This is where options like userAgent, defaultBrowserType are
     const userAgent = projectConfig?.userAgent;
-    const configuredBrowserType =
-      projectConfig?.defaultBrowserType?.toLowerCase();
+    const configuredBrowserType = projectConfig?.browserName?.toLowerCase();
 
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
