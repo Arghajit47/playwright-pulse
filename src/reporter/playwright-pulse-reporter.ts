@@ -21,6 +21,7 @@ import type {
 } from "../types"; // Use relative path
 import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
+import { UAParser } from "ua-parser-js"; // Added UAParser import
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -116,13 +117,99 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    // console.log(`Starting test: ${test.title}`);
+    console.log(`Starting test: ${test.title}`);
+  }
+
+  private getBrowserDetails(test: TestCase): string {
+    const project = test.parent?.project(); // project() can return undefined if not in a project context
+
+    const projectConfig = project?.use; // This is where options like userAgent, defaultBrowserType are
+    const userAgent = projectConfig?.userAgent;
+    const configuredBrowserType =
+      projectConfig?.defaultBrowserType?.toLowerCase();
+
+    // --- DEBUG LOGS (Uncomment if needed for diagnosing) ---
+    // console.log(`[PulseReporter DEBUG] Project: ${test.info().project.name}`);
+    // console.log(`[PulseReporter DEBUG] Configured Browser Type: "${configuredBrowserType}"`);
+    // console.log(`[PulseReporter DEBUG] User Agent for UAParser: "${userAgent}"`);
+    // --- END DEBUG LOGS ---
+
+    // if (!userAgent) {
+    //   // Fallback if no user agent is available
+    //   return configuredBrowserType
+    //     ? configuredBrowserType.charAt(0).toUpperCase() +
+    //         configuredBrowserType.slice(1)
+    //     : "Unknown Browser";
+    // }
+
+    // try {
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
+
+    // --- DEBUG LOGS (Uncomment if needed for diagnosing) ---
+    // console.log("[PulseReporter DEBUG] UAParser Result:", JSON.stringify(result, null, 2));
+    // --- END DEBUG LOGS ---
+
+    let browserName = result.browser.name;
+    const browserVersion = result.browser.version
+      ? ` v${result.browser.version.split(".")[0]}`
+      : ""; // Major version
+    const osName = result.os.name ? ` on ${result.os.name}` : "";
+    const osVersion = result.os.version
+      ? ` ${result.os.version.split(".")[0]}`
+      : ""; // Major version
+    const deviceType = result.device.type; // "mobile", "tablet", etc.
+
+    // If UAParser couldn't determine browser name, fallback to configured type
+    if (!browserName) {
+      browserName = configuredBrowserType
+        ? configuredBrowserType.charAt(0).toUpperCase() +
+          configuredBrowserType.slice(1)
+        : "Unknown";
+    } else {
+      // Specific refinements for mobile based on parsed OS and device type
+      if (deviceType === "mobile" || deviceType === "tablet") {
+        if (result.os.name?.toLowerCase().includes("android")) {
+          if (browserName.toLowerCase().includes("chrome"))
+            browserName = "Chrome Mobile";
+          else if (browserName.toLowerCase().includes("firefox"))
+            browserName = "Firefox Mobile";
+          else if (result.engine.name === "Blink" && !result.browser.name)
+            browserName = "Android WebView";
+          else if (
+            browserName &&
+            !browserName.toLowerCase().includes("mobile")
+          ) {
+            // Keep it as is, e.g. "Samsung Browser" is specific enough
+          } else {
+            browserName = "Android Browser"; // default for android if not specific
+          }
+        } else if (result.os.name?.toLowerCase().includes("ios")) {
+          browserName = "Mobile Safari";
+        }
+      } else if (browserName === "Electron") {
+        browserName = "Electron App";
+      }
+    }
+
+    let finalString = `${browserName}${browserVersion}${osName}${osVersion}`;
+    return finalString.trim() || "Unknown Browser";
+    // } catch (error) {
+    //   console.warn(
+    //     `Pulse Reporter: Error parsing User-Agent string "${userAgent}":`,
+    //     error
+    //   );
+    //   return configuredBrowserType
+    //     ? configuredBrowserType.charAt(0).toUpperCase() +
+    //         configuredBrowserType.slice(1)
+    //     : "Unknown Browser";
+    // }
   }
 
   private async processStep(
     step: PwStep,
     testId: string,
-    browserName: string,
+    browserDetails: string,
     testCase?: TestCase
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
@@ -154,7 +241,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserDetails,
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
@@ -171,8 +258,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
-    const browserName =
-      project?.use?.defaultBrowserType || project?.name || "unknown";
+    const browserDetails = this.getBrowserDetails(test);
 
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
@@ -192,7 +278,7 @@ export class PlaywrightPulseReporter implements Reporter {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserName,
+          browserDetails,
           test
         );
         processed.push(processedStep);
@@ -245,7 +331,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserDetails,
       retries: result.retry,
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,

@@ -1,38 +1,29 @@
 # Playwright Pluse Report
 
-![Playwright Pulse Report](./screenshots/image.png)  
+![Playwright Pulse Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png)  
 *The ultimate Playwright reporter — Interactive dashboard with historical trend analytics, CI/CD-ready standalone HTML reports, and sharding support for scalable test execution.*
 
-<a href="https://pulse-report.netlify.app/" target="_blank"><h3>Live Demo</h3></a>
+## [Live Demo](https://pulse-report.netlify.app/)
 
-## 🌟 Features
-
-- **Custom Playwright Reporter** - Collects detailed test results with rich metadata
-- **Sharding Support** - Seamlessly handles parallel test execution across shards
-- **Two Reporting Options**:
-  - **Standalone HTML Report** - Self-contained, shareable single file
-  - **Email Report** - Attached test summary with generated test report
-- **CI/CD Ready** - GitHub Actions workflow examples included
-- **Email Integration** - Send reports directly to stakeholders
-- **AI Analysis** - Get insights into your test results
+## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/features.svg)
 
 ## 📸 Screenshots
 
 ### 🖥️ Desktop View
 
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;"> <a href="https://postimg.cc/180cym6c" target="_blank"> <img src="./screenshots/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png" alt="Dashboard Overview" width="300"/> <p align="center"><strong>Dashboard Overview</strong></p> </a> <a href="https://postimg.cc/V5TFRHmM" target="_blank"> <img src="./screenshots/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png" alt="Test Details" width="300"/> <p align="center"><strong>Test Details</strong></p> </a> <a href="https://postimg.cc/XXTwFGkk" target="_blank"> <img src="./screenshots/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png" alt="Filter View" width="300"/> <p align="center"><strong>Filter View</strong></p> </a> </div>
+<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;"> <a href="https://postimg.cc/180cym6c" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png" alt="Dashboard Overview" width="300"/> <p align="center"><strong>Dashboard Overview</strong></p> </a> <a href="https://postimg.cc/V5TFRHmM" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png" alt="Test Details" width="300"/> <p align="center"><strong>Test Details</strong></p> </a> <a href="https://postimg.cc/XXTwFGkk" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png" alt="Filter View" width="300"/> <p align="center"><strong>Filter View</strong></p> </a> </div>
 
 ### 📱 Mobile View
 
 <div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
 
   <a href="https://postimg.cc/CzJBLR5N" target="_blank">
-    <img src="./screenshots/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max.png" alt="Mobile Overview" width="300"/>
+    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max.png" alt="Mobile Overview" width="300"/>
     <p align="center"><strong>Dashboard Overview</strong></p>
   </a>
 
   <a href="https://postimg.cc/G8YTczT8" target="_blank">
-    <img src="./screenshots/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1.png" alt="Test Details" width="300"/>
+    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1.png" alt="Test Details" width="300"/>
     <p align="center"><strong>Test Details</strong></p>
   </a>
 
@@ -40,7 +31,7 @@
 
 ### Email Report Example
 
-[![Email Report](./screenshots//Email-report.jpg)](https://postimg.cc/DmCPgtqh)
+[![Email Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Email-report.jpg)](https://postimg.cc/DmCPgtqh)
 
 ## 🛠️ How It Works
 
@@ -218,21 +209,7 @@ The dashboard includes AI-powered test analysis that provides:
 - merge-report is a custom Node.js script that combines all JSON files into one.
 - generate-report can build a static HTML dashboard if needed.
 
-## 📂 Key Files
-
-```bash
-playwright-pulse-reporter/
-├── src/
-│   ├── reporter/            # Reporter implementation
-│   └── app/                 # Next.js dashboard
-├── scripts/
-│   └── generate-static-report.mjs  # HTML generator
-|   └── generate-trend.mjs  # Generate Trends
-|   └── merge-pulse-report.mjs  # merge sharded reports
-|   └── sendReport.mjs  # Send email report
-├── pulse-report/            # Generated reports
-└── sample-report.json       # Example data
-```
+## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/structures.svg)
 
 ## 🎉 What's New in v0.2.1
 
