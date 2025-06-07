@@ -150,10 +150,10 @@ class PlaywrightPulseReporter {
         };
     }
     getBrowserInfo(test) {
-        var _a, _b, _c, _d;
+        var _a, _b, _c;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const configuredBrowserType = (_c = (_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) === null || _c === void 0 ? void 0 : _c.toLowerCase();
-        const userAgentString = (_d = project === null || project === void 0 ? void 0 : project.use) === null || _d === void 0 ? void 0 : _d.userAgent;
+        const userAgentString = test.info().project.use.userAgent;
         // --- DEBUG LOGS (IMPORTANT! Check these in your console output) ---
         console.log(`[PulseReporter DEBUG] Project: ${(project === null || project === void 0 ? void 0 : project.name) || "N/A"}`);
         console.log(`[PulseReporter DEBUG] Configured Browser Type: "${configuredBrowserType}"`);
@@ -238,7 +238,11 @@ class PlaywrightPulseReporter {
     async onTestEnd(test, result) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const browserDisplayInfo = this.getBrowserInfo(test);
+        // const browserDisplayInfo = this.getBrowserInfo(test);
+        const ua = test.info().project.use.userAgent;
+        const parser = new ua_parser_js_1.UAParser(ua);
+        const res = parser.getResult();
+        const browserDisplayInfo = res.browser.name || "";
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);

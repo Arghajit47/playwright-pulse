@@ -176,7 +176,7 @@ export class PlaywrightPulseReporter implements Reporter {
     const project = test.parent?.project();
     const configuredBrowserType =
       project?.use?.defaultBrowserType?.toLowerCase();
-    const userAgentString = project?.use?.userAgent;
+    const userAgentString = test.info().project.use.userAgent;
 
     // --- DEBUG LOGS (IMPORTANT! Check these in your console output) ---
     console.log(`[PulseReporter DEBUG] Project: ${project?.name || "N/A"}`);
@@ -273,7 +273,11 @@ export class PlaywrightPulseReporter implements Reporter {
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
-    const browserDisplayInfo = this.getBrowserInfo(test);
+    // const browserDisplayInfo = this.getBrowserInfo(test);
+    const ua = test.info().project.use.userAgent;
+    const parser = new UAParser(ua);
+    const res = parser.getResult();
+    const browserDisplayInfo = res.browser.name || "";
 
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
