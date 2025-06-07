@@ -40,24 +40,6 @@ const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
 const ua_parser_js_1 = require("ua-parser-js"); // Added UAParser import
-// Use dynamic import for chalk as it's ESM only
-let chalk;
-try {
-    (async () => {
-        chalk = (await Promise.resolve().then(() => __importStar(require("chalk")))).default;
-    })();
-}
-catch (e) {
-    console.warn("Chalk could not be imported. Using plain console logs.");
-    chalk = {
-        green: (text) => text,
-        red: (text) => text,
-        yellow: (text) => text,
-        blue: (text) => text,
-        bold: (text) => text,
-        gray: (text) => text,
-    };
-}
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return "failed";
@@ -124,7 +106,7 @@ class PlaywrightPulseReporter {
             .catch((err) => console.error("Pulse Reporter: Error during initialization:", err));
     }
     onTestBegin(test) {
-        console.log(`${chalk.blue("Starting test:")} ${test.title}`);
+        console.log(`Starting test: ${test.title}`);
     }
     getBrowserDetails(test) {
         var _a, _b, _c, _d;

@@ -23,23 +23,6 @@ import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
 import { UAParser } from "ua-parser-js"; // Added UAParser import
 
-// Use dynamic import for chalk as it's ESM only
-let chalk: any;
-try {
-  (async () => {
-  chalk = (await import("chalk")).default;
-})();
-} catch (e) {
-  console.warn("Chalk could not be imported. Using plain console logs.");
-  chalk = {
-    green: (text: string) => text,
-    red: (text: string) => text,
-    yellow: (text: string) => text,
-    blue: (text: string) => text,
-    bold: (text: string) => text,
-    gray: (text: string) => text,
-  };
-}
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -135,7 +118,7 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    console.log(`${chalk.blue("Starting test:")} ${test.title}`);
+    console.log(`Starting test: ${test.title}`);
   }
 
   private getBrowserDetails(test: TestCase): string {
