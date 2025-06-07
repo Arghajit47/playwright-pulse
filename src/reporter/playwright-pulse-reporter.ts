@@ -23,6 +23,24 @@ import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
 import { UAParser } from "ua-parser-js"; // Added UAParser import
 
+// Use dynamic import for chalk as it's ESM only
+let chalk: any;
+try {
+  (async () => {
+  chalk = (await import("chalk")).default;
+})();
+} catch (e) {
+  console.warn("Chalk could not be imported. Using plain console logs.");
+  chalk = {
+    green: (text: string) => text,
+    red: (text: string) => text,
+    yellow: (text: string) => text,
+    blue: (text: string) => text,
+    bold: (text: string) => text,
+    gray: (text: string) => text,
+  };
+}
+
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
   testCase?: TestCase
@@ -117,7 +135,7 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    console.log(`Starting test: ${test.title}`);
+    console.log(`${chalk.blue("Starting test:")} ${test.title}`);
   }
 
   private getBrowserDetails(test: TestCase): string {
@@ -128,27 +146,8 @@ export class PlaywrightPulseReporter implements Reporter {
     const configuredBrowserType =
       projectConfig?.defaultBrowserType?.toLowerCase();
 
-    // --- DEBUG LOGS (Uncomment if needed for diagnosing) ---
-    // console.log(`[PulseReporter DEBUG] Project: ${test.info().project.name}`);
-    // console.log(`[PulseReporter DEBUG] Configured Browser Type: "${configuredBrowserType}"`);
-    // console.log(`[PulseReporter DEBUG] User Agent for UAParser: "${userAgent}"`);
-    // --- END DEBUG LOGS ---
-
-    // if (!userAgent) {
-    //   // Fallback if no user agent is available
-    //   return configuredBrowserType
-    //     ? configuredBrowserType.charAt(0).toUpperCase() +
-    //         configuredBrowserType.slice(1)
-    //     : "Unknown Browser";
-    // }
-
-    // try {
     const parser = new UAParser(userAgent);
     const result = parser.getResult();
-
-    // --- DEBUG LOGS (Uncomment if needed for diagnosing) ---
-    // console.log("[PulseReporter DEBUG] UAParser Result:", JSON.stringify(result, null, 2));
-    // --- END DEBUG LOGS ---
 
     let browserName = result.browser.name;
     const browserVersion = result.browser.version
@@ -159,13 +158,12 @@ export class PlaywrightPulseReporter implements Reporter {
       ? ` ${result.os.version.split(".")[0]}`
       : ""; // Major version
     const deviceType = result.device.type; // "mobile", "tablet", etc.
+    let finalString;
 
     // If UAParser couldn't determine browser name, fallback to configured type
-    if (!browserName) {
-      browserName = configuredBrowserType
-        ? configuredBrowserType.charAt(0).toUpperCase() +
-          configuredBrowserType.slice(1)
-        : "Unknown";
+    if (browserName === undefined) {
+      browserName = configuredBrowserType;
+      finalString = `${browserName}`;
     } else {
       // Specific refinements for mobile based on parsed OS and device type
       if (deviceType === "mobile" || deviceType === "tablet") {
@@ -190,20 +188,10 @@ export class PlaywrightPulseReporter implements Reporter {
       } else if (browserName === "Electron") {
         browserName = "Electron App";
       }
+      finalString = `${browserName}${browserVersion}${osName}${osVersion}`;
     }
 
-    let finalString = `${browserName}${browserVersion}${osName}${osVersion}`;
-    return finalString.trim() || "Unknown Browser";
-    // } catch (error) {
-    //   console.warn(
-    //     `Pulse Reporter: Error parsing User-Agent string "${userAgent}":`,
-    //     error
-    //   );
-    //   return configuredBrowserType
-    //     ? configuredBrowserType.charAt(0).toUpperCase() +
-    //         configuredBrowserType.slice(1)
-    //     : "Unknown Browser";
-    // }
+    return finalString.trim();
   }
 
   private async processStep(

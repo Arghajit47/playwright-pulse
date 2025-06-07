@@ -874,8 +874,11 @@ function generateSuitesWidget(suitesData) {
         <h3 class="suite-name" title="${sanitizeHTML(
           suite.name
         )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
-        <span class="browser-tag">${sanitizeHTML(suite.browser)}</span>
       </div>
+        <div>
+          🖥️
+          <span class="browser-tag">${sanitizeHTML(suite.browser)}</span>
+        </div>
       <div class="suite-card-body">
         <span class="test-count">${suite.count} test${
           suite.count !== 1 ? "s" : ""
