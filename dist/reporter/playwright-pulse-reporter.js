@@ -382,7 +382,7 @@ class PlaywrightPulseReporter {
         }
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
-        const runId = `run-${this.runStartTime}-${(0, crypto_1.randomUUID)()}`;
+        const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`; // Need not to change
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),

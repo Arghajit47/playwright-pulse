@@ -58,7 +58,8 @@
     "recharts": "^2.15.1",
     "ua-parser-js": "^2.0.3",
     "zod": "^3.24.2",
-    "lucide-react": "^0.475.0"
+    "lucide-react": "^0.475.0",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^20",

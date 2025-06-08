@@ -491,7 +491,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
-    const runId = `run-${this.runStartTime}-${randomUUID()}`;
+    const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`; // Need not to change
 
     const runData: TestRun = {
       id: runId,
