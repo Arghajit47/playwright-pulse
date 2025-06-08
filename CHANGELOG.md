@@ -1,5 +1,14 @@
 # 📜 Changelog
 
+## **Version 0.2.2**
+
+**🚀 Fix Update**  
+
+- **🐛 Fixed** Browser Name components in test suite (Accurate browser name, version and os)
+- **🐛 Fixed** Send Report functionality with minified html report (with Minimum important details)
+
+---
+
 ## **Version 0.2.1**
 
 **🚀 Fix Update**  
