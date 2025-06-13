@@ -21,12 +21,10 @@ try {
     gray: (text) => text,
   };
 }
-
 // Default configuration
 const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
-
 // Helper functions
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
@@ -45,7 +43,6 @@ function capitalize(str) {
   if (!str) return ""; // Handle empty string
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
-
 function formatPlaywrightError(error) {
   // Get the error message and clean ANSI codes
   const rawMessage = error.stack || error.message || error.toString();
@@ -68,11 +65,11 @@ function formatPlaywrightError(error) {
       /[&<>'"]/g,
       (tag) =>
         ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          "'": "&#39;",
-          '"': "&quot;",
+          "&": "&",
+          "<": "<",
+          ">": ">",
+          "'": "'",
+          '"': '"',
         }[tag])
     );
   };
@@ -144,13 +141,85 @@ function formatPlaywrightError(error) {
 
   return html;
 }
-
 // User-provided formatDuration function
-function formatDuration(ms) {
-  if (ms === undefined || ms === null || ms < 0) return "0.0s";
-  return (ms / 1000).toFixed(1) + "s";
-}
+function formatDuration(ms, options = {}) {
+    const {
+        precision = 1,
+        invalidInputReturn = "N/A",
+        defaultForNullUndefinedNegative = null
+    } = options;
 
+    const validPrecision = Math.max(0, Math.floor(precision));
+    const zeroWithPrecision = (0).toFixed(validPrecision) + "s";
+    const resolvedNullUndefNegReturn = defaultForNullUndefinedNegative === null 
+                                       ? zeroWithPrecision 
+                                       : defaultForNullUndefinedNegative;
+
+    if (ms === undefined || ms === null) {
+        return resolvedNullUndefNegReturn;
+    }
+
+    const numMs = Number(ms);
+
+    if (Number.isNaN(numMs) || !Number.isFinite(numMs)) {
+        return invalidInputReturn;
+    }
+
+    if (numMs < 0) {
+        return resolvedNullUndefNegReturn;
+    }
+    
+    if (numMs === 0) {
+        return zeroWithPrecision;
+    }
+
+    const MS_PER_SECOND = 1000;
+    const SECONDS_PER_MINUTE = 60;
+    const MINUTES_PER_HOUR = 60;
+    const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+
+    const totalRawSeconds = numMs / MS_PER_SECOND;
+
+    // Decision: Are we going to display hours or minutes?
+    // This happens if the duration is inherently >= 1 minute OR
+    // if it's < 1 minute but ceiling the seconds makes it >= 1 minute.
+    if (totalRawSeconds < SECONDS_PER_MINUTE && Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE) {
+        // Strictly seconds-only display, use precision.
+        return `${totalRawSeconds.toFixed(validPrecision)}s`;
+    } else {
+        // Display will include minutes and/or hours, or seconds round up to a minute.
+        // Seconds part should be an integer (ceiling).
+        // Round the total milliseconds UP to the nearest full second.
+        const totalMsRoundedUpToSecond = Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
+        
+        let remainingMs = totalMsRoundedUpToSecond;
+        
+        const h = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_HOUR));
+        remainingMs %= (MS_PER_SECOND * SECONDS_PER_HOUR);
+        
+        const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
+        remainingMs %= (MS_PER_SECOND * SECONDS_PER_MINUTE);
+        
+        const s = Math.floor(remainingMs / MS_PER_SECOND); // This will be an integer
+
+        const parts = [];
+        if (h > 0) {
+            parts.push(`${h}h`);
+        }
+
+        // Show minutes if:
+        // - hours are present (e.g., "1h 0m 5s")
+        // - OR minutes themselves are > 0 (e.g., "5m 10s")
+        // - OR the original duration was >= 1 minute (ensures "1m 0s" for 60000ms)
+        if (h > 0 || m > 0 || numMs >= (MS_PER_SECOND * SECONDS_PER_MINUTE)) {
+            parts.push(`${m}m`);
+        }
+        
+        parts.push(`${s}s`);
+
+        return parts.join(" ");
+    }
+}
 function generateTestTrendsChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for test counts.</div>';
@@ -159,107 +228,93 @@ function generateTestTrendsChart(trendData) {
   const chartId = `testTrendsChart-${Date.now()}-${Math.random()
     .toString(36)
     .substring(2, 7)}`;
+  const renderFunctionName = `renderTestTrendsChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
   const runs = trendData.overall;
 
   const series = [
     {
       name: "Total",
       data: runs.map((r) => r.totalTests),
-      color: "var(--primary-color)", // Blue
+      color: "var(--primary-color)",
       marker: { symbol: "circle" },
     },
     {
       name: "Passed",
       data: runs.map((r) => r.passed),
-      color: "var(--success-color)", // Green
+      color: "var(--success-color)",
       marker: { symbol: "circle" },
     },
     {
       name: "Failed",
       data: runs.map((r) => r.failed),
-      color: "var(--danger-color)", // Red
+      color: "var(--danger-color)",
       marker: { symbol: "circle" },
     },
     {
       name: "Skipped",
       data: runs.map((r) => r.skipped || 0),
-      color: "var(--warning-color)", // Yellow
+      color: "var(--warning-color)",
       marker: { symbol: "circle" },
     },
   ];
-
-  // Data needed by the tooltip formatter, stringified to be embedded in the client-side script
   const runsForTooltip = runs.map((r) => ({
     runId: r.runId,
     timestamp: r.timestamp,
     duration: r.duration,
   }));
 
-  const optionsObjectString = `
-  {
-      chart: { type: "line", height: 350, backgroundColor: "transparent" },
-      title: { text: null },
-      xAxis: {
-          categories: ${JSON.stringify(runs.map((run, i) => `Run ${i + 1}`))},
-          crosshair: true,
-          labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}
-      },
-      yAxis: {
-          title: { text: "Test Count", style: { color: 'var(--text-color)'} },
-          min: 0,
-          labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}
-      },
-      legend: {
-          layout: "horizontal", align: "center", verticalAlign: "bottom",
-          itemStyle: { fontSize: "12px", color: 'var(--text-color)' }
-      },
-      plotOptions: {
-          series: { marker: { radius: 4, states: { hover: { radius: 6 }}}, states: { hover: { halo: { size: 5, opacity: 0.1 }}}},
-          line: { lineWidth: 2.5 } // fillOpacity was 0.1, but for line charts, area fill is usually separate (area chart type)
-      },
-      tooltip: {
-          shared: true, useHTML: true,
-          backgroundColor: 'rgba(10,10,10,0.92)',
-          borderColor: 'rgba(10,10,10,0.92)',
-          style: { color: '#f5f5f5' },
-          formatter: function () {
-              const runsData = ${JSON.stringify(runsForTooltip)};
-              const pointIndex = this.points[0].point.x; // Get index from point
-              const run = runsData[pointIndex];
-              let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' +
-                            'Date: ' + new Date(run.timestamp).toLocaleString() + '<br><br>';
-              this.points.forEach(point => {
-                  tooltip += '<span style="color:' + point.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b><br>';
-              });
-              tooltip += '<br>Duration: ' + formatDuration(run.duration);
-              return tooltip;
-          }
-      },
-      series: ${JSON.stringify(series)},
-      credits: { enabled: false }
-  }
-  `;
+  const categoriesString = JSON.stringify(runs.map((run, i) => `Run ${i + 1}`));
+  const seriesString = JSON.stringify(series);
+  const runsForTooltipString = JSON.stringify(runsForTooltip);
 
   return `
-      <div id="${chartId}" class="trend-chart-container"></div>
+      <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}">
+          <div class="no-data">Loading Test Volume Trends...</div>
+      </div>
       <script>
-          document.addEventListener('DOMContentLoaded', function() {
+          window.${renderFunctionName} = function() {
+              const chartContainer = document.getElementById('${chartId}');
+              if (!chartContainer) { console.error("Chart container ${chartId} not found for lazy loading."); return; }
               if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
                   try {
-                      const chartOptions = ${optionsObjectString};
+                      chartContainer.innerHTML = ''; // Clear placeholder
+                      const chartOptions = {
+                          chart: { type: "line", height: 350, backgroundColor: "transparent" },
+                          title: { text: null },
+                          xAxis: { categories: ${categoriesString}, crosshair: true, labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}},
+                          yAxis: { title: { text: "Test Count", style: { color: 'var(--text-color)'} }, min: 0, labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}},
+                          legend: { layout: "horizontal", align: "center", verticalAlign: "bottom", itemStyle: { fontSize: "12px", color: 'var(--text-color)' }},
+                          plotOptions: { series: { marker: { radius: 4, states: { hover: { radius: 6 }}}, states: { hover: { halo: { size: 5, opacity: 0.1 }}}}, line: { lineWidth: 2.5 }},
+                          tooltip: {
+                              shared: true, useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: { color: '#f5f5f5' },
+                              formatter: function () {
+                                  const runsData = ${runsForTooltipString};
+                                  const pointIndex = this.points[0].point.x;
+                                  const run = runsData[pointIndex];
+                                  let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' + 'Date: ' + new Date(run.timestamp).toLocaleString() + '<br><br>';
+                                  this.points.forEach(point => { tooltip += '<span style="color:' + point.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b><br>'; });
+                                  tooltip += '<br>Duration: ' + formatDuration(run.duration);
+                                  return tooltip;
+                              }
+                          },
+                          series: ${seriesString},
+                          credits: { enabled: false }
+                      };
                       Highcharts.chart('${chartId}', chartOptions);
                   } catch (e) {
-                      console.error("Error rendering chart ${chartId}:", e);
-                      document.getElementById('${chartId}').innerHTML = '<div class="no-data">Error rendering test trends chart.</div>';
+                      console.error("Error rendering chart ${chartId} (lazy):", e);
+                      chartContainer.innerHTML = '<div class="no-data">Error rendering test trends chart.</div>';
                   }
               } else {
-                  document.getElementById('${chartId}').innerHTML = '<div class="no-data">Charting library not available.</div>';
+                  chartContainer.innerHTML = '<div class="no-data">Charting library not available for test trends.</div>';
               }
-          });
+          };
       </script>
   `;
 }
-
 function generateDurationTrendChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for durations.</div>';
@@ -267,109 +322,83 @@ function generateDurationTrendChart(trendData) {
   const chartId = `durationTrendChart-${Date.now()}-${Math.random()
     .toString(36)
     .substring(2, 7)}`;
+  const renderFunctionName = `renderDurationTrendChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
   const runs = trendData.overall;
 
-  // Assuming var(--accent-color-alt) is Orange #FF9800
-  const accentColorAltRGB = "255, 152, 0";
+  const accentColorAltRGB = "255, 152, 0"; // Assuming var(--accent-color-alt) is Orange #FF9800
 
-  const seriesString = `[{
-      name: 'Duration',
-      data: ${JSON.stringify(runs.map((run) => run.duration))},
-      color: 'var(--accent-color-alt)',
-      type: 'area',
-      marker: {
-          symbol: 'circle', enabled: true, radius: 4,
-          states: { hover: { radius: 6, lineWidthPlus: 0 } }
-      },
-      fillColor: {
-          linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-          stops: [
-              [0, 'rgba(${accentColorAltRGB}, 0.4)'],
-              [1, 'rgba(${accentColorAltRGB}, 0.05)']
-          ]
-      },
-      lineWidth: 2.5
-  }]`;
-
+  const chartDataString = JSON.stringify(runs.map((run) => run.duration));
+  const categoriesString = JSON.stringify(runs.map((run, i) => `Run ${i + 1}`));
   const runsForTooltip = runs.map((r) => ({
     runId: r.runId,
     timestamp: r.timestamp,
     duration: r.duration,
     totalTests: r.totalTests,
   }));
+  const runsForTooltipString = JSON.stringify(runsForTooltip);
 
-  const optionsObjectString = `
-  {
-      chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
-      title: { text: null },
-      xAxis: {
-          categories: ${JSON.stringify(runs.map((run, i) => `Run ${i + 1}`))},
-          crosshair: true,
-          labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' } }
-      },
-      yAxis: {
-          title: { text: 'Duration', style: { color: 'var(--text-color)' } },
-          labels: {
-              formatter: function() { return formatDuration(this.value); },
-              style: { color: 'var(--text-color-secondary)', fontSize: '12px' }
-          },
-          min: 0
-      },
-      legend: {
-          layout: 'horizontal', align: 'center', verticalAlign: 'bottom',
-          itemStyle: { fontSize: '12px', color: 'var(--text-color)' }
-      },
-      plotOptions: {
-          area: {
-              lineWidth: 2.5,
-              states: { hover: { lineWidthPlus: 0 } },
-              threshold: null 
-          }
-      },
-      tooltip: {
-          shared: true, useHTML: true,
-          backgroundColor: 'rgba(10,10,10,0.92)',
-          borderColor: 'rgba(10,10,10,0.92)',
-          style: { color: '#f5f5f5' },
-          formatter: function () {
-              const runsData = ${JSON.stringify(runsForTooltip)};
-              const pointIndex = this.points[0].point.x;
-              const run = runsData[pointIndex];
-              let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' +
-                            'Date: ' + new Date(run.timestamp).toLocaleString() + '<br>';
-              this.points.forEach(point => {
-                  tooltip += '<span style="color:' + point.series.color + '">●</span> ' +
-                             point.series.name + ': <b>' + formatDuration(point.y) + '</b><br>';
-              });
-              tooltip += '<br>Tests: ' + run.totalTests;
-              return tooltip;
-          }
-      },
-      series: ${seriesString},
-      credits: { enabled: false }
-  }
-  `;
+  const seriesStringForRender = `[{
+      name: 'Duration',
+      data: ${chartDataString},
+      color: 'var(--accent-color-alt)',
+      type: 'area',
+      marker: { symbol: 'circle', enabled: true, radius: 4, states: { hover: { radius: 6, lineWidthPlus: 0 } } },
+      fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(${accentColorAltRGB}, 0.4)'], [1, 'rgba(${accentColorAltRGB}, 0.05)']] },
+      lineWidth: 2.5
+  }]`;
 
   return `
-      <div id="${chartId}" class="trend-chart-container"></div>
+      <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}">
+          <div class="no-data">Loading Duration Trends...</div>
+      </div>
       <script>
-          document.addEventListener('DOMContentLoaded', function() {
+          window.${renderFunctionName} = function() {
+              const chartContainer = document.getElementById('${chartId}');
+              if (!chartContainer) { console.error("Chart container ${chartId} not found for lazy loading."); return; }
               if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
                   try {
-                      const chartOptions = ${optionsObjectString};
+                      chartContainer.innerHTML = ''; // Clear placeholder
+                      const chartOptions = {
+                          chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
+                          title: { text: null },
+                          xAxis: { categories: ${categoriesString}, crosshair: true, labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}},
+                          yAxis: {
+                              title: { text: 'Duration', style: { color: 'var(--text-color)' } },
+                              labels: { formatter: function() { return formatDuration(this.value); }, style: { color: 'var(--text-color-secondary)', fontSize: '12px' }},
+                              min: 0
+                          },
+                          legend: { layout: 'horizontal', align: 'center', verticalAlign: 'bottom', itemStyle: { fontSize: '12px', color: 'var(--text-color)' }},
+                          plotOptions: { area: { lineWidth: 2.5, states: { hover: { lineWidthPlus: 0 } }, threshold: null }},
+                          tooltip: {
+                              shared: true, useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: { color: '#f5f5f5' },
+                              formatter: function () {
+                                  const runsData = ${runsForTooltipString};
+                                  const pointIndex = this.points[0].point.x;
+                                  const run = runsData[pointIndex];
+                                  let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' + 'Date: ' + new Date(run.timestamp).toLocaleString() + '<br>';
+                                  this.points.forEach(point => { tooltip += '<span style="color:' + point.series.color + '">●</span> ' + point.series.name + ': <b>' + formatDuration(point.y) + '</b><br>'; });
+                                  tooltip += '<br>Tests: ' + run.totalTests;
+                                  return tooltip;
+                              }
+                          },
+                          series: ${seriesStringForRender}, // This is already a string representation of an array
+                          credits: { enabled: false }
+                      };
                       Highcharts.chart('${chartId}', chartOptions);
                   } catch (e) {
-                      console.error("Error rendering chart ${chartId}:", e);
-                      document.getElementById('${chartId}').innerHTML = '<div class="no-data">Error rendering duration trend chart.</div>';
+                      console.error("Error rendering chart ${chartId} (lazy):", e);
+                      chartContainer.innerHTML = '<div class="no-data">Error rendering duration trend chart.</div>';
                   }
               } else {
-                   document.getElementById('${chartId}').innerHTML = '<div class="no-data">Charting library not available.</div>';
+                  chartContainer.innerHTML = '<div class="no-data">Charting library not available for duration trends.</div>';
               }
-          });
+          };
       </script>
   `;
 }
-
 function formatDate(dateStrOrDate) {
   if (!dateStrOrDate) return "N/A";
   try {
@@ -388,11 +417,9 @@ function formatDate(dateStrOrDate) {
     return "Invalid Date Format";
   }
 }
-
 function generateTestHistoryChart(history) {
   if (!history || history.length === 0)
     return '<div class="no-data-chart">No data for chart</div>';
-
   const validHistory = history.filter(
     (h) => h && typeof h.duration === "number" && h.duration >= 0
   );
@@ -402,6 +429,10 @@ function generateTestHistoryChart(history) {
   const chartId = `testHistoryChart-${Date.now()}-${Math.random()
     .toString(36)
     .substring(2, 7)}`;
+  const renderFunctionName = `renderTestHistoryChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
 
   const seriesDataPoints = validHistory.map((run) => {
     let color;
@@ -431,94 +462,71 @@ function generateTestHistoryChart(history) {
     };
   });
 
-  // Assuming var(--accent-color) is Deep Purple #673ab7 -> RGB 103, 58, 183
-  const accentColorRGB = "103, 58, 183";
+  const accentColorRGB = "103, 58, 183"; // Assuming var(--accent-color) is Deep Purple #673ab7
 
-  const optionsObjectString = `
-  {
-      chart: { type: 'area', height: 100, width: 320, backgroundColor: 'transparent', spacing: [10,10,15,35] },
-      title: { text: null },
-      xAxis: {
-          categories: ${JSON.stringify(
-            validHistory.map((_, i) => `R${i + 1}`)
-          )},
-          labels: { style: { fontSize: '10px', color: 'var(--text-color-secondary)' } }
-      },
-      yAxis: {
-          title: { text: null },
-          labels: {
-              formatter: function() { return formatDuration(this.value); },
-              style: { fontSize: '10px', color: 'var(--text-color-secondary)' },
-              align: 'left', x: -35, y: 3
-          },
-          min: 0,
-          gridLineWidth: 0,
-          tickAmount: 4
-      },
-      legend: { enabled: false },
-      plotOptions: {
-          area: {
-              lineWidth: 2,
-              lineColor: 'var(--accent-color)',
-              fillColor: {
-                  linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-                  stops: [
-                      [0, 'rgba(${accentColorRGB}, 0.4)'],
-                      [1, 'rgba(${accentColorRGB}, 0)']
-                  ]
-              },
-              marker: { enabled: true },
-              threshold: null
-          }
-      },
-      tooltip: {
-          useHTML: true,
-          backgroundColor: 'rgba(10,10,10,0.92)',
-          borderColor: 'rgba(10,10,10,0.92)',
-          style: { color: '#f5f5f5', padding: '8px' },
-          formatter: function() {
-              const pointData = this.point;
-              let statusBadgeHtml = '<span style="padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; background-color: ';
-              switch(String(pointData.status).toLowerCase()) {
-                  case 'passed': statusBadgeHtml += 'var(--success-color)'; break;
-                  case 'failed': statusBadgeHtml += 'var(--danger-color)'; break;
-                  case 'skipped': statusBadgeHtml += 'var(--warning-color)'; break;
-                  default: statusBadgeHtml += 'var(--dark-gray-color)';
-              }
-              statusBadgeHtml += ';">' + String(pointData.status).toUpperCase() + '</span>';
+  const categoriesString = JSON.stringify(
+    validHistory.map((_, i) => `R${i + 1}`)
+  );
+  const seriesDataPointsString = JSON.stringify(seriesDataPoints);
 
-              return '<strong>Run ' + (pointData.runId || (this.point.index + 1)) + '</strong><br>' +
-                     'Status: ' + statusBadgeHtml + '<br>' +
-                     'Duration: ' + formatDuration(pointData.y);
-          }
-      },
-      series: [{
-          data: ${JSON.stringify(seriesDataPoints)},
-          showInLegend: false
-      }],
-      credits: { enabled: false }
-  }
-  `;
   return `
-      <div id="${chartId}" style="width: 320px; height: 100px;"></div>
+      <div id="${chartId}" style="width: 320px; height: 100px;" class="lazy-load-chart" data-render-function-name="${renderFunctionName}">
+          <div class="no-data-chart">Loading History...</div>
+      </div>
       <script>
-          document.addEventListener('DOMContentLoaded', function() {
+          window.${renderFunctionName} = function() {
+              const chartContainer = document.getElementById('${chartId}');
+              if (!chartContainer) { console.error("Chart container ${chartId} not found for lazy loading."); return; }
               if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
                   try {
-                      const chartOptions = ${optionsObjectString};
+                      chartContainer.innerHTML = ''; // Clear placeholder
+                      const chartOptions = {
+                          chart: { type: 'area', height: 100, width: 320, backgroundColor: 'transparent', spacing: [10,10,15,35] },
+                          title: { text: null },
+                          xAxis: { categories: ${categoriesString}, labels: { style: { fontSize: '10px', color: 'var(--text-color-secondary)' }}},
+                          yAxis: {
+                              title: { text: null },
+                              labels: { formatter: function() { return formatDuration(this.value); }, style: { fontSize: '10px', color: 'var(--text-color-secondary)' }, align: 'left', x: -35, y: 3 },
+                              min: 0, gridLineWidth: 0, tickAmount: 4
+                          },
+                          legend: { enabled: false },
+                          plotOptions: {
+                              area: {
+                                  lineWidth: 2, lineColor: 'var(--accent-color)',
+                                  fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(${accentColorRGB}, 0.4)'],[1, 'rgba(${accentColorRGB}, 0)']]},
+                                  marker: { enabled: true }, threshold: null
+                              }
+                          },
+                          tooltip: {
+                              useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: { color: '#f5f5f5', padding: '8px' },
+                              formatter: function() {
+                                  const pointData = this.point;
+                                  let statusBadgeHtml = '<span style="padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; background-color: ';
+                                  switch(String(pointData.status).toLowerCase()) {
+                                      case 'passed': statusBadgeHtml += 'var(--success-color)'; break;
+                                      case 'failed': statusBadgeHtml += 'var(--danger-color)'; break;
+                                      case 'skipped': statusBadgeHtml += 'var(--warning-color)'; break;
+                                      default: statusBadgeHtml += 'var(--dark-gray-color)';
+                                  }
+                                  statusBadgeHtml += ';">' + String(pointData.status).toUpperCase() + '</span>';
+                                  return '<strong>Run ' + (pointData.runId || (this.point.index + 1)) + '</strong><br>' + 'Status: ' + statusBadgeHtml + '<br>' + 'Duration: ' + formatDuration(pointData.y);
+                              }
+                          },
+                          series: [{ data: ${seriesDataPointsString}, showInLegend: false }],
+                          credits: { enabled: false }
+                      };
                       Highcharts.chart('${chartId}', chartOptions);
                   } catch (e) {
-                      console.error("Error rendering chart ${chartId}:", e);
-                      document.getElementById('${chartId}').innerHTML = '<div class="no-data-chart">Error rendering history chart.</div>';
+                      console.error("Error rendering chart ${chartId} (lazy):", e);
+                      chartContainer.innerHTML = '<div class="no-data-chart">Error rendering history chart.</div>';
                   }
               } else {
-                  document.getElementById('${chartId}').innerHTML = '<div class="no-data-chart">Charting library not available.</div>';
+                  chartContainer.innerHTML = '<div class="no-data-chart">Charting library not available for history.</div>';
               }
-          });
+          };
       </script>
   `;
 }
-
 function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) {
@@ -648,7 +656,6 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       </div>
   `;
 }
-
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -734,7 +741,7 @@ function generateTestHistoryContent(trendData) {
                 </span>
               </div>
               <div class="test-history-trend">
-                ${generateTestHistoryChart(test.history)}
+                ${generateTestHistoryChart(test.history)} 
               </div>
               <details class="test-history-details-collapsible">
                 <summary>Show Run Details (${test.history.length})</summary>
@@ -768,7 +775,6 @@ function generateTestHistoryContent(trendData) {
     </div>
   `;
 }
-
 function getStatusClass(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -781,7 +787,6 @@ function getStatusClass(status) {
       return "status-unknown";
   }
 }
-
 function getStatusIcon(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -794,7 +799,6 @@ function getStatusIcon(status) {
       return "❓";
   }
 }
-
 function getSuitesData(results) {
   const suitesMap = new Map();
   if (!results || results.length === 0) return [];
@@ -837,19 +841,12 @@ function getSuitesData(results) {
     if (currentStatus && suite[currentStatus] !== undefined) {
       suite[currentStatus]++;
     }
-
-    if (currentStatus === "failed") {
-      suite.statusOverall = "failed";
-    } else if (
-      currentStatus === "skipped" &&
-      suite.statusOverall !== "failed"
-    ) {
+    if (currentStatus === "failed") suite.statusOverall = "failed";
+    else if (currentStatus === "skipped" && suite.statusOverall !== "failed")
       suite.statusOverall = "skipped";
-    }
   });
   return Array.from(suitesMap.values());
 }
-
 function generateSuitesWidget(suitesData) {
   if (!suitesData || suitesData.length === 0) {
     return `<div class="suites-widget"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
@@ -858,12 +855,12 @@ function generateSuitesWidget(suitesData) {
 <div class="suites-widget">
   <div class="suites-header">
     <h2>Test Suites</h2>
-    <span class="summary-badge">
-      ${suitesData.length} suites • ${suitesData.reduce(
+    <span class="summary-badge">${
+      suitesData.length
+    } suites • ${suitesData.reduce(
     (sum, suite) => sum + suite.count,
     0
-  )} tests
-    </span>
+  )} tests</span>
   </div>
   <div class="suites-grid">
     ${suitesData
@@ -875,10 +872,9 @@ function generateSuitesWidget(suitesData) {
           suite.name
         )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
       </div>
-        <div>
-          🖥️
-          <span class="browser-tag">${sanitizeHTML(suite.browser)}</span>
-        </div>
+      <div>🖥️ <span class="browser-tag">${sanitizeHTML(
+        suite.browser
+      )}</span></div>
       <div class="suite-card-body">
         <span class="test-count">${suite.count} test${
           suite.count !== 1 ? "s" : ""
@@ -907,7 +903,6 @@ function generateSuitesWidget(suitesData) {
   </div>
 </div>`;
 }
-
 function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results || []);
@@ -919,8 +914,7 @@ function generateHTML(reportData, trendData = null) {
     duration: 0,
     timestamp: new Date().toISOString(),
   };
-
-  const totalTestsOr1 = runSummary.totalTests || 1; // Avoid division by zero
+  const totalTestsOr1 = runSummary.totalTests || 1;
   const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
   const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
   const skipPercentage = Math.round(
@@ -930,19 +924,15 @@ function generateHTML(reportData, trendData = null) {
     runSummary.totalTests > 0
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
-
   function generateTestCasesHTML() {
-    if (!results || results.length === 0) {
+    if (!results || results.length === 0)
       return '<div class="no-tests">No test results found in this run.</div>';
-    }
-
     return results
       .map((test, index) => {
         const browser = test.browser || "unknown";
         const testFileParts = test.name.split(" > ");
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
-
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
             return "<div class='no-steps'>No steps recorded for this test.</div>";
@@ -954,7 +944,6 @@ function generateHTML(reportData, trendData = null) {
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
-
               return `
           <div class="step-item" style="--depth: ${depth};">
             <div class="step-header ${stepClass}" role="button" aria-expanded="false">
@@ -976,16 +965,13 @@ function generateHTML(reportData, trendData = null) {
               }
               ${
                 step.errorMessage
-                  ? `
-                <div class="step-error">
-                  ${
-                    step.stackTrace
-                      ? `<pre class="stack-trace">${sanitizeHTML(
-                          step.stackTrace
-                        )}</pre>`
-                      : ""
-                  }
-                </div>`
+                  ? `<div class="step-error">${
+                      step.stackTrace
+                        ? `<pre class="stack-trace">${sanitizeHTML(
+                            step.stackTrace
+                          )}</pre>`
+                        : ""
+                    }</div>`
                   : ""
               }
               ${
@@ -1002,6 +988,16 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
+        // Local escapeHTML for screenshot rendering part, ensuring it uses proper entities
+        const escapeHTMLForScreenshots = (str) => {
+          if (str === null || str === undefined) return "";
+          return String(str).replace(
+            /[&<>"']/g,
+            (match) =>
+              ({ "&": "&", "<": "<", ">": ">", '"': '"', "'": "'" }[match] ||
+              match)
+          );
+        };
         return `
       <div class="test-case" data-status="${
         test.status
@@ -1033,106 +1029,72 @@ function generateHTML(reportData, trendData = null) {
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
           ${
             test.error
-              ? `<div class="test-error-summary">
-  ${formatPlaywrightError(test.error)}
-</div>`
+              ? `<div class="test-error-summary">${formatPlaywrightError(
+                  test.error
+                )}</div>`
               : ""
           }
-
           <h4>Steps</h4>
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
-
           ${
             test.stdout && test.stdout.length > 0
-              ? `
-            <div class="console-output-section">
-              <h4>Console Output (stdout)</h4>
-              <pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
-                .map((line) => sanitizeHTML(line))
-                .join("\n")}</pre>
-            </div>`
+              ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
+                  .map((line) => sanitizeHTML(line))
+                  .join("\n")}</pre></div>`
               : ""
           }
           ${
             test.stderr && test.stderr.length > 0
-              ? `
-            <div class="console-output-section">
-              <h4>Console Output (stderr)</h4>
-              <pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
-                .map((line) => sanitizeHTML(line))
-                .join("\n")}</pre>
-            </div>`
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
+                  .map((line) => sanitizeHTML(line))
+                  .join("\n")}</pre></div>`
               : ""
           }
-          
           ${(() => {
+            // Screenshots
             if (!test.screenshots || test.screenshots.length === 0) return "";
-
-            // Define base output directory to resolve relative screenshot paths
-            // This assumes screenshot paths in your JSON are relative to DEFAULT_OUTPUT_DIR
             const baseOutputDir = path.resolve(
               process.cwd(),
               DEFAULT_OUTPUT_DIR
             );
-
-            // Helper to escape HTML special characters (safer than the global sanitizeHTML)
-            const escapeHTML = (str) => {
-              if (str === null || str === undefined) return "";
-              return String(str).replace(/[&<>"']/g, (match) => {
-                const replacements = {
-                  "&": "&",
-                  "<": "<",
-                  ">": ">",
-                  '"': '"',
-                  "'": "'",
-                };
-                return replacements[match] || match;
-              });
-            };
 
             const renderScreenshot = (screenshotPathOrData, index) => {
               let base64ImageData = "";
               const uniqueSuffix = `${Date.now()}-${index}-${Math.random()
                 .toString(36)
                 .substring(2, 7)}`;
-
               try {
                 if (
                   typeof screenshotPathOrData === "string" &&
                   !screenshotPathOrData.startsWith("data:image")
                 ) {
-                  // It's likely a file path, try to read and convert
                   const imagePath = path.resolve(
                     baseOutputDir,
                     screenshotPathOrData
                   );
-
-                  if (fsExistsSync(imagePath)) {
-                    // Use imported fsExistsSync
-                    const imageBuffer = readFileSync(imagePath); // Use imported readFileSync
-                    base64ImageData = imageBuffer.toString("base64");
-                  } else {
+                  if (fsExistsSync(imagePath))
+                    base64ImageData =
+                      readFileSync(imagePath).toString("base64");
+                  else {
                     console.warn(
                       chalk.yellow(
                         `[Reporter] Screenshot file not found: ${imagePath}`
                       )
                     );
-                    return `<div class="attachment-item error" style="padding:10px; color:red;">Screenshot not found: ${escapeHTML(
+                    return `<div class="attachment-item error" style="padding:10px; color:red;">Screenshot not found: ${escapeHTMLForScreenshots(
                       screenshotPathOrData
                     )}</div>`;
                   }
                 } else if (
                   typeof screenshotPathOrData === "string" &&
                   screenshotPathOrData.startsWith("data:image/png;base64,")
-                ) {
-                  // It's already a data URI, extract base64 part
+                )
                   base64ImageData = screenshotPathOrData.substring(
                     "data:image/png;base64,".length
                   );
-                } else if (typeof screenshotPathOrData === "string") {
-                  // Assume it's raw Base64 data if it's a string but not a known path or full data URI
+                else if (typeof screenshotPathOrData === "string")
                   base64ImageData = screenshotPathOrData;
-                } else {
+                else {
                   console.warn(
                     chalk.yellow(
                       `[Reporter] Invalid screenshot data type for item at index ${index}.`
@@ -1140,76 +1102,46 @@ function generateHTML(reportData, trendData = null) {
                   );
                   return `<div class="attachment-item error" style="padding:10px; color:red;">Invalid screenshot data</div>`;
                 }
-
                 if (!base64ImageData) {
-                  // This case should ideally be caught above, but as a fallback:
                   console.warn(
                     chalk.yellow(
-                      `[Reporter] Could not obtain base64 data for screenshot: ${escapeHTML(
+                      `[Reporter] Could not obtain base64 data for screenshot: ${escapeHTMLForScreenshots(
                         String(screenshotPathOrData)
                       )}`
                     )
                   );
-                  return `<div class="attachment-item error" style="padding:10px; color:red;">Error loading screenshot: ${escapeHTML(
+                  return `<div class="attachment-item error" style="padding:10px; color:red;">Error loading screenshot: ${escapeHTMLForScreenshots(
                     String(screenshotPathOrData)
                   )}</div>`;
                 }
-
-                return `
-                        <div class="attachment-item">
-                          <img src="data:image/png;base64,${base64ImageData}" 
-                               alt="Screenshot ${index + 1}" 
-                               loading="lazy"
-                               onerror="this.alt='Error displaying embedded image'; this.style.display='none'; this.parentElement.innerHTML='<p style=\\'color:red;padding:10px;\\'>Error displaying screenshot ${
-                                 index + 1
-                               }.</p>';">
-                          <div class="attachment-info">
-                            <div class="trace-actions">
-                              <a href="data:image/png;base64,${base64ImageData}" 
-                                target="_blank"
-                                class="view-full">
-                                View Full Image
-                              </a>
-                              <a href="data:image/png;base64,${base64ImageData}" 
-                                 target="_blank" 
-                                 download="screenshot-${uniqueSuffix}.png">
-                                Download
-                              </a>
-                            </div>
-                          </div>
-                        </div>`;
+                return `<div class="attachment-item"><img src="data:image/png;base64,${base64ImageData}" alt="Screenshot ${
+                  index + 1
+                }" loading="lazy" onerror="this.alt='Error displaying embedded image'; this.style.display='none'; this.parentElement.innerHTML='<p style=\\'color:red;padding:10px;\\'>Error displaying screenshot ${
+                  index + 1
+                }.</p>';"><div class="attachment-info"><div class="trace-actions"><a href="data:image/png;base64,${base64ImageData}" target="_blank" class="view-full">View Full Image</a><a href="data:image/png;base64,${base64ImageData}" target="_blank" download="screenshot-${uniqueSuffix}.png">Download</a></div></div></div>`;
               } catch (e) {
                 console.error(
                   chalk.red(
-                    `[Reporter] Error processing screenshot ${escapeHTML(
+                    `[Reporter] Error processing screenshot ${escapeHTMLForScreenshots(
                       String(screenshotPathOrData)
                     )}: ${e.message}`
                   )
                 );
-                return `<div class="attachment-item error" style="padding:10px; color:red;">Failed to load screenshot: ${escapeHTML(
+                return `<div class="attachment-item error" style="padding:10px; color:red;">Failed to load screenshot: ${escapeHTMLForScreenshots(
                   String(screenshotPathOrData)
                 )}</div>`;
               }
-            }; // end of renderScreenshot
-
-            return `
-                    <div class="attachments-section">
-                      <h4>Screenshots (${test.screenshots.length})</h4>
-                      <div class="attachments-grid">
-                        ${test.screenshots.map(renderScreenshot).join("")}
-                      </div>
-                    </div>
-                  `;
+            };
+            return `<div class="attachments-section"><h4>Screenshots (${
+              test.screenshots.length
+            })</h4><div class="attachments-grid">${test.screenshots
+              .map(renderScreenshot)
+              .join("")}</div></div>`;
           })()}
-            
           ${
             test.videoPath
-              ? `
-            <div class="attachments-section">
-              <h4>Videos</h4>
-              <div class="attachments-grid">
-                ${(() => {
-                  // Handle both string and array cases
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${(() => {
+                  // Videos
                   const videos = Array.isArray(test.videoPath)
                     ? test.videoPath
                     : [test.videoPath];
@@ -1220,7 +1152,6 @@ function generateHTML(reportData, trendData = null) {
                     mov: "video/quicktime",
                     avi: "video/x-msvideo",
                   };
-
                   return videos
                     .map((video, index) => {
                       const videoUrl =
@@ -1229,82 +1160,53 @@ function generateHTML(reportData, trendData = null) {
                         typeof video === "object"
                           ? video.name || `Video ${index + 1}`
                           : `Video ${index + 1}`;
-                      const fileExtension = videoUrl
+                      const fileExtension = String(videoUrl)
                         .split(".")
                         .pop()
                         .toLowerCase();
                       const mimeType = mimeTypes[fileExtension] || "video/mp4";
-
-                      return `
-                      <div class="attachment-item">
-                        <video controls width="100%" height="auto" title="${videoName}">
-                          <source src="${videoUrl}" type="${mimeType}">
-                          Your browser does not support the video tag.
-                        </video>
-                        <div class="attachment-info">
-                          <div class="trace-actions">
-                          <a href="${videoUrl}" target="_blank" download="${videoName}.${fileExtension}">
-                            Download
-                          </a>
-                          </div>
-                        </div>
-                      </div>
-                    `;
+                      return `<div class="attachment-item"><video controls width="100%" height="auto" title="${sanitizeHTML(
+                        videoName
+                      )}"><source src="${sanitizeHTML(
+                        videoUrl
+                      )}" type="${mimeType}">Your browser does not support the video tag.</video><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
+                        videoUrl
+                      )}" target="_blank" download="${sanitizeHTML(
+                        videoName
+                      )}.${fileExtension}">Download</a></div></div></div>`;
                     })
                     .join("");
-                })()}
-              </div>
-            </div>
-          `
+                })()}</div></div>`
               : ""
           }
-          
           ${
             test.tracePath
-              ? `
-  <div class="attachments-section">
-    <h4>Trace Files</h4>
-    <div class="attachments-grid">
-      ${(() => {
-        // Handle both string and array cases
-        const traces = Array.isArray(test.tracePath)
-          ? test.tracePath
-          : [test.tracePath];
-
-        return traces
-          .map((trace, index) => {
-            const traceUrl =
-              typeof trace === "object" ? trace.url || "" : trace;
-            const traceName =
-              typeof trace === "object"
-                ? trace.name || `Trace ${index + 1}`
-                : `Trace ${index + 1}`;
-            const traceFileName = traceUrl.split("/").pop();
-
-            return `
-            <div class="attachment-item">
-              <div class="trace-preview">
-                <span class="trace-icon">📄</span>
-                <span class="trace-name">${traceName}</span>
-              </div>
-              <div class="attachment-info">
-                <div class="trace-actions">
-                  <a href="${traceUrl}" target="_blank" download="${traceFileName}" class="download-trace">
-                    Download
-                  </a>
-                </div>
-              </div>
-            </div>
-          `;
-          })
-          .join("");
-      })()}
-    </div>
-  </div>
-`
+              ? `<div class="attachments-section"><h4>Trace Files</h4><div class="attachments-grid">${(() => {
+                  // Traces
+                  const traces = Array.isArray(test.tracePath)
+                    ? test.tracePath
+                    : [test.tracePath];
+                  return traces
+                    .map((trace, index) => {
+                      const traceUrl =
+                        typeof trace === "object" ? trace.url || "" : trace;
+                      const traceName =
+                        typeof trace === "object"
+                          ? trace.name || `Trace ${index + 1}`
+                          : `Trace ${index + 1}`;
+                      const traceFileName = String(traceUrl).split("/").pop();
+                      return `<div class="attachment-item"><div class="trace-preview"><span class="trace-icon">📄</span><span class="trace-name">${sanitizeHTML(
+                        traceName
+                      )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
+                        traceUrl
+                      )}" target="_blank" download="${sanitizeHTML(
+                        traceFileName
+                      )}" class="download-trace">Download</a></div></div></div>`;
+                    })
+                    .join("");
+                })()}</div></div>`
               : ""
           }
-
           ${
             test.codeSnippet
               ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
@@ -1317,7 +1219,6 @@ function generateHTML(reportData, trendData = null) {
       })
       .join("");
   }
-
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -1329,30 +1230,17 @@ function generateHTML(reportData, trendData = null) {
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <title>Playwright Pulse Report</title>
     <style>
-        :root {
-          --primary-color: #3f51b5; /* Indigo */
-          --secondary-color: #ff4081; /* Pink */
-          --accent-color: #673ab7; /* Deep Purple */
-          --accent-color-alt: #FF9800; /* Orange for duration charts */
-          --success-color: #4CAF50; /* Green */
-          --danger-color: #F44336; /* Red */
-          --warning-color: #FFC107; /* Amber */
-          --info-color: #2196F3; /* Blue */
-          --light-gray-color: #f5f5f5;
-          --medium-gray-color: #e0e0e0;
-          --dark-gray-color: #757575;
-          --text-color: #333;
-          --text-color-secondary: #555;
-          --border-color: #ddd;
-          --background-color: #f8f9fa; 
-          --card-background-color: #fff;
-          --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          --border-radius: 8px;
-          --box-shadow: 0 5px 15px rgba(0,0,0,0.08); 
-          --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05);
-          --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
+        :root { 
+          --primary-color: #3f51b5; --secondary-color: #ff4081; --accent-color: #673ab7; --accent-color-alt: #FF9800;
+          --success-color: #4CAF50; --danger-color: #F44336; --warning-color: #FFC107; --info-color: #2196F3;
+          --light-gray-color: #f5f5f5; --medium-gray-color: #e0e0e0; --dark-gray-color: #757575;
+          --text-color: #333; --text-color-secondary: #555; --border-color: #ddd; --background-color: #f8f9fa;
+          --card-background-color: #fff; --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          --border-radius: 8px; --box-shadow: 0 5px 15px rgba(0,0,0,0.08); --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05); --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
         }
-
+        .amcharts-pie-container, .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
+        .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
+        
         /* General Highcharts styling */
         .highcharts-background { fill: transparent; }
         .highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
@@ -1360,60 +1248,23 @@ function generateHTML(reportData, trendData = null) {
         .highcharts-axis-title { fill: var(--text-color) !important; }
         .highcharts-tooltip > span { background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }
         
-        body {
-          font-family: var(--font-family);
-          margin: 0;
-          background-color: var(--background-color);
-          color: var(--text-color);
-          line-height: 1.65; 
-          font-size: 16px;
-        }
-        
-        .container {
-          max-width: 1600px; 
-          padding: 30px; 
-          border-radius: var(--border-radius);
-          box-shadow: var(--box-shadow);
-          background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec);
-        }
-        
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          padding-bottom: 25px;
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: 25px;
-        }
+        body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
+        .container { max-width: 1600px; padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec); }
+        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
         .header-title { display: flex; align-items: center; gap: 15px; }
         .header h1 { margin: 0; font-size: 1.85em; font-weight: 600; color: var(--primary-color); }
         #report-logo { height: 40px; width: 40px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
         .run-info { font-size: 0.9em; text-align: right; color: var(--text-color-secondary); line-height:1.5;}
         .run-info strong { color: var(--text-color); }
-        
         .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 30px; overflow-x: auto; }
-        .tab-button {
-          padding: 15px 25px; background: none; border: none; border-bottom: 3px solid transparent;
-          cursor: pointer; font-size: 1.1em; font-weight: 600; color: black;
-          transition: color 0.2s ease, border-color 0.2s ease; white-space: nowrap;
-        }
+        .tab-button { padding: 15px 25px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 1.1em; font-weight: 600; color: black; transition: color 0.2s ease, border-color 0.2s ease; white-space: nowrap; }
         .tab-button:hover { color: var(--accent-color); }
         .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
         .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); 
-          gap: 22px; margin-bottom: 35px;
-        }
-        .summary-card {
-          background-color: var(--card-background-color); border: 1px solid var(--border-color);
-          border-radius: var(--border-radius); padding: 22px; text-align: center;
-          box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px; margin-bottom: 35px; }
+        .summary-card { background-color: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; text-align: center; box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .summary-card:hover { transform: translateY(-5px); box-shadow: var(--box-shadow); }
         .summary-card h3 { margin: 0 0 10px; font-size: 1.05em; font-weight: 500; color: var(--text-color-secondary); }
         .summary-card .value { font-size: 2.4em; font-weight: 600; margin-bottom: 8px; }
@@ -1421,43 +1272,19 @@ function generateHTML(reportData, trendData = null) {
         .status-passed .value, .stat-passed svg { color: var(--success-color); }
         .status-failed .value, .stat-failed svg { color: var(--danger-color); }
         .status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
-        
-        .dashboard-bottom-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
-            gap: 28px; align-items: stretch; 
-        }
-        .pie-chart-wrapper, .suites-widget, .trend-chart {
-            background-color: var(--card-background-color); padding: 28px; 
-            border-radius: var(--border-radius); box-shadow: var(--box-shadow-light);
-            display: flex; flex-direction: column; 
-        }
-
-        .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { 
-            text-align: center; margin-top: 0; margin-bottom: 25px; 
-            font-size: 1.25em; font-weight: 600; color: var(--text-color);
-        }
-         .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { /* For Highcharts containers */
-            flex-grow: 1;
-            min-height: 250px; /* Ensure charts have some min height */
-        }
-        
-        .chart-tooltip { /* This class was for D3, Highcharts has its own tooltip styling via JS/SVG */
-          /* Basic styling for Highcharts HTML tooltips can be done via .highcharts-tooltip span */
-        }
+        .dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: stretch; }
+        .pie-chart-wrapper, .suites-widget, .trend-chart { background-color: var(--card-background-color); padding: 28px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+        .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color); }
+        .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { flex-grow: 1; min-height: 250px; }
         .status-badge-small-tooltip { padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }
         .status-badge-small-tooltip.status-passed { background-color: var(--success-color); }
         .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
         .status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
         .status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
-        
         .suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
         .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .suite-card {
-          border: 1px solid var(--border-color); border-left-width: 5px;
-          border-radius: calc(var(--border-radius) / 1.5); padding: 20px;
-          background-color: var(--card-background-color); transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
-        }
+        .suite-card { border: 1px solid var(--border-color); border-left-width: 5px; border-radius: calc(var(--border-radius) / 1.5); padding: 20px; background-color: var(--card-background-color); transition: box-shadow 0.2s ease, border-left-color 0.2s ease; }
         .suite-card:hover { box-shadow: var(--box-shadow); }
         .suite-card.status-passed { border-left-color: var(--success-color); }
         .suite-card.status-failed { border-left-color: var(--danger-color); }
@@ -1469,67 +1296,36 @@ function generateHTML(reportData, trendData = null) {
         .suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
         .suite-stats span { display: flex; align-items: center; gap: 6px; }
         .suite-stats svg { vertical-align: middle; font-size: 1.15em; }
-
-        .filters {
-          display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px;
-          padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius);
-          box-shadow: var(--box-shadow-inset); border-color: black; border-style: groove;
-        }
-        .filters input, .filters select, .filters button {
-          padding: 11px 15px; border: 1px solid var(--border-color);
-          border-radius: 6px; font-size: 1em;
-        }
+        .filters { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px; padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-inset); border-color: black; border-style: groove; }
+        .filters input, .filters select, .filters button { padding: 11px 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1em; }
         .filters input { flex-grow: 1; min-width: 240px;}
         .filters select {min-width: 180px;}
         .filters button { background-color: var(--primary-color); color: white; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; border: none; }
         .filters button:hover { background-color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.15);}
-
-        .test-case {
-          margin-bottom: 15px; border: 1px solid var(--border-color);
-          border-radius: var(--border-radius); background-color: var(--card-background-color);
-          box-shadow: var(--box-shadow-light); overflow: hidden; 
-        }
-        .test-case-header {
-          padding: 10px 15px; background-color: #fff; cursor: pointer;
-          display: flex; justify-content: space-between; align-items: center;
-          border-bottom: 1px solid transparent; 
-          transition: background-color 0.2s ease;
-        }
+        .test-case { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--card-background-color); box-shadow: var(--box-shadow-light); overflow: hidden; }
+        .test-case-header { padding: 10px 15px; background-color: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid transparent; transition: background-color 0.2s ease; }
         .test-case-header:hover { background-color: #f4f6f8; } 
         .test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: #f9fafb; }
-        
         .test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
         .test-case-title { font-weight: 600; color: var(--text-color); font-size: 1em; }
         .test-case-browser { font-size: 0.9em; color: var(--text-color-secondary); }
         .test-case-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: var(--text-color-secondary); flex-shrink: 0; }
         .test-duration { background-color: var(--light-gray-color); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;}
-        
-        .status-badge {
-          padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase;
-          min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+        .status-badge { padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .status-badge.status-passed { background-color: var(--success-color); }
         .status-badge.status-failed { background-color: var(--danger-color); }
         .status-badge.status-skipped { background-color: var(--warning-color); }
         .status-badge.status-unknown { background-color: var(--dark-gray-color); }
-        
         .tag { display: inline-block; background: linear-gradient( #fff, #333, #000); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; font-weight: 400; }
-        
         .test-case-content { display: none; padding: 20px; border-top: 1px solid var(--border-color); background-color: #fcfdff; }
         .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
         .test-case-content p { margin-bottom: 10px; font-size: 1em; }
         .test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(244,67,54,0.05); border: 1px solid rgba(244,67,54,0.2); border-left: 4px solid var(--danger-color); border-radius: 4px; }
         .test-error-summary h4 { color: var(--danger-color); margin-top:0;}
         .test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
-
         .steps-list { margin: 18px 0; }
         .step-item { margin-bottom: 8px; padding-left: calc(var(--depth, 0) * 28px); } 
-        .step-header {
-          display: flex; align-items: center; cursor: pointer;
-          padding: 10px 14px; border-radius: 6px; background-color: #fff;
-          border: 1px solid var(--light-gray-color); 
-          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
+        .step-header { display: flex; align-items: center; cursor: pointer; padding: 10px 14px; border-radius: 6px; background-color: #fff; border: 1px solid var(--light-gray-color); transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
         .step-header:hover { background-color: #f0f2f5; border-color: var(--medium-gray-color); box-shadow: var(--box-shadow-inset); }
         .step-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1em; }
         .step-title { flex: 1; font-size: 1em; }
@@ -1541,178 +1337,55 @@ function generateHTML(reportData, trendData = null) {
         .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 
         .step-hook .step-title { font-style: italic; color: var(--info-color)}
         .nested-steps { margin-top: 12px; }
-
         .attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
         .attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }
         .attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
-        .attachment-item {
-          border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff;
-          box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column;
-          transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-        }
+        .attachment-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff; box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
         .attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
-        .attachment-item img {
-          width: 100%; height: 180px; object-fit: cover; display: block;
-          border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease;
-        }
+        .attachment-item img { width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
         .attachment-item a:hover img { opacity: 0.85; }
-        .attachment-caption {
-          padding: 12px 15px; font-size: 0.9em; text-align: center;
-          color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color);
-        }
+        .attachment-caption { padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }
         .video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
         .video-item a:hover, .trace-item a:hover { text-decoration: underline; }
         .code-section pre { background-color: #2d2d2d; color: #f0f0f0; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
-
         .trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
-        /* Removed D3 specific .chart-axis, .main-chart-title, .chart-line.* rules */
-        /* Highcharts styles its elements with classes like .highcharts-axis, .highcharts-title etc. */
-        
         .test-history-container h2.tab-main-title { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
         .test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
-        .test-history-card {
-            background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius);
-            padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column;
-        }
+        .test-history-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
         .test-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--light-gray-color); }
-        .test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .test-history-header p { font-weight: 500 }
+        .test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* This was h3, changed to p for consistency with user file */
+        .test-history-header p { font-weight: 500 } /* Added this */
         .test-history-trend { margin-bottom: 20px; min-height: 110px; }
-        .test-history-trend div[id^="testHistoryChart-"] { /* Highcharts container for history */
-            display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; /* Match JS config */
-        }
-        /* .test-history-trend .small-axis text {font-size: 11px;} Removed D3 specific */
+        .test-history-trend div[id^="testHistoryChart-"] { display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; }
         .test-history-details-collapsible summary { cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }
         .test-history-details-collapsible summary:hover {text-decoration: underline;}
         .test-history-details table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
         .test-history-details th, .test-history-details td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--light-gray-color); }
         .test-history-details th { background-color: var(--light-gray-color); font-weight: 600; }
-        .status-badge-small { 
-            padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; 
-            color: white; text-transform: uppercase; display: inline-block;
-        }
+        .status-badge-small { padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; display: inline-block; }
         .status-badge-small.status-passed { background-color: var(--success-color); }
         .status-badge-small.status-failed { background-color: var(--danger-color); }
         .status-badge-small.status-skipped { background-color: var(--warning-color); }
         .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
-
-        .no-data, .no-tests, .no-steps, .no-data-chart { 
-          padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em;
-          background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0;
-          border: 1px dashed var(--medium-gray-color);
-        }
+        .no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
         .no-data-chart {font-size: 0.95em; padding: 18px;}
-        
         #test-ai iframe { border: 1px solid var(--border-color); width: 100%; height: 85vh; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); }
         #test-ai p {margin-bottom: 18px; font-size: 1em; color: var(--text-color-secondary);}
-        pre .stdout-log { background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
-        pre .stderr-log { background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
-        
-        .trace-preview {
-  padding: 1rem;
-  text-align: center;
-  background: #f5f5f5;
-  border-bottom: 1px solid #e1e1e1;
-}
-
-.trace-icon {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.trace-name {
-  word-break: break-word;
-  font-size: 0.9rem;
-}
-
-.trace-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.trace-actions a {
-  flex: 1;
-  text-align: center;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-  border-radius: 4px;
-  text-decoration: none;
-  background: cornflowerblue;
-  color: aliceblue;
-}
-
-.view-trace {
-  background: #3182ce;
-  color: white;
-}
-
-.view-trace:hover {
-  background: #2c5282;
-}
-
-.download-trace {
-  background: #e2e8f0;
-  color: #2d3748;
-}
-
-.download-trace:hover {
-  background: #cbd5e0;
-}
-
-.filters button.clear-filters-btn {
-    background-color: var(--medium-gray-color); /* Or any other suitable color */
-    color: var(--text-color);
-    /* Add other styling as per your .filters button style if needed */
-}
-
-.filters button.clear-filters-btn:hover {
-    background-color: var(--dark-gray-color); /* Darker on hover */
-    color: #fff;
-}
-        @media (max-width: 1200px) {
-            .trend-charts-row { grid-template-columns: 1fr; } 
-        }
-        @media (max-width: 992px) { 
-            .dashboard-bottom-row { grid-template-columns: 1fr; }
-            .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; }
-            .filters input { min-width: 180px; }
-            .filters select { min-width: 150px; }
-        }
-        @media (max-width: 768px) { 
-          body { font-size: 15px; }
-          .container { margin: 10px; padding: 20px; } 
-          .header { flex-direction: column; align-items: flex-start; gap: 15px; }
-          .header h1 { font-size: 1.6em; }
-          .run-info { text-align: left; font-size:0.9em; }
-          .tabs { margin-bottom: 25px;}
-          .tab-button { padding: 12px 20px; font-size: 1.05em;}
-          .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;}
-          .summary-card .value {font-size: 2em;}
-          .summary-card h3 {font-size: 0.95em;}
-          .filters { flex-direction: column; padding: 18px; gap: 12px;}
-          .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} 
-          .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
-          .test-case-summary {gap: 10px;}
-          .test-case-title {font-size: 1.05em;}
-          .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;}
-          .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;}
-          .test-history-grid {grid-template-columns: 1fr;}
-          .pie-chart-wrapper {min-height: auto;} 
-        }
-        @media (max-width: 480px) { 
-            body {font-size: 14px;}
-            .container {padding: 15px;}
-            .header h1 {font-size: 1.4em;}
-            #report-logo { height: 35px; width: 35px; }
-            .tab-button {padding: 10px 15px; font-size: 1em;}
-            .summary-card .value {font-size: 1.8em;}
-            .attachments-grid {grid-template-columns: 1fr;}
-            .step-item {padding-left: calc(var(--depth, 0) * 18px);} 
-            .test-case-content, .step-details {padding: 15px;}
-            .trend-charts-row {gap: 20px;}
-            .trend-chart {padding: 20px;}
-        }
+        .trace-preview { padding: 1rem; text-align: center; background: #f5f5f5; border-bottom: 1px solid #e1e1e1; }
+        .trace-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+        .trace-name { word-break: break-word; font-size: 0.9rem; }
+        .trace-actions { display: flex; gap: 0.5rem; }
+        .trace-actions a { flex: 1; text-align: center; padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: 4px; text-decoration: none; background: cornflowerblue; color: aliceblue; }
+        .view-trace { background: #3182ce; color: white; }
+        .view-trace:hover { background: #2c5282; }
+        .download-trace { background: #e2e8f0; color: #2d3748; }
+        .download-trace:hover { background: #cbd5e0; }
+        .filters button.clear-filters-btn { background-color: var(--medium-gray-color); color: var(--text-color); }
+        .filters button.clear-filters-btn:hover { background-color: var(--dark-gray-color); color: #fff; }
+        @media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
+        @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
+        @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} }
+        @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 35px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} }
     </style>
 </head>
 <body>
@@ -1722,113 +1395,81 @@ function generateHTML(reportData, trendData = null) {
                 <img id="report-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMNCA3bDggNSA4LTUtOC01eiIgZmlsbD0iIzNmNTFiNSIvPjxwYXRoIGQ9Ik0xMiA2TDQgMTFsOCA1IDgtNS04LTV6IiBmaWxsPSIjNDI4NWY0Ii8+PHBhdGggZD0iTTEyIDEwbC04IDUgOCA1IDgtNS04LTV6IiBmaWxsPSIjM2Q1NWI0Ii8+PC9zdmc+" alt="Report Logo">
                 <h1>Playwright Pulse Report</h1>
             </div>
-            <div class="run-info">
-                <strong>Run Date:</strong> ${formatDate(
-                  runSummary.timestamp
-                )}<br>
-                <strong>Total Duration:</strong> ${formatDuration(
-                  runSummary.duration
-                )}
-            </div>
+            <div class="run-info"><strong>Run Date:</strong> ${formatDate(
+              runSummary.timestamp
+            )}<br><strong>Total Duration:</strong> ${formatDuration(
+    runSummary.duration
+  )}</div>
         </header>
-        
         <div class="tabs">
             <button class="tab-button active" data-tab="dashboard">Dashboard</button>
             <button class="tab-button" data-tab="test-runs">Test Run Summary</button>
             <button class="tab-button" data-tab="test-history">Test History</button>
             <button class="tab-button" data-tab="test-ai">AI Analysis</button>
         </div>
-        
         <div id="dashboard" class="tab-content active">
             <div class="dashboard-grid">
-                <div class="summary-card">
-                    <h3>Total Tests</h3><div class="value">${
-                      runSummary.totalTests
-                    }</div>
-                </div>
-                <div class="summary-card status-passed">
-                    <h3>Passed</h3><div class="value">${runSummary.passed}</div>
-                    <div class="trend-percentage">${passPercentage}%</div>
-                </div>
-                <div class="summary-card status-failed">
-                    <h3>Failed</h3><div class="value">${runSummary.failed}</div>
-                    <div class="trend-percentage">${failPercentage}%</div>
-                </div>
-                <div class="summary-card status-skipped">
-                    <h3>Skipped</h3><div class="value">${
-                      runSummary.skipped || 0
-                    }</div>
-                    <div class="trend-percentage">${skipPercentage}%</div>
-                </div>
-                <div class="summary-card">
-                    <h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div>
-                </div>
-                 <div class="summary-card">
-                    <h3>Run Duration</h3><div class="value">${formatDuration(
-                      runSummary.duration
-                    )}</div>
-                </div>
+                <div class="summary-card"><h3>Total Tests</h3><div class="value">${
+                  runSummary.totalTests
+                }</div></div>
+                <div class="summary-card status-passed"><h3>Passed</h3><div class="value">${
+                  runSummary.passed
+                }</div><div class="trend-percentage">${passPercentage}%</div></div>
+                <div class="summary-card status-failed"><h3>Failed</h3><div class="value">${
+                  runSummary.failed
+                }</div><div class="trend-percentage">${failPercentage}%</div></div>
+                <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
+                  runSummary.skipped || 0
+                }</div><div class="trend-percentage">${skipPercentage}%</div></div>
+                <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
+                <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
+                  runSummary.duration
+                )}</div></div>
             </div>
             <div class="dashboard-bottom-row">
                 ${generatePieChart(
-                  // Changed from generatePieChartD3
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
                     { label: "Skipped", value: runSummary.skipped || 0 },
                   ],
-                  400, // Default width
-                  390 // Default height (adjusted for legend + title)
+                  400,
+                  390
                 )} 
                 ${generateSuitesWidget(suitesData)}
             </div>
         </div>
-        
         <div id="test-runs" class="tab-content">
             <div class="filters">
-    <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-    <select id="filter-status">
-        <option value="">All Statuses</option>
-        <option value="passed">Passed</option>
-        <option value="failed">Failed</option>
-        <option value="skipped">Skipped</option>
-    </select>
-    <select id="filter-browser">
-        <option value="">All Browsers</option>
-        {/* Dynamically generated options will be here */}
-        ${Array.from(
-          new Set((results || []).map((test) => test.browser || "unknown"))
-        )
-          .map(
-            (browser) =>
-              `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
-                browser
-              )}</option>`
-          )
-          .join("")}
-    </select>
-    <button id="expand-all-tests">Expand All</button>
-    <button id="collapse-all-tests">Collapse All</button>
-    <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
-</div>
-            <div class="test-cases-list">
-                ${generateTestCasesHTML()}
+                <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
+                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
+                <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
+                  new Set(
+                    (results || []).map((test) => test.browser || "unknown")
+                  )
+                )
+                  .map(
+                    (browser) =>
+                      `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
+                        browser
+                      )}</option>`
+                  )
+                  .join("")}</select>
+                <button id="expand-all-tests">Expand All</button> <button id="collapse-all-tests">Collapse All</button> <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
+            <div class="test-cases-list">${generateTestCasesHTML()}</div>
         </div>
-
         <div id="test-history" class="tab-content">
           <h2 class="tab-main-title">Execution Trends</h2>
           <div class="trend-charts-row">
-            <div class="trend-chart">
-              <h3 class="chart-title-header">Test Volume & Outcome Trends</h3>
+            <div class="trend-chart"><h3 class="chart-title-header">Test Volume & Outcome Trends</h3>
               ${
                 trendData && trendData.overall && trendData.overall.length > 0
                   ? generateTestTrendsChart(trendData)
                   : '<div class="no-data">Overall trend data not available for test counts.</div>'
               }
             </div>
-            <div class="trend-chart">
-              <h3 class="chart-title-header">Execution Duration Trends</h3>
+            <div class="trend-chart"><h3 class="chart-title-header">Execution Duration Trends</h3>
               ${
                 trendData && trendData.overall && trendData.overall.length > 0
                   ? generateDurationTrendChart(trendData)
@@ -1845,69 +1486,26 @@ function generateHTML(reportData, trendData = null) {
               : '<div class="no-data">Individual test history data not available.</div>'
           }
         </div>
-
         <div id="test-ai" class="tab-content">
-             <iframe 
-            src="https://ai-test-analyser.netlify.app/" 
-            width="100%" 
-            height="100%"
-            frameborder="0"
-            allowfullscreen 
-            style="border: none; height: 100vh;">
-          </iframe>
+             <iframe data-src="https://ai-test-analyser.netlify.app/" width="100%" height="100%" frameborder="0" allowfullscreen class="lazy-load-iframe" title="AI Test Analyser" style="border: none; height: 100vh;"></iframe>
         </div>
-        <footer style="
-  padding: 0.5rem;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-">
-  <div style="
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #333;
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  ">
-    <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
-    <span>Created by</span>
-    <a href="https://github.com/Arghajit47"
-       target="_blank"
-       rel="noopener noreferrer"
-       style="
-         color: #7737BF;
-         font-weight: 700;
-         font-style: italic;
-         text-decoration: none;
-         transition: all 0.2s ease;
-       "
-       onmouseover="this.style.color='#BF5C37'"
-       onmouseout="this.style.color='#7737BF'">
-      Arghajit Singha
-    </a>
-  </div>
-  <div style="
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: #666;
-  ">
-    Crafted with precision
-  </div>
-</footer>
+        <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
+                <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
+                <span>Created by</span>
+                <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
+            </div>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">Crafted with precision</div>
+        </footer>
     </div>
-    
-    
     <script>
     // Ensure formatDuration is globally available
-    if (typeof formatDuration === 'undefined') {
-        function formatDuration(ms) {
-            if (ms === undefined || ms === null || ms < 0) return "0.0s";
-            return (ms / 1000).toFixed(1) + "s";
+    if (typeof formatDuration === 'undefined') { 
+        function formatDuration(ms) { 
+            if (ms === undefined || ms === null || ms < 0) return "0.0s"; 
+            return (ms / 1000).toFixed(1) + "s"; 
         }
     }
-
     function initializeReportInteractivity() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -1918,82 +1516,64 @@ function generateHTML(reportData, trendData = null) {
                 button.classList.add('active');
                 const tabId = button.getAttribute('data-tab');
                 const activeContent = document.getElementById(tabId);
-                if (activeContent) activeContent.classList.add('active');
+                if (activeContent) {
+                    activeContent.classList.add('active');
+                    // Check if IntersectionObserver is already handling elements in this tab
+                    // For simplicity, we assume if an element is observed, it will be handled when it becomes visible.
+                    // If IntersectionObserver is not supported, already-visible elements would have been loaded by fallback.
+                }
             });
         });
-
         // --- Test Run Summary Filters ---
         const nameFilter = document.getElementById('filter-name');
         const statusFilter = document.getElementById('filter-status');
         const browserFilter = document.getElementById('filter-browser');
-        const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); // Get the new button
-
-        function filterTestCases() {
+        const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); 
+        function filterTestCases() { 
             const nameValue = nameFilter ? nameFilter.value.toLowerCase() : "";
             const statusValue = statusFilter ? statusFilter.value : "";
             const browserValue = browserFilter ? browserFilter.value : "";
-            
             document.querySelectorAll('#test-runs .test-case').forEach(testCaseElement => {
                 const titleElement = testCaseElement.querySelector('.test-case-title');
                 const fullTestName = titleElement ? titleElement.getAttribute('title').toLowerCase() : "";
                 const status = testCaseElement.getAttribute('data-status');
                 const browser = testCaseElement.getAttribute('data-browser');
-                
                 const nameMatch = fullTestName.includes(nameValue);
                 const statusMatch = !statusValue || status === statusValue;
                 const browserMatch = !browserValue || browser === browserValue;
-                
                 testCaseElement.style.display = (nameMatch && statusMatch && browserMatch) ? '' : 'none';
             });
         }
         if(nameFilter) nameFilter.addEventListener('input', filterTestCases);
         if(statusFilter) statusFilter.addEventListener('change', filterTestCases);
         if(browserFilter) browserFilter.addEventListener('change', filterTestCases);
-
-        // Event listener for clearing Test Run Summary filters
-        if (clearRunSummaryFiltersBtn) {
-            clearRunSummaryFiltersBtn.addEventListener('click', () => {
-                if (nameFilter) nameFilter.value = '';
-                if (statusFilter) statusFilter.value = '';
-                if (browserFilter) browserFilter.value = '';
-                filterTestCases(); // Re-apply filters (which will show all)
-            });
-        }
-
+        if(clearRunSummaryFiltersBtn) clearRunSummaryFiltersBtn.addEventListener('click', () => {
+            if(nameFilter) nameFilter.value = ''; if(statusFilter) statusFilter.value = ''; if(browserFilter) browserFilter.value = '';
+            filterTestCases();
+        });
         // --- Test History Filters ---
         const historyNameFilter = document.getElementById('history-filter-name');
         const historyStatusFilter = document.getElementById('history-filter-status');
-        const clearHistoryFiltersBtn = document.getElementById('clear-history-filters'); // Get the new button
-
-
-        function filterTestHistoryCards() {
+        const clearHistoryFiltersBtn = document.getElementById('clear-history-filters'); 
+        function filterTestHistoryCards() { 
             const nameValue = historyNameFilter ? historyNameFilter.value.toLowerCase() : "";
             const statusValue = historyStatusFilter ? historyStatusFilter.value : "";
-
             document.querySelectorAll('.test-history-card').forEach(card => {
                 const testTitle = card.getAttribute('data-test-name').toLowerCase(); 
                 const latestStatus = card.getAttribute('data-latest-status');
-
                 const nameMatch = testTitle.includes(nameValue);
                 const statusMatch = !statusValue || latestStatus === statusValue;
-
                 card.style.display = (nameMatch && statusMatch) ? '' : 'none';
             });
         }
         if(historyNameFilter) historyNameFilter.addEventListener('input', filterTestHistoryCards);
         if(historyStatusFilter) historyStatusFilter.addEventListener('change', filterTestHistoryCards);
-
-        // Event listener for clearing Test History filters
-        if (clearHistoryFiltersBtn) {
-            clearHistoryFiltersBtn.addEventListener('click', () => {
-                if (historyNameFilter) historyNameFilter.value = '';
-                if (historyStatusFilter) historyStatusFilter.value = '';
-                filterTestHistoryCards(); // Re-apply filters (which will show all)
-            });
-        }
-
-        // --- Expand/Collapse and Toggle Details Logic (remains the same) ---
-        function toggleElementDetails(headerElement, contentSelector) {
+        if(clearHistoryFiltersBtn) clearHistoryFiltersBtn.addEventListener('click', () => {
+            if(historyNameFilter) historyNameFilter.value = ''; if(historyStatusFilter) historyStatusFilter.value = '';
+            filterTestHistoryCards();
+        });
+        // --- Expand/Collapse and Toggle Details Logic ---
+        function toggleElementDetails(headerElement, contentSelector) { 
             let contentElement;
             if (headerElement.classList.contains('test-case-header')) {
                 contentElement = headerElement.parentElement.querySelector('.test-case-content');
@@ -2003,33 +1583,86 @@ function generateHTML(reportData, trendData = null) {
                      contentElement = null;
                 }
             }
-
             if (contentElement) {
                  const isExpanded = contentElement.style.display === 'block';
                  contentElement.style.display = isExpanded ? 'none' : 'block';
                  headerElement.setAttribute('aria-expanded', String(!isExpanded));
             }
         }
-        
         document.querySelectorAll('#test-runs .test-case-header').forEach(header => {
             header.addEventListener('click', () => toggleElementDetails(header)); 
         });
         document.querySelectorAll('#test-runs .step-header').forEach(header => {
             header.addEventListener('click', () => toggleElementDetails(header, '.step-details'));
         });
-
         const expandAllBtn = document.getElementById('expand-all-tests');
         const collapseAllBtn = document.getElementById('collapse-all-tests');
-
         function setAllTestRunDetailsVisibility(displayMode, ariaState) {
             document.querySelectorAll('#test-runs .test-case-content').forEach(el => el.style.display = displayMode);
             document.querySelectorAll('#test-runs .step-details').forEach(el => el.style.display = displayMode);
             document.querySelectorAll('#test-runs .test-case-header[aria-expanded]').forEach(el => el.setAttribute('aria-expanded', ariaState));
             document.querySelectorAll('#test-runs .step-header[aria-expanded]').forEach(el => el.setAttribute('aria-expanded', ariaState));
         }
-        
         if (expandAllBtn) expandAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('block', 'true'));
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
+        // --- Intersection Observer for Lazy Loading ---
+        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe');
+        if ('IntersectionObserver' in window) {
+            let lazyObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const element = entry.target;
+                        if (element.classList.contains('lazy-load-iframe')) {
+                            if (element.dataset.src) {
+                                element.src = element.dataset.src;
+                                element.removeAttribute('data-src'); // Optional: remove data-src after loading
+                                console.log('Lazy loaded iframe:', element.title || 'Untitled Iframe');
+                            }
+                        } else if (element.classList.contains('lazy-load-chart')) {
+                            const renderFunctionName = element.dataset.renderFunctionName;
+                            if (renderFunctionName && typeof window[renderFunctionName] === 'function') {
+                                try {
+                                    console.log('Lazy loading chart with function:', renderFunctionName);
+                                    window[renderFunctionName](); // Call the render function
+                                } catch (e) {
+                                    console.error(\`Error lazy-loading chart \${element.id} using \${renderFunctionName}:\`, e);
+                                    element.innerHTML = '<div class="no-data-chart">Error lazy-loading chart.</div>';
+                                }
+                            } else {
+                                console.warn(\`Render function \${renderFunctionName} not found or not a function for chart:\`, element.id);
+                            }
+                        }
+                        observer.unobserve(element); // Important: stop observing once loaded
+                    }
+                });
+            }, { 
+                rootMargin: "0px 0px 200px 0px" // Start loading when element is 200px from viewport bottom
+            });
+
+            lazyLoadElements.forEach(el => {
+                lazyObserver.observe(el);
+            });
+        } else { // Fallback for browsers without IntersectionObserver
+            console.warn("IntersectionObserver not supported. Loading all items immediately.");
+            lazyLoadElements.forEach(element => {
+                if (element.classList.contains('lazy-load-iframe')) {
+                     if (element.dataset.src) {
+                        element.src = element.dataset.src;
+                        element.removeAttribute('data-src');
+                    }
+                } else if (element.classList.contains('lazy-load-chart')) {
+                    const renderFunctionName = element.dataset.renderFunctionName;
+                    if (renderFunctionName && typeof window[renderFunctionName] === 'function') {
+                         try {
+                            window[renderFunctionName]();
+                        } catch (e) {
+                            console.error(\`Error loading chart (fallback) \${element.id} using \${renderFunctionName}:\`, e);
+                            element.innerHTML = '<div class="no-data-chart">Error loading chart (fallback).</div>';
+                        }
+                    }
+                }
+            });
+        }
     }
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
 </script>
@@ -2037,7 +1670,6 @@ function generateHTML(reportData, trendData = null) {
 </html>
   `;
 }
-
 async function runScript(scriptPath) {
   return new Promise((resolve, reject) => {
     console.log(chalk.blue(`Executing script: ${scriptPath}...`));
@@ -2062,7 +1694,6 @@ async function runScript(scriptPath) {
     });
   });
 }
-
 async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
@@ -2097,11 +1728,10 @@ async function main() {
       ),
       error
     );
-    // You might decide to proceed or exit depending on the importance of historical data
   }
 
   // Step 2: Load current run's data (for non-trend sections of the report)
-  let currentRunReportData; // Data for the run being reported
+  let currentRunReportData;
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
     currentRunReportData = JSON.parse(jsonData);
@@ -2128,13 +1758,13 @@ async function main() {
         `Critical Error: Could not read or parse main report JSON at ${reportJsonPath}: ${error.message}`
       )
     );
-    process.exit(1); // Exit if the main report for the current run is missing/invalid
+    process.exit(1);
   }
 
   // Step 3: Load historical data for trends
-  let historicalRuns = []; // Array of past PlaywrightPulseReport objects
+  let historicalRuns = [];
   try {
-    await fs.access(historyDir); // Check if history directory exists
+    await fs.access(historyDir);
     const allHistoryFiles = await fs.readdir(historyDir);
 
     const jsonHistoryFiles = allHistoryFiles
@@ -2152,7 +1782,7 @@ async function main() {
         };
       })
       .filter((file) => !isNaN(file.timestamp))
-      .sort((a, b) => b.timestamp - a.timestamp); // Sort newest first to easily pick the latest N
+      .sort((a, b) => b.timestamp - a.timestamp);
 
     const filesToLoadForTrend = jsonHistoryFiles.slice(
       0,
@@ -2162,7 +1792,7 @@ async function main() {
     for (const fileMeta of filesToLoadForTrend) {
       try {
         const fileContent = await fs.readFile(fileMeta.path, "utf-8");
-        const runJsonData = JSON.parse(fileContent); // Each file IS a PlaywrightPulseReport
+        const runJsonData = JSON.parse(fileContent);
         historicalRuns.push(runJsonData);
       } catch (fileReadError) {
         console.warn(
@@ -2172,8 +1802,7 @@ async function main() {
         );
       }
     }
-    // Reverse to have oldest first for chart data series (if charts expect chronological)
-    historicalRuns.reverse();
+    historicalRuns.reverse(); // Oldest first for charts
     console.log(
       chalk.green(
         `Loaded ${historicalRuns.length} historical run(s) for trend analysis.`
@@ -2195,20 +1824,18 @@ async function main() {
     }
   }
 
-  // Step 4: Prepare trendData object in the format expected by chart functions
+  // Step 4: Prepare trendData object
   const trendData = {
-    overall: [], // For overall run summaries (passed, failed, skipped, duration over time)
-    testRuns: {}, // For individual test history (key: "test run <run_timestamp_ms>", value: array of test result summaries)
+    overall: [],
+    testRuns: {},
   };
 
   if (historicalRuns.length > 0) {
     historicalRuns.forEach((histRunReport) => {
-      // histRunReport is a full PlaywrightPulseReport object from a past run
       if (histRunReport.run) {
-        // Ensure timestamp is a Date object for correct sorting/comparison later if needed by charts
         const runTimestamp = new Date(histRunReport.run.timestamp);
         trendData.overall.push({
-          runId: runTimestamp.getTime(), // Use timestamp as a unique ID for this context
+          runId: runTimestamp.getTime(),
           timestamp: runTimestamp,
           duration: histRunReport.run.duration,
           totalTests: histRunReport.run.totalTests,
@@ -2217,21 +1844,19 @@ async function main() {
           skipped: histRunReport.run.skipped || 0,
         });
 
-        // For generateTestHistoryContent
         if (histRunReport.results && Array.isArray(histRunReport.results)) {
-          const runKeyForTestHistory = `test run ${runTimestamp.getTime()}`; // Use timestamp to key test runs
+          const runKeyForTestHistory = `test run ${runTimestamp.getTime()}`;
           trendData.testRuns[runKeyForTestHistory] = histRunReport.results.map(
             (test) => ({
-              testName: test.name, // Full test name path
+              testName: test.name,
               duration: test.duration,
               status: test.status,
-              timestamp: new Date(test.startTime), // Assuming test.startTime exists and is what you need
+              timestamp: new Date(test.startTime),
             })
           );
         }
       }
     });
-    // Ensure trendData.overall is sorted by timestamp if not already
     trendData.overall.sort(
       (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
     );
@@ -2239,8 +1864,6 @@ async function main() {
 
   // Step 5: Generate and write HTML
   try {
-    // currentRunReportData is for the main content (test list, summary cards of *this* run)
-    // trendData is for the historical charts and test history section
     const htmlContent = generateHTML(currentRunReportData, trendData);
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
@@ -2251,12 +1874,10 @@ async function main() {
     console.log(chalk.gray(`(You can open this file in your browser)`));
   } catch (error) {
     console.error(chalk.red(`Error generating HTML report: ${error.message}`));
-    console.error(chalk.red(error.stack)); // Log full stack for HTML generation errors
+    console.error(chalk.red(error.stack));
     process.exit(1);
   }
 }
-
-// Make sure main() is called at the end of your script
 main().catch((err) => {
   console.error(
     chalk.red.bold(`Unhandled error during script execution: ${err.message}`)

@@ -55,13 +55,13 @@
     "dotenv": "^16.5.0",
     "highcharts": "^12.2.0",
     "jsdom": "^26.1.0",
+    "lucide-react": "^0.475.0",
+    "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.3",
     "patch-package": "^8.0.0",
     "recharts": "^2.15.1",
     "ua-parser-js": "^2.0.3",
-    "zod": "^3.24.2",
-    "lucide-react": "^0.475.0",
-    "node-fetch": "^3.3.2"
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^20",
