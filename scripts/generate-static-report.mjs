@@ -143,82 +143,87 @@ function formatPlaywrightError(error) {
 }
 // User-provided formatDuration function
 function formatDuration(ms, options = {}) {
-    const {
-        precision = 1,
-        invalidInputReturn = "N/A",
-        defaultForNullUndefinedNegative = null
-    } = options;
+  const {
+    precision = 1,
+    invalidInputReturn = "N/A",
+    defaultForNullUndefinedNegative = null,
+  } = options;
 
-    const validPrecision = Math.max(0, Math.floor(precision));
-    const zeroWithPrecision = (0).toFixed(validPrecision) + "s";
-    const resolvedNullUndefNegReturn = defaultForNullUndefinedNegative === null 
-                                       ? zeroWithPrecision 
-                                       : defaultForNullUndefinedNegative;
+  const validPrecision = Math.max(0, Math.floor(precision));
+  const zeroWithPrecision = (0).toFixed(validPrecision) + "s";
+  const resolvedNullUndefNegReturn =
+    defaultForNullUndefinedNegative === null
+      ? zeroWithPrecision
+      : defaultForNullUndefinedNegative;
 
-    if (ms === undefined || ms === null) {
-        return resolvedNullUndefNegReturn;
+  if (ms === undefined || ms === null) {
+    return resolvedNullUndefNegReturn;
+  }
+
+  const numMs = Number(ms);
+
+  if (Number.isNaN(numMs) || !Number.isFinite(numMs)) {
+    return invalidInputReturn;
+  }
+
+  if (numMs < 0) {
+    return resolvedNullUndefNegReturn;
+  }
+
+  if (numMs === 0) {
+    return zeroWithPrecision;
+  }
+
+  const MS_PER_SECOND = 1000;
+  const SECONDS_PER_MINUTE = 60;
+  const MINUTES_PER_HOUR = 60;
+  const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+
+  const totalRawSeconds = numMs / MS_PER_SECOND;
+
+  // Decision: Are we going to display hours or minutes?
+  // This happens if the duration is inherently >= 1 minute OR
+  // if it's < 1 minute but ceiling the seconds makes it >= 1 minute.
+  if (
+    totalRawSeconds < SECONDS_PER_MINUTE &&
+    Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE
+  ) {
+    // Strictly seconds-only display, use precision.
+    return `${totalRawSeconds.toFixed(validPrecision)}s`;
+  } else {
+    // Display will include minutes and/or hours, or seconds round up to a minute.
+    // Seconds part should be an integer (ceiling).
+    // Round the total milliseconds UP to the nearest full second.
+    const totalMsRoundedUpToSecond =
+      Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
+
+    let remainingMs = totalMsRoundedUpToSecond;
+
+    const h = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_HOUR));
+    remainingMs %= MS_PER_SECOND * SECONDS_PER_HOUR;
+
+    const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
+    remainingMs %= MS_PER_SECOND * SECONDS_PER_MINUTE;
+
+    const s = Math.floor(remainingMs / MS_PER_SECOND); // This will be an integer
+
+    const parts = [];
+    if (h > 0) {
+      parts.push(`${h}h`);
     }
 
-    const numMs = Number(ms);
-
-    if (Number.isNaN(numMs) || !Number.isFinite(numMs)) {
-        return invalidInputReturn;
+    // Show minutes if:
+    // - hours are present (e.g., "1h 0m 5s")
+    // - OR minutes themselves are > 0 (e.g., "5m 10s")
+    // - OR the original duration was >= 1 minute (ensures "1m 0s" for 60000ms)
+    if (h > 0 || m > 0 || numMs >= MS_PER_SECOND * SECONDS_PER_MINUTE) {
+      parts.push(`${m}m`);
     }
 
-    if (numMs < 0) {
-        return resolvedNullUndefNegReturn;
-    }
-    
-    if (numMs === 0) {
-        return zeroWithPrecision;
-    }
+    parts.push(`${s}s`);
 
-    const MS_PER_SECOND = 1000;
-    const SECONDS_PER_MINUTE = 60;
-    const MINUTES_PER_HOUR = 60;
-    const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
-
-    const totalRawSeconds = numMs / MS_PER_SECOND;
-
-    // Decision: Are we going to display hours or minutes?
-    // This happens if the duration is inherently >= 1 minute OR
-    // if it's < 1 minute but ceiling the seconds makes it >= 1 minute.
-    if (totalRawSeconds < SECONDS_PER_MINUTE && Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE) {
-        // Strictly seconds-only display, use precision.
-        return `${totalRawSeconds.toFixed(validPrecision)}s`;
-    } else {
-        // Display will include minutes and/or hours, or seconds round up to a minute.
-        // Seconds part should be an integer (ceiling).
-        // Round the total milliseconds UP to the nearest full second.
-        const totalMsRoundedUpToSecond = Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
-        
-        let remainingMs = totalMsRoundedUpToSecond;
-        
-        const h = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_HOUR));
-        remainingMs %= (MS_PER_SECOND * SECONDS_PER_HOUR);
-        
-        const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
-        remainingMs %= (MS_PER_SECOND * SECONDS_PER_MINUTE);
-        
-        const s = Math.floor(remainingMs / MS_PER_SECOND); // This will be an integer
-
-        const parts = [];
-        if (h > 0) {
-            parts.push(`${h}h`);
-        }
-
-        // Show minutes if:
-        // - hours are present (e.g., "1h 0m 5s")
-        // - OR minutes themselves are > 0 (e.g., "5m 10s")
-        // - OR the original duration was >= 1 minute (ensures "1m 0s" for 60000ms)
-        if (h > 0 || m > 0 || numMs >= (MS_PER_SECOND * SECONDS_PER_MINUTE)) {
-            parts.push(`${m}m`);
-        }
-        
-        parts.push(`${s}s`);
-
-        return parts.join(" ");
-    }
+    return parts.join(" ");
+  }
 }
 function generateTestTrendsChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
@@ -633,7 +638,7 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   `;
 
   return `
-      <div class="pie-chart-wrapper" style="align-items: center">
+      <div class="pie-chart-wrapper" style="align-items: center; max-height: 450px">
           <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
           <div id="${chartId}" style="width: ${chartWidth}px; height: ${
     chartHeight - 40
