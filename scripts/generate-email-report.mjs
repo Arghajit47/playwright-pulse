@@ -2,8 +2,6 @@
 
 import * as fs from "fs/promises";
 import path from "path";
-import { fork } from "child_process";
-import { fileURLToPath } from "url";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -21,12 +19,10 @@ try {
   };
 }
 
-// Default configuration
 const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const MINIFIED_HTML_FILE = "pulse-email-summary.html"; // New minified report
 
-// Helper functions
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
   return String(str).replace(/[&<>"']/g, (match) => {
@@ -40,17 +36,93 @@ function sanitizeHTML(str) {
     return replacements[match] || match;
   });
 }
-
 function capitalize(str) {
   if (!str) return "";
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
+function formatDuration(ms, options = {}) {
+  const {
+    precision = 1,
+    invalidInputReturn = "N/A",
+    defaultForNullUndefinedNegative = null,
+  } = options;
 
-function formatDuration(ms) {
-  if (ms === undefined || ms === null || ms < 0) return "0.0s";
-  return (ms / 1000).toFixed(1) + "s";
+  const validPrecision = Math.max(0, Math.floor(precision));
+  const zeroWithPrecision = (0).toFixed(validPrecision) + "s";
+  const resolvedNullUndefNegReturn =
+    defaultForNullUndefinedNegative === null
+      ? zeroWithPrecision
+      : defaultForNullUndefinedNegative;
+
+  if (ms === undefined || ms === null) {
+    return resolvedNullUndefNegReturn;
+  }
+
+  const numMs = Number(ms);
+
+  if (Number.isNaN(numMs) || !Number.isFinite(numMs)) {
+    return invalidInputReturn;
+  }
+
+  if (numMs < 0) {
+    return resolvedNullUndefNegReturn;
+  }
+
+  if (numMs === 0) {
+    return zeroWithPrecision;
+  }
+
+  const MS_PER_SECOND = 1000;
+  const SECONDS_PER_MINUTE = 60;
+  const MINUTES_PER_HOUR = 60;
+  const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+
+  const totalRawSeconds = numMs / MS_PER_SECOND;
+
+  // Decision: Are we going to display hours or minutes?
+  // This happens if the duration is inherently >= 1 minute OR
+  // if it's < 1 minute but ceiling the seconds makes it >= 1 minute.
+  if (
+    totalRawSeconds < SECONDS_PER_MINUTE &&
+    Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE
+  ) {
+    // Strictly seconds-only display, use precision.
+    return `${totalRawSeconds.toFixed(validPrecision)}s`;
+  } else {
+    // Display will include minutes and/or hours, or seconds round up to a minute.
+    // Seconds part should be an integer (ceiling).
+    // Round the total milliseconds UP to the nearest full second.
+    const totalMsRoundedUpToSecond =
+      Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
+
+    let remainingMs = totalMsRoundedUpToSecond;
+
+    const h = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_HOUR));
+    remainingMs %= MS_PER_SECOND * SECONDS_PER_HOUR;
+
+    const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
+    remainingMs %= MS_PER_SECOND * SECONDS_PER_MINUTE;
+
+    const s = Math.floor(remainingMs / MS_PER_SECOND); // This will be an integer
+
+    const parts = [];
+    if (h > 0) {
+      parts.push(`${h}h`);
+    }
+
+    // Show minutes if:
+    // - hours are present (e.g., "1h 0m 5s")
+    // - OR minutes themselves are > 0 (e.g., "5m 10s")
+    // - OR the original duration was >= 1 minute (ensures "1m 0s" for 60000ms)
+    if (h > 0 || m > 0 || numMs >= MS_PER_SECOND * SECONDS_PER_MINUTE) {
+      parts.push(`${m}m`);
+    }
+
+    parts.push(`${s}s`);
+
+    return parts.join(" ");
+  }
 }
-
 function formatDate(dateStrOrDate) {
   if (!dateStrOrDate) return "N/A";
   try {
@@ -69,7 +141,6 @@ function formatDate(dateStrOrDate) {
     return "Invalid Date Format";
   }
 }
-
 function getStatusClass(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -82,7 +153,6 @@ function getStatusClass(status) {
       return "status-unknown";
   }
 }
-
 function getStatusIcon(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -95,7 +165,6 @@ function getStatusIcon(status) {
       return "❓";
   }
 }
-
 function generateMinifiedHTML(reportData) {
   const { run, results } = reportData;
   const runSummary = run || {
@@ -157,11 +226,13 @@ function generateMinifiedHTML(reportData) {
   }
 
   return `
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <title>Playwright Pulse Summary Report</title>
     <style>
         :root {
@@ -405,9 +476,9 @@ function generateMinifiedHTML(reportData) {
         
         <footer class="report-footer">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                <span>Created by</span>
+                <span>Created for</span>
                 <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer">
-                    Arghajit Singha
+                    Pulse Email Report
                 </a>
             </div>
             <div style="margin-top: 0.3rem; font-size: 0.7rem;">Crafted with precision</div>
@@ -442,31 +513,6 @@ function generateMinifiedHTML(reportData) {
 </html>
   `;
 }
-
-async function runScript(scriptPath) {
-  return new Promise((resolve, reject) => {
-    const process = fork(scriptPath, [], {
-      stdio: "inherit",
-    });
-
-    process.on("error", (err) => {
-      console.error(chalk.red(`Failed to start script: ${scriptPath}`), err);
-      reject(err);
-    });
-
-    process.on("exit", (code) => {
-      if (code === 0) {
-        console.log(chalk.green(`Script ${scriptPath} finished successfully.`));
-        resolve();
-      } else {
-        const errorMessage = `Script ${scriptPath} exited with code ${code}.`;
-        console.error(chalk.red(errorMessage));
-        reject(new Error(errorMessage));
-      }
-    });
-  });
-}
-
 async function main() {
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
@@ -521,7 +567,6 @@ async function main() {
     process.exit(1);
   }
 }
-
 main().catch((err) => {
   console.error(
     chalk.red.bold(`Unhandled error during script execution: ${err.message}`)

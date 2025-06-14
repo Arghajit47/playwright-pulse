@@ -5,6 +5,7 @@ import { readFileSync, existsSync as fsExistsSync } from "fs"; // ADD THIS LINE
 import path from "path";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
+import prettyAnsi from "pretty-ansi";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -44,104 +45,27 @@ function capitalize(str) {
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 function formatPlaywrightError(error) {
-  // Get the error message and clean ANSI codes
-  const rawMessage = error.stack || error.message || error.toString();
-  const cleanMessage = rawMessage.replace(/\x1B\[[0-9;]*[mGKH]/g, "");
-
-  // Parse error components
-  const timeoutMatch = cleanMessage.match(/Timed out (\d+)ms waiting for/);
-  const assertionMatch = cleanMessage.match(/expect\((.*?)\)\.(.*?)\(/);
-  const expectedMatch = cleanMessage.match(
-    /Expected (?:pattern|string|regexp|value): (.*?)(?:\n|Call log|$)/s
-  );
-  const actualMatch = cleanMessage.match(
-    /Received (?:string|value): (.*?)(?:\n|Call log|$)/s
-  );
-
-  // HTML escape function
-  const escapeHtml = (str) => {
-    if (!str) return "";
-    return str.replace(
-      /[&<>'"]/g,
-      (tag) =>
-        ({
-          "&": "&",
-          "<": "<",
-          ">": ">",
-          "'": "'",
-          '"': '"',
-        }[tag])
-    );
-  };
-
-  // Build HTML output
-  let html = `<div class="playwright-error">
-    <div class="error-header">Test Error</div>`;
-
-  if (timeoutMatch) {
-    html += `<div class="error-timeout">⏱ Timeout: ${escapeHtml(
-      timeoutMatch[1]
-    )}ms</div>`;
-  }
-
-  if (assertionMatch) {
-    html += `<div class="error-assertion">🔍 Assertion: expect(${escapeHtml(
-      assertionMatch[1]
-    )}).${escapeHtml(assertionMatch[2])}()</div>`;
-  }
-
-  if (expectedMatch) {
-    html += `<div class="error-expected">✅ Expected: ${escapeHtml(
-      expectedMatch[1]
-    )}</div>`;
-  }
-
-  if (actualMatch) {
-    html += `<div class="error-actual">❌ Actual: ${escapeHtml(
-      actualMatch[1]
-    )}</div>`;
-  }
-
-  // Add call log if present
-  const callLogStart = cleanMessage.indexOf("Call log:");
-  if (callLogStart !== -1) {
-    const callLogEnd =
-      cleanMessage.indexOf("\n\n", callLogStart) || cleanMessage.length;
-    const callLogSection = cleanMessage
-      .slice(callLogStart + 9, callLogEnd)
-      .trim();
-
-    html += `<div class="error-call-log">
-      <div class="call-log-header">📜 Call Log:</div>
-      <ul class="call-log-items">${callLogSection
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line)
-        .map((line) => `<li>${escapeHtml(line.replace(/^-\s*/, ""))}</li>`)
-        .join("")}</ul>
-    </div>`;
-  }
-
-  // Add stack trace if present
-  const stackTraceMatch = cleanMessage.match(/\n\s*at\s.*/gs);
-  if (stackTraceMatch) {
-    html += `<div class="error-stack-trace">
-      <div class="stack-trace-header">🔎 Stack Trace:</div>
-      <ul class="stack-trace-items">${stackTraceMatch[0]
-        .trim()
-        .split("\n")
-        .map((line) => line.trim())
-        .filter((line) => line)
-        .map((line) => `<li>${escapeHtml(line)}</li>`)
-        .join("")}</ul>
-    </div>`;
-  }
-
-  html += `</div>`;
-
-  return html;
+  const commandOutput = prettyAnsi(error || error.message);
+  return convertPlaywrightErrorToHTML(commandOutput);
 }
-// User-provided formatDuration function
+function convertPlaywrightErrorToHTML(str) {
+  return (
+    str
+      // Convert leading spaces to &nbsp; and tabs to &nbsp;&nbsp;&nbsp;&nbsp;
+      .replace(/^(\s+)/gm, (match) =>
+        match.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;")
+      )
+      // Color and style replacements
+      .replace(/<red>/g, '<span style="color: red;">')
+      .replace(/<green>/g, '<span style="color: green;">')
+      .replace(/<dim>/g, '<span style="opacity: 0.6;">')
+      .replace(/<intensity>/g, '<span style="font-weight: bold;">') // Changed to apply bold
+      .replace(/<\/color>/g, "</span>")
+      .replace(/<\/intensity>/g, "</span>")
+      // Convert newlines to <br> after processing other replacements
+      .replace(/\n/g, "<br>")
+  );
+}
 function formatDuration(ms, options = {}) {
   const {
     precision = 1,
@@ -970,13 +894,34 @@ function generateHTML(reportData, trendData = null) {
               }
               ${
                 step.errorMessage
-                  ? `<div class="step-error">${
-                      step.stackTrace
-                        ? `<pre class="stack-trace">${sanitizeHTML(
-                            step.stackTrace
-                          )}</pre>`
-                        : ""
-                    }</div>`
+                  ? `<div class="step-error">
+                      ${
+                        step.stackTrace
+                          ? `<div class="stack-trace">${formatPlaywrightError(
+                              step.stackTrace
+                            )}</div>`
+                          : ""
+                      }
+                      <button 
+                        class="copy-error-btn" 
+                        onclick="copyErrorToClipboard(this)"
+                        style="
+                          margin-top: 8px;
+                          padding: 4px 8px;
+                          background: #f0f0f0;
+                          border: 2px solid #ccc;
+                          border-radius: 4px;
+                          cursor: pointer;
+                          font-size: 12px;
+                          border-color: #8B0000;
+                          color: #8B0000;
+                          "
+                            onmouseover="this.style.background='#e0e0e0'"
+                            onmouseout="this.style.background='#f0f0f0'"
+                      > 
+                        Copy Error Prompt
+                      </button>
+                    </div>`
                   : ""
               }
               ${
@@ -1033,10 +978,30 @@ function generateHTML(reportData, trendData = null) {
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
           ${
-            test.error
+            test.errorMessage
               ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.error
-                )}</div>`
+                  test.errorMessage
+                )}
+                <button 
+                        class="copy-error-btn" 
+                        onclick="copyErrorToClipboard(this)"
+                        style="
+                          margin-top: 8px;
+                          padding: 4px 8px;
+                          background: #f0f0f0;
+                          border: 2px solid #ccc;
+                          border-radius: 4px;
+                          cursor: pointer;
+                          font-size: 12px;
+                          border-color: #8B0000;
+                          color: #8B0000;
+                          "
+                            onmouseover="this.style.background='#e0e0e0'"
+                            onmouseout="this.style.background='#f0f0f0'"
+                      > 
+                        Copy Error Prompt
+                      </button>
+                </div>`
               : ""
           }
           <h4>Steps</h4>
@@ -1243,7 +1208,7 @@ function generateHTML(reportData, trendData = null) {
           --card-background-color: #fff; --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
           --border-radius: 8px; --box-shadow: 0 5px 15px rgba(0,0,0,0.08); --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05); --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
         }
-        .amcharts-pie-container, .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
+        .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
         .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
         
         /* General Highcharts styling */
@@ -1254,7 +1219,7 @@ function generateHTML(reportData, trendData = null) {
         .highcharts-tooltip > span { background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }
         
         body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
-        .container { max-width: 1600px; padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec); }
+        .container { padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec); }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
         .header-title { display: flex; align-items: center; gap: 15px; }
         .header h1 { margin: 0; font-size: 1.85em; font-weight: 600; color: var(--primary-color); }
@@ -1670,6 +1635,27 @@ function generateHTML(reportData, trendData = null) {
         }
     }
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
+
+    function copyErrorToClipboard(button) {
+      const errorContainer = button.closest('.step-error');
+      const errorText = errorContainer.querySelector('.stack-trace').textContent;
+      const textarea = document.createElement('textarea');
+      textarea.value = errorText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        const successful = document.execCommand('copy');
+        const originalText = button.textContent;
+        button.textContent = successful ? 'Copied!' : 'Failed to copy';
+        setTimeout(() => {
+          button.textContent = originalText;
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+        button.textContent = 'Failed to copy';
+      }  
+  document.body.removeChild(textarea);
+}
 </script>
 </body>
 </html>

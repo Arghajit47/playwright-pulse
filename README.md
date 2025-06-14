@@ -11,27 +11,49 @@
 
 ### 🖥️ Desktop View
 
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;"> <a href="https://postimg.cc/180cym6c" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html.png" alt="Dashboard Overview" width="300"/> <p align="center"><strong>Dashboard Overview</strong></p> </a> <a href="https://postimg.cc/V5TFRHmM" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-1.png" alt="Test Details" width="300"/> <p align="center"><strong>Test Details</strong></p> </a> <a href="https://postimg.cc/XXTwFGkk" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/Users-arghajitsingha-Downloads-pulse-report-1-playwright-pulse-static-report-html-2.png" alt="Filter View" width="300"/> <p align="center"><strong>Filter View</strong></p> </a> </div>
+<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-desktop.html.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-desktop.html.png" alt="Dashboard Overview" width="300"/>
+   <p align="center"><strong>Dashboard Overview</strong></p>
+  </a>
+  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-run-desktop.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-run-desktop.png" alt="Test Details" width="300"/>
+   <p align="center"><strong>Test Details</strong>
+   </p>
+  </a>
+  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-error-desktop.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-run-desktop.png" alt="Test Failure Details" width="300"/>
+   <p align="center"><strong>Test Failure Details</strong>
+   </p>
+  </a>
+  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-trends-desktop.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-trends-desktop.png" alt="Filter View" width="300"/>
+  <p align="center"><strong>Test Trends</strong></p>
+  </a>
+</div>
 
 ### 📱 Mobile View
 
 <div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
 
   <a href="https://postimg.cc/CzJBLR5N" target="_blank">
-    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max.png" alt="Mobile Overview" width="300"/>
+    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-Dashboard.html.png" alt="Mobile Dashboard Overview" width="300"/>
     <p align="center"><strong>Dashboard Overview</strong></p>
   </a>
 
   <a href="https://postimg.cc/G8YTczT8" target="_blank">
-    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/127-0-0-1-5500-pulse-report-output-playwright-pulse-static-report-html-i-Phone-14-Pro-Max-1.png" alt="Test Details" width="300"/>
+    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report_Test-results.html.png" alt="Test Details" width="300"/>
     <p align="center"><strong>Test Details</strong></p>
+  </a>
+
+  <a href="https://postimg.cc/G8YTczT8" target="_blank">
+    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-Trends.html.png" alt="Test Trends" width="300"/>
+    <p align="center"><strong>Test Trends</strong></p>
   </a>
 
 </div>
 
 ### Email Report Example
 
-[![Email Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Email-report.jpg)](https://postimg.cc/DmCPgtqh)
+[![Email Report Template](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Email-report-mobile-template.jpeg)](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Email-report-mobile-template.jpeg)
+
+[![Email Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-email-summary.html.png)](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-email-summary.html.png)
 
 ## 🛠️ How It Works
 
@@ -51,11 +73,11 @@
 ### 1. Installation
 
 ```bash
-npm install @arghajit/playwright-pulse-reporter@latest --save-dev
+npm install @arghajit/playwright-pulse-report@latest --save-dev
 # or
-yarn add @arghajit/playwright-pulse-reporter@latest --dev
+yarn add @arghajit/playwright-pulse-report@latest --dev
 # or
-pnpm add @arghajit/playwright-pulse-reporter@latest --save-dev
+pnpm add @arghajit/playwright-pulse-report@latest --save-dev
 ```
 
 ### 2. Configure Playwright
@@ -71,7 +93,7 @@ const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report');
 export default defineConfig({
   reporter: [
     ['list'],
-    ['@arghajit/playwright-pulse-reporter', {
+    ['@arghajit/playwright-pulse-report', {
       outputDir: PULSE_REPORT_DIR
     }]
   ],
@@ -115,6 +137,8 @@ npx generate-pulse-report
    ```bash
    npx send-email
    ```
+
+  NOTE: The email will be send with a light-weight html file, which can be opened in mail preview application.
 
 ## 🤖 AI Analysis
 
