@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.1.0-beta-14",
+  "version": "0.1.0-beta-15",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -67,7 +67,6 @@
     "@types/node": "^20",
     "@types/ua-parser-js": "^0.7.39",
     "eslint": "9.25.1",
-    "pretty-ansi": "^3.0.0",
     "typescript": "^5"
   },
   "engines": {
