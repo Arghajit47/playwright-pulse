@@ -707,6 +707,335 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       </div>
   `;
 }
+function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
+  // Format memory for display
+  const formattedMemory = environment.memory.replace(/(\d+\.\d{2})GB/, "$1 GB");
+
+  // Generate a unique ID for the dashboard
+  const dashboardId = `envDashboard-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+
+  const cardHeight = Math.floor(dashboardHeight * 0.44);
+  const cardContentPadding = 16; // px
+
+  return `
+    <div class="environment-dashboard-wrapper" id="${dashboardId}">
+      <style>
+        .environment-dashboard-wrapper *,
+        .environment-dashboard-wrapper *::before,
+        .environment-dashboard-wrapper *::after {
+          box-sizing: border-box;
+        }
+
+        .environment-dashboard-wrapper {
+          --primary-color: #007bff;
+          --primary-light-color: #e6f2ff;
+          --secondary-color: #6c757d;
+          --success-color: #28a745;
+          --success-light-color: #eaf6ec;
+          --warning-color: #ffc107;
+          --warning-light-color: #fff9e6;
+          --danger-color: #dc3545;
+          
+          --background-color: #ffffff; 
+          --card-background-color: #ffffff; 
+          --text-color: #212529; 
+          --text-color-secondary: #6c757d; 
+          --border-color: #dee2e6; 
+          --border-light-color: #f1f3f5;
+          --icon-color: #495057;
+          --chip-background: #e9ecef;
+          --chip-text: #495057;
+          --shadow-color: rgba(0, 0, 0, 0.075);
+
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+          background-color: var(--background-color);
+          border-radius: 12px; 
+          box-shadow: 0 6px 12px var(--shadow-color);
+          padding: 24px; 
+          color: var(--text-color);
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: auto 1fr; 
+          gap: 20px; 
+          font-size: 14px; 
+        }
+        
+        .env-dashboard-header {
+          grid-column: 1 / -1;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 16px; 
+          margin-bottom: 8px; 
+        }
+        
+        .env-dashboard-title {
+          font-size: 1.5rem; 
+          font-weight: 600;
+          color: var(--text-color); 
+          margin: 0;
+        }
+        
+        .env-dashboard-subtitle {
+          font-size: 0.875rem; 
+          color: var(--text-color-secondary);
+          margin-top: 4px;
+        }
+        
+        .env-card {
+          background-color: var(--card-background-color);
+          border-radius: 8px;
+          padding: ${cardContentPadding}px;
+          box-shadow: 0 3px 6px var(--shadow-color);
+          height: ${cardHeight}px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden; 
+        }
+        
+        .env-card-header {
+          font-weight: 600;
+          font-size: 1rem; 
+          margin-bottom: 12px;
+          color: var(--text-color);
+          display: flex;
+          align-items: center;
+          padding-bottom: 8px;
+          border-bottom: 1px solid var(--border-light-color);
+        }
+        
+        .env-card-header svg {
+          margin-right: 10px; 
+          width: 18px; 
+          height: 18px;
+          fill: var(--icon-color);
+        }
+
+        .env-card-content {
+          flex-grow: 1; 
+          overflow-y: auto; 
+          padding-right: 5px; 
+        }
+        
+        .env-detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center; 
+          padding: 10px 0; 
+          border-bottom: 1px solid var(--border-light-color);
+          font-size: 0.875rem;
+        }
+        
+        .env-detail-row:last-child {
+          border-bottom: none;
+        }
+        
+        .env-detail-label {
+          color: var(--text-color-secondary);
+          font-weight: 500;
+          margin-right: 10px; 
+        }
+        
+        .env-detail-value {
+          color: var(--text-color);
+          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+          text-align: right;
+          word-break: break-all; 
+        }
+        
+        .env-chip {
+          display: inline-block;
+          padding: 4px 10px; 
+          border-radius: 16px; 
+          font-size: 0.75rem; 
+          font-weight: 500;
+          line-height: 1.2;
+          background-color: var(--chip-background);
+          color: var(--chip-text);
+        }
+        
+        .env-chip-primary {
+          background-color: var(--primary-light-color);
+          color: var(--primary-color);
+        }
+        
+        .env-chip-success {
+          background-color: var(--success-light-color);
+          color: var(--success-color);
+        }
+        
+        .env-chip-warning {
+          background-color: var(--warning-light-color);
+          color: var(--warning-color);
+        }
+        
+        .env-cpu-cores {
+          display: flex;
+          align-items: center;
+          gap: 6px; 
+        }
+        
+        .env-core-indicator {
+          width: 12px; 
+          height: 12px;
+          border-radius: 50%;
+          background-color: var(--success-color);
+          border: 1px solid rgba(0,0,0,0.1); 
+        }
+        
+        .env-core-indicator.inactive {
+          background-color: var(--border-light-color);
+          opacity: 0.7; 
+          border-color: var(--border-color);
+        }
+      </style>
+      
+      <div class="env-dashboard-header">
+        <div>
+          <h3 class="env-dashboard-title">System Environment</h3>
+          <p class="env-dashboard-subtitle">Snapshot of the execution environment</p>
+        </div>
+        <span class="env-chip env-chip-primary">${environment.host}</span>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16V4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h-2v10H4V6zm18-2h-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v2h20V6a2 2 0 0 0-2-2zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
+          Hardware
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">CPU Model</span>
+            <span class="env-detail-value">${environment.cpu.model}</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">CPU Cores</span>
+            <span class="env-detail-value">
+              <div class="env-cpu-cores">
+                ${Array.from(
+                  { length: Math.max(0, environment.cpu.cores || 0) },
+                  (_, i) =>
+                    `<div class="env-core-indicator ${
+                      i >=
+                      (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
+                        ? "inactive"
+                        : ""
+                    }" title="Core ${i + 1}"></div>`
+                ).join("")}
+                <span>${environment.cpu.cores || "N/A"} cores</span>
+              </div>
+            </span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Memory</span>
+            <span class="env-detail-value">${formattedMemory}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-0.01 18c-2.76 0-5.26-1.12-7.07-2.93A7.973 7.973 0 0 1 4 12c0-2.21.9-4.21 2.36-5.64A7.994 7.994 0 0 1 11.99 4c4.41 0 8 3.59 8 8 0 2.76-1.12 5.26-2.93 7.07A7.973 7.973 0 0 1 11.99 20zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
+          Operating System
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">OS Type</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[0] === "darwin"
+                ? "macOS"
+                : environment.os.split(" ")[0] || "Unknown"
+            }</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">OS Version</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[1] || "N/A"
+            }</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Hostname</span>
+            <span class="env-detail-value" title="${environment.host}">${
+    environment.host
+  }</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+          Node.js Runtime
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">Node Version</span>
+            <span class="env-detail-value">${environment.node}</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">V8 Engine</span>
+            <span class="env-detail-value">${environment.v8}</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Working Dir</span>
+            <span class="env-detail-value" title="${environment.cwd}">${
+    environment.cwd.length > 25
+      ? "..." + environment.cwd.slice(-22)
+      : environment.cwd
+  }</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h.71C7.37 8.69 9.48 7 12 7c2.76 0 5 2.24 5 5v1h2c1.66 0 3 1.34 3 3s-1.34 3-3 3z"/></svg>
+          System Summary
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">Platform Arch</span>
+            <span class="env-detail-value">
+              <span class="env-chip ${
+                environment.os.includes("darwin") &&
+                environment.cpu.model.toLowerCase().includes("apple")
+                  ? "env-chip-success"
+                  : "env-chip-warning"
+              }">
+                ${
+                  environment.os.includes("darwin") &&
+                  environment.cpu.model.toLowerCase().includes("apple")
+                    ? "Apple Silicon"
+                    : environment.cpu.model.toLowerCase().includes("arm") ||
+                      environment.cpu.model.toLowerCase().includes("aarch64")
+                    ? "ARM-based"
+                    : "x86/Other"
+                }
+              </span>
+            </span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Memory per Core</span>
+            <span class="env-detail-value">${
+              environment.cpu.cores > 0
+                ? (
+                    parseFloat(environment.memory) / environment.cpu.cores
+                  ).toFixed(2) + " GB"
+                : "N/A"
+            }</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Run Context</span>
+            <span class="env-detail-value">CI/Local Test</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -1319,7 +1648,7 @@ function generateHTML(reportData, trendData = null) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
-    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts.js" defer></script>
     <title>Playwright Pulse Report</title>
     <style>
         :root { 
@@ -1519,6 +1848,7 @@ function generateHTML(reportData, trendData = null) {
                 )}</div></div>
             </div>
             <div class="dashboard-bottom-row">
+              <div style="display: grid; gap: 20px">
                 ${generatePieChart(
                   [
                     { label: "Passed", value: runSummary.passed },
@@ -1528,6 +1858,13 @@ function generateHTML(reportData, trendData = null) {
                   400,
                   390
                 )} 
+                ${
+                  runSummary.environment &&
+                  Object.keys(runSummary.environment).length > 0
+                    ? generateEnvironmentDashboard(runSummary.environment)
+                    : '<div class="no-data">Environment data not available.</div>'
+                }
+              </div> 
                 ${generateSuitesWidget(suitesData)}
             </div>
         </div>
