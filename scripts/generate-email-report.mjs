@@ -177,9 +177,11 @@ function generateMinifiedHTML(reportData) {
   };
 
   const testsByBrowser = new Map();
+  const allBrowsers = new Set();
   if (results && results.length > 0) {
     results.forEach((test) => {
       const browser = test.browser || "unknown";
+      allBrowsers.add(browser);
       if (!testsByBrowser.has(browser)) {
         testsByBrowser.set(browser, []);
       }
@@ -195,7 +197,9 @@ function generateMinifiedHTML(reportData) {
     let html = "";
     testsByBrowser.forEach((tests, browser) => {
       html += `
-        <div class="browser-section">
+        <div class="browser-section" data-browser-group="${sanitizeHTML(
+          browser.toLowerCase()
+        )}">
           <h2 class="browser-title">${sanitizeHTML(capitalize(browser))}</h2>
           <ul class="test-list">
       `;
@@ -204,7 +208,12 @@ function generateMinifiedHTML(reportData) {
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
         html += `
-            <li class="test-item ${getStatusClass(test.status)}">
+            <li class="test-item ${getStatusClass(test.status)}" 
+                data-test-name-min="${sanitizeHTML(testTitle.toLowerCase())}" 
+                data-status-min="${sanitizeHTML(
+                  String(test.status).toLowerCase()
+                )}"
+                data-browser-min="${sanitizeHTML(browser.toLowerCase())}">
               <span class="test-status-icon">${getStatusIcon(
                 test.status
               )}</span>
@@ -343,6 +352,43 @@ function generateMinifiedHTML(reportData) {
             padding-bottom: 10px;
             border-bottom: 2px solid var(--secondary-color);
         }
+        
+        /* Filters Section */
+        .filters-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--light-gray-color);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+        }
+        .filters-section input[type="text"],
+        .filters-section select {
+            padding: 8px 12px;
+            border: 1px solid var(--medium-gray-color);
+            border-radius: 4px;
+            font-size: 0.95em;
+            flex-grow: 1;
+        }
+        .filters-section select {
+            min-width: 150px;
+        }
+        .filters-section button {
+            padding: 8px 15px;
+            font-size: 0.95em;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        .filters-section button:hover {
+            background-color: var(--primary-color);
+        }
+
         .browser-section {
             margin-bottom: 25px;
         }
@@ -365,7 +411,7 @@ function generateMinifiedHTML(reportData) {
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius);
             background-color: #fff;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, display 0.3s ease-out;
         }
         .test-item:hover {
             background-color: var(--light-gray-color);
@@ -424,10 +470,11 @@ function generateMinifiedHTML(reportData) {
             .report-header { flex-direction: column; align-items: flex-start; gap: 10px; }
             .report-header h1 { font-size: 1.5em; }
             .run-info { text-align: left; }
-            .summary-stats { grid-template-columns: 1fr 1fr; } /* Two cards per row on smaller screens */
+            .summary-stats { grid-template-columns: 1fr 1fr; }
+            .filters-section { flex-direction: column; }
         }
         @media (max-width: 480px) {
-            .summary-stats { grid-template-columns: 1fr; } /* One card per row on very small screens */
+            .summary-stats { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -471,6 +518,30 @@ function generateMinifiedHTML(reportData) {
 
         <section class="test-results-section">
             <h1 class="section-title">Test Case Summary</h1>
+            
+            <div class="filters-section">
+                <input type="text" id="filter-min-name" placeholder="Search by test name...">
+                <select id="filter-min-status">
+                    <option value="">All Statuses</option>
+                    <option value="passed">Passed</option>
+                    <option value="failed">Failed</option>
+                    <option value="skipped">Skipped</option>
+                    <option value="unknown">Unknown</option>
+                </select>
+                <select id="filter-min-browser">
+                    <option value="">All Browsers</option>
+                    ${Array.from(allBrowsers)
+                      .map(
+                        (browser) =>
+                          `<option value="${sanitizeHTML(
+                            browser.toLowerCase()
+                          )}">${sanitizeHTML(capitalize(browser))}</option>`
+                      )
+                      .join("")}
+                </select>
+                <button id="clear-min-filters">Clear Filters</button>
+            </div>
+
             ${generateTestListHTML()}
         </section>
         
@@ -485,16 +556,83 @@ function generateMinifiedHTML(reportData) {
         </footer>
     </div>
     <script>
-        // Global helper functions needed by the template (if any complex ones were used)
-        // For this minified version, formatDuration and formatDate are primarily used during HTML generation server-side.
-        // No client-side interactivity scripts are needed for this simple report.
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameFilterMin = document.getElementById('filter-min-name');
+            const statusFilterMin = document.getElementById('filter-min-status');
+            const browserFilterMin = document.getElementById('filter-min-browser');
+            const clearMinFiltersBtn = document.getElementById('clear-min-filters');
+            const testItemsMin = document.querySelectorAll('.test-results-section .test-item');
+            const browserSections = document.querySelectorAll('.test-results-section .browser-section');
+
+            function filterMinifiedTests() {
+                const nameValue = nameFilterMin.value.toLowerCase();
+                const statusValue = statusFilterMin.value;
+                const browserValue = browserFilterMin.value;
+                let anyBrowserSectionVisible = false;
+
+                browserSections.forEach(section => {
+                    let sectionHasVisibleTests = false;
+                    const testsInThisSection = section.querySelectorAll('.test-item');
+                    
+                    testsInThisSection.forEach(testItem => {
+                        const testName = testItem.getAttribute('data-test-name-min');
+                        const testStatus = testItem.getAttribute('data-status-min');
+                        const testBrowser = testItem.getAttribute('data-browser-min');
+
+                        const nameMatch = testName.includes(nameValue);
+                        const statusMatch = !statusValue || testStatus === statusValue;
+                        const browserMatch = !browserValue || testBrowser === browserValue;
+
+                        if (nameMatch && statusMatch && browserMatch) {
+                            testItem.style.display = 'flex';
+                            sectionHasVisibleTests = true;
+                            anyBrowserSectionVisible = true;
+                        } else {
+                            testItem.style.display = 'none';
+                        }
+                    });
+                    // Hide browser section if no tests match OR if a specific browser is selected and it's not this one
+                     if (!sectionHasVisibleTests || (browserValue && section.getAttribute('data-browser-group') !== browserValue)) {
+                        section.style.display = 'none';
+                    } else {
+                        section.style.display = '';
+                    }
+                });
+                
+                // Show "no tests" message if all sections are hidden
+                const noTestsMessage = document.querySelector('.test-results-section .no-tests');
+                if (noTestsMessage) {
+                    noTestsMessage.style.display = anyBrowserSectionVisible ? 'none' : 'block';
+                }
+
+            }
+
+            if (nameFilterMin) nameFilterMin.addEventListener('input', filterMinifiedTests);
+            if (statusFilterMin) statusFilterMin.addEventListener('change', filterMinifiedTests);
+            if (browserFilterMin) browserFilterMin.addEventListener('change', filterMinifiedTests);
+            
+            if (clearMinFiltersBtn) {
+                clearMinFiltersBtn.addEventListener('click', () => {
+                    nameFilterMin.value = '';
+                    statusFilterMin.value = '';
+                    browserFilterMin.value = '';
+                    filterMinifiedTests();
+                });
+            }
+            // Initial filter call in case of pre-filled values (though unlikely here)
+             if (testItemsMin.length > 0) { // Only filter if there are items
+                filterMinifiedTests();
+            }
+        });
+
+        // Fallback helper functions (though ideally not needed client-side for this minified report)
         if (typeof formatDuration === 'undefined') {
-             function formatDuration(ms) { // Fallback, though should be pre-rendered
+             function formatDuration(ms) { 
                 if (ms === undefined || ms === null || ms < 0) return "0.0s";
                 return (ms / 1000).toFixed(1) + "s";
             }
         }
-         if (typeof formatDate === 'undefined') { // Fallback
+         if (typeof formatDate === 'undefined') {
             function formatDate(dateStrOrDate) {
                 if (!dateStrOrDate) return "N/A";
                 try {
