@@ -5,7 +5,6 @@ import { readFileSync, existsSync as fsExistsSync } from "fs"; // ADD THIS LINE
 import path from "path";
 import { fork } from "child_process"; // Add this
 import { fileURLToPath } from "url"; // Add this for resolving path in ESM
-import prettyAnsi from "pretty-ansi";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -27,6 +26,129 @@ const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
 // Helper functions
+export function ansiToHtml(text) {
+  if (!text) {
+    return "";
+  }
+
+  const codes = {
+    0: "color:inherit;font-weight:normal;font-style:normal;text-decoration:none;opacity:1;background-color:inherit;",
+    1: "font-weight:bold",
+    2: "opacity:0.6",
+    3: "font-style:italic",
+    4: "text-decoration:underline",
+    30: "color:#000", // black
+    31: "color:#d00", // red
+    32: "color:#0a0", // green
+    33: "color:#aa0", // yellow
+    34: "color:#00d", // blue
+    35: "color:#a0a", // magenta
+    36: "color:#0aa", // cyan
+    37: "color:#aaa", // light grey
+    39: "color:inherit", // default foreground color
+    40: "background-color:#000", // black background
+    41: "background-color:#d00", // red background
+    42: "background-color:#0a0", // green background
+    43: "background-color:#aa0", // yellow background
+    44: "background-color:#00d", // blue background
+    45: "background-color:#a0a", // magenta background
+    46: "background-color:#0aa", // cyan background
+    47: "background-color:#aaa", // light grey background
+    49: "background-color:inherit", // default background color
+    90: "color:#555", // dark grey
+    91: "color:#f55", // light red
+    92: "color:#5f5", // light green
+    93: "color:#ff5", // light yellow
+    94: "color:#55f", // light blue
+    95: "color:#f5f", // light magenta
+    96: "color:#5ff", // light cyan
+    97: "color:#fff", // white
+  };
+
+  let currentStylesArray = [];
+  let html = "";
+  let openSpan = false;
+
+  const applyStyles = () => {
+    if (openSpan) {
+      html += "</span>";
+      openSpan = false;
+    }
+    if (currentStylesArray.length > 0) {
+      const styleString = currentStylesArray.filter((s) => s).join(";");
+      if (styleString) {
+        html += `<span style="${styleString}">`;
+        openSpan = true;
+      }
+    }
+  };
+
+  const resetAndApplyNewCodes = (newCodesStr) => {
+    const newCodes = newCodesStr.split(";");
+
+    if (newCodes.includes("0")) {
+      currentStylesArray = [];
+      if (codes["0"]) currentStylesArray.push(codes["0"]);
+    }
+
+    for (const code of newCodes) {
+      if (code === "0") continue;
+
+      if (codes[code]) {
+        if (code === "39") {
+          currentStylesArray = currentStylesArray.filter(
+            (s) => !s.startsWith("color:")
+          );
+          currentStylesArray.push("color:inherit");
+        } else if (code === "49") {
+          currentStylesArray = currentStylesArray.filter(
+            (s) => !s.startsWith("background-color:")
+          );
+          currentStylesArray.push("background-color:inherit");
+        } else {
+          currentStylesArray.push(codes[code]);
+        }
+      } else if (code.startsWith("38;2;") || code.startsWith("48;2;")) {
+        const parts = code.split(";");
+        const type = parts[0] === "38" ? "color" : "background-color";
+        if (parts.length === 5) {
+          currentStylesArray = currentStylesArray.filter(
+            (s) => !s.startsWith(type + ":")
+          );
+          currentStylesArray.push(
+            `${type}:rgb(${parts[2]},${parts[3]},${parts[4]})`
+          );
+        }
+      }
+    }
+    applyStyles();
+  };
+
+  const segments = text.split(/(\x1b\[[0-9;]*m)/g);
+
+  for (const segment of segments) {
+    if (!segment) continue;
+
+    if (segment.startsWith("\x1b[") && segment.endsWith("m")) {
+      const command = segment.slice(2, -1);
+      resetAndApplyNewCodes(command);
+    } else {
+      const escapedContent = segment
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+      html += escapedContent;
+    }
+  }
+
+  if (openSpan) {
+    html += "</span>";
+  }
+
+  return html;
+}
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
   return String(str).replace(/[&<>"']/g, (match) => {
@@ -45,7 +167,7 @@ function capitalize(str) {
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 function formatPlaywrightError(error) {
-  const commandOutput = prettyAnsi(error || error.message);
+  const commandOutput = ansiToHtml(error || error.message);
   return convertPlaywrightErrorToHTML(commandOutput);
 }
 function convertPlaywrightErrorToHTML(str) {
