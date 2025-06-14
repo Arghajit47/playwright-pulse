@@ -36,6 +36,10 @@ export interface TestResult {
     tracePath?: string;
     stdout?: string[];
     stderr?: string[];
+    workerId?: number;
+    totalWorkers?: number;
+    configFile?: string;
+    metadata?: string;
 }
 export interface TestRun {
     id: string;
@@ -45,6 +49,7 @@ export interface TestRun {
     failed: number;
     skipped: number;
     duration: number;
+    environment?: EnvDetails;
 }
 export interface TrendDataPoint {
     date: string;
@@ -62,4 +67,16 @@ export interface PlaywrightPulseReporterOptions {
     outputFile?: string;
     outputDir?: string;
     base64Images?: boolean;
+}
+export interface EnvDetails {
+    host: string;
+    os: string;
+    cpu: {
+        model: string;
+        cores: number;
+    };
+    memory: string;
+    node: string;
+    v8: string;
+    cwd: string;
 }

@@ -22,7 +22,7 @@ import type {
 import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
 import { UAParser } from "ua-parser-js"; // Added UAParser import
-
+import * as os from "os";
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -229,7 +229,6 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
     const browserDetails = this.getBrowserDetails(test);
-
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
@@ -290,6 +289,15 @@ export class PlaywrightPulseReporter implements Reporter {
     }
 
     const uniqueTestId = test.id;
+    // --- ADDED THIS SECTION for testData ---
+    const testSpecificData = {
+      workerId: result.workerIndex,
+      totalWorkers: this.config.workers,
+      configFile: this.config.configFile,
+      metadata: this.config.metadata
+        ? JSON.stringify(this.config.metadata)
+        : undefined,
+    };
 
     const pulseResult: TestResult = {
       id: uniqueTestId,
@@ -315,6 +323,8 @@ export class PlaywrightPulseReporter implements Reporter {
       tracePath: undefined,
       stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
       stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
+      // --- ADDED THESE LINES from testSpecificData ---
+      ...testSpecificData,
     };
 
     try {
@@ -348,6 +358,21 @@ export class PlaywrightPulseReporter implements Reporter {
     if (error?.stack) {
       console.error(error.stack);
     }
+  }
+
+  private _getEnvDetails() {
+    return {
+      host: os.hostname(),
+      os: `${os.platform()} ${os.release()}`,
+      cpu: {
+        model: os.cpus()[0] ? os.cpus()[0].model : "N/A", // Handle cases with no CPU info
+        cores: os.cpus().length,
+      },
+      memory: `${(os.totalmem() / 1024 ** 3).toFixed(2)}GB`, // Total RAM in GB
+      node: process.version,
+      v8: process.versions.v8,
+      cwd: process.cwd(),
+    };
   }
 
   private async _writeShardResults(): Promise<void> {
@@ -492,6 +517,8 @@ export class PlaywrightPulseReporter implements Reporter {
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
     const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`; // Need not to change
+    // --- CALLING _getEnvDetails HERE ---
+    const environmentDetails = this._getEnvDetails();
 
     const runData: TestRun = {
       id: runId,
@@ -501,12 +528,18 @@ export class PlaywrightPulseReporter implements Reporter {
       failed: 0,
       skipped: 0,
       duration,
+      // --- ADDED environmentDetails HERE ---
+      environment: environmentDetails,
     };
 
     let finalReport: PlaywrightPulseReport | undefined = undefined; // Initialize as undefined
 
     if (this.isSharded) {
       finalReport = await this._mergeShardResults(runData);
+      // Ensured environment details are on the final merged runData if not already
+      if (finalReport && finalReport.run && !finalReport.run.environment) {
+        finalReport.run.environment = environmentDetails;
+      }
     } else {
       this.results.forEach((r) => (r.runId = runId));
       runData.passed = this.results.filter((r) => r.status === "passed").length;
@@ -563,6 +596,7 @@ PlaywrightPulseReporter: Run Finished
           failed: 0,
           skipped: 0,
           duration: duration,
+          environment: environmentDetails,
         },
         results: [],
         metadata: {

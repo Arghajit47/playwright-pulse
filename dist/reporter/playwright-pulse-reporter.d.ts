@@ -19,6 +19,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private processStep;
     onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;
     onError(error: any): void;
+    private _getEnvDetails;
     private _writeShardResults;
     private _mergeShardResults;
     private _cleanupTemporaryFiles;

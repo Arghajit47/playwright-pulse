@@ -40,6 +40,7 @@ const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
 const ua_parser_js_1 = require("ua-parser-js"); // Added UAParser import
+const os = __importStar(require("os"));
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return "failed";
@@ -244,6 +245,15 @@ class PlaywrightPulseReporter {
             });
         }
         const uniqueTestId = test.id;
+        // --- ADDED THIS SECTION for testData ---
+        const testSpecificData = {
+            workerId: result.workerIndex,
+            totalWorkers: this.config.workers,
+            configFile: this.config.configFile,
+            metadata: this.config.metadata
+                ? JSON.stringify(this.config.metadata)
+                : undefined,
+        };
         const pulseResult = {
             id: uniqueTestId,
             runId: "TBD",
@@ -265,6 +275,8 @@ class PlaywrightPulseReporter {
             tracePath: undefined,
             stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
             stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
+            // --- ADDED THESE LINES from testSpecificData ---
+            ...testSpecificData,
         };
         try {
             (0, attachment_utils_1.attachFiles)(testIdForFiles, result, pulseResult, this.options);
@@ -288,6 +300,20 @@ class PlaywrightPulseReporter {
         if (error === null || error === void 0 ? void 0 : error.stack) {
             console.error(error.stack);
         }
+    }
+    _getEnvDetails() {
+        return {
+            host: os.hostname(),
+            os: `${os.platform()} ${os.release()}`,
+            cpu: {
+                model: os.cpus()[0] ? os.cpus()[0].model : "N/A", // Handle cases with no CPU info
+                cores: os.cpus().length,
+            },
+            memory: `${(os.totalmem() / 1024 ** 3).toFixed(2)}GB`, // Total RAM in GB
+            node: process.version,
+            v8: process.versions.v8,
+            cwd: process.cwd(),
+        };
     }
     async _writeShardResults() {
         if (this.shardIndex === undefined) {
@@ -383,6 +409,8 @@ class PlaywrightPulseReporter {
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
         const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`; // Need not to change
+        // --- CALLING _getEnvDetails HERE ---
+        const environmentDetails = this._getEnvDetails();
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
@@ -391,10 +419,16 @@ class PlaywrightPulseReporter {
             failed: 0,
             skipped: 0,
             duration,
+            // --- ADDED environmentDetails HERE ---
+            environment: environmentDetails,
         };
         let finalReport = undefined; // Initialize as undefined
         if (this.isSharded) {
             finalReport = await this._mergeShardResults(runData);
+            // Ensured environment details are on the final merged runData if not already
+            if (finalReport && finalReport.run && !finalReport.run.environment) {
+                finalReport.run.environment = environmentDetails;
+            }
         }
         else {
             this.results.forEach((r) => (r.runId = runId));
@@ -441,6 +475,7 @@ PlaywrightPulseReporter: Run Finished
                     failed: 0,
                     skipped: 0,
                     duration: duration,
+                    environment: environmentDetails,
                 },
                 results: [],
                 metadata: {
