@@ -292,16 +292,24 @@ export class PlaywrightPulseReporter implements Reporter {
 
     // --- REFINED THIS SECTION for testData ---
     const maxWorkers = this.config.workers;
-    // Use the modulo operator to map the unique workerIndex to a concurrency "slot".
-    // This ensures workerId is always between 0 and (maxWorkers - 1).
-    // Added a safeguard to fall back to the raw index if maxWorkers isn't a positive number.
-    const mappedWorkerId =
-      maxWorkers && maxWorkers > 0
-        ? result.workerIndex % maxWorkers
-        : result.workerIndex;
+    let mappedWorkerId: number;
+
+    // First, check for the special case where a test is not assigned a worker (e.g., global setup failure).
+    if (result.workerIndex === -1) {
+      mappedWorkerId = -1; // Keep it as -1 to clearly identify this special case.
+    } else if (maxWorkers && maxWorkers > 0) {
+      // If there's a valid worker, map it to the concurrency slot...
+      const zeroBasedId = result.workerIndex % maxWorkers;
+      // ...and then shift it to be 1-based (1 to n).
+      mappedWorkerId = zeroBasedId + 1;
+    } else {
+      // Fallback for when maxWorkers is not defined: just use the original index (and shift to 1-based).
+      mappedWorkerId = result.workerIndex + 1;
+    }
 
     const testSpecificData = {
       workerId: mappedWorkerId,
+      uniqueWorkerIndex: result.workerIndex, // We'll keep the original for diagnostics
       totalWorkers: maxWorkers,
       configFile: this.config.configFile,
       metadata: this.config.metadata
