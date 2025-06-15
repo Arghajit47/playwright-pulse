@@ -289,10 +289,20 @@ export class PlaywrightPulseReporter implements Reporter {
     }
 
     const uniqueTestId = test.id;
-    // --- ADDED THIS SECTION for testData ---
+
+    // --- REFINED THIS SECTION for testData ---
+    const maxWorkers = this.config.workers;
+    // Use the modulo operator to map the unique workerIndex to a concurrency "slot".
+    // This ensures workerId is always between 0 and (maxWorkers - 1).
+    // Added a safeguard to fall back to the raw index if maxWorkers isn't a positive number.
+    const mappedWorkerId =
+      maxWorkers && maxWorkers > 0
+        ? result.workerIndex % maxWorkers
+        : result.workerIndex;
+
     const testSpecificData = {
-      workerId: result.workerIndex,
-      totalWorkers: this.config.workers,
+      workerId: mappedWorkerId,
+      totalWorkers: maxWorkers,
       configFile: this.config.configFile,
       metadata: this.config.metadata
         ? JSON.stringify(this.config.metadata)
@@ -323,7 +333,7 @@ export class PlaywrightPulseReporter implements Reporter {
       tracePath: undefined,
       stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
       stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
-      // --- ADDED THESE LINES from testSpecificData ---
+      // --- UPDATED THESE LINES from testSpecificData ---
       ...testSpecificData,
     };
 

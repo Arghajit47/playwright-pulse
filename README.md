@@ -1,7 +1,7 @@
 # Playwright Pluse Report
 
 ![Playwright Pulse Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png)  
-*The ultimate Playwright reporter — Interactive dashboard with historical trend analytics, CI/CD-ready standalone HTML reports, and sharding support for scalable test execution.*
+_The ultimate Playwright reporter — Interactive dashboard with historical trend analytics, CI/CD-ready standalone HTML reports, and sharding support for scalable test execution._
 
 ## [Live Demo](https://pulse-report.netlify.app/)
 
@@ -58,10 +58,12 @@
 ## 🛠️ How It Works
 
 1. **Reporter Collection**:
+
    - Custom reporter collects detailed results during test execution
    - Handles sharding by merging `.pulse-shard-results-*.json` files
 
 2. **JSON Output**:
+
    - Generates comprehensive `playwright-pulse-report.json`
 
 3. **Visualization Options**:
@@ -84,18 +86,20 @@ pnpm add @arghajit/playwright-pulse-report@latest --save-dev
 
 ```typescript
 // playwright.config.ts
-import { defineConfig } from '@playwright/test';
-import * as path from 'path';
+import { defineConfig } from "@playwright/test";
+import * as path from "path";
 
-
-const PULSE_REPORT_DIR = path.resolve(__dirname, 'pulse-report');
+const PULSE_REPORT_DIR = path.resolve(__dirname, "pulse-report");
 
 export default defineConfig({
   reporter: [
-    ['list'],
-    ['@arghajit/playwright-pulse-report', {
-      outputDir: PULSE_REPORT_DIR
-    }]
+    ["list"],
+    [
+      "@arghajit/playwright-pulse-report",
+      {
+        outputDir: PULSE_REPORT_DIR,
+      },
+    ],
   ],
   // Other configurations...
 });
@@ -112,9 +116,11 @@ npx send-email            # Sends email report
 
 ## 📊 Report Options
 
-### Option 1: Static HTML Report
+### Option 1: Static HTML Report (Embedded Attachments)
 
 ```bash
+npm run generate-pulse-report
+or,
 npx generate-pulse-report
 ```
 
@@ -122,7 +128,20 @@ npx generate-pulse-report
 - Self-contained, no server required
 - Preserves all dashboard functionality
 
-### Option 2: Email Report
+### Option 2: HTML Report (Attachment-based)
+
+```bash
+npm run generate-report
+or,
+npx generate-report
+```
+
+- Generates playwright-pulse-report.html
+- Loads screenshots and images dynamically from the attachments/ directory
+- Produces a lighter HTML file with faster initial load
+- Requires attachments/ directory to be present when viewing the report
+
+### Option 3: Email Report
 
 1. Configure `.env`:
 
@@ -138,7 +157,7 @@ npx generate-pulse-report
    npx send-email
    ```
 
-  NOTE: The email will be send with a light-weight html file, which can be opened in mail preview application.
+NOTE: The email will be send with a light-weight html file, which can be opened in mail preview application.
 
 ## 🤖 AI Analysis
 
@@ -173,7 +192,7 @@ The dashboard includes AI-powered test analysis that provides:
 - name: Generate Pulse Report
   run: |
     npm run script merge-report
-    npm run script generate-report
+    npm run generate-report [or, npm run generate-pulse-report]
 
 # Upload final merged report as CI artifact
 - name: Upload Pulse report
@@ -213,8 +232,8 @@ The dashboard includes AI-powered test analysis that provides:
 # Merge all sharded JSON reports into one final output
 - name: Generate Pulse Report
   run: |
-    npm run script merge-report
-    npm run script generate-report
+    npm run merge-report
+    npm run generate-report [or, npm run generate-pulse-report]
 
 # Upload final merged report as CI artifact
 - name: Upload Pulse report
@@ -222,18 +241,18 @@ The dashboard includes AI-powered test analysis that provides:
   with:
     name: pulse-report
     path: pulse-report/
-
 ```
 
 ## 🧠 Notes
 
+- <strong>`npm run generate-report` generates a HTML report ( screenshots/images will be taken in realtime from 'attachments/' directory ).</strong>
+- <strong>`npm run generate-pulse-report` generates a fully self-contained static HTML report( All screenshots and images are embedded directly into the HTML using base64 encoding, which simplifies distribution but may result in larger file sizes and longer load times ).</strong>
 - Each shard generates its own playwright-pulse-report.json inside pulse-report/.
 - Artifacts are named using the shard type (matrix.config.type).
 - After the test matrix completes, reports are downloaded, renamed, and merged.
 - merge-report is a custom Node.js script that combines all JSON files into one.
-- generate-report can build a static HTML dashboard if needed.
 
-## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/structures.svg)
+## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-folder-structures.svg)
 
 ### 🚀 **Upgrade Now**
 
@@ -244,6 +263,12 @@ npm install @arghajit/playwright-pulse-report@latest
 ## 📬 Support
 
 For issues or feature requests, please [Contact Me](mailto:arghajitsingha47@gmail.com).
+
+---
+
+## 🙌🏼 Thank you
+
+Special Thanks to [@suman-vishwakarma](https://www.linkedin.com/in/suman-vishwakarma-426108185/) and [@sagnik-ghosh](https://www.linkedin.com/in/sagnikghosh99/), for continuous UAT feedback.
 
 ---
 

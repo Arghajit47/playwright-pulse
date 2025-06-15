@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.1.0-beta-15",
+  "version": "0.1.0-beta-16",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -26,6 +26,7 @@
   "license": "MIT",
   "bin": {
     "generate-pulse-report": "./scripts/generate-static-report.mjs",
+    "generate-report": "./scripts/generate-report.mjs",
     "merge-pulse-report": "./scripts/merge-pulse-report.js",
     "send-email": "./scripts/sendReport.mjs",
     "generate-trend": "./scripts/generate-trend.mjs",
@@ -42,6 +43,7 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "npm run build:reporter",
     "report:static": "node ./scripts/generate-static-report.mjs",
+    "report:generate": "node ./scripts/generate-report.mjs",
     "report:merge": "node ./scripts/merge-pulse-report.js",
     "report:email": "node ./scripts/sendReport.mjs",
     "report:minify": "node ./scripts/generate-email-report.mjs"
