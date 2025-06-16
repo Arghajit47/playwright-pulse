@@ -47,6 +47,11 @@ export interface TestResult {
   tracePath?: string; // Relative path to the trace file
   stdout?: string[]; // Standard output captured during the test
   stderr?: string[]; // Standard error captured during the test
+  // New fields for testData
+  workerId?: number;
+  totalWorkers?: number;
+  configFile?: string;
+  metadata?: string;
 }
 
 export interface TestRun {
@@ -57,6 +62,8 @@ export interface TestRun {
   failed: number;
   skipped: number;
   duration: number; // total duration for the run
+  // New field for getEnvDetails
+  environment?: EnvDetails;
 }
 
 export interface TrendDataPoint {
@@ -78,4 +85,18 @@ export interface PlaywrightPulseReporterOptions {
   outputFile?: string;
   outputDir?: string;
   base64Images?: boolean; // Option to embed images as base64
+}
+
+// Add this new interface
+export interface EnvDetails {
+  host: string;
+  os: string;
+  cpu: {
+    model: string;
+    cores: number;
+  };
+  memory: string;
+  node: string;
+  v8: string;
+  cwd: string;
 }

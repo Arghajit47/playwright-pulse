@@ -21,6 +21,8 @@ import type {
 } from "../types"; // Use relative path
 import { randomUUID } from "crypto";
 import { attachFiles } from "./attachment-utils"; // Use relative path
+import { UAParser } from "ua-parser-js"; // Added UAParser import
+import * as os from "os";
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -116,13 +118,68 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    // console.log(`Starting test: ${test.title}`);
+    console.log(`Starting test: ${test.title}`);
+  }
+
+  private getBrowserDetails(test: TestCase): string {
+    const project = test.parent?.project(); // project() can return undefined if not in a project context
+
+    const projectConfig = project?.use; // This is where options like userAgent, defaultBrowserType are
+    const userAgent = projectConfig?.userAgent;
+    const configuredBrowserType = projectConfig?.browserName?.toLowerCase();
+
+    const parser = new UAParser(userAgent);
+    const result = parser.getResult();
+
+    let browserName = result.browser.name;
+    const browserVersion = result.browser.version
+      ? ` v${result.browser.version.split(".")[0]}`
+      : ""; // Major version
+    const osName = result.os.name ? ` on ${result.os.name}` : "";
+    const osVersion = result.os.version
+      ? ` ${result.os.version.split(".")[0]}`
+      : ""; // Major version
+    const deviceType = result.device.type; // "mobile", "tablet", etc.
+    let finalString;
+
+    // If UAParser couldn't determine browser name, fallback to configured type
+    if (browserName === undefined) {
+      browserName = configuredBrowserType;
+      finalString = `${browserName}`;
+    } else {
+      // Specific refinements for mobile based on parsed OS and device type
+      if (deviceType === "mobile" || deviceType === "tablet") {
+        if (result.os.name?.toLowerCase().includes("android")) {
+          if (browserName.toLowerCase().includes("chrome"))
+            browserName = "Chrome Mobile";
+          else if (browserName.toLowerCase().includes("firefox"))
+            browserName = "Firefox Mobile";
+          else if (result.engine.name === "Blink" && !result.browser.name)
+            browserName = "Android WebView";
+          else if (
+            browserName &&
+            !browserName.toLowerCase().includes("mobile")
+          ) {
+            // Keep it as is, e.g. "Samsung Browser" is specific enough
+          } else {
+            browserName = "Android Browser"; // default for android if not specific
+          }
+        } else if (result.os.name?.toLowerCase().includes("ios")) {
+          browserName = "Mobile Safari";
+        }
+      } else if (browserName === "Electron") {
+        browserName = "Electron App";
+      }
+      finalString = `${browserName}${browserVersion}${osName}${osVersion}`;
+    }
+
+    return finalString.trim();
   }
 
   private async processStep(
     step: PwStep,
     testId: string,
-    browserName: string,
+    browserDetails: string,
     testCase?: TestCase
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
@@ -154,7 +211,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserDetails,
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
@@ -171,9 +228,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
-    const browserName =
-      project?.use?.defaultBrowserType || project?.name || "unknown";
-
+    const browserDetails = this.getBrowserDetails(test);
     const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
@@ -192,7 +247,7 @@ export class PlaywrightPulseReporter implements Reporter {
         const processedStep = await this.processStep(
           step,
           testIdForFiles,
-          browserName,
+          browserDetails,
           test
         );
         processed.push(processedStep);
@@ -235,6 +290,33 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const uniqueTestId = test.id;
 
+    // --- REFINED THIS SECTION for testData ---
+    const maxWorkers = this.config.workers;
+    let mappedWorkerId: number;
+
+    // First, check for the special case where a test is not assigned a worker (e.g., global setup failure).
+    if (result.workerIndex === -1) {
+      mappedWorkerId = -1; // Keep it as -1 to clearly identify this special case.
+    } else if (maxWorkers && maxWorkers > 0) {
+      // If there's a valid worker, map it to the concurrency slot...
+      const zeroBasedId = result.workerIndex % maxWorkers;
+      // ...and then shift it to be 1-based (1 to n).
+      mappedWorkerId = zeroBasedId + 1;
+    } else {
+      // Fallback for when maxWorkers is not defined: just use the original index (and shift to 1-based).
+      mappedWorkerId = result.workerIndex + 1;
+    }
+
+    const testSpecificData = {
+      workerId: mappedWorkerId,
+      uniqueWorkerIndex: result.workerIndex, // We'll keep the original for diagnostics
+      totalWorkers: maxWorkers,
+      configFile: this.config.configFile,
+      metadata: this.config.metadata
+        ? JSON.stringify(this.config.metadata)
+        : undefined,
+    };
+
     const pulseResult: TestResult = {
       id: uniqueTestId,
       runId: "TBD",
@@ -245,7 +327,7 @@ export class PlaywrightPulseReporter implements Reporter {
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
-      browser: browserName,
+      browser: browserDetails,
       retries: result.retry,
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
@@ -259,6 +341,8 @@ export class PlaywrightPulseReporter implements Reporter {
       tracePath: undefined,
       stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
       stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
+      // --- UPDATED THESE LINES from testSpecificData ---
+      ...testSpecificData,
     };
 
     try {
@@ -292,6 +376,21 @@ export class PlaywrightPulseReporter implements Reporter {
     if (error?.stack) {
       console.error(error.stack);
     }
+  }
+
+  private _getEnvDetails() {
+    return {
+      host: os.hostname(),
+      os: `${os.platform()} ${os.release()}`,
+      cpu: {
+        model: os.cpus()[0] ? os.cpus()[0].model : "N/A", // Handle cases with no CPU info
+        cores: os.cpus().length,
+      },
+      memory: `${(os.totalmem() / 1024 ** 3).toFixed(2)}GB`, // Total RAM in GB
+      node: process.version,
+      v8: process.versions.v8,
+      cwd: process.cwd(),
+    };
   }
 
   private async _writeShardResults(): Promise<void> {
@@ -435,7 +534,9 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
-    const runId = `run-${this.runStartTime}-${randomUUID()}`;
+    const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`; // Need not to change
+    // --- CALLING _getEnvDetails HERE ---
+    const environmentDetails = this._getEnvDetails();
 
     const runData: TestRun = {
       id: runId,
@@ -445,12 +546,18 @@ export class PlaywrightPulseReporter implements Reporter {
       failed: 0,
       skipped: 0,
       duration,
+      // --- ADDED environmentDetails HERE ---
+      environment: environmentDetails,
     };
 
     let finalReport: PlaywrightPulseReport | undefined = undefined; // Initialize as undefined
 
     if (this.isSharded) {
       finalReport = await this._mergeShardResults(runData);
+      // Ensured environment details are on the final merged runData if not already
+      if (finalReport && finalReport.run && !finalReport.run.environment) {
+        finalReport.run.environment = environmentDetails;
+      }
     } else {
       this.results.forEach((r) => (r.runId = runId));
       runData.passed = this.results.filter((r) => r.status === "passed").length;
@@ -507,6 +614,7 @@ PlaywrightPulseReporter: Run Finished
           failed: 0,
           skipped: 0,
           duration: duration,
+          environment: environmentDetails,
         },
         results: [],
         metadata: {

@@ -1,5 +1,25 @@
 # 📜 Changelog
 
+## **Version 0.2.2**
+
+**🚀 Update Highlights**  
+
+- **🏷️ Added** Introduced 'System Information' widget to visualize Details about the test execution environment, like; Host, Os, Cpu Model & Cores, Memory, Node, V8, Cwd.
+- **📊 Enhanced Analytics**:  
+  - Improved accuracy in history trend calculations.  
+  - Added support for filtering trends by date range.
+  - Added workerIndex support for individual tests in json report.
+- **🐛 Bug Fixes**:  
+  - Resolved issues with inconsistent test suite durations.  
+  - Fixed layout glitches in the HTML report on smaller screens.  
+- **🔧 Improvements**:  
+  - Optimized report generation for large test datasets.  
+  - Enhanced error handling for missing test data.  
+  - Browser Name components in test suite (Accurate browser name, version and os)
+  - Send Report functionality with minified html report (with Minimum important details)
+
+---
+
 ## **Version 0.2.1**
 
 **🚀 Fix Update**  

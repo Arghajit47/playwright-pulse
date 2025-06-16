@@ -39,6 +39,8 @@ const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const attachment_utils_1 = require("./attachment-utils"); // Use relative path
+const ua_parser_js_1 = require("ua-parser-js"); // Added UAParser import
+const os = __importStar(require("os"));
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return "failed";
@@ -105,9 +107,61 @@ class PlaywrightPulseReporter {
             .catch((err) => console.error("Pulse Reporter: Error during initialization:", err));
     }
     onTestBegin(test) {
-        // console.log(`Starting test: ${test.title}`);
+        console.log(`Starting test: ${test.title}`);
     }
-    async processStep(step, testId, browserName, testCase) {
+    getBrowserDetails(test) {
+        var _a, _b, _c, _d;
+        const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project(); // project() can return undefined if not in a project context
+        const projectConfig = project === null || project === void 0 ? void 0 : project.use; // This is where options like userAgent, defaultBrowserType are
+        const userAgent = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.userAgent;
+        const configuredBrowserType = (_b = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.browserName) === null || _b === void 0 ? void 0 : _b.toLowerCase();
+        const parser = new ua_parser_js_1.UAParser(userAgent);
+        const result = parser.getResult();
+        let browserName = result.browser.name;
+        const browserVersion = result.browser.version
+            ? ` v${result.browser.version.split(".")[0]}`
+            : ""; // Major version
+        const osName = result.os.name ? ` on ${result.os.name}` : "";
+        const osVersion = result.os.version
+            ? ` ${result.os.version.split(".")[0]}`
+            : ""; // Major version
+        const deviceType = result.device.type; // "mobile", "tablet", etc.
+        let finalString;
+        // If UAParser couldn't determine browser name, fallback to configured type
+        if (browserName === undefined) {
+            browserName = configuredBrowserType;
+            finalString = `${browserName}`;
+        }
+        else {
+            // Specific refinements for mobile based on parsed OS and device type
+            if (deviceType === "mobile" || deviceType === "tablet") {
+                if ((_c = result.os.name) === null || _c === void 0 ? void 0 : _c.toLowerCase().includes("android")) {
+                    if (browserName.toLowerCase().includes("chrome"))
+                        browserName = "Chrome Mobile";
+                    else if (browserName.toLowerCase().includes("firefox"))
+                        browserName = "Firefox Mobile";
+                    else if (result.engine.name === "Blink" && !result.browser.name)
+                        browserName = "Android WebView";
+                    else if (browserName &&
+                        !browserName.toLowerCase().includes("mobile")) {
+                        // Keep it as is, e.g. "Samsung Browser" is specific enough
+                    }
+                    else {
+                        browserName = "Android Browser"; // default for android if not specific
+                    }
+                }
+                else if ((_d = result.os.name) === null || _d === void 0 ? void 0 : _d.toLowerCase().includes("ios")) {
+                    browserName = "Mobile Safari";
+                }
+            }
+            else if (browserName === "Electron") {
+                browserName = "Electron App";
+            }
+            finalString = `${browserName}${browserVersion}${osName}${osVersion}`;
+        }
+        return finalString.trim();
+    }
+    async processStep(step, testId, browserDetails, testCase) {
         var _a, _b, _c, _d;
         let stepStatus = "passed";
         let errorMessage = ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined;
@@ -132,7 +186,7 @@ class PlaywrightPulseReporter {
             duration: duration,
             startTime: startTime,
             endTime: endTime,
-            browser: browserName,
+            browser: browserDetails,
             errorMessage: errorMessage,
             stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
@@ -146,9 +200,9 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
-        const browserName = ((_b = project === null || project === void 0 ? void 0 : project.use) === null || _b === void 0 ? void 0 : _b.defaultBrowserType) || (project === null || project === void 0 ? void 0 : project.name) || "unknown";
+        const browserDetails = this.getBrowserDetails(test);
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
@@ -160,7 +214,7 @@ class PlaywrightPulseReporter {
         const processAllSteps = async (steps) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, testIdForFiles, browserName, test);
+                const processedStep = await this.processStep(step, testIdForFiles, browserDetails, test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     processedStep.steps = await processAllSteps(step.steps);
@@ -170,7 +224,7 @@ class PlaywrightPulseReporter {
         };
         let codeSnippet = undefined;
         try {
-            if (((_c = test.location) === null || _c === void 0 ? void 0 : _c.file) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.line) && ((_e = test.location) === null || _e === void 0 ? void 0 : _e.column)) {
+            if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
                 const relativePath = path.relative(this.config.rootDir, test.location.file);
                 codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
             }
@@ -191,20 +245,46 @@ class PlaywrightPulseReporter {
             });
         }
         const uniqueTestId = test.id;
+        // --- REFINED THIS SECTION for testData ---
+        const maxWorkers = this.config.workers;
+        let mappedWorkerId;
+        // First, check for the special case where a test is not assigned a worker (e.g., global setup failure).
+        if (result.workerIndex === -1) {
+            mappedWorkerId = -1; // Keep it as -1 to clearly identify this special case.
+        }
+        else if (maxWorkers && maxWorkers > 0) {
+            // If there's a valid worker, map it to the concurrency slot...
+            const zeroBasedId = result.workerIndex % maxWorkers;
+            // ...and then shift it to be 1-based (1 to n).
+            mappedWorkerId = zeroBasedId + 1;
+        }
+        else {
+            // Fallback for when maxWorkers is not defined: just use the original index (and shift to 1-based).
+            mappedWorkerId = result.workerIndex + 1;
+        }
+        const testSpecificData = {
+            workerId: mappedWorkerId,
+            uniqueWorkerIndex: result.workerIndex, // We'll keep the original for diagnostics
+            totalWorkers: maxWorkers,
+            configFile: this.config.configFile,
+            metadata: this.config.metadata
+                ? JSON.stringify(this.config.metadata)
+                : undefined,
+        };
         const pulseResult = {
             id: uniqueTestId,
             runId: "TBD",
             name: test.titlePath().join(" > "),
-            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_f = this.config.projects[0]) === null || _f === void 0 ? void 0 : _f.name) || "Default Suite",
+            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
-            browser: browserName,
+            browser: browserDetails,
             retries: result.retry,
-            steps: ((_g = result.steps) === null || _g === void 0 ? void 0 : _g.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
-            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
+            steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
+            errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
+            stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
@@ -212,6 +292,8 @@ class PlaywrightPulseReporter {
             tracePath: undefined,
             stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
             stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
+            // --- UPDATED THESE LINES from testSpecificData ---
+            ...testSpecificData,
         };
         try {
             (0, attachment_utils_1.attachFiles)(testIdForFiles, result, pulseResult, this.options);
@@ -235,6 +317,20 @@ class PlaywrightPulseReporter {
         if (error === null || error === void 0 ? void 0 : error.stack) {
             console.error(error.stack);
         }
+    }
+    _getEnvDetails() {
+        return {
+            host: os.hostname(),
+            os: `${os.platform()} ${os.release()}`,
+            cpu: {
+                model: os.cpus()[0] ? os.cpus()[0].model : "N/A", // Handle cases with no CPU info
+                cores: os.cpus().length,
+            },
+            memory: `${(os.totalmem() / 1024 ** 3).toFixed(2)}GB`, // Total RAM in GB
+            node: process.version,
+            v8: process.versions.v8,
+            cwd: process.cwd(),
+        };
     }
     async _writeShardResults() {
         if (this.shardIndex === undefined) {
@@ -329,7 +425,9 @@ class PlaywrightPulseReporter {
         }
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
-        const runId = `run-${this.runStartTime}-${(0, crypto_1.randomUUID)()}`;
+        const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`; // Need not to change
+        // --- CALLING _getEnvDetails HERE ---
+        const environmentDetails = this._getEnvDetails();
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
@@ -338,10 +436,16 @@ class PlaywrightPulseReporter {
             failed: 0,
             skipped: 0,
             duration,
+            // --- ADDED environmentDetails HERE ---
+            environment: environmentDetails,
         };
         let finalReport = undefined; // Initialize as undefined
         if (this.isSharded) {
             finalReport = await this._mergeShardResults(runData);
+            // Ensured environment details are on the final merged runData if not already
+            if (finalReport && finalReport.run && !finalReport.run.environment) {
+                finalReport.run.environment = environmentDetails;
+            }
         }
         else {
             this.results.forEach((r) => (r.runId = runId));
@@ -388,6 +492,7 @@ PlaywrightPulseReporter: Run Finished
                     failed: 0,
                     skipped: 0,
                     duration: duration,
+                    environment: environmentDetails,
                 },
                 results: [],
                 metadata: {

@@ -24,7 +24,7 @@ try {
 // Default configuration
 const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
-const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
+const DEFAULT_HTML_FILE = "playwright-pulse-report.html";
 // Helper functions
 export function ansiToHtml(text) {
   if (!text) {
@@ -1471,94 +1471,34 @@ function generateHTML(reportData, trendData = null) {
                   .join("\n")}</pre></div>`
               : ""
           }
-          ${(() => {
-            // Screenshots
-            if (!test.screenshots || test.screenshots.length === 0) return "";
-            const baseOutputDir = path.resolve(
-              process.cwd(),
-              DEFAULT_OUTPUT_DIR
-            );
-
-            const renderScreenshot = (screenshotPathOrData, index) => {
-              let base64ImageData = "";
-              const uniqueSuffix = `${Date.now()}-${index}-${Math.random()
-                .toString(36)
-                .substring(2, 7)}`;
-              try {
-                if (
-                  typeof screenshotPathOrData === "string" &&
-                  !screenshotPathOrData.startsWith("data:image")
-                ) {
-                  const imagePath = path.resolve(
-                    baseOutputDir,
-                    screenshotPathOrData
-                  );
-                  if (fsExistsSync(imagePath))
-                    base64ImageData =
-                      readFileSync(imagePath).toString("base64");
-                  else {
-                    console.warn(
-                      chalk.yellow(
-                        `[Reporter] Screenshot file not found: ${imagePath}`
-                      )
-                    );
-                    return `<div class="attachment-item error" style="padding:10px; color:red;">Screenshot not found: ${escapeHTMLForScreenshots(
-                      screenshotPathOrData
-                    )}</div>`;
-                  }
-                } else if (
-                  typeof screenshotPathOrData === "string" &&
-                  screenshotPathOrData.startsWith("data:image/png;base64,")
-                )
-                  base64ImageData = screenshotPathOrData.substring(
-                    "data:image/png;base64,".length
-                  );
-                else if (typeof screenshotPathOrData === "string")
-                  base64ImageData = screenshotPathOrData;
-                else {
-                  console.warn(
-                    chalk.yellow(
-                      `[Reporter] Invalid screenshot data type for item at index ${index}.`
-                    )
-                  );
-                  return `<div class="attachment-item error" style="padding:10px; color:red;">Invalid screenshot data</div>`;
-                }
-                if (!base64ImageData) {
-                  console.warn(
-                    chalk.yellow(
-                      `[Reporter] Could not obtain base64 data for screenshot: ${escapeHTMLForScreenshots(
-                        String(screenshotPathOrData)
-                      )}`
-                    )
-                  );
-                  return `<div class="attachment-item error" style="padding:10px; color:red;">Error loading screenshot: ${escapeHTMLForScreenshots(
-                    String(screenshotPathOrData)
-                  )}</div>`;
-                }
-                return `<div class="attachment-item"><img src="data:image/png;base64,${base64ImageData}" alt="Screenshot ${
-                  index + 1
-                }" loading="lazy" onerror="this.alt='Error displaying embedded image'; this.style.display='none'; this.parentElement.innerHTML='<p style=\\'color:red;padding:10px;\\'>Error displaying screenshot ${
-                  index + 1
-                }.</p>';"><div class="attachment-info"><div class="trace-actions"><a href="data:image/png;base64,${base64ImageData}" target="_blank" class="view-full">View Full Image</a><a href="data:image/png;base64,${base64ImageData}" target="_blank" download="screenshot-${uniqueSuffix}.png">Download</a></div></div></div>`;
-              } catch (e) {
-                console.error(
-                  chalk.red(
-                    `[Reporter] Error processing screenshot ${escapeHTMLForScreenshots(
-                      String(screenshotPathOrData)
-                    )}: ${e.message}`
-                  )
-                );
-                return `<div class="attachment-item error" style="padding:10px; color:red;">Failed to load screenshot: ${escapeHTMLForScreenshots(
-                  String(screenshotPathOrData)
-                )}</div>`;
-              }
-            };
-            return `<div class="attachments-section"><h4>Screenshots (${
-              test.screenshots.length
-            })</h4><div class="attachments-grid">${test.screenshots
-              .map(renderScreenshot)
-              .join("")}</div></div>`;
-          })()}
+          ${
+            test.screenshots && test.screenshots.length > 0
+              ? `
+  <div class="attachments-section">
+    <h4>Screenshots</h4>
+    <div class="attachments-grid">
+      ${test.screenshots
+        .map(
+          (screenshot, index) => `
+        <div class="attachment-item">
+          <img src="${screenshot}" alt="Screenshot">
+          <div class="attachment-info">
+            <div class="trace-actions">
+              <a href="${screenshot}" target="_blank" class="view-full">View Full Image</a>
+              <a href="${screenshot}" target="_blank" download="screenshot-${Date.now()}-${index}-${Math.random()
+            .toString(36)
+            .substring(2, 7)}.png">Download</a>
+            </div>
+          </div>
+        </div>
+      `
+        )
+        .join("")}
+    </div>
+  </div>
+  `
+              : ""
+          }
           ${
             test.videoPath
               ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${(() => {
