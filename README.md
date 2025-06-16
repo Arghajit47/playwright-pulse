@@ -55,6 +55,21 @@ _The ultimate Playwright reporter — Interactive dashboard with historical tren
 
 [![Email Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-email-summary.html.png)](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-email-summary.html.png)
 
+## Available Scripts
+
+The project provides these utility commands:
+
+| Command                | Description                                                                 |
+|------------------------|-----------------------------------------------------------------------------|
+| `generate-report`      | Generates playwright-pulse-report.html, Loads screenshots and images dynamically from the attachments/ directory, Produces a lighter HTML file with faster initial load, Requires attachments/ directory to be present when viewing the report                                    |
+| `generate-pulse-report`| Generates `playwright-pulse-static-report.html`, Self-contained, no server required, Preserves all dashboard functionality                                             |
+| `merge-pulse-report`   | Combines multiple parallel test json reports, basically used in sharding                                     |
+| `generate-trend`       | Analyzes historical trends in test results                                  |
+| `generate-email-report`| Generates email-friendly report versions                                    |
+| `send-email`           | Generates email-friendly report versions & Distributes report via email                                               |
+
+Run with `npm run <command>`
+
 ## 🛠️ How It Works
 
 1. **Reporter Collection**:
@@ -268,7 +283,7 @@ For issues or feature requests, please [Contact Me](mailto:arghajitsingha47@gmai
 
 ## 🙌🏼 Thank you
 
-Special Thanks to [@suman-vishwakarma](https://www.linkedin.com/in/suman-vishwakarma-426108185/) and [@sagnik-ghosh](https://www.linkedin.com/in/sagnikghosh99/), for continuous UAT feedback.
+Special Thanks to [@Suman Vishwakarma](https://www.linkedin.com/in/suman-vishwakarma-426108185/), for continuous UAT feedback.
 
 ---
 
