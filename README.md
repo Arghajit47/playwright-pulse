@@ -304,9 +304,9 @@ npm run pulse-dashboard
 
 **Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
 
-*Part of the Playwright Pulse Report ecosystem*  
+*Part of the Playwright Pulse Report ecosystem*
 
---- 
+---
 
 ## 📬 Support
 
