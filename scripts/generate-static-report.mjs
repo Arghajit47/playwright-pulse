@@ -1460,7 +1460,7 @@ function generateHTML(reportData, trendData = null) {
           ${
             test.stdout && test.stdout.length > 0
               ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
-                  .map((line) => sanitizeHTML(line))
+                  .map((line) => formatPlaywrightError(line))
                   .join("\n")}</pre></div>`
               : ""
           }
@@ -2096,23 +2096,63 @@ function generateHTML(reportData, trendData = null) {
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
 
     function copyErrorToClipboard(button) {
-      const errorContainer = button.closest('.step-error');
-      const errorText = errorContainer.querySelector('.stack-trace').textContent;
-      const textarea = document.createElement('textarea');
-      textarea.value = errorText;
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        const successful = document.execCommand('copy');
-        const originalText = button.textContent;
-        button.textContent = successful ? 'Copied!' : 'Failed to copy';
-        setTimeout(() => {
-          button.textContent = originalText;
-        }, 2000);
-      } catch (err) {
-        console.error('Failed to copy: ', err);
-        button.textContent = 'Failed to copy';
-      }  
+  // 1. Find the main error container, which should always be present.
+  const errorContainer = button.closest('.step-error');
+  if (!errorContainer) {
+    console.error("Could not find '.step-error' container. The report's HTML structure might have changed.");
+    return;
+  }
+
+  let errorText;
+
+  // 2. First, try to find the preferred .stack-trace element (the "happy path").
+  const stackTraceElement = errorContainer.querySelector('.stack-trace');
+
+  if (stackTraceElement) {
+    // If it exists, use its text content. This handles standard assertion errors.
+    errorText = stackTraceElement.textContent;
+  } else {
+    // 3. FALLBACK: If .stack-trace doesn't exist, this is likely an unstructured error.
+    // We clone the container to avoid manipulating the live DOM or copying the button's own text.
+    const clonedContainer = errorContainer.cloneNode(true);
+    
+    // Remove the button from our clone before extracting the text.
+    const buttonInClone = clonedContainer.querySelector('button');
+    if (buttonInClone) {
+      buttonInClone.remove();
+    }
+    
+    // Use the text content of the cleaned container as the fallback.
+    errorText = clonedContainer.textContent;
+  }
+
+  // 4. Proceed with the clipboard logic, ensuring text is not null and is trimmed.
+  if (!errorText) {
+    console.error('Could not extract error text.');
+    button.textContent = 'Nothing to copy';
+    setTimeout(() => { button.textContent = 'Copy Error'; }, 2000);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = errorText.trim(); // Trim whitespace for a cleaner copy.
+  textarea.style.position = 'fixed'; // Prevent screen scroll
+  textarea.style.top = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    const successful = document.execCommand('copy');
+    const originalText = button.textContent;
+    button.textContent = successful ? 'Copied!' : 'Failed';
+    setTimeout(() => {
+      button.textContent = originalText;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+    button.textContent = 'Failed';
+  }  
+
   document.body.removeChild(textarea);
 }
 </script>
