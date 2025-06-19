@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.1.0-beta-18",
+  "version": "0.1.0-beta-19",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "keywords": [
     "playwright",
@@ -11,6 +11,7 @@
     "reporting",
     "nextjs",
     "playwright-pulse",
+    "playwright-pulse-report",
     "report",
     "email-report",
     "send-report",
@@ -46,7 +47,8 @@
     "report:generate": "node ./scripts/generate-report.mjs",
     "report:merge": "node ./scripts/merge-pulse-report.js",
     "report:email": "node ./scripts/sendReport.mjs",
-    "report:minify": "node ./scripts/generate-email-report.mjs"
+    "report:minify": "node ./scripts/generate-email-report.mjs",
+    "generate-trend": "node ./scripts/generate-trend.mjs"
   },
   "dependencies": {
     "archiver": "^7.0.1",

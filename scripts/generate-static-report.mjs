@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import * as fs from "fs/promises";
-import { readFileSync, existsSync as fsExistsSync } from "fs"; // ADD THIS LINE
+import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
-import { fork } from "child_process"; // Add this
-import { fileURLToPath } from "url"; // Add this for resolving path in ESM
+import { fork } from "child_process";
+import { fileURLToPath } from "url";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -21,16 +21,17 @@ try {
     gray: (text) => text,
   };
 }
+
 // Default configuration
 const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
+
 // Helper functions
 export function ansiToHtml(text) {
   if (!text) {
     return "";
   }
-
   const codes = {
     0: "color:inherit;font-weight:normal;font-style:normal;text-decoration:none;opacity:1;background-color:inherit;",
     1: "font-weight:bold",
@@ -82,18 +83,14 @@ export function ansiToHtml(text) {
       }
     }
   };
-
   const resetAndApplyNewCodes = (newCodesStr) => {
     const newCodes = newCodesStr.split(";");
-
     if (newCodes.includes("0")) {
       currentStylesArray = [];
       if (codes["0"]) currentStylesArray.push(codes["0"]);
     }
-
     for (const code of newCodes) {
       if (code === "0") continue;
-
       if (codes[code]) {
         if (code === "39") {
           currentStylesArray = currentStylesArray.filter(
@@ -123,12 +120,9 @@ export function ansiToHtml(text) {
     }
     applyStyles();
   };
-
   const segments = text.split(/(\x1b\[[0-9;]*m)/g);
-
   for (const segment of segments) {
     if (!segment) continue;
-
     if (segment.startsWith("\x1b[") && segment.endsWith("m")) {
       const command = segment.slice(2, -1);
       resetAndApplyNewCodes(command);
@@ -142,28 +136,23 @@ export function ansiToHtml(text) {
       html += escapedContent;
     }
   }
-
   if (openSpan) {
     html += "</span>";
   }
-
   return html;
 }
+
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
-  return String(str).replace(/[&<>"']/g, (match) => {
-    const replacements = {
-      "&": "&",
-      "<": "<",
-      ">": ">",
-      '"': '"',
-      "'": "'", // or '
-    };
-    return replacements[match] || match;
-  });
+  return String(str).replace(
+    /[&<>"']/g,
+    (match) =>
+      ({ "&": "&", "<": "<", ">": ">", '"': '"', "'": "'" }[match] || match)
+  );
 }
+
 function capitalize(str) {
-  if (!str) return ""; // Handle empty string
+  if (!str) return "";
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 function formatPlaywrightError(error) {
@@ -1304,11 +1293,12 @@ function generateHTML(reportData, trendData = null) {
     runSummary.totalTests > 0
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
+
   function generateTestCasesHTML() {
     if (!results || results.length === 0)
       return '<div class="no-tests">No test results found in this run.</div>';
     return results
-      .map((test, index) => {
+      .map((test) => {
         const browser = test.browser || "unknown";
         const testFileParts = test.name.split(" > ");
         const testTitle =
@@ -1324,319 +1314,229 @@ function generateHTML(reportData, trendData = null) {
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
-              return `
-          <div class="step-item" style="--depth: ${depth};">
-            <div class="step-header ${stepClass}" role="button" aria-expanded="false">
-              <span class="step-icon">${getStatusIcon(step.status)}</span>
-              <span class="step-title">${sanitizeHTML(
+              return `<div class="step-item" style="--depth: ${depth};"><div class="step-header ${stepClass}" role="button" aria-expanded="false"><span class="step-icon">${getStatusIcon(
+                step.status
+              )}</span><span class="step-title">${sanitizeHTML(
                 step.title
-              )}${hookIndicator}</span>
-              <span class="step-duration">${formatDuration(
+              )}${hookIndicator}</span><span class="step-duration">${formatDuration(
                 step.duration
-              )}</span>
-            </div>
-            <div class="step-details" style="display: none;">
-              ${
+              )}</span></div><div class="step-details" style="display: none;">${
                 step.codeLocation
                   ? `<div class="step-info"><strong>Location:</strong> ${sanitizeHTML(
                       step.codeLocation
                     )}</div>`
                   : ""
-              }
-              ${
+              }${
                 step.errorMessage
-                  ? `<div class="step-error">
-                      ${
-                        step.stackTrace
-                          ? `<div class="stack-trace">${formatPlaywrightError(
-                              step.stackTrace
-                            )}</div>`
-                          : ""
-                      }
-                      <button 
-                        class="copy-error-btn" 
-                        onclick="copyErrorToClipboard(this)"
-                        style="
-                          margin-top: 8px;
-                          padding: 4px 8px;
-                          background: #f0f0f0;
-                          border: 2px solid #ccc;
-                          border-radius: 4px;
-                          cursor: pointer;
-                          font-size: 12px;
-                          border-color: #8B0000;
-                          color: #8B0000;
-                          "
-                            onmouseover="this.style.background='#e0e0e0'"
-                            onmouseout="this.style.background='#f0f0f0'"
-                      > 
-                        Copy Error Prompt
-                      </button>
-                    </div>`
+                  ? `<div class="step-error">${
+                      step.stackTrace
+                        ? `<div class="stack-trace">${formatPlaywrightError(
+                            step.stackTrace
+                          )}</div>`
+                        : ""
+                    }<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                   : ""
-              }
-              ${
+              }${
                 hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
                       step.steps,
                       depth + 1
                     )}</div>`
                   : ""
-              }
-            </div>
-          </div>`;
+              }</div></div>`;
             })
             .join("");
         };
-
-        // Local escapeHTML for screenshot rendering part, ensuring it uses proper entities
-        const escapeHTMLForScreenshots = (str) => {
-          if (str === null || str === undefined) return "";
-          return String(str).replace(
-            /[&<>"']/g,
-            (match) =>
-              ({ "&": "&", "<": "<", ">": ">", '"': '"', "'": "'" }[match] ||
-              match)
-          );
-        };
-        return `
-      <div class="test-case" data-status="${
-        test.status
-      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
+        return `<div class="test-case" data-status="${
+          test.status
+        }" data-browser="${sanitizeHTML(browser)}" data-tags="${(
+          test.tags || []
+        )
           .join(",")
           .toLowerCase()}">
-        <div class="test-case-header" role="button" aria-expanded="false">
-          <div class="test-case-summary">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
+                    <div class="test-case-header" role="button" aria-expanded="false"><div class="test-case-summary"><span class="status-badge ${getStatusClass(
+                      test.status
+                    )}">${String(
           test.status
-        ).toUpperCase()}</span>
-            <span class="test-case-title" title="${sanitizeHTML(
-              test.name
-            )}">${sanitizeHTML(testTitle)}</span>
-            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
-          </div>
-          <div class="test-case-meta">
-            ${
-              test.tags && test.tags.length > 0
-                ? test.tags
-                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-                    .join(" ")
-                : ""
-            }
-            <span class="test-duration">${formatDuration(test.duration)}</span>
-          </div>
-        </div>
-        <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
-          ${
-            test.errorMessage
-              ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.errorMessage
-                )}
-                <button 
-                        class="copy-error-btn" 
-                        onclick="copyErrorToClipboard(this)"
-                        style="
-                          margin-top: 8px;
-                          padding: 4px 8px;
-                          background: #f0f0f0;
-                          border: 2px solid #ccc;
-                          border-radius: 4px;
-                          cursor: pointer;
-                          font-size: 12px;
-                          border-color: #8B0000;
-                          color: #8B0000;
-                          "
-                            onmouseover="this.style.background='#e0e0e0'"
-                            onmouseout="this.style.background='#f0f0f0'"
-                      > 
-                        Copy Error Prompt
-                      </button>
-                </div>`
-              : ""
-          }
-          <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
-          ${
-            test.stdout && test.stdout.length > 0
-              ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
-                  .map((line) => formatPlaywrightError(line))
-                  .join("\n")}</pre></div>`
-              : ""
-          }
-          ${
-            test.stderr && test.stderr.length > 0
-              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
-                  .map((line) => sanitizeHTML(line))
-                  .join("\n")}</pre></div>`
-              : ""
-          }
-          ${(() => {
-            // Screenshots
-            if (!test.screenshots || test.screenshots.length === 0) return "";
-            const baseOutputDir = path.resolve(
-              process.cwd(),
-              DEFAULT_OUTPUT_DIR
-            );
+        ).toUpperCase()}</span><span class="test-case-title" title="${sanitizeHTML(
+          test.name
+        )}">${sanitizeHTML(
+          testTitle
+        )}</span><span class="test-case-browser">(${sanitizeHTML(
+          browser
+        )})</span></div><div class="test-case-meta">${
+          test.tags && test.tags.length > 0
+            ? test.tags
+                .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                .join(" ")
+            : ""
+        }<span class="test-duration">${formatDuration(
+          test.duration
+        )}</span></div></div>
+                    <div class="test-case-content" style="display: none;">
+                        <p><strong>Full Path:</strong> ${sanitizeHTML(
+                          test.name
+                        )}</p>
+                        ${
+                          test.errorMessage
+                            ? `<div class="test-error-summary">${formatPlaywrightError(
+                                test.errorMessage
+                              )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
+                            : ""
+                        }
+                        <h4>Steps</h4><div class="steps-list">${generateStepsHTML(
+                          test.steps
+                        )}</div>
+                        ${
+                          test.stdout && test.stdout.length > 0
+                            ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log">${formatPlaywrightError(
+                                test.stdout.join("\\n")
+                              )}</pre></div>`
+                            : ""
+                        }
+                        ${
+                          test.stderr && test.stderr.length > 0
+                            ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log">${test.stderr
+                                .map((line) => sanitizeHTML(line))
+                                .join("\\n")}</pre></div>`
+                            : ""
+                        }
+                        
+                        ${(() => {
+                          if (
+                            !test.screenshots ||
+                            test.screenshots.length === 0
+                          )
+                            return "";
+                          return `<div class="attachments-section"><h4>Screenshots</h4><div class="attachments-grid">${test.screenshots
+                            .map((screenshotPath, index) => {
+                              try {
+                                const imagePath = path.resolve(
+                                  DEFAULT_OUTPUT_DIR,
+                                  screenshotPath
+                                );
+                                if (!fsExistsSync(imagePath))
+                                  return `<div class="attachment-item error">Screenshot not found: ${sanitizeHTML(
+                                    screenshotPath
+                                  )}</div>`;
+                                const base64ImageData =
+                                  readFileSync(imagePath).toString("base64");
+                                return `<div class="attachment-item"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" data-src="data:image/png;base64,${base64ImageData}" alt="Screenshot ${
+                                  index + 1
+                                }" class="lazy-load-image"><div class="attachment-info"><div class="trace-actions"><a href="data:image/png;base64,${base64ImageData}" target="_blank" download="screenshot-${index}.png">Download</a></div></div></div>`;
+                              } catch (e) {
+                                return `<div class="attachment-item error">Failed to load screenshot: ${sanitizeHTML(
+                                  screenshotPath
+                                )}</div>`;
+                              }
+                            })
+                            .join("")}</div></div>`;
+                        })()}
 
-            const renderScreenshot = (screenshotPathOrData, index) => {
-              let base64ImageData = "";
-              const uniqueSuffix = `${Date.now()}-${index}-${Math.random()
-                .toString(36)
-                .substring(2, 7)}`;
-              try {
-                if (
-                  typeof screenshotPathOrData === "string" &&
-                  !screenshotPathOrData.startsWith("data:image")
-                ) {
-                  const imagePath = path.resolve(
-                    baseOutputDir,
-                    screenshotPathOrData
-                  );
-                  if (fsExistsSync(imagePath))
-                    base64ImageData =
-                      readFileSync(imagePath).toString("base64");
-                  else {
-                    console.warn(
-                      chalk.yellow(
-                        `[Reporter] Screenshot file not found: ${imagePath}`
-                      )
-                    );
-                    return `<div class="attachment-item error" style="padding:10px; color:red;">Screenshot not found: ${escapeHTMLForScreenshots(
-                      screenshotPathOrData
-                    )}</div>`;
-                  }
-                } else if (
-                  typeof screenshotPathOrData === "string" &&
-                  screenshotPathOrData.startsWith("data:image/png;base64,")
-                )
-                  base64ImageData = screenshotPathOrData.substring(
-                    "data:image/png;base64,".length
-                  );
-                else if (typeof screenshotPathOrData === "string")
-                  base64ImageData = screenshotPathOrData;
-                else {
-                  console.warn(
-                    chalk.yellow(
-                      `[Reporter] Invalid screenshot data type for item at index ${index}.`
-                    )
-                  );
-                  return `<div class="attachment-item error" style="padding:10px; color:red;">Invalid screenshot data</div>`;
-                }
-                if (!base64ImageData) {
-                  console.warn(
-                    chalk.yellow(
-                      `[Reporter] Could not obtain base64 data for screenshot: ${escapeHTMLForScreenshots(
-                        String(screenshotPathOrData)
-                      )}`
-                    )
-                  );
-                  return `<div class="attachment-item error" style="padding:10px; color:red;">Error loading screenshot: ${escapeHTMLForScreenshots(
-                    String(screenshotPathOrData)
-                  )}</div>`;
-                }
-                return `<div class="attachment-item"><img src="data:image/png;base64,${base64ImageData}" alt="Screenshot ${
-                  index + 1
-                }" loading="lazy" onerror="this.alt='Error displaying embedded image'; this.style.display='none'; this.parentElement.innerHTML='<p style=\\'color:red;padding:10px;\\'>Error displaying screenshot ${
-                  index + 1
-                }.</p>';"><div class="attachment-info"><div class="trace-actions"><a href="data:image/png;base64,${base64ImageData}" target="_blank" class="view-full">View Full Image</a><a href="data:image/png;base64,${base64ImageData}" target="_blank" download="screenshot-${uniqueSuffix}.png">Download</a></div></div></div>`;
-              } catch (e) {
-                console.error(
-                  chalk.red(
-                    `[Reporter] Error processing screenshot ${escapeHTMLForScreenshots(
-                      String(screenshotPathOrData)
-                    )}: ${e.message}`
-                  )
-                );
-                return `<div class="attachment-item error" style="padding:10px; color:red;">Failed to load screenshot: ${escapeHTMLForScreenshots(
-                  String(screenshotPathOrData)
-                )}</div>`;
-              }
-            };
-            return `<div class="attachments-section"><h4>Screenshots (${
-              test.screenshots.length
-            })</h4><div class="attachments-grid">${test.screenshots
-              .map(renderScreenshot)
-              .join("")}</div></div>`;
-          })()}
-          ${
-            test.videoPath
-              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${(() => {
-                  // Videos
-                  const videos = Array.isArray(test.videoPath)
-                    ? test.videoPath
-                    : [test.videoPath];
-                  const mimeTypes = {
-                    mp4: "video/mp4",
-                    webm: "video/webm",
-                    ogg: "video/ogg",
-                    mov: "video/quicktime",
-                    avi: "video/x-msvideo",
-                  };
-                  return videos
-                    .map((video, index) => {
-                      const videoUrl =
-                        typeof video === "object" ? video.url || "" : video;
-                      const videoName =
-                        typeof video === "object"
-                          ? video.name || `Video ${index + 1}`
-                          : `Video ${index + 1}`;
-                      const fileExtension = String(videoUrl)
-                        .split(".")
-                        .pop()
-                        .toLowerCase();
-                      const mimeType = mimeTypes[fileExtension] || "video/mp4";
-                      return `<div class="attachment-item"><video controls width="100%" height="auto" title="${sanitizeHTML(
-                        videoName
-                      )}"><source src="${sanitizeHTML(
-                        videoUrl
-                      )}" type="${mimeType}">Your browser does not support the video tag.</video><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                        videoUrl
-                      )}" target="_blank" download="${sanitizeHTML(
-                        videoName
-                      )}.${fileExtension}">Download</a></div></div></div>`;
-                    })
-                    .join("");
-                })()}</div></div>`
-              : ""
-          }
-          ${
-            test.tracePath
-              ? `<div class="attachments-section"><h4>Trace Files</h4><div class="attachments-grid">${(() => {
-                  // Traces
-                  const traces = Array.isArray(test.tracePath)
-                    ? test.tracePath
-                    : [test.tracePath];
-                  return traces
-                    .map((trace, index) => {
-                      const traceUrl =
-                        typeof trace === "object" ? trace.url || "" : trace;
-                      const traceName =
-                        typeof trace === "object"
-                          ? trace.name || `Trace ${index + 1}`
-                          : `Trace ${index + 1}`;
-                      const traceFileName = String(traceUrl).split("/").pop();
-                      return `<div class="attachment-item"><div class="trace-preview"><span class="trace-icon">📄</span><span class="trace-name">${sanitizeHTML(
-                        traceName
-                      )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                        traceUrl
-                      )}" target="_blank" download="${sanitizeHTML(
-                        traceFileName
-                      )}" class="download-trace">Download</a></div></div></div>`;
-                    })
-                    .join("");
-                })()}</div></div>`
-              : ""
-          }
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
-                  test.codeSnippet
-                )}</code></pre></div>`
-              : ""
-          }
-        </div>
-      </div>`;
+                        ${(() => {
+                          if (!test.videoPath || test.videoPath.length === 0)
+                            return "";
+                          return `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
+                            .map((videoPath, index) => {
+                              try {
+                                const videoFilePath = path.resolve(
+                                  DEFAULT_OUTPUT_DIR,
+                                  videoPath
+                                );
+                                if (!fsExistsSync(videoFilePath))
+                                  return `<div class="attachment-item error">Video not found: ${sanitizeHTML(
+                                    videoPath
+                                  )}</div>`;
+                                const videoBase64 =
+                                  readFileSync(videoFilePath).toString(
+                                    "base64"
+                                  );
+                                const fileExtension = path
+                                  .extname(videoPath)
+                                  .slice(1)
+                                  .toLowerCase();
+                                const mimeType =
+                                  {
+                                    mp4: "video/mp4",
+                                    webm: "video/webm",
+                                    ogg: "video/ogg",
+                                    mov: "video/quicktime",
+                                    avi: "video/x-msvideo",
+                                  }[fileExtension] || "video/mp4";
+                                const videoDataUri = `data:${mimeType};base64,${videoBase64}`;
+                                return `<div class="attachment-item video-item"><video controls preload="none" class="lazy-load-video"><source data-src="${videoDataUri}" type="${mimeType}"></video><div class="attachment-info"><div class="trace-actions"><a href="${videoDataUri}" target="_blank" download="video-${index}.${fileExtension}">Download</a></div></div></div>`;
+                              } catch (e) {
+                                return `<div class="attachment-item error">Failed to load video: ${sanitizeHTML(
+                                  videoPath
+                                )}</div>`;
+                              }
+                            })
+                            .join("")}</div></div>`;
+                        })()}
+
+                        ${(() => {
+                          if (!test.tracePath) return "";
+                          try {
+                            const traceFilePath = path.resolve(
+                              DEFAULT_OUTPUT_DIR,
+                              test.tracePath
+                            );
+                            if (!fsExistsSync(traceFilePath))
+                              return `<div class="attachments-section"><h4>Trace File</h4><div class="attachment-item error">Trace file not found: ${sanitizeHTML(
+                                test.tracePath
+                              )}</div></div>`;
+                            const traceBase64 =
+                              readFileSync(traceFilePath).toString("base64");
+                            const traceDataUri = `data:application/zip;base64,${traceBase64}`;
+                            return `<div class="attachments-section"><h4>Trace File</h4><div class="attachments-grid"><div class="attachment-item generic-attachment"><div class="attachment-icon">📄</div><div class="attachment-caption"><span class="attachment-name">trace.zip</span></div><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="${traceDataUri}" class="lazy-load-attachment" download="trace.zip">Download Trace</a></div></div></div></div></div>`;
+                          } catch (e) {
+                            return `<div class="attachments-section"><h4>Trace File</h4><div class="attachment-item error">Failed to load trace file.</div></div>`;
+                          }
+                        })()}
+                        
+                        ${(() => {
+                          if (
+                            !test.attachments ||
+                            test.attachments.length === 0
+                          )
+                            return "";
+                          return `<div class="attachments-section"><h4>Other Attachments</h4><div class="attachments-grid">${test.attachments
+                            .map((attachment) => {
+                              try {
+                                const attachmentPath = path.resolve(
+                                  DEFAULT_OUTPUT_DIR,
+                                  attachment.path
+                                );
+                                if (!fsExistsSync(attachmentPath))
+                                  return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                                    attachment.name
+                                  )}</div>`;
+                                const attachmentBase64 =
+                                  readFileSync(attachmentPath).toString(
+                                    "base64"
+                                  );
+                                const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+                                return `<div class="attachment-item generic-attachment"><div class="attachment-icon">${getAttachmentIcon(
+                                  attachment.contentType
+                                )}</div><div class="attachment-caption"><span class="attachment-name" title="${sanitizeHTML(
+                                  attachment.name
+                                )}">${sanitizeHTML(
+                                  attachment.name
+                                )}</span><span class="attachment-type">${sanitizeHTML(
+                                  attachment.contentType
+                                )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
+                                  attachment.name
+                                )}">Download</a></div></div></div>`;
+                              } catch (e) {
+                                return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
+                                  attachment.name
+                                )}</div>`;
+                              }
+                            })
+                            .join("")}</div></div>`;
+                        })()}
+                    </div>
+                </div>`;
       })
       .join("");
   }
@@ -1668,7 +1568,6 @@ function generateHTML(reportData, trendData = null) {
         .highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
         .highcharts-axis-title { fill: var(--text-color) !important; }
         .highcharts-tooltip > span { background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }
-        
         body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
         .container { padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec); }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
@@ -1763,7 +1662,8 @@ function generateHTML(reportData, trendData = null) {
         .attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
         .attachment-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff; box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
         .attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
-        .attachment-item img { width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
+        .attachment-item img, .attachment-item video { width: 100%; height: 180px; object-fit: cover; display: block; background-color: #eee; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
+        .attachment-info { padding: 12px; margin-top: auto; background-color: #fafafa;}
         .attachment-item a:hover img { opacity: 0.85; }
         .attachment-caption { padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }
         .video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
@@ -1807,6 +1707,12 @@ function generateHTML(reportData, trendData = null) {
         @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
         @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} }
         @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 35px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} }
+        .trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
+        .generic-attachment { text-align: center; padding: 1rem; justify-content: center; align-items: center; }
+        .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+        .attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
+        .attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .attachment-type { font-size: 0.8rem; color: var(--text-color-secondary); }
     </style>
 </head>
 <body>
@@ -2035,61 +1941,52 @@ function generateHTML(reportData, trendData = null) {
         if (expandAllBtn) expandAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('block', 'true'));
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
         // --- Intersection Observer for Lazy Loading ---
-        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe');
+        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe, .lazy-load-image, .lazy-load-video, .lazy-load-attachment');
         if ('IntersectionObserver' in window) {
             let lazyObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const element = entry.target;
-                        if (element.classList.contains('lazy-load-iframe')) {
+                        if (element.classList.contains('lazy-load-image')) {
                             if (element.dataset.src) {
                                 element.src = element.dataset.src;
-                                element.removeAttribute('data-src'); // Optional: remove data-src after loading
-                                console.log('Lazy loaded iframe:', element.title || 'Untitled Iframe');
+                                element.removeAttribute('data-src');
+                            }
+                        } else if (element.classList.contains('lazy-load-video')) {
+                            const source = element.querySelector('source');
+                            if (source && source.dataset.src) {
+                                source.src = source.dataset.src;
+                                source.removeAttribute('data-src');
+                                element.load();
+                            }
+                        } else if (element.classList.contains('lazy-load-attachment')) {
+                            if (element.dataset.href) {
+                                element.href = element.dataset.href;
+                                element.removeAttribute('data-href');
+                            }
+                        } else if (element.classList.contains('lazy-load-iframe')) {
+                            if (element.dataset.src) {
+                                element.src = element.dataset.src;
+                                element.removeAttribute('data-src');
                             }
                         } else if (element.classList.contains('lazy-load-chart')) {
                             const renderFunctionName = element.dataset.renderFunctionName;
                             if (renderFunctionName && typeof window[renderFunctionName] === 'function') {
-                                try {
-                                    console.log('Lazy loading chart with function:', renderFunctionName);
-                                    window[renderFunctionName](); // Call the render function
-                                } catch (e) {
-                                    console.error(\`Error lazy-loading chart \${element.id} using \${renderFunctionName}:\`, e);
-                                    element.innerHTML = '<div class="no-data-chart">Error lazy-loading chart.</div>';
-                                }
-                            } else {
-                                console.warn(\`Render function \${renderFunctionName} not found or not a function for chart:\`, element.id);
+                                window[renderFunctionName]();
                             }
                         }
-                        observer.unobserve(element); // Important: stop observing once loaded
+                        observer.unobserve(element);
                     }
                 });
-            }, { 
-                rootMargin: "0px 0px 200px 0px" // Start loading when element is 200px from viewport bottom
-            });
-
-            lazyLoadElements.forEach(el => {
-                lazyObserver.observe(el);
-            });
+            }, { rootMargin: "0px 0px 200px 0px" });
+            lazyLoadElements.forEach(el => lazyObserver.observe(el));
         } else { // Fallback for browsers without IntersectionObserver
-            console.warn("IntersectionObserver not supported. Loading all items immediately.");
             lazyLoadElements.forEach(element => {
-                if (element.classList.contains('lazy-load-iframe')) {
-                     if (element.dataset.src) {
-                        element.src = element.dataset.src;
-                        element.removeAttribute('data-src');
-                    }
-                } else if (element.classList.contains('lazy-load-chart')) {
-                    const renderFunctionName = element.dataset.renderFunctionName;
-                    if (renderFunctionName && typeof window[renderFunctionName] === 'function') {
-                         try {
-                            window[renderFunctionName]();
-                        } catch (e) {
-                            console.error(\`Error loading chart (fallback) \${element.id} using \${renderFunctionName}:\`, e);
-                            element.innerHTML = '<div class="no-data-chart">Error loading chart (fallback).</div>';
-                        }
-                    }
-                }
+                if (element.classList.contains('lazy-load-image') && element.dataset.src) element.src = element.dataset.src;
+                else if (element.classList.contains('lazy-load-video')) { const source = element.querySelector('source'); if (source && source.dataset.src) { source.src = source.dataset.src; element.load(); } }
+                else if (element.classList.contains('lazy-load-attachment') && element.dataset.href) element.href = element.dataset.href;
+                else if (element.classList.contains('lazy-load-iframe') && element.dataset.src) element.src = element.dataset.src;
+                else if (element.classList.contains('lazy-load-chart')) { const renderFn = element.dataset.renderFunctionName; if(renderFn && window[renderFn]) window[renderFn](); }
             });
         }
     }

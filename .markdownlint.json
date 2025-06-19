@@ -1,5 +1,8 @@
 {
   "no-duplicate-heading": false,
   "line-length": false,
-  "no-inline-html": false
+  "no-inline-html": false,
+  "emphasis-style": false,
+  "no-trailing-spaces": false,
+  "hr-style": false
 }
