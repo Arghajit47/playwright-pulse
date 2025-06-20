@@ -50,6 +50,7 @@
           <ul class="sidebar-nav">
             <li><a href="#core-reporter">The Core Reporter</a></li>
             <li><a href="#cli-scripts">Command-Line Scripts</a></li>
+            <li><a href="#optional-cli-scripts">Optional CLI Scripts</a></li>
           </ul>
         </aside>
         <main class="main-content">
@@ -185,6 +186,42 @@
               </li>
             </ul>
 
+            <h4>send-email</h4>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> To generate and distribute a
+                lightweight summary report via email.
+              </li>
+              <li>
+                <strong>Commands:</strong>
+                <code>npx generate-email-report</code> (creates file only),
+                <code>npx send-email</code> (creates and sends).
+              </li>
+              <li>
+                <strong>Output:</strong>
+                <code>pulse-report/pulse-email-summary.html</code>.
+              </li>
+              <li>
+                <strong>Details:</strong> The <code>send-email</code> command
+                requires a <code>.env</code> file with recipient emails
+                (<code>RECIPIENT_EMAIL_1, RECIPIENT_EMAIL_1, ...</code>, etc.). It uses Nodemailer to
+                send the summary as an attachment. Authentication credentials
+                are fetched from a secure endpoint.
+              </li>
+              <li>
+                <strong>Source:</strong> 
+                <code>sendReport.mjs</code>
+              </li>
+            </ul>
+          </section>
+
+          <section id="optional-cli-scripts">
+            <h2>Optional CLI Scripts</h2>
+            <p>
+              These scripts are already been integrated into the above mentioned scripts. They are designed to be run after
+              <code>npx playwright test</code> has completed.
+            </p>
+
             <h4>generate-trend</h4>
             <ul>
               <li>
@@ -208,34 +245,32 @@
                 script is the engine that powers that feature.
               </li>
               <li><strong>Source:</strong> <code>generate-trend.mjs</code></li>
+              <li><strong>Why Optional:</strong> While running <code>generate-report.mjs</code> or, <code>generate-static-report.mjs</code>, <code>generate-trend.mjs</code> is being already called as a prefetching step.</li>
+              <li><strong>Where it can help:</strong> If user is using 'Pulse Dashboard', then <code>generate-trend.mjs</code> can help them generate Test History without needing to generate Playwright Pulse Report.</li>
             </ul>
 
-            <h4>generate-email-report & send-email</h4>
+            <h4>generate-email-report</h4>
             <ul>
               <li>
                 <strong>Purpose:</strong> To generate and distribute a
-                lightweight summary report via email.
+                lightweight summary report for email purpose.
               </li>
               <li>
                 <strong>Commands:</strong>
-                <code>npx generate-email-report</code> (creates file only),
-                <code>npx send-email</code> (creates and sends).
+                <code>npx generate-email-report</code> (creates file only)
               </li>
               <li>
                 <strong>Output:</strong>
                 <code>pulse-report/pulse-email-summary.html</code>.
               </li>
               <li>
-                <strong>Details:</strong> The <code>send-email</code> command
-                requires a <code>.env</code> file with recipient emails
-                (<code>RECIPIENT_EMAIL_1</code>, etc.). It uses Nodemailer to
-                send the summary as an attachment. Authentication credentials
-                are fetched from a secure endpoint.
+                <strong>Details:</strong> The <code>generate-email-report</code> command
+                generates a lightweight email report.
               </li>
               <li>
-                <strong>Source:</strong> <code>generate-email-report.mjs</code>,
-                <code>sendReport.mjs</code>
+                <strong>Source:</strong> <code>generate-email-report.mjs</code>
               </li>
+              <li><strong>Why Optional:</strong> While running <code>send-report.mjs</code>, <code>generate-email-report.mjs</code> is being already called as a prefetching step.</li>
             </ul>
           </section>
         </main>
