@@ -161,8 +161,8 @@ npx generate-report
 1. Configure `.env`:
 
    ```bash
-   SENDER_EMAIL_1=recipient1@example.com
-   SENDER_EMAIL_2=recipient2@example.com
+   RECIPIENT_EMAIL_1=recipient1@example.com
+   RECIPIENT_EMAIL_2=recipient2@example.com
    # ... up to 5 recipients
    ```
 

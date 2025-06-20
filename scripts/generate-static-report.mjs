@@ -1377,6 +1377,11 @@ function generateHTML(reportData, trendData = null) {
                         <p><strong>Full Path:</strong> ${sanitizeHTML(
                           test.name
                         )}</p>
+                        <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
+                          test.workerId
+                        )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
+          test.totalWorkers
+        )}]</p>
                         ${
                           test.errorMessage
                             ? `<div class="test-error-summary">${formatPlaywrightError(
@@ -1535,6 +1540,14 @@ function generateHTML(reportData, trendData = null) {
                             })
                             .join("")}</div></div>`;
                         })()}
+                        
+                        ${
+                          test.codeSnippet
+                            ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
+                                test.codeSnippet
+                              )}</code></pre></div>`
+                            : ""
+                        }
                     </div>
                 </div>`;
       })

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Getting Started - Playwright Pulse Report</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+
+    <div class="page-wrapper">
+      <nav class="top-nav">
+        <a href="index.html" class="nav-logo"
+          ><img
+            src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png"
+            alt="Playwright Pulse Report Banner"
+            class="sidebar-banner"
+        /></a>
+        <div class="tab-buttons">
+          <a href="index.html" class="tab-button">Getting Started</a>
+          <a href="reporters-scripts.html" class="tab-button"
+            >Reporters & Scripts</a
+          >
+          <a href="report-features.html" class="tab-button">Report Features</a>
+          <a href="advanced-usage.html" class="tab-button">Advanced Usage</a>
+          <a href="reference.html" class="tab-button">Reference</a>
+          <a
+            href="https://postman-test-bit.github.io/pulse-dashboard/"
+            class="tab-button external-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Live Pulse Dashboard
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </nav>
+      <div class="content-area">
+        <aside class="sidebar" id="sidebar">
+          <ul class="sidebar-nav">
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#features">Core Features</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#configuration">Initial Configuration</a></li>
+            <li><a href="#first-report">Generating Your First Report</a></li>
+          </ul>
+        </aside>
+        <main class="main-content">
+          <header id="overview" class="page-header">
+            <div class="page-header-intro">
+              <h1>Playwright Pulse Report</h1>
+              <p>
+                The ultimate Playwright reporter — Interactive dashboard with
+                historical trend analytics, CI/CD-ready standalone HTML reports,
+                and sharding support for scalable test execution.
+              </p>
+              <a
+                href="https://pulse-report.netlify.app/"
+                class="live-demo-btn"
+                target="_blank"
+                >View Live Demo</a
+              >
+            </div>
+          </header>
+
+          <section id="features">
+            <h2>Core Features</h2>
+            <img
+              src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/features.svg"
+              alt="Features"
+              style="width: 100%; margin-bottom: 1.5rem"
+            />
+            <ul>
+              <li>
+                <strong>Interactive Dashboard:</strong> A rich, single-page
+                application to visualize test results. Filter by status,
+                browser, or test name. Expand test cases to see detailed steps,
+                errors, console logs, and attachments.
+              </li>
+              <li>
+                <strong>Historical Trend Analysis:</strong> Automatically
+                archives test runs to track performance over time. View trends
+                for test volume, pass/fail rates, and execution duration.
+              </li>
+              <li>
+                <strong>Standalone HTML Reports:</strong> Generate fully
+                self-contained HTML reports with embedded attachments
+                (screenshots, videos), perfect for sharing and CI/CD artifacts.
+              </li>
+              <li>
+                <strong>Emailable Summaries:</strong> Automatically generate and
+                send lightweight email reports with key statistics to
+                stakeholders.
+              </li>
+              <li>
+                <strong>Full Sharding Support:</strong> Natively handles
+                Playwright's sharding capabilities. It can merge reports from
+                all shards into a single, comprehensive report.
+              </li>
+              <li>
+                <strong>AI-Powered Analysis:</strong> Integrates an AI analysis
+                tool to provide insights on test flakiness, performance
+                bottlenecks, and failure patterns.
+              </li>
+            </ul>
+          </section>
+
+          <section id="installation">
+            <h2>Installation</h2>
+            <p>
+              Install the package as a development dependency in your project.
+            </p>
+            <pre><code class="language-bash"># Using npm
+npm install @arghajit/playwright-pulse-report@latest --save-dev
+</code></pre>
+          </section>
+
+          <section id="configuration">
+            <h2>Initial Configuration</h2>
+            <p>
+              Add the reporter to your <code>playwright.config.ts</code> file.
+              This is the minimum configuration needed to get started.
+            </p>
+            <pre><code class="language-typescript">// playwright.config.ts
+import { defineConfig } from "@playwright/test";
+import * as path from "path";
+
+export default defineConfig({
+  reporter: [
+    ["list"], // Keep the default 'list' reporter or use any other you prefer
+    [
+      "@arghajit/playwright-pulse-report",
+      {
+        outputDir: path.resolve(__dirname, "pulse-report"),
+      },
+    ],
+  ],
+  
+  // IMPORTANT: For the reporter to capture attachments, you must enable them here.
+  use: {
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    trace: 'retain-on-failure',
+  },
+});</code></pre>
+          </section>
+
+          <section id="first-report">
+            <h2>Generating Your First Report</h2>
+            <ol>
+              <li>
+                <strong>Run your tests:</strong> Execute your Playwright tests
+                as you normally would.
+                <pre><code class="language-bash">npx playwright test</code></pre>
+                <p>
+                  This command will run your tests and the Playwright Pulse
+                  Reporter will automatically collect data in the background,
+                  creating a <code>pulse-report</code> directory.
+                </p>
+              </li>
+              <li>
+                <strong>Generate the HTML report:</strong> After the test run is
+                complete, use the provided script to generate the interactive
+                HTML file.
+                <pre><code class="language-bash">npx generate-pulse-report</code></pre>
+                <p>
+                  This creates a self-contained static file named
+                  <code>playwright-pulse-static-report.html</code> inside the
+                  <code>pulse-report</code> directory.
+                </p>
+              </li>
+              <li>
+                <strong>View your report:</strong> Open the newly generated HTML
+                file in your browser to explore the dashboard.
+              </li>
+            </ol>
+          </section>
+        </main>
+      </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+    <footer>
+      <div class="footer-content">
+        <img
+          src="https://i.postimg.cc/XqVn1NhF/pulse.png"
+          alt="Pulse Logo"
+          class="footer-logo"
+        />
+        <p>
+          © 2025 Pulse Dashboard. Crafted by
+          <a
+            href="https://github.com/arghajit47"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Arghajit Singha</a
+          >
+          with precision
+        </p>
+      </div>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>

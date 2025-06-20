@@ -1409,6 +1409,11 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+          <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
+            test.workerId
+          )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
+          test.totalWorkers
+        )}]</p>
           ${
             test.errorMessage
               ? `<div class="test-error-summary">${formatPlaywrightError(
@@ -1441,15 +1446,15 @@ function generateHTML(reportData, trendData = null) {
           ${
             test.stdout && test.stdout.length > 0
               ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                  test.stdout.join("\n")
+                  test.stdout.map((line) => sanitizeHTML(line)).join("\n")
                 )}</pre></div>`
               : ""
           }
           ${
             test.stderr && test.stderr.length > 0
-              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
-                  .map((line) => sanitizeHTML(line))
-                  .join("\n")}</pre></div>`
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  test.stderr.map((line) => sanitizeHTML(line)).join("\n")
+                )}</pre></div>`
               : ""
           }
           ${
@@ -1480,11 +1485,7 @@ function generateHTML(reportData, trendData = null) {
           }
           ${
             test.videoPath && test.videoPath.length > 0
-              ? `
-            <div class="attachments-section">
-                <h4>Videos</h4>
-                <div class="attachments-grid">
-                ${test.videoPath
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
                   .map((videoUrl, index) => {
                     const fileExtension = String(videoUrl)
                       .split(".")
@@ -1498,8 +1499,7 @@ function generateHTML(reportData, trendData = null) {
                         mov: "video/quicktime",
                         avi: "video/x-msvideo",
                       }[fileExtension] || "video/mp4";
-                    return `
-                        <div class="attachment-item video-item">
+                    return `<div class="attachment-item video-item">
                             <video controls width="100%" height="auto" title="Video ${
                               index + 1
                             }">
@@ -1517,10 +1517,7 @@ function generateHTML(reportData, trendData = null) {
                             </div>
                         </div>`;
                   })
-                  .join("")}
-                </div>
-            </div>
-            `
+                  .join("")}</div></div>`
               : ""
           }
           ${
@@ -1592,8 +1589,8 @@ function generateHTML(reportData, trendData = null) {
           }
           ${
             test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
-                  test.codeSnippet
+              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
+                  sanitizeHTML(test.codeSnippet)
                 )}</code></pre></div>`
               : ""
           }

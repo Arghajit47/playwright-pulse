@@ -253,37 +253,47 @@ class PlaywrightPulseReporter {
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
-            videoPath: [], // MODIFIED: Initialized as an array
+            videoPath: [],
             tracePath: undefined,
-            attachments: [], // NEW: Initialized
+            attachments: [],
             stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
             stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
             ...testSpecificData,
         };
-        // --- NEW SELF-CONTAINED ATTACHMENT PROCESSING LOGIC ---
-        for (const attachment of result.attachments) {
+        // --- CORRECTED ATTACHMENT PROCESSING LOGIC ---
+        for (const [index, attachment] of result.attachments.entries()) {
             if (!attachment.path)
                 continue;
             try {
-                const attachmentFileName = path.basename(attachment.path);
-                const relativeDestPath = path.join(ATTACHMENTS_SUBDIR, attachmentFileName);
+                // Create a sanitized, unique folder name for this specific test
+                const testSubfolder = test.id.replace(/[^a-zA-Z0-9_-]/g, "_");
+                // Sanitize the original attachment name to create a safe filename
+                const safeAttachmentName = path
+                    .basename(attachment.path)
+                    .replace(/[^a-zA-Z0-9_.-]/g, "_");
+                // Create a unique filename to prevent collisions, especially in retries
+                const uniqueFileName = `${index}-${Date.now()}-${safeAttachmentName}`;
+                // This is the relative path that will be stored in the JSON report
+                const relativeDestPath = path.join(ATTACHMENTS_SUBDIR, testSubfolder, uniqueFileName);
+                // This is the absolute path used for the actual file system operation
                 const absoluteDestPath = path.join(this.outputDir, relativeDestPath);
+                // Ensure the unique, test-specific attachment directory exists
                 await this._ensureDirExists(path.dirname(absoluteDestPath));
                 await fs.copyFile(attachment.path, absoluteDestPath);
+                // Categorize the attachment based on its content type
                 if (attachment.contentType.startsWith("image/")) {
                     (_j = pulseResult.screenshots) === null || _j === void 0 ? void 0 : _j.push(relativeDestPath);
                 }
                 else if (attachment.contentType.startsWith("video/")) {
-                    (_k = pulseResult.videoPath) === null || _k === void 0 ? void 0 : _k.push(relativeDestPath); // MODIFIED: Push to videoPath array
+                    (_k = pulseResult.videoPath) === null || _k === void 0 ? void 0 : _k.push(relativeDestPath);
                 }
                 else if (attachment.name === "trace") {
                     pulseResult.tracePath = relativeDestPath;
                 }
                 else {
-                    // NEW: Handle all other file types
                     (_l = pulseResult.attachments) === null || _l === void 0 ? void 0 : _l.push({
-                        name: attachment.name,
-                        path: relativeDestPath,
+                        name: attachment.name, // The original, human-readable name
+                        path: relativeDestPath, // The safe, relative path for linking
                         contentType: attachment.contentType,
                     });
                 }

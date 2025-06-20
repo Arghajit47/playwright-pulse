@@ -1,6 +1,6 @@
+#!/usr/bin/env node
 import * as fs from "fs/promises";
 import path from "path";
-// XLSX is NO LONGER NEEDED here
 
 // Use dynamic import for chalk as it's ESM only for prettier console logs
 let chalk;

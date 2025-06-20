@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporters & Scripts - Playwright Pulse Report</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="top-nav">
+        <a href="index.html" class="nav-logo"
+          ><img
+            src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png"
+            alt="Playwright Pulse Report Banner"
+            class="sidebar-banner"
+        /></a>
+        <div class="tab-buttons">
+          <a href="index.html" class="tab-button">Getting Started</a>
+          <a href="reporters-scripts.html" class="tab-button"
+            >Reporters & Scripts</a
+          >
+          <a href="report-features.html" class="tab-button">Report Features</a>
+          <a href="advanced-usage.html" class="tab-button">Advanced Usage</a>
+          <a href="reference.html" class="tab-button">Reference</a>
+          <a
+            href="https://postman-test-bit.github.io/pulse-dashboard/"
+            class="tab-button external-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Live Pulse Dashboard
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </nav>
+      <div class="content-area">
+        <aside class="sidebar" id="sidebar">
+          <ul class="sidebar-nav">
+            <li><a href="#core-reporter">The Core Reporter</a></li>
+            <li><a href="#cli-scripts">Command-Line Scripts</a></li>
+          </ul>
+        </aside>
+        <main class="main-content">
+          <h1>Reporters & Scripts</h1>
+          <p>
+            The package is composed of a core reporter and a set of CLI scripts
+            for processing the collected data.
+          </p>
+
+          <section id="core-reporter">
+            <h2>The Core Reporter</h2>
+            <p>
+              The main logic resides in
+              <code>playwright-pulse-reporter.ts</code>, which implements
+              Playwright's <code>Reporter</code> interface.
+            </p>
+            <h4>How it Works</h4>
+            <ul>
+              <li>
+                <strong>Event-Driven:</strong> It hooks into Playwright's test
+                execution lifecycle using methods like <code>onBegin</code>,
+                <code>onTestEnd</code>, and <code>onEnd</code>.
+              </li>
+              <li>
+                <strong>Data Collection:</strong> It captures comprehensive data
+                for each test, including status, duration, retries, steps,
+                errors, console output, and tags.
+              </li>
+              <li>
+                <strong>Attachment Handling:</strong> When a test completes, the
+                reporter automatically processes its attachments. It copies
+                screenshots, videos, and trace files into a structured
+                <code>pulse-report/attachments/</code> directory. This ensures
+                all artifacts are co-located with the report data.
+              </li>
+              <li>
+                <strong>Sharding Awareness:</strong> The reporter is aware of
+                sharding. When run in a sharded environment, it saves its
+                results to a temporary file (e.g.,
+                <code>.pulse-shard-results-0.json</code>) instead of writing the
+                final report. The main process (shard 0) is responsible for the
+                final merge.
+              </li>
+              <li>
+                <strong>JSON Output:</strong> At the end of a non-sharded run
+                (or after merging shards), it generates the master
+                <code>playwright-pulse-report.json</code> file, which contains
+                all the structured data for the entire test run.
+              </li>
+            </ul>
+          </section>
+
+          <section id="cli-scripts">
+            <h2>Command-Line Scripts</h2>
+            <p>
+              These scripts are the tools you use to transform the raw JSON data
+              into viewable reports. They are designed to be run after
+              <code>npx playwright test</code> has completed.
+            </p>
+
+            <h4>generate-pulse-report</h4>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> Creates the primary, fully
+                self-contained static HTML report.
+              </li>
+              <li>
+                <strong>Command:</strong> <code>npx generate-pulse-report</code>
+              </li>
+              <li>
+                <strong>Output:</strong>
+                <code>pulse-report/playwright-pulse-static-report.html</code>
+              </li>
+              <li>
+                <strong>Details:</strong> This is the recommended script for
+                most use cases, especially CI/CD. It reads the JSON data and
+                embeds all attachments (images, videos) directly into the HTML
+                file using base64 encoding. The resulting file is large but
+                highly portable.
+              </li>
+              <li>
+                <strong>Source:</strong> <code>generate-static-report.mjs</code>
+              </li>
+            </ul>
+
+            <h4>generate-report</h4>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> Creates a lightweight HTML report that
+                loads attachments dynamically.
+              </li>
+              <li>
+                <strong>Command:</strong> <code>npx generate-report</code>
+              </li>
+              <li>
+                <strong>Output:</strong>
+                <code>pulse-report/playwright-pulse-report.html</code>
+              </li>
+              <li>
+                <strong>Details:</strong> This generates a much smaller HTML
+                file, leading to faster initial load times. However, it requires
+                the <code>pulse-report/attachments/</code> directory to be
+                served alongside the HTML file for images and videos to appear.
+              </li>
+              <li><strong>Source:</strong> <code>generate-report.mjs</code></li>
+            </ul>
+
+            <h4>merge-pulse-report</h4>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> Merges test results from multiple
+                shards into a single master JSON file.
+              </li>
+              <li>
+                <strong>Command:</strong> <code>npx merge-pulse-report</code>
+              </li>
+              <li>
+                <strong>Input:</strong> Reads all
+                <code>playwright-pulse-report-*.json</code> files in the
+                <code>pulse-report/</code> directory.
+              </li>
+              <li>
+                <strong>Output:</strong> A single, combined
+                <code>pulse-report/playwright-pulse-report.json</code>.
+              </li>
+              <li>
+                <strong>Details:</strong> This script is essential for sharded
+                test runs. It must be executed after all shards have completed
+                and before generating the final HTML report.
+              </li>
+              <li>
+                <strong>Source:</strong> <code>merge-pulse-report.js</code>
+              </li>
+            </ul>
+
+            <h4>generate-trend</h4>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> Archives the current test run's data
+                to enable historical trend analysis.
+              </li>
+              <li><strong>Command:</strong> <code>npx generate-trend</code></li>
+              <li>
+                <strong>Action:</strong> Copies the current
+                <code>playwright-pulse-report.json</code> into a
+                <code>pulse-report/history/</code> subdirectory, naming it with
+                a timestamp. It also automatically deletes the oldest files to
+                keep only the last 15 runs.
+              </li>
+              <li>
+                <strong>Details:</strong> The report generation scripts (<code
+                  >generate-pulse-report</code
+                >
+                and <code>generate-report</code>) automatically look in the
+                <code>history/</code> folder to build the trend charts. This
+                script is the engine that powers that feature.
+              </li>
+              <li><strong>Source:</strong> <code>generate-trend.mjs</code></li>
+            </ul>
+
+            <h4>generate-email-report & send-email</h4>
+            <ul>
+              <li>
+                <strong>Purpose:</strong> To generate and distribute a
+                lightweight summary report via email.
+              </li>
+              <li>
+                <strong>Commands:</strong>
+                <code>npx generate-email-report</code> (creates file only),
+                <code>npx send-email</code> (creates and sends).
+              </li>
+              <li>
+                <strong>Output:</strong>
+                <code>pulse-report/pulse-email-summary.html</code>.
+              </li>
+              <li>
+                <strong>Details:</strong> The <code>send-email</code> command
+                requires a <code>.env</code> file with recipient emails
+                (<code>RECIPIENT_EMAIL_1</code>, etc.). It uses Nodemailer to
+                send the summary as an attachment. Authentication credentials
+                are fetched from a secure endpoint.
+              </li>
+              <li>
+                <strong>Source:</strong> <code>generate-email-report.mjs</code>,
+                <code>sendReport.mjs</code>
+              </li>
+            </ul>
+          </section>
+        </main>
+      </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+    <script src="script.js"></script>
+  </body>
+</html>
