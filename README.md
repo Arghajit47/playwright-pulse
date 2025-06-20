@@ -277,7 +277,7 @@ npm install @arghajit/playwright-pulse-report@latest
 
 ---
 
-<img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-logo.png" alt="pulse dashboard" title="pulse dashboard" height="50px" width="80px" align="left" padding="10px"/>
+<img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-logo.png" alt="pulse dashboard" title="pulse dashboard" height="35px" width="60px" align="left" padding="5px"/>
 <h2>Pulse Dashboard</h2>
 
 **Real-time Playwright Test Monitoring & Analysis**  
@@ -300,13 +300,13 @@ npm run pulse-dashboard
 
 *(Run from project root containing `pulse-report/` directory)*  
 
-**NPM Package**: [pulse-dashboard on npm](https://www.npmjs.com/package/pulse-dashboard)  
+**NPM Package**: [pulse-dashboard](https://www.npmjs.com/package/pulse-dashboard)  
 
 **Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
 
-*Part of the Playwright Pulse Report ecosystem*  
+*Part of the Playwright Pulse Report ecosystem*
 
---- 
+---
 
 ## 📬 Support
 
