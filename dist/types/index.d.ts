@@ -32,8 +32,13 @@ export interface TestResult {
     runId: string;
     browser: string;
     screenshots?: string[];
-    videoPath?: string;
+    videoPath?: string[];
     tracePath?: string;
+    attachments?: {
+        name: string;
+        path: string;
+        contentType: string;
+    }[];
     stdout?: string[];
     stderr?: string[];
     workerId?: number;

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 import * as fs from "fs/promises";
-import { readFileSync, existsSync as fsExistsSync } from "fs"; // ADD THIS LINE
+import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
-import { fork } from "child_process"; // Add this
-import { fileURLToPath } from "url"; // Add this for resolving path in ESM
+import { fork } from "child_process";
+import { fileURLToPath } from "url";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -157,13 +157,13 @@ function sanitizeHTML(str) {
       "<": "<",
       ">": ">",
       '"': '"',
-      "'": "'", // or '
+      "'": "'",
     };
     return replacements[match] || match;
   });
 }
 function capitalize(str) {
-  if (!str) return ""; // Handle empty string
+  if (!str) return "";
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
 function formatPlaywrightError(error) {
@@ -171,22 +171,18 @@ function formatPlaywrightError(error) {
   return convertPlaywrightErrorToHTML(commandOutput);
 }
 function convertPlaywrightErrorToHTML(str) {
-  return (
-    str
-      // Convert leading spaces to &nbsp; and tabs to &nbsp;&nbsp;&nbsp;&nbsp;
-      .replace(/^(\s+)/gm, (match) =>
-        match.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;")
-      )
-      // Color and style replacements
-      .replace(/<red>/g, '<span style="color: red;">')
-      .replace(/<green>/g, '<span style="color: green;">')
-      .replace(/<dim>/g, '<span style="opacity: 0.6;">')
-      .replace(/<intensity>/g, '<span style="font-weight: bold;">') // Changed to apply bold
-      .replace(/<\/color>/g, "</span>")
-      .replace(/<\/intensity>/g, "</span>")
-      // Convert newlines to <br> after processing other replacements
-      .replace(/\n/g, "<br>")
-  );
+  if (!str) return "";
+  return str
+    .replace(/^(\s+)/gm, (match) =>
+      match.replace(/ /g, " ").replace(/\t/g, "  ")
+    )
+    .replace(/<red>/g, '<span style="color: red;">')
+    .replace(/<green>/g, '<span style="color: green;">')
+    .replace(/<dim>/g, '<span style="opacity: 0.6;">')
+    .replace(/<intensity>/g, '<span style="font-weight: bold;">')
+    .replace(/<\/color>/g, "</span>")
+    .replace(/<\/intensity>/g, "</span>")
+    .replace(/\n/g, "<br>");
 }
 function formatDuration(ms, options = {}) {
   const {
@@ -227,19 +223,12 @@ function formatDuration(ms, options = {}) {
 
   const totalRawSeconds = numMs / MS_PER_SECOND;
 
-  // Decision: Are we going to display hours or minutes?
-  // This happens if the duration is inherently >= 1 minute OR
-  // if it's < 1 minute but ceiling the seconds makes it >= 1 minute.
   if (
     totalRawSeconds < SECONDS_PER_MINUTE &&
     Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE
   ) {
-    // Strictly seconds-only display, use precision.
     return `${totalRawSeconds.toFixed(validPrecision)}s`;
   } else {
-    // Display will include minutes and/or hours, or seconds round up to a minute.
-    // Seconds part should be an integer (ceiling).
-    // Round the total milliseconds UP to the nearest full second.
     const totalMsRoundedUpToSecond =
       Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
 
@@ -251,21 +240,15 @@ function formatDuration(ms, options = {}) {
     const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
     remainingMs %= MS_PER_SECOND * SECONDS_PER_MINUTE;
 
-    const s = Math.floor(remainingMs / MS_PER_SECOND); // This will be an integer
+    const s = Math.floor(remainingMs / MS_PER_SECOND);
 
     const parts = [];
     if (h > 0) {
       parts.push(`${h}h`);
     }
-
-    // Show minutes if:
-    // - hours are present (e.g., "1h 0m 5s")
-    // - OR minutes themselves are > 0 (e.g., "5m 10s")
-    // - OR the original duration was >= 1 minute (ensures "1m 0s" for 60000ms)
     if (h > 0 || m > 0 || numMs >= MS_PER_SECOND * SECONDS_PER_MINUTE) {
       parts.push(`${m}m`);
     }
-
     parts.push(`${s}s`);
 
     return parts.join(" ");
@@ -1283,6 +1266,14 @@ function generateSuitesWidget(suitesData) {
   </div>
 </div>`;
 }
+function getAttachmentIcon(contentType) {
+  if (contentType.includes("pdf")) return "📄";
+  if (contentType.includes("json")) return "{ }";
+  if (contentType.includes("html") || contentType.includes("xml")) return "</>";
+  if (contentType.includes("csv")) return "📊";
+  if (contentType.startsWith("text/")) return "📝";
+  return "📎";
+}
 function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results || []);
@@ -1389,16 +1380,6 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
-        // Local escapeHTML for screenshot rendering part, ensuring it uses proper entities
-        const escapeHTMLForScreenshots = (str) => {
-          if (str === null || str === undefined) return "";
-          return String(str).replace(
-            /[&<>"']/g,
-            (match) =>
-              ({ "&": "&", "<": "<", ">": ">", '"': '"', "'": "'" }[match] ||
-              match)
-          );
-        };
         return `
       <div class="test-case" data-status="${
         test.status
@@ -1428,6 +1409,11 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+          <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
+            test.workerId
+          )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
+          test.totalWorkers
+        )}]</p>
           ${
             test.errorMessage
               ? `<div class="test-error-summary">${formatPlaywrightError(
@@ -1459,119 +1445,152 @@ function generateHTML(reportData, trendData = null) {
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
           ${
             test.stdout && test.stdout.length > 0
-              ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
-                  .map((line) => sanitizeHTML(line))
-                  .join("\n")}</pre></div>`
+              ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  test.stdout.map((line) => sanitizeHTML(line)).join("\n")
+                )}</pre></div>`
               : ""
           }
           ${
             test.stderr && test.stderr.length > 0
-              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
-                  .map((line) => sanitizeHTML(line))
-                  .join("\n")}</pre></div>`
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  test.stderr.map((line) => sanitizeHTML(line)).join("\n")
+                )}</pre></div>`
               : ""
           }
           ${
             test.screenshots && test.screenshots.length > 0
               ? `
-  <div class="attachments-section">
-    <h4>Screenshots</h4>
-    <div class="attachments-grid">
-      ${test.screenshots
-        .map(
-          (screenshot, index) => `
-        <div class="attachment-item">
-          <img src="${screenshot}" alt="Screenshot">
-          <div class="attachment-info">
-            <div class="trace-actions">
-              <a href="${screenshot}" target="_blank" class="view-full">View Full Image</a>
-              <a href="${screenshot}" target="_blank" download="screenshot-${Date.now()}-${index}-${Math.random()
-            .toString(36)
-            .substring(2, 7)}.png">Download</a>
+            <div class="attachments-section">
+                <h4>Screenshots</h4>
+                <div class="attachments-grid">
+                ${test.screenshots
+                  .map(
+                    (screenshot, index) => `
+                    <div class="attachment-item">
+                    <img src="${screenshot}" alt="Screenshot ${index + 1}">
+                    <div class="attachment-info">
+                        <div class="trace-actions">
+                        <a href="${screenshot}" target="_blank" class="view-full">View Full Image</a>
+                        <a href="${screenshot}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
+                        </div>
+                    </div>
+                    </div>
+                `
+                  )
+                  .join("")}
+                </div>
             </div>
-          </div>
-        </div>
-      `
-        )
-        .join("")}
-    </div>
-  </div>
-  `
+            `
               : ""
           }
           ${
-            test.videoPath
-              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${(() => {
-                  // Videos
-                  const videos = Array.isArray(test.videoPath)
-                    ? test.videoPath
-                    : [test.videoPath];
-                  const mimeTypes = {
-                    mp4: "video/mp4",
-                    webm: "video/webm",
-                    ogg: "video/ogg",
-                    mov: "video/quicktime",
-                    avi: "video/x-msvideo",
-                  };
-                  return videos
-                    .map((video, index) => {
-                      const videoUrl =
-                        typeof video === "object" ? video.url || "" : video;
-                      const videoName =
-                        typeof video === "object"
-                          ? video.name || `Video ${index + 1}`
-                          : `Video ${index + 1}`;
-                      const fileExtension = String(videoUrl)
-                        .split(".")
-                        .pop()
-                        .toLowerCase();
-                      const mimeType = mimeTypes[fileExtension] || "video/mp4";
-                      return `<div class="attachment-item"><video controls width="100%" height="auto" title="${sanitizeHTML(
-                        videoName
-                      )}"><source src="${sanitizeHTML(
-                        videoUrl
-                      )}" type="${mimeType}">Your browser does not support the video tag.</video><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                        videoUrl
-                      )}" target="_blank" download="${sanitizeHTML(
-                        videoName
-                      )}.${fileExtension}">Download</a></div></div></div>`;
-                    })
-                    .join("");
-                })()}</div></div>`
+            test.videoPath && test.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
+                  .map((videoUrl, index) => {
+                    const fileExtension = String(videoUrl)
+                      .split(".")
+                      .pop()
+                      .toLowerCase();
+                    const mimeType =
+                      {
+                        mp4: "video/mp4",
+                        webm: "video/webm",
+                        ogg: "video/ogg",
+                        mov: "video/quicktime",
+                        avi: "video/x-msvideo",
+                      }[fileExtension] || "video/mp4";
+                    return `<div class="attachment-item video-item">
+                            <video controls width="100%" height="auto" title="Video ${
+                              index + 1
+                            }">
+                                <source src="${sanitizeHTML(
+                                  videoUrl
+                                )}" type="${mimeType}">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="attachment-info">
+                                <div class="trace-actions">
+                                <a href="${sanitizeHTML(
+                                  videoUrl
+                                )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
+                                </div>
+                            </div>
+                        </div>`;
+                  })
+                  .join("")}</div></div>`
               : ""
           }
           ${
             test.tracePath
-              ? `<div class="attachments-section"><h4>Trace Files</h4><div class="attachments-grid">${(() => {
-                  // Traces
-                  const traces = Array.isArray(test.tracePath)
-                    ? test.tracePath
-                    : [test.tracePath];
-                  return traces
-                    .map((trace, index) => {
-                      const traceUrl =
-                        typeof trace === "object" ? trace.url || "" : trace;
-                      const traceName =
-                        typeof trace === "object"
-                          ? trace.name || `Trace ${index + 1}`
-                          : `Trace ${index + 1}`;
-                      const traceFileName = String(traceUrl).split("/").pop();
-                      return `<div class="attachment-item"><div class="trace-preview"><span class="trace-icon">📄</span><span class="trace-name">${sanitizeHTML(
-                        traceName
-                      )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                        traceUrl
-                      )}" target="_blank" download="${sanitizeHTML(
-                        traceFileName
-                      )}" class="download-trace">Download</a></div></div></div>`;
-                    })
-                    .join("");
-                })()}</div></div>`
+              ? `
+            <div class="attachments-section">
+                <h4>Trace Files</h4>
+                <div class="attachments-grid">
+                    <div class="attachment-item trace-item">
+                        <div class="trace-preview">
+                        <span class="trace-icon">📄</span>
+                        <span class="trace-name">${sanitizeHTML(
+                          path.basename(test.tracePath)
+                        )}</span>
+                        </div>
+                        <div class="attachment-info">
+                        <div class="trace-actions">
+                            <a href="${sanitizeHTML(
+                              test.tracePath
+                            )}" target="_blank" download="${sanitizeHTML(
+                  path.basename(test.tracePath)
+                )}" class="download-trace">Download Trace</a>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+              : ""
+          }
+          ${
+            test.attachments && test.attachments.length > 0
+              ? `
+            <div class="attachments-section">
+                <h4>Other Attachments</h4>
+                <div class="attachments-grid">
+                ${test.attachments
+                  .map(
+                    (attachment) => `
+                    <div class="attachment-item generic-attachment">
+                        <div class="attachment-icon">${getAttachmentIcon(
+                          attachment.contentType
+                        )}</div>
+                        <div class="attachment-caption">
+                        <span class="attachment-name" title="${sanitizeHTML(
+                          attachment.name
+                        )}">${sanitizeHTML(attachment.name)}</span>
+                        <span class="attachment-type">${sanitizeHTML(
+                          attachment.contentType
+                        )}</span>
+                        </div>
+                        <div class="attachment-info">
+                        <div class="trace-actions">
+                            <a href="${sanitizeHTML(
+                              attachment.path
+                            )}" target="_blank" download="${sanitizeHTML(
+                      attachment.name
+                    )}" class="download-trace">Download</a>
+                        </div>
+                        </div>
+                    </div>
+                `
+                  )
+                  .join("")}
+                </div>
+            </div>
+            `
               : ""
           }
           ${
             test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
-                  test.codeSnippet
+              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
+                  sanitizeHTML(test.codeSnippet)
                 )}</code></pre></div>`
               : ""
           }
@@ -1601,14 +1620,11 @@ function generateHTML(reportData, trendData = null) {
         }
         .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
         .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
-        
-        /* General Highcharts styling */
         .highcharts-background { fill: transparent; }
         .highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
         .highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
         .highcharts-axis-title { fill: var(--text-color) !important; }
         .highcharts-tooltip > span { background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }
-        
         body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
         .container { padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec); }
         .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
@@ -1704,11 +1720,19 @@ function generateHTML(reportData, trendData = null) {
         .attachment-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff; box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
         .attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
         .attachment-item img { width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
+        .attachment-info { padding: 12px; margin-top: auto; background-color: #fafafa;}
         .attachment-item a:hover img { opacity: 0.85; }
         .attachment-caption { padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }
         .video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
         .video-item a:hover, .trace-item a:hover { text-decoration: underline; }
         .code-section pre { background-color: #2d2d2d; color: #f0f0f0; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
+        .trace-actions { display: flex; justify-content: center; }
+        .trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
+        .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
+        .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+        .attachment-caption { display: flex; flex-direction: column; }
+        .attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .attachment-type { font-size: 0.8rem; color: var(--text-color-secondary); }
         .trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
         .test-history-container h2.tab-main-title { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
         .test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
@@ -2035,24 +2059,64 @@ function generateHTML(reportData, trendData = null) {
     }
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
 
-    function copyErrorToClipboard(button) {
-      const errorContainer = button.closest('.step-error');
-      const errorText = errorContainer.querySelector('.stack-trace').textContent;
-      const textarea = document.createElement('textarea');
-      textarea.value = errorText;
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        const successful = document.execCommand('copy');
-        const originalText = button.textContent;
-        button.textContent = successful ? 'Copied!' : 'Failed to copy';
-        setTimeout(() => {
-          button.textContent = originalText;
-        }, 2000);
-      } catch (err) {
-        console.error('Failed to copy: ', err);
-        button.textContent = 'Failed to copy';
-      }  
+function copyErrorToClipboard(button) {
+  // 1. Find the main error container, which should always be present.
+  const errorContainer = button.closest('.step-error');
+  if (!errorContainer) {
+    console.error("Could not find '.step-error' container. The report's HTML structure might have changed.");
+    return;
+  }
+
+  let errorText;
+
+  // 2. First, try to find the preferred .stack-trace element (the "happy path").
+  const stackTraceElement = errorContainer.querySelector('.stack-trace');
+
+  if (stackTraceElement) {
+    // If it exists, use its text content. This handles standard assertion errors.
+    errorText = stackTraceElement.textContent;
+  } else {
+    // 3. FALLBACK: If .stack-trace doesn't exist, this is likely an unstructured error.
+    // We clone the container to avoid manipulating the live DOM or copying the button's own text.
+    const clonedContainer = errorContainer.cloneNode(true);
+    
+    // Remove the button from our clone before extracting the text.
+    const buttonInClone = clonedContainer.querySelector('button');
+    if (buttonInClone) {
+      buttonInClone.remove();
+    }
+    
+    // Use the text content of the cleaned container as the fallback.
+    errorText = clonedContainer.textContent;
+  }
+
+  // 4. Proceed with the clipboard logic, ensuring text is not null and is trimmed.
+  if (!errorText) {
+    console.error('Could not extract error text.');
+    button.textContent = 'Nothing to copy';
+    setTimeout(() => { button.textContent = 'Copy Error'; }, 2000);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = errorText.trim(); // Trim whitespace for a cleaner copy.
+  textarea.style.position = 'fixed'; // Prevent screen scroll
+  textarea.style.top = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    const successful = document.execCommand('copy');
+    const originalText = button.textContent;
+    button.textContent = successful ? 'Copied!' : 'Failed';
+    setTimeout(() => {
+      button.textContent = originalText;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+    button.textContent = 'Failed';
+  }  
+
   document.body.removeChild(textarea);
 }
 </script>

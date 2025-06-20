@@ -265,11 +265,11 @@ const sendEmail = async (credentials) => {
     const mailOptions = {
       from: credentials.username,
       to: [
-        process.env.SENDER_EMAIL_1 || "",
-        process.env.SENDER_EMAIL_2 || "",
-        process.env.SENDER_EMAIL_3 || "",
-        process.env.SENDER_EMAIL_4 || "",
-        process.env.SENDER_EMAIL_5 || "",
+        process.env.RECIPIENT_EMAIL_1 || "",
+        process.env.RECIPIENT_EMAIL_2 || "",
+        process.env.RECIPIENT_EMAIL_3 || "",
+        process.env.RECIPIENT_EMAIL_4 || "",
+        process.env.RECIPIENT_EMAIL_5 || "",
       ].filter((email) => email), // Filter out empty strings
       subject: "Pulse Report " + new Date().toLocaleString(),
       html: htmlContent,

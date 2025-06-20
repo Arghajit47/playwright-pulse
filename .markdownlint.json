@@ -2,6 +2,7 @@
   "no-duplicate-heading": false,
   "line-length": false,
   "no-inline-html": false,
-  "no-emphasis-as-heading": false,
-  "emphasis-style": false
+  "emphasis-style": false,
+  "no-trailing-spaces": false,
+  "hr-style": false
 }
