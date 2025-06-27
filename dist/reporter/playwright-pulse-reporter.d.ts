@@ -26,5 +26,6 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private _cleanupTemporaryFiles;
     private _ensureDirExists;
     onEnd(result: FullResult): Promise<void>;
+    private falseResetOnEachRun;
 }
 export default PlaywrightPulseReporter;
