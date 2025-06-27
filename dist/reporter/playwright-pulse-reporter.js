@@ -296,15 +296,18 @@ class PlaywrightPulseReporter {
                 console.error(`Pulse Reporter: Failed to process attachment "${attachment.name}" for test ${pulseResult.name}. Error: ${err.message}`);
             }
         }
-        const existingTestIndex = this.results.findIndex((r) => r.id === test.id);
-        if (existingTestIndex !== -1) {
-            if (pulseResult.retries >= this.results[existingTestIndex].retries) {
-                this.results[existingTestIndex] = pulseResult;
+        this.results.push(pulseResult);
+    }
+    _getFinalizedResults(allResults) {
+        const finalResultsMap = new Map();
+        for (const result of allResults) {
+            const existing = finalResultsMap.get(result.id);
+            // Keep the result with the highest retry attempt for each test ID
+            if (!existing || result.retries >= existing.retries) {
+                finalResultsMap.set(result.id, result);
             }
         }
-        else {
-            this.results.push(pulseResult);
-        }
+        return Array.from(finalResultsMap.values());
     }
     onError(error) {
         var _a;
@@ -359,14 +362,7 @@ class PlaywrightPulseReporter {
                 }
             }
         }
-        let finalUniqueResultsMap = new Map();
-        for (const result of allShardProcessedResults) {
-            const existing = finalUniqueResultsMap.get(result.id);
-            if (!existing || result.retries >= existing.retries) {
-                finalUniqueResultsMap.set(result.id, result);
-            }
-        }
-        const finalResultsList = Array.from(finalUniqueResultsMap.values());
+        const finalResultsList = this._getFinalizedResults(allShardProcessedResults);
         finalResultsList.forEach((r) => (r.runId = finalRunData.id));
         finalRunData.passed = finalResultsList.filter((r) => r.status === "passed").length;
         finalRunData.failed = finalResultsList.filter((r) => r.status === "failed").length;
@@ -417,6 +413,8 @@ class PlaywrightPulseReporter {
             await this._writeShardResults();
             return;
         }
+        // De-duplicate and handle retries here, in a safe, single-threaded context.
+        const finalResults = this._getFinalizedResults(this.results);
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
         const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`;
@@ -424,26 +422,25 @@ class PlaywrightPulseReporter {
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
-            totalTests: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
+            // Use the length of the de-duplicated array for all counts
+            totalTests: finalResults.length,
+            passed: finalResults.filter((r) => r.status === "passed").length,
+            failed: finalResults.filter((r) => r.status === "failed").length,
+            skipped: finalResults.filter((r) => r.status === "skipped").length,
             duration,
             environment: environmentDetails,
         };
+        finalResults.forEach((r) => (r.runId = runId));
         let finalReport = undefined;
         if (this.isSharded) {
+            // The _mergeShardResults method will handle its own de-duplication
             finalReport = await this._mergeShardResults(runData);
         }
         else {
-            this.results.forEach((r) => (r.runId = runId));
-            runData.passed = this.results.filter((r) => r.status === "passed").length;
-            runData.failed = this.results.filter((r) => r.status === "failed").length;
-            runData.skipped = this.results.filter((r) => r.status === "skipped").length;
-            runData.totalTests = this.results.length;
             finalReport = {
                 run: runData,
-                results: this.results,
+                // Use the de-duplicated results
+                results: finalResults,
                 metadata: { generatedAt: new Date().toISOString() },
             };
         }
