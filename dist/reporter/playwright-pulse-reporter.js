@@ -512,47 +512,48 @@ class PlaywrightPulseReporter {
             }
             return;
         }
-        const combinedRun = {
-            id: `merged-${Date.now()}`,
-            timestamp: new Date(0),
-            totalTests: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
-            duration: 0,
-            environment: undefined,
-        };
-        const allResults = [];
+        const allResultsFromAllFiles = [];
         let latestTimestamp = new Date(0);
+        let lastRunEnvironment = undefined;
+        let totalDuration = 0;
         for (const file of reportFiles) {
             const filePath = path.join(pulseResultsDir, file);
             try {
                 const content = await fs.readFile(filePath, "utf-8");
                 const json = JSON.parse(content);
                 if (json.run) {
-                    combinedRun.totalTests += json.run.totalTests || 0;
-                    combinedRun.passed += json.run.passed || 0;
-                    combinedRun.failed += json.run.failed || 0;
-                    combinedRun.skipped += json.run.skipped || 0;
-                    combinedRun.duration += json.run.duration || 0;
                     const runTimestamp = new Date(json.run.timestamp);
                     if (runTimestamp > latestTimestamp) {
                         latestTimestamp = runTimestamp;
-                        combinedRun.environment = json.run.environment || undefined;
+                        lastRunEnvironment = json.run.environment || undefined;
                     }
                 }
                 if (json.results) {
-                    allResults.push(...json.results);
+                    allResultsFromAllFiles.push(...json.results);
                 }
             }
             catch (err) {
                 console.warn(`Pulse Reporter: Could not parse report file ${filePath}. Skipping. Error: ${err.message}`);
             }
         }
-        combinedRun.timestamp = latestTimestamp;
+        // De-duplicate the results from ALL merged files using the helper function
+        const finalMergedResults = this._getFinalizedResults(allResultsFromAllFiles);
+        // Sum the duration from the final, de-duplicated list of tests
+        totalDuration = finalMergedResults.reduce((acc, r) => acc + (r.duration || 0), 0);
+        const combinedRun = {
+            id: `merged-${Date.now()}`,
+            timestamp: latestTimestamp,
+            environment: lastRunEnvironment,
+            // Recalculate counts based on the truly final, de-duplicated list
+            totalTests: finalMergedResults.length,
+            passed: finalMergedResults.filter((r) => r.status === "passed").length,
+            failed: finalMergedResults.filter((r) => r.status === "failed").length,
+            skipped: finalMergedResults.filter((r) => r.status === "skipped").length,
+            duration: totalDuration,
+        };
         const finalReport = {
             run: combinedRun,
-            results: allResults,
+            results: finalMergedResults, // Use the de-duplicated list
             metadata: {
                 generatedAt: new Date().toISOString(),
             },
@@ -564,7 +565,7 @@ class PlaywrightPulseReporter {
                 return value;
             }, 2));
             if (this.printsToStdio()) {
-                console.log(`PlaywrightPulseReporter: ✅ Merged report with ${allResults.length} total results saved to ${finalOutputPath}`);
+                console.log(`PlaywrightPulseReporter: ✅ Merged report with ${finalMergedResults.length} total results saved to ${finalOutputPath}`);
             }
         }
         catch (err) {
