@@ -36,6 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlaywrightPulseReporter = void 0;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
+const fsSync = __importStar(require("fs"));
 const crypto_1 = require("crypto");
 const ua_parser_js_1 = require("ua-parser-js");
 const os = __importStar(require("os"));
@@ -62,7 +63,7 @@ const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
 const ATTACHMENTS_SUBDIR = "attachments";
 class PlaywrightPulseReporter {
     constructor(options = {}) {
-        var _a, _b;
+        var _a, _b, _c;
         this.results = [];
         this.baseOutputFile = "playwright-pulse-report.json";
         this.isSharded = false;
@@ -71,6 +72,7 @@ class PlaywrightPulseReporter {
         this.baseOutputFile = (_a = options.outputFile) !== null && _a !== void 0 ? _a : this.baseOutputFile;
         this.outputDir = (_b = options.outputDir) !== null && _b !== void 0 ? _b : "pulse-report";
         this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR);
+        this.resetOnEachRun = (_c = options.resetOnEachRun) !== null && _c !== void 0 ? _c : false;
     }
     printsToStdio() {
         return this.shardIndex === undefined || this.shardIndex === 0;
@@ -469,29 +471,118 @@ class PlaywrightPulseReporter {
             console.error("PlaywrightPulseReporter: CRITICAL - finalReport object was not generated. Cannot create summary.");
             return;
         }
-        const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
-        try {
-            await this._ensureDirExists(this.outputDir);
-            await fs.writeFile(finalOutputPath, JSON.stringify(finalReport, (key, value) => {
-                if (value instanceof Date)
-                    return value.toISOString();
-                if (typeof value === "bigint")
-                    return value.toString();
-                return value;
-            }, 2));
-            if (this.printsToStdio()) {
-                console.log(`PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`);
+        if (this.resetOnEachRun == true) {
+            const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
+            try {
+                await this._ensureDirExists(this.outputDir);
+                await fs.writeFile(finalOutputPath, JSON.stringify(finalReport, (key, value) => {
+                    if (value instanceof Date)
+                        return value.toISOString();
+                    if (typeof value === "bigint")
+                        return value.toString();
+                    return value;
+                }, 2));
+                if (this.printsToStdio()) {
+                    console.log(`PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`);
+                }
+            }
+            catch (error) {
+                console.error(`Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`);
+            }
+            finally {
+                if (this.isSharded) {
+                    await this._cleanupTemporaryFiles();
+                }
             }
         }
-        catch (error) {
-            console.error(`Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`);
-        }
-        finally {
-            if (this.isSharded) {
-                await this._cleanupTemporaryFiles();
+        else {
+            console.warn("PlaywrightPulseReporter: resetOnEachRun is set to false. The finalReport will display all the results present in '/pulse-results'.");
+            const finalOutputPath = path.join(`${this.outputDir}/pulse-results`, `playwright-pulse-report-${Date.now()}.json`);
+            try {
+                await this._ensureDirExists(this.outputDir);
+                await fs.writeFile(finalOutputPath, JSON.stringify(finalReport, (key, value) => {
+                    if (value instanceof Date)
+                        return value.toISOString();
+                    if (typeof value === "bigint")
+                        return value.toString();
+                    return value;
+                }, 2));
+                if (this.printsToStdio()) {
+                    console.log(`PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`);
+                }
+            }
+            catch (error) {
+                console.error(`Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`);
+            }
+            finally {
+                if (this.isSharded) {
+                    await this._cleanupTemporaryFiles();
+                }
             }
         }
     }
 }
 exports.PlaywrightPulseReporter = PlaywrightPulseReporter;
+function falseResetOnEachRun() {
+    const REPORT_DIR = "./pulse-report"; // Or change this to your reports directory
+    const OUTPUT_FILE = "playwright-pulse-report.json";
+    function getReportFiles(dir) {
+        return fsSync
+            .readdirSync(dir)
+            .filter((file) => file.startsWith("playwright-pulse-report-") && file.endsWith(".json"));
+    }
+    function mergeReports(files) {
+        var _a;
+        let combinedRun = {
+            totalTests: 0,
+            passed: 0,
+            failed: 0,
+            skipped: 0,
+            duration: 0,
+            environment: {},
+        };
+        let combinedResults = [];
+        let latestTimestamp = "";
+        let latestGeneratedAt = "";
+        for (const file of files) {
+            const filePath = path.join(`${REPORT_DIR}/pulse-results`, file);
+            const json = JSON.parse(fsSync.readFileSync(filePath, "utf-8"));
+            const run = json.run || {};
+            combinedRun.totalTests += run.totalTests || 0;
+            combinedRun.passed += run.passed || 0;
+            combinedRun.failed += run.failed || 0;
+            combinedRun.skipped += run.skipped || 0;
+            combinedRun.duration += run.duration || 0;
+            combinedRun.environment = run.environment || {};
+            if (json.results) {
+                combinedResults.push(...json.results);
+            }
+            if (run.timestamp > latestTimestamp)
+                latestTimestamp = run.timestamp;
+            if (((_a = json.metadata) === null || _a === void 0 ? void 0 : _a.generatedAt) > latestGeneratedAt)
+                latestGeneratedAt = json.metadata.generatedAt;
+        }
+        const finalJson = {
+            run: {
+                id: `merged-${Date.now()}`,
+                timestamp: latestTimestamp,
+                ...combinedRun,
+            },
+            results: combinedResults,
+            metadata: {
+                generatedAt: latestGeneratedAt,
+            },
+        };
+        return finalJson;
+    }
+    // Main execution
+    const reportFiles = getReportFiles(REPORT_DIR);
+    if (reportFiles.length === 0) {
+        console.log("No matching JSON report files found.");
+        process.exit(1);
+    }
+    const merged = mergeReports(reportFiles);
+    fsSync.writeFileSync(path.join(REPORT_DIR, OUTPUT_FILE), JSON.stringify(merged, null, 2));
+    console.log(`✅ Merged report saved as ${OUTPUT_FILE}`);
+}
 exports.default = PlaywrightPulseReporter;
