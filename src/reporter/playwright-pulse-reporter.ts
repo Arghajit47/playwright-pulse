@@ -1,3 +1,4 @@
+// src/reporter/playwright-pulse-reporter.ts
 import type {
   FullConfig,
   FullResult,
@@ -9,7 +10,6 @@ import type {
 } from "@playwright/test/reporter";
 import * as fs from "fs/promises";
 import * as path from "path";
-import * as fsSync from "fs";
 import type { PlaywrightPulseReport } from "../lib/report-types";
 import type {
   TestResult,
@@ -47,6 +47,7 @@ const convertStatus = (
 
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
 const ATTACHMENTS_SUBDIR = "attachments";
+const INDIVIDUAL_REPORTS_SUBDIR = "pulse-results";
 
 export class PlaywrightPulseReporter implements Reporter {
   private config!: FullConfig;
@@ -66,7 +67,7 @@ export class PlaywrightPulseReporter implements Reporter {
     this.baseOutputFile = options.outputFile ?? this.baseOutputFile;
     this.outputDir = options.outputDir ?? "pulse-report";
     this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR);
-    this.resetOnEachRun = options.resetOnEachRun ?? false;
+    this.resetOnEachRun = options.resetOnEachRun ?? true;
   }
 
   printsToStdio() {
@@ -96,7 +97,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     this._ensureDirExists(this.outputDir)
       .then(() => {
-        if (this.shardIndex === undefined || this.shardIndex === 0) {
+        if (this.printsToStdio()) {
           console.log(
             `PlaywrightPulseReporter: Starting test run with ${
               suite.allTests().length
@@ -313,37 +314,24 @@ export class PlaywrightPulseReporter implements Reporter {
       ...testSpecificData,
     };
 
-    // --- CORRECTED ATTACHMENT PROCESSING LOGIC ---
     for (const [index, attachment] of result.attachments.entries()) {
       if (!attachment.path) continue;
 
       try {
-        // Create a sanitized, unique folder name for this specific test
         const testSubfolder = test.id.replace(/[^a-zA-Z0-9_-]/g, "_");
-
-        // Sanitize the original attachment name to create a safe filename
         const safeAttachmentName = path
           .basename(attachment.path)
           .replace(/[^a-zA-Z0-9_.-]/g, "_");
-
-        // Create a unique filename to prevent collisions, especially in retries
         const uniqueFileName = `${index}-${Date.now()}-${safeAttachmentName}`;
-
-        // This is the relative path that will be stored in the JSON report
         const relativeDestPath = path.join(
           ATTACHMENTS_SUBDIR,
           testSubfolder,
           uniqueFileName
         );
-
-        // This is the absolute path used for the actual file system operation
         const absoluteDestPath = path.join(this.outputDir, relativeDestPath);
-
-        // Ensure the unique, test-specific attachment directory exists
         await this._ensureDirExists(path.dirname(absoluteDestPath));
         await fs.copyFile(attachment.path, absoluteDestPath);
 
-        // Categorize the attachment based on its content type
         if (attachment.contentType.startsWith("image/")) {
           pulseResult.screenshots?.push(relativeDestPath);
         } else if (attachment.contentType.startsWith("video/")) {
@@ -352,8 +340,8 @@ export class PlaywrightPulseReporter implements Reporter {
           pulseResult.tracePath = relativeDestPath;
         } else {
           pulseResult.attachments?.push({
-            name: attachment.name, // The original, human-readable name
-            path: relativeDestPath, // The safe, relative path for linking
+            name: attachment.name,
+            path: relativeDestPath,
             contentType: attachment.contentType,
           });
         }
@@ -559,9 +547,6 @@ export class PlaywrightPulseReporter implements Reporter {
 
     if (this.isSharded) {
       finalReport = await this._mergeShardResults(runData);
-      if (finalReport && finalReport.run && !finalReport.run.environment) {
-        finalReport.run.environment = environmentDetails;
-      }
     } else {
       this.results.forEach((r) => (r.runId = runId));
       runData.passed = this.results.filter((r) => r.status === "passed").length;
@@ -571,22 +556,9 @@ export class PlaywrightPulseReporter implements Reporter {
       ).length;
       runData.totalTests = this.results.length;
 
-      const reviveDates = (key: string, value: any): any => {
-        const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-        if (typeof value === "string" && isoDateRegex.test(value)) {
-          const date = new Date(value);
-          return !isNaN(date.getTime()) ? date : value;
-        }
-        return value;
-      };
-      const properlyTypedResults = JSON.parse(
-        JSON.stringify(this.results),
-        reviveDates
-      );
-
       finalReport = {
         run: runData,
-        results: properlyTypedResults,
+        results: this.results,
         metadata: { generatedAt: new Date().toISOString() },
       };
     }
@@ -598,22 +570,19 @@ export class PlaywrightPulseReporter implements Reporter {
       return;
     }
 
-    if (this.resetOnEachRun == true) {
-      const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
+    const jsonReplacer = (key: string, value: any) => {
+      if (value instanceof Date) return value.toISOString();
+      if (typeof value === "bigint") return value.toString();
+      return value;
+    };
 
+    if (this.resetOnEachRun) {
+      const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
       try {
         await this._ensureDirExists(this.outputDir);
         await fs.writeFile(
           finalOutputPath,
-          JSON.stringify(
-            finalReport,
-            (key, value) => {
-              if (value instanceof Date) return value.toISOString();
-              if (typeof value === "bigint") return value.toString();
-              return value;
-            },
-            2
-          )
+          JSON.stringify(finalReport, jsonReplacer, 2)
         );
         if (this.printsToStdio()) {
           console.log(
@@ -624,132 +593,157 @@ export class PlaywrightPulseReporter implements Reporter {
         console.error(
           `Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`
         );
-      } finally {
-        if (this.isSharded) {
-          await this._cleanupTemporaryFiles();
-        }
       }
     } else {
-      console.warn(
-        "PlaywrightPulseReporter: resetOnEachRun is set to false. The finalReport will display all the results present in '/pulse-results'."
+      // Logic for appending/merging reports
+      const pulseResultsDir = path.join(
+        this.outputDir,
+        INDIVIDUAL_REPORTS_SUBDIR
       );
-      const finalOutputPath = path.join(
-        `${this.outputDir}/pulse-results`,
+      const individualReportPath = path.join(
+        pulseResultsDir,
         `playwright-pulse-report-${Date.now()}.json`
       );
+
       try {
-        await this._ensureDirExists(this.outputDir);
+        await this._ensureDirExists(pulseResultsDir);
         await fs.writeFile(
-          finalOutputPath,
-          JSON.stringify(
-            finalReport,
-            (key, value) => {
-              if (value instanceof Date) return value.toISOString();
-              if (typeof value === "bigint") return value.toString();
-              return value;
-            },
-            2
-          )
+          individualReportPath,
+          JSON.stringify(finalReport, jsonReplacer, 2)
         );
+
         if (this.printsToStdio()) {
           console.log(
-            `PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`
+            `PlaywrightPulseReporter: Individual run report for merging written to ${individualReportPath}`
           );
         }
+        await this._mergeAllRunReports();
       } catch (error: any) {
         console.error(
-          `Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`
+          `Pulse Reporter: Failed to write or merge report. Error: ${error.message}`
         );
-      } finally {
-        if (this.isSharded) {
-          await this._cleanupTemporaryFiles();
-        }
-        await this.falseResetOnEachRun();
       }
+    }
+
+    if (this.isSharded) {
+      await this._cleanupTemporaryFiles();
     }
   }
-  private async falseResetOnEachRun() {
-    const REPORT_DIR = "./pulse-report"; // Or change this to your reports directory
-    const OUTPUT_FILE = "playwright-pulse-report.json";
 
-    function getReportFiles(dir: any) {
-      return fsSync
-        .readdirSync(dir)
-        .filter(
-          (file) =>
-            file.startsWith("playwright-pulse-report-") &&
-            file.endsWith(".json")
-        );
-    }
+  private async _mergeAllRunReports(): Promise<void> {
+    const pulseResultsDir = path.join(
+      this.outputDir,
+      INDIVIDUAL_REPORTS_SUBDIR
+    );
+    const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
 
-    function mergeReports(files: any) {
-      let combinedRun = {
-        totalTests: 0,
-        passed: 0,
-        failed: 0,
-        skipped: 0,
-        duration: 0,
-        environment: {},
-      };
-
-      let combinedResults = [];
-
-      let latestTimestamp = "";
-      let latestGeneratedAt = "";
-
-      for (const file of files) {
-        const filePath = path.join(`${REPORT_DIR}/pulse-results`, file);
-        const json = JSON.parse(fsSync.readFileSync(filePath, "utf-8"));
-
-        const run = json.run || {};
-        combinedRun.totalTests += run.totalTests || 0;
-        combinedRun.passed += run.passed || 0;
-        combinedRun.failed += run.failed || 0;
-        combinedRun.skipped += run.skipped || 0;
-        combinedRun.duration += run.duration || 0;
-        combinedRun.environment = run.environment || {};
-
-        if (json.results) {
-          combinedResults.push(...json.results);
+    let reportFiles: string[];
+    try {
+      const allFiles = await fs.readdir(pulseResultsDir);
+      reportFiles = allFiles.filter(
+        (file) =>
+          file.startsWith("playwright-pulse-report-") && file.endsWith(".json")
+      );
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        if (this.printsToStdio()) {
+          console.log(
+            `Pulse Reporter: No individual reports directory found at ${pulseResultsDir}. Skipping merge.`
+          );
         }
-
-        if (run.timestamp > latestTimestamp) latestTimestamp = run.timestamp;
-        if (json.metadata?.generatedAt > latestGeneratedAt)
-          latestGeneratedAt = json.metadata.generatedAt;
+        return;
       }
-
-      const finalJson = {
-        run: {
-          id: `merged-${Date.now()}`,
-          timestamp: latestTimestamp,
-          ...combinedRun,
-        },
-        results: combinedResults,
-        metadata: {
-          generatedAt: latestGeneratedAt,
-        },
-      };
-
-      return finalJson;
+      console.error(
+        `Pulse Reporter: Error reading report directory ${pulseResultsDir}:`,
+        error
+      );
+      return;
     }
-
-    // Main execution
-    const reportFiles = getReportFiles(REPORT_DIR);
 
     if (reportFiles.length === 0) {
-      console.log("No matching JSON report files found.");
-      process.exit(1);
+      if (this.printsToStdio()) {
+        console.log(
+          "Pulse Reporter: No matching JSON report files found to merge."
+        );
+      }
+      return;
     }
 
-    const merged = mergeReports(reportFiles);
+    const combinedRun: TestRun = {
+      id: `merged-${Date.now()}`,
+      timestamp: new Date(0),
+      totalTests: 0,
+      passed: 0,
+      failed: 0,
+      skipped: 0,
+      duration: 0,
+      environment: undefined,
+    };
 
-    fsSync.writeFileSync(
-      path.join(REPORT_DIR, OUTPUT_FILE),
-      JSON.stringify(merged, null, 2)
-    );
-    console.log(`✅ Merged report saved as ${OUTPUT_FILE}`);
+    const allResults: TestResult[] = [];
+    let latestTimestamp = new Date(0);
+
+    for (const file of reportFiles) {
+      const filePath = path.join(pulseResultsDir, file);
+      try {
+        const content = await fs.readFile(filePath, "utf-8");
+        const json: PlaywrightPulseReport = JSON.parse(content);
+
+        if (json.run) {
+          combinedRun.totalTests += json.run.totalTests || 0;
+          combinedRun.passed += json.run.passed || 0;
+          combinedRun.failed += json.run.failed || 0;
+          combinedRun.skipped += json.run.skipped || 0;
+          combinedRun.duration += json.run.duration || 0;
+
+          const runTimestamp = new Date(json.run.timestamp);
+          if (runTimestamp > latestTimestamp) {
+            latestTimestamp = runTimestamp;
+            combinedRun.environment = json.run.environment || undefined;
+          }
+        }
+        if (json.results) {
+          allResults.push(...json.results);
+        }
+      } catch (err: any) {
+        console.warn(
+          `Pulse Reporter: Could not parse report file ${filePath}. Skipping. Error: ${err.message}`
+        );
+      }
+    }
+    combinedRun.timestamp = latestTimestamp;
+
+    const finalReport: PlaywrightPulseReport = {
+      run: combinedRun,
+      results: allResults,
+      metadata: {
+        generatedAt: new Date().toISOString(),
+      },
+    };
+
+    try {
+      await fs.writeFile(
+        finalOutputPath,
+        JSON.stringify(
+          finalReport,
+          (key, value) => {
+            if (value instanceof Date) return value.toISOString();
+            return value;
+          },
+          2
+        )
+      );
+      if (this.printsToStdio()) {
+        console.log(
+          `PlaywrightPulseReporter: ✅ Merged report with ${allResults.length} total results saved to ${finalOutputPath}`
+        );
+      }
+    } catch (err: any) {
+      console.error(
+        `Pulse Reporter: Failed to write final merged report to ${finalOutputPath}. Error: ${err.message}`
+      );
+    }
   }
 }
-
 
 export default PlaywrightPulseReporter;
