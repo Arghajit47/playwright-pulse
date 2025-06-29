@@ -308,6 +308,52 @@ npm run pulse-dashboard
 
 ---
 
+## ⚙️ Advanced Configuration
+
+### Handling Sequential Test Runs
+
+By default, the reporter will overwrite the `playwright-pulse-report.json` file on each new test run. This is usually what we want. However, if we run tests sequentially in the same job, like this:
+
+```bash
+npx playwright test test1.spec.ts && npx playwright test test2.spec.ts
+```
+
+By default, In this above scenario, the report from test1 will be lost. To solve this, you can use the resetOnEachRun option.
+
+```bash
+// playwright.config.ts
+import { defineConfig } from "@playwright/test";
+import * as path from "path";
+
+// Define where the final report JSON and HTML should go
+const PULSE_REPORT_DIR = path.resolve(__dirname, "pulse-report"); // Example: a directory in your project root
+
+export default defineConfig({
+  reporter: [
+    ["list"],
+    [
+      "@arghajit/playwright-pulse-report",
+      {
+        outputDir: PULSE_REPORT_DIR,
+        // Add this option
+        resetOnEachRun: false, // Default is true
+      },
+    ],
+  ],
+  // ...
+});
+```
+
+**How it works when resetOnEachRun: false:**
+
+- On the first run, it saves report-1.json to a pulse-report/pulse-results directory and creates the main playwright-pulse-report.json from it.
+- On the second run, it saves report-2.json to the same directory.
+- It then automatically reads both report-1.json and report-2.json, merges them, and updates the main playwright-pulse-report.json with the combined results.
+
+***This ensures your final report is always a complete summary of all sequential test runs.***
+
+---
+
 ## 📬 Support
 
 For issues or feature requests, please [Contact Me](mailto:arghajitsingha47@gmail.com).

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporter Comparison - Playwright Pulse Report</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .comparison-table-wrapper {
+        width: 100%;
+        margin: 2rem 0;
+      }
+      .comparison-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        border-radius: 10px;
+      }
+      .comparison-table th,
+      .comparison-table td {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        vertical-align: top;
+        border-bottom: 1px solid var(--border-color);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        hyphens: auto;
+      }
+      .comparison-table thead th {
+        background-color: var(--primary-color);
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .comparison-table tbody tr:nth-child(even) {
+        background-color: #fcfdff;
+      }
+      .comparison-table tbody tr:hover {
+        background-color: #f1f3f9;
+      }
+      .comparison-table .feature-col {
+        font-weight: 600;
+        color: var(--text-color);
+        background-color: var(--bg-color-alt);
+        border-right: 1px solid var(--border-color);
+        width: 20%;
+      }
+      .comparison-table ul {
+        padding-left: 18px;
+        margin-top: 0.5rem;
+        margin-bottom: 0;
+      }
+      .comparison-table li {
+        margin-bottom: 0.4rem;
+      }
+      .comparison-table .check {
+        color: #28a745;
+        font-weight: bold;
+        font-size: 1.2em;
+      }
+      .comparison-table .cross {
+        color: #dc3545;
+        font-weight: bold;
+        font-size: 1.2em;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 1200px) {
+        .comparison-table .feature-col {
+          width: 25%;
+        }
+      }
+      @media (max-width: 992px) {
+        .comparison-table {
+          font-size: 0.95rem;
+        }
+        .comparison-table th,
+        .comparison-table td {
+          padding: 0.8rem 1rem;
+        }
+      }
+      @media (max-width: 768px) {
+        .comparison-table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+        .comparison-table .feature-col {
+          width: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="top-nav">
+        <a href="index.html" class="nav-logo"
+          ><img
+            src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png"
+            alt="Playwright Pulse Report Banner"
+            class="sidebar-banner"
+        /></a>
+        <div class="tab-buttons">
+          <a href="index.html" class="tab-button">Getting Started</a>
+          <a href="reporters-scripts.html" class="tab-button"
+            >Reporters & Scripts</a
+          >
+          <a href="report-features.html" class="tab-button">Report Features</a>
+          <a href="advanced-usage.html" class="tab-button">Advanced Usage</a>
+          <a href="comparison.html" class="tab-button active">Comparison</a>
+          <a href="reference.html" class="tab-button">Reference</a>
+          <a
+            href="https://postman-test-bit.github.io/pulse-dashboard/"
+            class="tab-button external-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Live Pulse Dashboard
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
+              ></path>
+            </svg>
+          </a>
+        </div>
+      </nav>
+      <div class="content-area">
+        <main class="main-content">
+          <h1>Reporter Feature Comparison</h1>
+          <p>
+            Choosing the right reporter depends on your team's specific needs.
+            This table compares the key features of Playwright Pulse Report
+            against other popular options to help you decide.
+          </p>
+
+          <section id="comparison-table">
+            <div class="comparison-table-wrapper">
+              <table class="comparison-table">
+                <thead>
+                  <tr>
+                    <th class="feature-col">Feature / Aspect</th>
+                    <th>Playwright Default HTML Report</th>
+                    <th>Monocart Reporter</th>
+                    <th>Allure Reporter</th>
+                    <th>Playwright Pulse Report</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="feature-col">Primary Purpose</td>
+                    <td>Quick, local debugging of a single test run.</td>
+                    <td>
+                      Creating a professional, shareable report of a single test
+                      run.
+                    </td>
+                    <td>
+                      Comprehensive test analytics for multiple runs, focusing
+                      on categorization and history.
+                    </td>
+                    <td>
+                      Creating a live, centralized dashboard for continuous
+                      monitoring of test trends and visual stability. For local
+                      usage, users can also install 'Pulse-Dashboard' - a NextJS
+                      application that requires just npm install.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">User Interface (UI)</td>
+                    <td>
+                      Functional but basic. Clean, developer-focused layout.
+                    </td>
+                    <td>
+                      Modern, clean, and highly readable. Excellent visual
+                      presentation.
+                    </td>
+                    <td>
+                      Rich, dashboard-style UI with multiple tabs, graphs, and
+                      widgets.
+                    </td>
+                    <td>
+                      Highly interactive and modern web application. Focuses on
+                      data visualization with KPI cards and dynamic charts.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Historical Data & Trends</td>
+                    <td>
+                      <span class="cross">⛔️</span> None. The report is
+                      overwritten with each new run.
+                    </td>
+                    <td>
+                      <span class="cross">⛔️</span> None. Designed as a
+                      snapshot of a single execution.
+                    </td>
+                    <td>
+                      <span class="check">✔</span> Aggregates history to show
+                      trends, duration changes, and flaky tests over time.
+                    </td>
+                    <td>
+                      <span class="check">✔</span> The core mission. Built to
+                      aggregate all test runs into a central
+                      <code>history/</code> folder and visualize pass/fail rates
+                      and stability trends.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Sequential Test Runs</td>
+                    <td>
+                      <span class="cross">⛔️</span> Not supported. Overwrites
+                      previous report.
+                    </td>
+                    <td>
+                      <span class="cross">⛔️</span> Not supported. Overwrites
+                      previous report.
+                    </td>
+                    <td>
+                      <span class="check">✔</span> Supported. Can aggregate
+                      results from multiple runs.
+                    </td>
+                    <td>
+                      <span class="check">✔</span> Natively Supported.
+                      Automatically merges results from sequential runs.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Metrics</td>
+                    <td>Shows test duration only.</td>
+                    <td>Shows test duration and step timings.</td>
+                    <td>Can display test duration and trends over time.</td>
+                    <td>
+                      Superior. Provides a holistic view of each test including
+                      detailed metrics.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">CI/CD Integration</td>
+                    <td>
+                      Easy. Generates a static folder that can be archived.
+                    </td>
+                    <td>
+                      Excellent. Generates a single, self-contained HTML file,
+                      easy to share and archive.
+                    </td>
+                    <td>
+                      Powerful but complex. Requires two-step process with
+                      Allure CLI and Java.
+                    </td>
+                    <td>
+                      Seamlessly designed for CI/CD. Reporter sends data via API
+                      to central dashboard (for Pulse Dashboard). No need to
+                      manage static files.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Setup & Dependencies</td>
+                    <td>Zero setup. Built into Playwright.</td>
+                    <td>
+                      Simple npm install and configuration in
+                      playwright.config.js.
+                    </td>
+                    <td>
+                      Moderate. Requires npm package, Allure CLI, and Java
+                      Runtime Environment.
+                    </td>
+                    <td>
+                      Moderate. Requires npm package for reporter.
+                      Pulse-Dashboard requires just npm install.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Output Format (HTML based)</td>
+                    <td>A folder of static HTML, CSS, and JS files.</td>
+                    <td>A single, portable HTML file.</td>
+                    <td>
+                      A folder of static HTML, CSS, and JS files, generated from
+                      JSON results.
+                    </td>
+                    <td>
+                      <ul>
+                        <li>Static HTML Report (Embedded Attachments)</li>
+                        <li>HTML Report (local Attachment-based)</li>
+                        <li>Email Report</li>
+                        <li>Live Pulse Dashboard</li>
+                      </ul>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">TestRunner System Details</td>
+                    <td><span class="cross">⛔️</span> Not supported</td>
+                    <td>
+                      <span class="check">✔</span>
+                      Detailed test runner system info, worker utilization chart
+                    </td>
+                    <td>
+                      <span class="cross">⚠️</span>
+                      Needs manual configuration in config file (mostly
+                      hard-coded)
+                    </td>
+                    <td>
+                      <span class="check">✔</span>
+                      Detailed test runner system info, worker utilization chart
+                      (with filtering in Pulse-Dashboard)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Email Report</td>
+                    <td>
+                      <span class="cross">⚠️</span> Explicit functionality
+                    </td>
+                    <td>
+                      <span class="check">⚠️</span> Explicit functionality
+                    </td>
+                    <td>
+                      <span class="check">⚠️</span> Explicit functionality
+                    </td>
+                    <td>
+                      <span class="check">✔</span> In-built lightweight email
+                      with tabular details and HTML report attachment, focused
+                      on team reporting.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Browser & OS Detection</td>
+                    <td>Shows device['Desktop Chrome'] directly</td>
+                    <td>Shows device['Desktop Chrome'] directly</td>
+                    <td>Shows device['Desktop Chrome'] directly</td>
+                    <td>
+                      Enhanced detection. Shows accurate OS and browser versions
+                      for all devices.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="feature-col">Use case scenario</td>
+                    <td>Individual developers for local debugging.</td>
+                    <td>
+                      Teams needing to share beautiful, portable reports of
+                      specific test runs.
+                    </td>
+                    <td>
+                      Large QA teams needing deep historical analytics and bug
+                      categorization.
+                    </td>
+                    <td>
+                      Modern engineering (Devs, QA, Leads/Managers) and DevOps
+                      teams needing centralized, real-time quality monitoring.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+    <div class="overlay" id="overlay"></div>
+    <footer>
+      <div class="footer-content">
+        <img
+          src="https://i.postimg.cc/XqVn1NhF/pulse.png"
+          alt="Pulse Logo"
+          class="footer-logo"
+        />
+        <p>
+          © 2025 Pulse Dashboard. Crafted by
+          <a
+            href="https://github.com/arghajit47"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Arghajit Singha</a
+          >
+          with precision
+        </p>
+      </div>
+    </footer>
+    <script src="script.js"></script>
+  </body>
+</html>
