@@ -5,5 +5,6 @@
   "emphasis-style": false,
   "no-trailing-spaces": false,
   "hr-style": false,
-  "no-emphasis-as-heading": false
+  "no-emphasis-as-heading": false,
+  "blanks-around-lists": false
 }
