@@ -27,8 +27,9 @@
           <a href="reporters-scripts.html" class="tab-button"
             >Reporters & Scripts</a
           >
-          <a href="report-features.html" class="tab-button">Report Features</a>
+          <a href="report-features.html" class="tab-button active">Report Features</a>
           <a href="advanced-usage.html" class="tab-button">Advanced Usage</a>
+          <a href="comparison.html" class="tab-button">Comparison</a>
           <a href="reference.html" class="tab-button">Reference</a>
           <a
             href="https://postman-test-bit.github.io/pulse-dashboard/"
@@ -36,7 +37,7 @@
             target="_blank"
             rel="noopener noreferrer"
           >
-            Live Pulse Dashboard
+            Pulse Dashboard
             <svg viewBox="0 0 24 24">
               <path
                 d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
@@ -70,7 +71,7 @@
             <div class="screenshots-grid">
               <div class="screenshot-item">
                 <img
-                  src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/Dashboard.png"
+                  src="./asset/Dashboard.png"
                   alt="Dashboard Overview"
                 />
                 <p><strong>Dashboard Overview</strong></p>
@@ -109,14 +110,16 @@
             <div class="screenshots-grid">
               <div class="screenshot-item">
                 <img
-                  src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/Passed%20Test%20Details.png"
+                  src="./asset/Passed Test Details.png"
                   alt="Test Run Details"
                 />
                 <p><strong>Passed Test Run Details</strong></p>
               </div>
+            </div>
+            <div class="screenshots-grid">
               <div class="screenshot-item">
                 <img
-                  src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/Failed%20Test%20Details.html.png"
+                  src="./asset/Failed Test Details.png"
                   alt="Test Run Details"
                 />
                 <p><strong>Failed Test Run Details</strong></p>
@@ -165,7 +168,7 @@
             <div class="screenshots-grid">
               <div class="screenshot-item">
                 <img
-                  src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/Test%20History.png"
+                  src="./asset/Test History.png"
                   alt="Test Trends"
                 />
                 <p><strong>Execution Trend Charts</strong></p>
@@ -213,24 +216,100 @@
               analysis of your test results, helping to identify flakiness,
               performance bottlenecks, and failure patterns.
             </p>
-            <div class="screenshots-grid">
-              <div class="screenshot-item">
-                <img
-                  src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/AI%20Failure%20Analyzer.png"
-                  alt="Test Failure Analyzer"
-                />
-                <p><strong>AI Test Analyzer</strong></p>
-              </div>
-            </div>
             <div class="note">
               The AI Analysis tool is an embedded third-party application and
               requires an internet connection to function.
+            </div>
+          </section>
+
+          <section id="screenshots-gallery">
+            <h2>Screenshots</h2>
+            <div class="screenshots-grid">
+              <div class="screenshot-item">
+                <a
+                  href="./asset/Dashboard.png"
+                  target="_blank"
+                  ><img
+                    src="./asset/Dashboard.png"
+                    alt="Dashboard Overview"
+                /></a>
+                <p><strong>Dashboard Overview</strong></p>
+              </div>
+              <div class="screenshot-item">
+                <a
+                  href="./asset/Failed Test Details.png"
+                  target="_blank"
+                  ><img
+                    src="./asset/Failed Test Details.png"
+                    alt="Test Details"
+                /></a>
+                <p><strong>Failed Test Details</strong></p>
+              </div>
+              <div class="screenshot-item">
+                <a
+                  href="./asset/Passed Test Details.png"
+                  target="_blank"
+                  ><img
+                    src="./asset/Passed Test Details.png"
+                    alt="Test Details"
+                /></a>
+                <p><strong>Passed Test Details</strong></p>
+              </div>
+              <div class="screenshot-item">
+                <a
+                  href="./asset/Test History.png"
+                  target="_blank"
+                  ><img
+                    src="./asset/Test History.png"
+                    alt="Test Trends"
+                /></a>
+                <p><strong>Test Trends</strong></p>
+              </div>
+              <div class="screenshot-item">
+                <a
+                  href="./asset/email report.png"
+                  target="_blank"
+                  ><img
+                    src="./asset/email report.png"
+                    alt="Test Trends"
+                /></a>
+                <p><strong>Email Report Template</strong></p>
+              </div>
+              <div class="screenshot-item">
+                <a
+                  href="./asset/AI Failure Analyzer.png"
+                  target="_blank"
+                  ><img
+                    src="./asset/AI Failure Analyzer.png"
+                    alt="Test Trends"
+                /></a>
+                <p><strong>AI Failure Analyzer</strong></p>
+              </div>
             </div>
           </section>
         </main>
       </div>
     </div>
     <div class="overlay" id="overlay"></div>
+    <footer>
+      <div class="footer-content">
+        <img
+          src="https://i.postimg.cc/XqVn1NhF/pulse.png"
+          alt="Pulse Logo"
+          class="footer-logo"
+        />
+        <p>
+          © 2025 Playwright Pulse Report. Crafted by
+          <a
+            href="https://github.com/arghajit47"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Arghajit Singha</a
+          >
+          with precision
+        </p>
+      </div>
+    </footer>
     <script src="script.js"></script>
   </body>
 </html>

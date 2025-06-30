@@ -11,6 +11,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private baseOutputFile;
     private isSharded;
     private shardIndex;
+    private resetOnEachRun;
     constructor(options?: PlaywrightPulseReporterOptions);
     printsToStdio(): boolean;
     onBegin(config: FullConfig, suite: Suite): void;
@@ -18,6 +19,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private getBrowserDetails;
     private processStep;
     onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;
+    private _getFinalizedResults;
     onError(error: any): void;
     private _getEnvDetails;
     private _writeShardResults;
@@ -25,5 +27,6 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private _cleanupTemporaryFiles;
     private _ensureDirExists;
     onEnd(result: FullResult): Promise<void>;
+    private _mergeAllRunReports;
 }
 export default PlaywrightPulseReporter;

@@ -91,6 +91,7 @@ export interface PlaywrightPulseReporterOptions {
   outputFile?: string;
   outputDir?: string;
   base64Images?: boolean;
+  resetOnEachRun?: boolean;
 }
 
 // Add this new interface

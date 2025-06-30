@@ -1,3 +1,4 @@
+// src/reporter/playwright-pulse-reporter.ts
 import type {
   FullConfig,
   FullResult,
@@ -46,6 +47,7 @@ const convertStatus = (
 
 const TEMP_SHARD_FILE_PREFIX = ".pulse-shard-results-";
 const ATTACHMENTS_SUBDIR = "attachments";
+const INDIVIDUAL_REPORTS_SUBDIR = "pulse-results";
 
 export class PlaywrightPulseReporter implements Reporter {
   private config!: FullConfig;
@@ -58,12 +60,14 @@ export class PlaywrightPulseReporter implements Reporter {
   private baseOutputFile: string = "playwright-pulse-report.json";
   private isSharded: boolean = false;
   private shardIndex: number | undefined = undefined;
+  private resetOnEachRun: boolean;
 
   constructor(options: PlaywrightPulseReporterOptions = {}) {
     this.options = options;
     this.baseOutputFile = options.outputFile ?? this.baseOutputFile;
     this.outputDir = options.outputDir ?? "pulse-report";
     this.attachmentsDir = path.join(this.outputDir, ATTACHMENTS_SUBDIR);
+    this.resetOnEachRun = options.resetOnEachRun ?? true;
   }
 
   printsToStdio() {
@@ -93,7 +97,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     this._ensureDirExists(this.outputDir)
       .then(() => {
-        if (this.shardIndex === undefined || this.shardIndex === 0) {
+        if (this.printsToStdio()) {
           console.log(
             `PlaywrightPulseReporter: Starting test run with ${
               suite.allTests().length
@@ -310,37 +314,24 @@ export class PlaywrightPulseReporter implements Reporter {
       ...testSpecificData,
     };
 
-    // --- CORRECTED ATTACHMENT PROCESSING LOGIC ---
     for (const [index, attachment] of result.attachments.entries()) {
       if (!attachment.path) continue;
 
       try {
-        // Create a sanitized, unique folder name for this specific test
         const testSubfolder = test.id.replace(/[^a-zA-Z0-9_-]/g, "_");
-
-        // Sanitize the original attachment name to create a safe filename
         const safeAttachmentName = path
           .basename(attachment.path)
           .replace(/[^a-zA-Z0-9_.-]/g, "_");
-
-        // Create a unique filename to prevent collisions, especially in retries
         const uniqueFileName = `${index}-${Date.now()}-${safeAttachmentName}`;
-
-        // This is the relative path that will be stored in the JSON report
         const relativeDestPath = path.join(
           ATTACHMENTS_SUBDIR,
           testSubfolder,
           uniqueFileName
         );
-
-        // This is the absolute path used for the actual file system operation
         const absoluteDestPath = path.join(this.outputDir, relativeDestPath);
-
-        // Ensure the unique, test-specific attachment directory exists
         await this._ensureDirExists(path.dirname(absoluteDestPath));
         await fs.copyFile(attachment.path, absoluteDestPath);
 
-        // Categorize the attachment based on its content type
         if (attachment.contentType.startsWith("image/")) {
           pulseResult.screenshots?.push(relativeDestPath);
         } else if (attachment.contentType.startsWith("video/")) {
@@ -349,8 +340,8 @@ export class PlaywrightPulseReporter implements Reporter {
           pulseResult.tracePath = relativeDestPath;
         } else {
           pulseResult.attachments?.push({
-            name: attachment.name, // The original, human-readable name
-            path: relativeDestPath, // The safe, relative path for linking
+            name: attachment.name,
+            path: relativeDestPath,
             contentType: attachment.contentType,
           });
         }
@@ -361,15 +352,19 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     }
 
-    const existingTestIndex = this.results.findIndex((r) => r.id === test.id);
+    this.results.push(pulseResult);
+  }
 
-    if (existingTestIndex !== -1) {
-      if (pulseResult.retries >= this.results[existingTestIndex].retries) {
-        this.results[existingTestIndex] = pulseResult;
+  private _getFinalizedResults(allResults: TestResult[]): TestResult[] {
+    const finalResultsMap = new Map<string, TestResult>();
+    for (const result of allResults) {
+      const existing = finalResultsMap.get(result.id);
+      // Keep the result with the highest retry attempt for each test ID
+      if (!existing || result.retries >= existing.retries) {
+        finalResultsMap.set(result.id, result);
       }
-    } else {
-      this.results.push(pulseResult);
     }
+    return Array.from(finalResultsMap.values());
   }
 
   onError(error: any): void {
@@ -454,14 +449,9 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     }
 
-    let finalUniqueResultsMap = new Map<string, TestResult>();
-    for (const result of allShardProcessedResults) {
-      const existing = finalUniqueResultsMap.get(result.id);
-      if (!existing || result.retries >= existing.retries) {
-        finalUniqueResultsMap.set(result.id, result);
-      }
-    }
-    const finalResultsList = Array.from(finalUniqueResultsMap.values());
+    const finalResultsList = this._getFinalizedResults(
+      allShardProcessedResults
+    );
     finalResultsList.forEach((r) => (r.runId = finalRunData.id));
 
     finalRunData.passed = finalResultsList.filter(
@@ -536,6 +526,9 @@ export class PlaywrightPulseReporter implements Reporter {
       return;
     }
 
+    // De-duplicate and handle retries here, in a safe, single-threaded context.
+    const finalResults = this._getFinalizedResults(this.results);
+
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
     const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`;
@@ -544,46 +537,27 @@ export class PlaywrightPulseReporter implements Reporter {
     const runData: TestRun = {
       id: runId,
       timestamp: new Date(this.runStartTime),
-      totalTests: 0,
-      passed: 0,
-      failed: 0,
-      skipped: 0,
+      // Use the length of the de-duplicated array for all counts
+      totalTests: finalResults.length,
+      passed: finalResults.filter((r) => r.status === "passed").length,
+      failed: finalResults.filter((r) => r.status === "failed").length,
+      skipped: finalResults.filter((r) => r.status === "skipped").length,
       duration,
       environment: environmentDetails,
     };
 
+    finalResults.forEach((r) => (r.runId = runId));
+
     let finalReport: PlaywrightPulseReport | undefined = undefined;
 
     if (this.isSharded) {
+      // The _mergeShardResults method will handle its own de-duplication
       finalReport = await this._mergeShardResults(runData);
-      if (finalReport && finalReport.run && !finalReport.run.environment) {
-        finalReport.run.environment = environmentDetails;
-      }
     } else {
-      this.results.forEach((r) => (r.runId = runId));
-      runData.passed = this.results.filter((r) => r.status === "passed").length;
-      runData.failed = this.results.filter((r) => r.status === "failed").length;
-      runData.skipped = this.results.filter(
-        (r) => r.status === "skipped"
-      ).length;
-      runData.totalTests = this.results.length;
-
-      const reviveDates = (key: string, value: any): any => {
-        const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-        if (typeof value === "string" && isoDateRegex.test(value)) {
-          const date = new Date(value);
-          return !isNaN(date.getTime()) ? date : value;
-        }
-        return value;
-      };
-      const properlyTypedResults = JSON.parse(
-        JSON.stringify(this.results),
-        reviveDates
-      );
-
       finalReport = {
         run: runData,
-        results: properlyTypedResults,
+        // Use the de-duplicated results
+        results: finalResults,
         metadata: { generatedAt: new Date().toISOString() },
       };
     }
@@ -595,17 +569,171 @@ export class PlaywrightPulseReporter implements Reporter {
       return;
     }
 
+    const jsonReplacer = (key: string, value: any) => {
+      if (value instanceof Date) return value.toISOString();
+      if (typeof value === "bigint") return value.toString();
+      return value;
+    };
+
+    if (this.resetOnEachRun) {
+      const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
+      try {
+        await this._ensureDirExists(this.outputDir);
+        await fs.writeFile(
+          finalOutputPath,
+          JSON.stringify(finalReport, jsonReplacer, 2)
+        );
+        if (this.printsToStdio()) {
+          console.log(
+            `PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`
+          );
+        }
+      } catch (error: any) {
+        console.error(
+          `Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`
+        );
+      }
+    } else {
+      // Logic for appending/merging reports
+      const pulseResultsDir = path.join(
+        this.outputDir,
+        INDIVIDUAL_REPORTS_SUBDIR
+      );
+      const individualReportPath = path.join(
+        pulseResultsDir,
+        `playwright-pulse-report-${Date.now()}.json`
+      );
+
+      try {
+        await this._ensureDirExists(pulseResultsDir);
+        await fs.writeFile(
+          individualReportPath,
+          JSON.stringify(finalReport, jsonReplacer, 2)
+        );
+
+        if (this.printsToStdio()) {
+          console.log(
+            `PlaywrightPulseReporter: Individual run report for merging written to ${individualReportPath}`
+          );
+        }
+        await this._mergeAllRunReports();
+      } catch (error: any) {
+        console.error(
+          `Pulse Reporter: Failed to write or merge report. Error: ${error.message}`
+        );
+      }
+    }
+
+    if (this.isSharded) {
+      await this._cleanupTemporaryFiles();
+    }
+  }
+
+  private async _mergeAllRunReports(): Promise<void> {
+    const pulseResultsDir = path.join(
+      this.outputDir,
+      INDIVIDUAL_REPORTS_SUBDIR
+    );
     const finalOutputPath = path.join(this.outputDir, this.baseOutputFile);
 
+    let reportFiles: string[];
     try {
-      await this._ensureDirExists(this.outputDir);
+      const allFiles = await fs.readdir(pulseResultsDir);
+      reportFiles = allFiles.filter(
+        (file) =>
+          file.startsWith("playwright-pulse-report-") && file.endsWith(".json")
+      );
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        if (this.printsToStdio()) {
+          console.log(
+            `Pulse Reporter: No individual reports directory found at ${pulseResultsDir}. Skipping merge.`
+          );
+        }
+        return;
+      }
+      console.error(
+        `Pulse Reporter: Error reading report directory ${pulseResultsDir}:`,
+        error
+      );
+      return;
+    }
+
+    if (reportFiles.length === 0) {
+      if (this.printsToStdio()) {
+        console.log(
+          "Pulse Reporter: No matching JSON report files found to merge."
+        );
+      }
+      return;
+    }
+
+    const allResultsFromAllFiles: TestResult[] = [];
+    let latestTimestamp = new Date(0);
+    let lastRunEnvironment: any = undefined;
+    let totalDuration = 0;
+
+    for (const file of reportFiles) {
+      const filePath = path.join(pulseResultsDir, file);
+      try {
+        const content = await fs.readFile(filePath, "utf-8");
+        const json: PlaywrightPulseReport = JSON.parse(content);
+
+        if (json.run) {
+          const runTimestamp = new Date(json.run.timestamp);
+          if (runTimestamp > latestTimestamp) {
+            latestTimestamp = runTimestamp;
+            lastRunEnvironment = json.run.environment || undefined;
+          }
+        }
+        if (json.results) {
+          allResultsFromAllFiles.push(...json.results);
+        }
+      } catch (err: any) {
+        console.warn(
+          `Pulse Reporter: Could not parse report file ${filePath}. Skipping. Error: ${err.message}`
+        );
+      }
+    }
+
+    // De-duplicate the results from ALL merged files using the helper function
+    const finalMergedResults = this._getFinalizedResults(
+      allResultsFromAllFiles
+    );
+
+    // Sum the duration from the final, de-duplicated list of tests
+    totalDuration = finalMergedResults.reduce(
+      (acc, r) => acc + (r.duration || 0),
+      0
+    );
+
+    const combinedRun: TestRun = {
+      id: `merged-${Date.now()}`,
+      timestamp: latestTimestamp,
+      environment: lastRunEnvironment,
+      // Recalculate counts based on the truly final, de-duplicated list
+      totalTests: finalMergedResults.length,
+      passed: finalMergedResults.filter((r) => r.status === "passed").length,
+      failed: finalMergedResults.filter((r) => r.status === "failed").length,
+      skipped: finalMergedResults.filter((r) => r.status === "skipped").length,
+      duration: totalDuration,
+    };
+
+    const finalReport: PlaywrightPulseReport = {
+      run: combinedRun,
+      results: finalMergedResults, // Use the de-duplicated list
+      metadata: {
+        generatedAt: new Date().toISOString(),
+      },
+    };
+
+    try {
       await fs.writeFile(
         finalOutputPath,
         JSON.stringify(
           finalReport,
           (key, value) => {
             if (value instanceof Date) return value.toISOString();
-            if (typeof value === "bigint") return value.toString();
             return value;
           },
           2
@@ -613,17 +741,13 @@ export class PlaywrightPulseReporter implements Reporter {
       );
       if (this.printsToStdio()) {
         console.log(
-          `PlaywrightPulseReporter: JSON report written to ${finalOutputPath}`
+          `PlaywrightPulseReporter: ✅ Merged report with ${finalMergedResults.length} total results saved to ${finalOutputPath}`
         );
       }
-    } catch (error: any) {
+    } catch (err: any) {
       console.error(
-        `Pulse Reporter: Failed to write final JSON report to ${finalOutputPath}. Error: ${error.message}`
+        `Pulse Reporter: Failed to write final merged report to ${finalOutputPath}. Error: ${err.message}`
       );
-    } finally {
-      if (this.isSharded) {
-        await this._cleanupTemporaryFiles();
-      }
     }
   }
 }

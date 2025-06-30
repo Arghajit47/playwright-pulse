@@ -72,6 +72,7 @@ export interface PlaywrightPulseReporterOptions {
     outputFile?: string;
     outputDir?: string;
     base64Images?: boolean;
+    resetOnEachRun?: boolean;
 }
 export interface EnvDetails {
     host: string;
