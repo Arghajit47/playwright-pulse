@@ -7,53 +7,7 @@ _The ultimate Playwright reporter — Interactive dashboard with historical tren
 
 ## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/features.svg)
 
-## 📸 Screenshots
-
-### 🖥️ Desktop View
-
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-desktop.html.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-desktop.html.png" alt="Dashboard Overview" width="300"/>
-   <p align="center"><strong>Dashboard Overview</strong></p>
-  </a>
-  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-run-desktop.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-run-desktop.png" alt="Test Details" width="300"/>
-   <p align="center"><strong>Test Details</strong>
-   </p>
-  </a>
-  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-error-desktop.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-run-desktop.png" alt="Test Failure Details" width="300"/>
-   <p align="center"><strong>Test Failure Details</strong>
-   </p>
-  </a>
-  <a href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-trends-desktop.png" target="_blank"> <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Test-trends-desktop.png" alt="Filter View" width="300"/>
-  <p align="center"><strong>Test Trends</strong></p>
-  </a>
-</div>
-
-### 📱 Mobile View
-
-<div align="center" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
-
-  <a href="https://postimg.cc/CzJBLR5N" target="_blank">
-    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-Dashboard.html.png" alt="Mobile Dashboard Overview" width="300"/>
-    <p align="center"><strong>Dashboard Overview</strong></p>
-  </a>
-
-  <a href="https://postimg.cc/G8YTczT8" target="_blank">
-    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report_Test-results.html.png" alt="Test Details" width="300"/>
-    <p align="center"><strong>Test Details</strong></p>
-  </a>
-
-  <a href="https://postimg.cc/G8YTczT8" target="_blank">
-    <img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//playwright-pulse-static-report-Trends.html.png" alt="Test Trends" width="300"/>
-    <p align="center"><strong>Test Trends</strong></p>
-  </a>
-
-</div>
-
-### Email Report Example
-
-[![Email Report Template](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Email-report-mobile-template.jpeg)](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//Email-report-mobile-template.jpeg)
-
-[![Email Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-email-summary.html.png)](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-email-summary.html.png)
+## **Documentation**: [Pulse Report](https://playwright-pulse-report.netlify.app/)
 
 ## Available Scripts
 
@@ -91,10 +45,6 @@ Run with `npm run <command>`
 
 ```bash
 npm install @arghajit/playwright-pulse-report@latest --save-dev
-# or
-yarn add @arghajit/playwright-pulse-report@latest --dev
-# or
-pnpm add @arghajit/playwright-pulse-report@latest --save-dev
 ```
 
 ### 2. Configure Playwright
@@ -300,7 +250,7 @@ npm run pulse-dashboard
 
 *(Run from project root containing `pulse-report/` directory)*  
 
-**NPM Package**: [pulse-dashboard](https://www.npmjs.com/package/pulse-dashboard)  
+**NPM Package**: [playwright-pulse-report](https://www.npmjs.com/package/@arghajit/playwright-pulse-report) 
 
 **Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
 
