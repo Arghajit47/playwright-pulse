@@ -1173,6 +1173,24 @@ function generateWorkerDistributionChart(results) {
     </script>
   `;
 }
+const infoTooltip = `
+  <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
+    <span class="info-icon" 
+          style="cursor: pointer; font-size: 1.25rem;"
+          onclick="window.workerInfoPrompt()">ℹ️</span>
+  </span>
+  <script>
+    window.workerInfoPrompt = function() {
+      const message = 'Why is worker -1 special?\\n\\n' +
+                     'Playwright assigns skipped tests to worker -1 because:\\n' +
+                     '1. They don\\'t require browser execution\\n' +
+                     '2. This keeps real workers focused on actual tests\\n' +
+                     '3. Maintains clean reporting\\n\\n' +
+                     'This is an intentional optimization by Playwright.';
+      alert(message);
+    }
+  </script>
+`;
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -2024,7 +2042,7 @@ function generateHTML(reportData, trendData = null) {
               }
             </div>
           </div>
-          <h2 class="tab-main-title">Test Distribution by Worker</h2>
+          <h2 class="tab-main-title">Test Distribution by Worker ${infoTooltip}</h2>
           <div class="trend-charts-row">
              <div class="trend-chart">
                 ${generateWorkerDistributionChart(results)}
