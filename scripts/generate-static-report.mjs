@@ -1214,6 +1214,19 @@ function getSuitesData(results) {
   });
   return Array.from(suitesMap.values());
 }
+function getAttachmentIcon(contentType) {
+  if (!contentType) return "📎"; // Handle undefined/null
+
+  const normalizedType = contentType.toLowerCase();
+
+  if (normalizedType.includes("pdf")) return "📄";
+  if (normalizedType.includes("json")) return "{ }";
+  if (/html/.test(normalizedType)) return "🌐"; // Fixed: regex for any HTML type
+  if (normalizedType.includes("xml")) return "<>";
+  if (normalizedType.includes("csv")) return "📊";
+  if (normalizedType.startsWith("text/")) return "📝";
+  return "📎";
+}
 function generateSuitesWidget(suitesData) {
   if (!suitesData || suitesData.length === 0) {
     return `<div class="suites-widget"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
@@ -1675,6 +1688,7 @@ function generateHTML(reportData, trendData = null) {
                             test.attachments.length === 0
                           )
                             return "";
+
                           return `<div class="attachments-section"><h4>Other Attachments</h4><div class="attachments-grid">${test.attachments
                             .map((attachment) => {
                               try {
@@ -1682,27 +1696,50 @@ function generateHTML(reportData, trendData = null) {
                                   DEFAULT_OUTPUT_DIR,
                                   attachment.path
                                 );
-                                if (!fsExistsSync(attachmentPath))
+
+                                if (!fsExistsSync(attachmentPath)) {
+                                  console.warn(
+                                    `Attachment not found at: ${attachmentPath}`
+                                  );
                                   return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
                                     attachment.name
                                   )}</div>`;
+                                }
+
                                 const attachmentBase64 =
                                   readFileSync(attachmentPath).toString(
                                     "base64"
                                   );
                                 const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
-                                return `<div class="attachment-item generic-attachment"><div class="attachment-icon">${getAttachmentIcon(
-                                  attachment.contentType
-                                )}</div><div class="attachment-caption"><span class="attachment-name" title="${sanitizeHTML(
+
+                                return `<div class="attachment-item generic-attachment">
+                                          <div class="attachment-icon">${getAttachmentIcon(
+                                            attachment.contentType
+                                          )}</div>
+                                          <div class="attachment-caption">
+                                            <span class="attachment-name" title="${sanitizeHTML(
+                                              attachment.name
+                                            )}">${sanitizeHTML(
                                   attachment.name
-                                )}">${sanitizeHTML(
+                                )}</span>
+                                            <span class="attachment-type">${sanitizeHTML(
+                                              attachment.contentType
+                                            )}</span>
+                                          </div>
+                                          <div class="attachment-info">
+                                            <div class="trace-actions">
+                                              <a href="${attachmentDataUri}" target="_blank" class="view-full">View</a>
+                                              <a href="${attachmentDataUri}" download="${sanitizeHTML(
                                   attachment.name
-                                )}</span><span class="attachment-type">${sanitizeHTML(
-                                  attachment.contentType
-                                )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
-                                  attachment.name
-                                )}">Download</a></div></div></div>`;
+                                )}">Download</a>
+                                            </div>
+                                          </div>
+                                        </div>`;
                               } catch (e) {
+                                console.error(
+                                  `Failed to process attachment "${attachment.name}":`,
+                                  e
+                                );
                                 return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
                                   attachment.name
                                 )}</div>`;
@@ -1891,7 +1928,7 @@ function generateHTML(reportData, trendData = null) {
         @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} }
         @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 35px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} }
         .trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
-        .generic-attachment { text-align: center; padding: 1rem; justify-content: center; align-items: center; }
+        .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
         .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
         .attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
         .attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -2015,7 +2052,6 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
-                <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
                 <span>Created by</span>
                 <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
             </div>

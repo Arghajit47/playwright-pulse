@@ -1439,11 +1439,16 @@ function generateSuitesWidget(suitesData) {
 </div>`;
 }
 function getAttachmentIcon(contentType) {
-  if (contentType.includes("pdf")) return "📄";
-  if (contentType.includes("json")) return "{ }";
-  if (contentType.includes("html") || contentType.includes("xml")) return "</>";
-  if (contentType.includes("csv")) return "📊";
-  if (contentType.startsWith("text/")) return "📝";
+  if (!contentType) return "📎"; // Handle undefined/null
+
+  const normalizedType = contentType.toLowerCase();
+
+  if (normalizedType.includes("pdf")) return "📄";
+  if (normalizedType.includes("json")) return "{ }";
+  if (/html/.test(normalizedType)) return "🌐"; // Fixed: regex for any HTML type
+  if (normalizedType.includes("xml")) return "<>";
+  if (normalizedType.includes("csv")) return "📊";
+  if (normalizedType.startsWith("text/")) return "📝";
   return "📎";
 }
 function generateHTML(reportData, trendData = null) {
@@ -1743,6 +1748,9 @@ function generateHTML(reportData, trendData = null) {
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
+                        <a href="${sanitizeHTML(
+                          attachment.path
+                        )}" target="_blank" class="view-full">View</a>
                             <a href="${sanitizeHTML(
                               attachment.path
                             )}" target="_blank" download="${sanitizeHTML(
@@ -2062,7 +2070,6 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
-                <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
                 <span>Created by</span>
                 <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
             </div>
