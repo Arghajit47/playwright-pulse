@@ -1019,6 +1019,178 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
     </div>
   `;
 }
+function generateWorkerDistributionChart(results) {
+  if (!results || results.length === 0) {
+    return '<div class="no-data">No test results data available to display worker distribution.</div>';
+  }
+
+  // 1. Sort results by startTime to ensure chronological order
+  const sortedResults = [...results].sort((a, b) => {
+    const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
+    const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  const workerData = sortedResults.reduce((acc, test) => {
+    const workerId =
+      typeof test.workerId !== "undefined" ? test.workerId : "N/A";
+    if (!acc[workerId]) {
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] }; // Changed to 'tests'
+    }
+
+    const status = String(test.status).toLowerCase();
+    if (status === "passed" || status === "failed" || status === "skipped") {
+      acc[workerId][status]++;
+    }
+
+    const testTitleParts = test.name.split(" > ");
+    const testTitle =
+      testTitleParts[testTitleParts.length - 1] || "Unnamed Test";
+    // 2. Store both name and status for each test
+    acc[workerId].tests.push({ name: testTitle, status: status });
+
+    return acc;
+  }, {});
+
+  const workerIds = Object.keys(workerData).sort((a, b) => {
+    if (a === "N/A") return 1;
+    if (b === "N/A") return -1;
+    return parseInt(a, 10) - parseInt(b, 10);
+  });
+
+  if (workerIds.length === 0) {
+    return '<div class="no-data">Could not determine worker distribution from test data.</div>';
+  }
+
+  const chartId = `workerDistChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderWorkerDistChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
+
+  const categoriesWithObjects = workerIds.map((id) => ({
+    name: `Worker ${id}`,
+    tests: workerData[id].tests, // Pass the array of test objects
+  }));
+
+  const passedData = workerIds.map((id) => workerData[id].passed);
+  const failedData = workerIds.map((id) => workerData[id].failed);
+  const skippedData = workerIds.map((id) => workerData[id].skipped);
+
+  const categoriesString = JSON.stringify(categoriesWithObjects);
+  const seriesString = JSON.stringify([
+    { name: "Passed", data: passedData, color: "var(--success-color)" },
+    { name: "Failed", data: failedData, color: "var(--danger-color)" },
+    { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
+  ]);
+
+  return `
+    <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}" style="min-height: 350px;">
+      <div class="no-data">Loading Worker Distribution Chart...</div>
+    </div>
+    <script>
+      window.${renderFunctionName} = function() {
+        const chartContainer = document.getElementById('${chartId}');
+        if (!chartContainer) { console.error("Chart container ${chartId} not found."); return; }
+        if (typeof Highcharts !== 'undefined') {
+          try {
+            chartContainer.innerHTML = '';
+            const allCategories = ${categoriesString};
+            const chartOptions = {
+              chart: { type: 'bar', height: 350, backgroundColor: 'transparent' },
+              title: { text: null },
+              xAxis: { 
+                categories: allCategories.map(c => c.name),
+                title: { text: 'Worker ID' },
+                labels: { style: { color: 'var(--text-color-secondary)' }}
+              },
+              yAxis: { 
+                min: 0, 
+                title: { text: 'Number of Tests' },
+                labels: { style: { color: 'var(--text-color-secondary)' }},
+                stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } }
+              },
+              legend: { reversed: true, itemStyle: { fontSize: "12px", color: 'var(--text-color)' } },
+              plotOptions: { series: { stacking: 'normal' } },
+              tooltip: {
+                shared: true,
+                useHTML: true,
+                backgroundColor: 'rgba(10,10,10,0.92)', 
+                borderColor: 'rgba(10,10,10,0.92)', 
+                style: { color: '#f5f5f5' },
+                formatter: function () {
+                  if (!this.points || this.points.length === 0) return '';
+                  
+                  const categoryIndex = this.points[0].point.x;
+                  const categoryObject = allCategories[categoryIndex];
+                  const tests = categoryObject.tests || [];
+                  
+                  const total = this.points.reduce((acc, point) => acc + point.y, 0);
+                  const workerId = this.x;
+
+                  let tooltipHeader = '<strong>Worker ' + workerId + '</strong><br/>Total Tests: ' + total + '<br/><br/>';
+                  
+                  let pointsInfo = this.points.slice().reverse().map(point => {
+                      return '<span style="color:' + point.series.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b>';
+                  }).join('<br/>');
+
+                  let testNamesHtml = '<br/><hr style="border-color: #555; margin: 5px 0;" /><strong>Tests Handled (in order):</strong><ul style="margin: 5px 0 0; padding-left: 20px; max-height: 150px; overflow-y: auto;">';
+                  if (tests.length > 0) {
+                    tests.forEach(test => {
+                        let color = 'inherit'; // Default color
+                        if (test.status === 'passed') {
+                            color = 'var(--success-color)';
+                        } else if (test.status === 'failed') {
+                            color = 'var(--danger-color)';
+                        } else if (test.status === 'skipped') {
+                            color = 'var(--warning-color)';
+                        }
+                        const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+                        testNamesHtml += '<li style="color:' + color + ';">' + escapedName + '</li>';
+                    });
+                  } else {
+                    testNamesHtml += '<li>No test name data available.</li>';
+                  }
+                  testNamesHtml += '</ul>';
+
+                  return tooltipHeader + pointsInfo + testNamesHtml;
+                }
+              },
+              series: ${seriesString},
+              credits: { enabled: false }
+            };
+            Highcharts.chart('${chartId}', chartOptions);
+          } catch (e) {
+            console.error("Error rendering chart ${chartId}:", e);
+            chartContainer.innerHTML = '<div class="no-data">Error rendering worker distribution chart.</div>';
+          }
+        } else {
+          chartContainer.innerHTML = '<div class="no-data">Charting library not available for worker distribution.</div>';
+        }
+      };
+    </script>
+  `;
+}
+const infoTooltip = `
+  <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
+    <span class="info-icon" 
+          style="cursor: pointer; font-size: 1.25rem;"
+          onclick="window.workerInfoPrompt()">ℹ️</span>
+  </span>
+  <script>
+    window.workerInfoPrompt = function() {
+      const message = 'Why is worker -1 special?\\n\\n' +
+                     'Playwright assigns skipped tests to worker -1 because:\\n' +
+                     '1. They don\\'t require browser execution\\n' +
+                     '2. This keeps real workers focused on actual tests\\n' +
+                     '3. Maintains clean reporting\\n\\n' +
+                     'This is an intentional optimization by Playwright.';
+      alert(message);
+    }
+  </script>
+`;
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -1267,11 +1439,16 @@ function generateSuitesWidget(suitesData) {
 </div>`;
 }
 function getAttachmentIcon(contentType) {
-  if (contentType.includes("pdf")) return "📄";
-  if (contentType.includes("json")) return "{ }";
-  if (contentType.includes("html") || contentType.includes("xml")) return "</>";
-  if (contentType.includes("csv")) return "📊";
-  if (contentType.startsWith("text/")) return "📝";
+  if (!contentType) return "📎"; // Handle undefined/null
+
+  const normalizedType = contentType.toLowerCase();
+
+  if (normalizedType.includes("pdf")) return "📄";
+  if (normalizedType.includes("json")) return "{ }";
+  if (/html/.test(normalizedType)) return "🌐"; // Fixed: regex for any HTML type
+  if (normalizedType.includes("xml")) return "<>";
+  if (normalizedType.includes("csv")) return "📊";
+  if (normalizedType.startsWith("text/")) return "📝";
   return "📎";
 }
 function generateHTML(reportData, trendData = null) {
@@ -1571,6 +1748,9 @@ function generateHTML(reportData, trendData = null) {
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
+                        <a href="${sanitizeHTML(
+                          attachment.path
+                        )}" target="_blank" class="view-full">View</a>
                             <a href="${sanitizeHTML(
                               attachment.path
                             )}" target="_blank" download="${sanitizeHTML(
@@ -1709,8 +1889,8 @@ function generateHTML(reportData, trendData = null) {
         .step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
         .step-details { display: none; padding: 14px; margin-top: 8px; background: #fdfdfd; border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
         .step-info { margin-bottom: 8px; }
-        .step-error { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
-        .step-error pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+        .test-error-summary { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
+        .test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
         .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 
         .step-hook .step-title { font-style: italic; color: var(--info-color)}
         .nested-steps { margin-top: 12px; }
@@ -1870,6 +2050,12 @@ function generateHTML(reportData, trendData = null) {
               }
             </div>
           </div>
+          <h2 class="tab-main-title">Test Distribution by Worker ${infoTooltip}</h2>
+          <div class="trend-charts-row">
+             <div class="trend-chart">
+                ${generateWorkerDistributionChart(results)}
+             </div>
+          </div>
           <h2 class="tab-main-title">Individual Test History</h2>
           ${
             trendData &&
@@ -1884,7 +2070,6 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
-                <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
                 <span>Created by</span>
                 <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
             </div>
@@ -2061,9 +2246,9 @@ function generateHTML(reportData, trendData = null) {
 
 function copyErrorToClipboard(button) {
   // 1. Find the main error container, which should always be present.
-  const errorContainer = button.closest('.step-error');
+  const errorContainer = button.closest('.test-error-summary');
   if (!errorContainer) {
-    console.error("Could not find '.step-error' container. The report's HTML structure might have changed.");
+    console.error("Could not find '.test-error-summary' container. The report's HTML structure might have changed.");
     return;
   }
 
