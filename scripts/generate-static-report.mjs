@@ -1299,7 +1299,7 @@ function generateWorkerDistributionChart(results) {
     const workerId =
       typeof test.workerId !== "undefined" ? test.workerId : "N/A";
     if (!acc[workerId]) {
-      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] }; // Changed to 'tests'
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
     }
 
     const status = String(test.status).toLowerCase();
@@ -1310,7 +1310,7 @@ function generateWorkerDistributionChart(results) {
     const testTitleParts = test.name.split(" > ");
     const testTitle =
       testTitleParts[testTitleParts.length - 1] || "Unnamed Test";
-    // 2. Store both name and status for each test
+    // Store both name and status for each test
     acc[workerId].tests.push({ name: testTitle, status: status });
 
     return acc;
@@ -1333,94 +1333,176 @@ function generateWorkerDistributionChart(results) {
     /-/g,
     "_"
   )}`;
+  const modalJsNamespace = `modal_funcs_${chartId.replace(/-/g, "_")}`;
 
-  const categoriesWithObjects = workerIds.map((id) => ({
+  // The categories now just need the name for the axis labels
+  const categories = workerIds.map((id) => `Worker ${id}`);
+
+  // We pass the full data separately to the script
+  const fullWorkerData = workerIds.map((id) => ({
+    id: id,
     name: `Worker ${id}`,
-    tests: workerData[id].tests, // Pass the array of test objects
+    tests: workerData[id].tests,
   }));
 
   const passedData = workerIds.map((id) => workerData[id].passed);
   const failedData = workerIds.map((id) => workerData[id].failed);
   const skippedData = workerIds.map((id) => workerData[id].skipped);
 
-  const categoriesString = JSON.stringify(categoriesWithObjects);
+  const categoriesString = JSON.stringify(categories);
+  const fullDataString = JSON.stringify(fullWorkerData);
   const seriesString = JSON.stringify([
     { name: "Passed", data: passedData, color: "var(--success-color)" },
     { name: "Failed", data: failedData, color: "var(--danger-color)" },
     { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
   ]);
 
+  // The HTML now includes the chart container, the modal, and styles for the modal
   return `
+    <style>
+      .worker-modal-overlay {
+        position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%;
+        overflow: auto; background-color: rgba(0,0,0,0.6);
+        display: none; align-items: center; justify-content: center;
+      }
+      .worker-modal-content {
+        background-color: #3d4043;
+        color: var(--card-background-color);
+        margin: auto; padding: 20px; border: 1px solid var(--border-color, #888);
+        width: 80%; max-width: 700px; border-radius: 8px;
+        position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      }
+      .worker-modal-close {
+        position: absolute; top: 10px; right: 20px;
+        font-size: 28px; font-weight: bold; cursor: pointer;
+        line-height: 1;
+      }
+      .worker-modal-close:hover, .worker-modal-close:focus {
+        color: var(--text-color, #000);
+      }
+      #worker-modal-body-${chartId} ul {
+        list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
+      }
+       #worker-modal-body-${chartId} li {
+         padding: 8px 5px; border-bottom: 1px solid var(--border-color, #eee);
+         font-size: 0.9em;
+      }
+       #worker-modal-body-${chartId} li:last-child {
+         border-bottom: none;
+      }
+       #worker-modal-body-${chartId} li > span {
+         display: inline-block;
+         width: 70px;
+         font-weight: bold;
+         text-align: right;
+         margin-right: 10px;
+      }
+    </style>
+
     <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}" style="min-height: 350px;">
       <div class="no-data">Loading Worker Distribution Chart...</div>
     </div>
+
+    <div id="worker-modal-${chartId}" class="worker-modal-overlay">
+      <div class="worker-modal-content">
+        <span class="worker-modal-close">×</span>
+        <h3 id="worker-modal-title-${chartId}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: #fff"></h3>
+        <div id="worker-modal-body-${chartId}"></div>
+      </div>
+    </div>
+
     <script>
+      // Namespace for modal functions to avoid global scope pollution
+      window.${modalJsNamespace} = {};
+
       window.${renderFunctionName} = function() {
         const chartContainer = document.getElementById('${chartId}');
         if (!chartContainer) { console.error("Chart container ${chartId} not found."); return; }
+
+        // --- Modal Setup ---
+        const modal = document.getElementById('worker-modal-${chartId}');
+        const modalTitle = document.getElementById('worker-modal-title-${chartId}');
+        const modalBody = document.getElementById('worker-modal-body-${chartId}');
+        const closeModalBtn = modal.querySelector('.worker-modal-close');
+
+        window.${modalJsNamespace}.open = function(worker) {
+          if (!worker) return;
+          modalTitle.textContent = 'Test Details for ' + worker.name;
+
+          let testListHtml = '<ul>';
+          if (worker.tests && worker.tests.length > 0) {
+            worker.tests.forEach(test => {
+                let color = 'inherit';
+                if (test.status === 'passed') color = 'var(--success-color)';
+                else if (test.status === 'failed') color = 'var(--danger-color)';
+                else if (test.status === 'skipped') color = 'var(--warning-color)';
+
+                const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+                testListHtml += \`<li style="color: \${color};"><span style="color: \${color}">[\${test.status.toUpperCase()}]</span> \${escapedName}</li>\`;
+            });
+          } else {
+            testListHtml += '<li>No detailed test data available for this worker.</li>';
+          }
+          testListHtml += '</ul>';
+
+          modalBody.innerHTML = testListHtml;
+          modal.style.display = 'flex';
+        };
+
+        const closeModal = function() {
+          modal.style.display = 'none';
+        };
+
+        closeModalBtn.onclick = closeModal;
+        modal.onclick = function(event) {
+          // Close if clicked on the dark overlay background
+          if (event.target == modal) {
+            closeModal();
+          }
+        };
+
+
+        // --- Highcharts Setup ---
         if (typeof Highcharts !== 'undefined') {
           try {
             chartContainer.innerHTML = '';
-            const allCategories = ${categoriesString};
+            const fullData = ${fullDataString};
+
             const chartOptions = {
               chart: { type: 'bar', height: 350, backgroundColor: 'transparent' },
               title: { text: null },
-              xAxis: { 
-                categories: allCategories.map(c => c.name),
+              xAxis: {
+                categories: ${categoriesString},
                 title: { text: 'Worker ID' },
                 labels: { style: { color: 'var(--text-color-secondary)' }}
               },
-              yAxis: { 
-                min: 0, 
+              yAxis: {
+                min: 0,
                 title: { text: 'Number of Tests' },
                 labels: { style: { color: 'var(--text-color-secondary)' }},
                 stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } }
               },
               legend: { reversed: true, itemStyle: { fontSize: "12px", color: 'var(--text-color)' } },
-              plotOptions: { series: { stacking: 'normal' } },
+              plotOptions: {
+                series: {
+                  stacking: 'normal',
+                  cursor: 'pointer',
+                  point: {
+                    events: {
+                      click: function () {
+                        // 'this.x' is the index of the category
+                        const workerData = fullData[this.x];
+                        window.${modalJsNamespace}.open(workerData);
+                      }
+                    }
+                  }
+                }
+              },
               tooltip: {
                 shared: true,
-                useHTML: true,
-                backgroundColor: 'rgba(10,10,10,0.92)', 
-                borderColor: 'rgba(10,10,10,0.92)', 
-                style: { color: '#f5f5f5' },
-                formatter: function () {
-                  if (!this.points || this.points.length === 0) return '';
-                  
-                  const categoryIndex = this.points[0].point.x;
-                  const categoryObject = allCategories[categoryIndex];
-                  const tests = categoryObject.tests || [];
-                  
-                  const total = this.points.reduce((acc, point) => acc + point.y, 0);
-                  const workerId = this.x;
-
-                  let tooltipHeader = '<strong>Worker ' + workerId + '</strong><br/>Total Tests: ' + total + '<br/><br/>';
-                  
-                  let pointsInfo = this.points.slice().reverse().map(point => {
-                      return '<span style="color:' + point.series.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b>';
-                  }).join('<br/>');
-
-                  let testNamesHtml = '<br/><hr style="border-color: #555; margin: 5px 0;" /><strong>Tests Handled (in order):</strong><ul style="margin: 5px 0 0; padding-left: 20px; max-height: 150px; overflow-y: auto;">';
-                  if (tests.length > 0) {
-                    tests.forEach(test => {
-                        let color = 'inherit'; // Default color
-                        if (test.status === 'passed') {
-                            color = 'var(--success-color)';
-                        } else if (test.status === 'failed') {
-                            color = 'var(--danger-color)';
-                        } else if (test.status === 'skipped') {
-                            color = 'var(--warning-color)';
-                        }
-                        const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
-                        testNamesHtml += '<li style="color:' + color + ';">' + escapedName + '</li>';
-                    });
-                  } else {
-                    testNamesHtml += '<li>No test name data available.</li>';
-                  }
-                  testNamesHtml += '</ul>';
-
-                  return tooltipHeader + pointsInfo + testNamesHtml;
-                }
+                headerFormat: '<b>{point.key}</b> (Click for details)<br/>',
+                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                footerFormat: 'Total: <b>{point.total}</b>'
               },
               series: ${seriesString},
               credits: { enabled: false }
@@ -1505,13 +1587,13 @@ function generateHTML(reportData, trendData = null) {
                 step.duration
               )}</span></div><div class="step-details" style="display: none;">${
                 step.codeLocation
-                  ? `<div class="step-info"><strong>Location:</strong> ${sanitizeHTML(
+                  ? `<div class="step-info code-section"><strong>Location:</strong> ${sanitizeHTML(
                       step.codeLocation
                     )}</div>`
                   : ""
               }${
                 step.errorMessage
-                  ? `<div class="step-error">${
+                  ? `<div class="test-error-summary">${
                       step.stackTrace
                         ? `<div class="stack-trace">${formatPlaywrightError(
                             step.stackTrace
@@ -1575,13 +1657,24 @@ function generateHTML(reportData, trendData = null) {
                         <h4>Steps</h4><div class="steps-list">${generateStepsHTML(
                           test.steps
                         )}</div>
-                        ${
-                          test.stdout && test.stdout.length > 0
-                            ? `<div class="console-output-section"><h4>Console Output (stdout)</h4><pre class="console-log stdout-log">${formatPlaywrightError(
-                                test.stdout.join("\\n")
-                              )}</pre></div>`
-                            : ""
-                        }
+                        ${(() => {
+                          if (!test.stdout || test.stdout.length === 0)
+                            return "";
+                          // Create a unique ID for the <pre> element to target it for copying
+                          const logId = `stdout-log-${test.id || testIndex}`;
+                          return `<div class="console-output-section">
+                                        <h4>Console Output (stdout)
+                                        <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy Console</button>
+                                        </h4>
+                                        <div class="log-wrapper">
+                                            <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                            test.stdout
+                              .map((line) => sanitizeHTML(line))
+                              .join("\n")
+                          )}</pre>
+                                        </div>
+                                    </div>`;
+                        })()}
                         ${
                           test.stderr && test.stderr.length > 0
                             ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log">${test.stderr
@@ -1923,6 +2016,7 @@ function generateHTML(reportData, trendData = null) {
         .download-trace:hover { background: #cbd5e0; }
         .filters button.clear-filters-btn { background-color: var(--medium-gray-color); color: var(--text-color); }
         .filters button.clear-filters-btn:hover { background-color: var(--dark-gray-color); color: #fff; }
+        .copy-btn {color: var(--primary-color); background: #fefefe; border-radius: 8px; cursor: pointer; border-color: var(--primary-color); font-size: 1em; margin-left: 93%; font-weight: 600;}
         @media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
         @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
         @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} }
@@ -2066,6 +2160,21 @@ function generateHTML(reportData, trendData = null) {
             return (ms / 1000).toFixed(1) + "s"; 
         }
     }
+    function copyLogContent(elementId, button) {
+        const logElement = document.getElementById(elementId);
+        if (!logElement) {
+            console.error('Could not find log element with ID:', elementId);
+            return;
+        }
+        navigator.clipboard.writeText(logElement.innerText).then(() => {
+            button.textContent = 'Copied!';
+            setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy log content:', err);
+            button.textContent = 'Failed';
+             setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+        });
+    } 
     function initializeReportInteractivity() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');

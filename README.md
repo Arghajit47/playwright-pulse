@@ -224,38 +224,6 @@ The dashboard includes AI-powered test analysis that provides:
 ```bash
 npm install @arghajit/playwright-pulse-report@latest
 ```
-
----
-
-<img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-logo.png" alt="pulse dashboard" title="pulse dashboard" height="35px" width="60px" align="left" padding="5px"/>
-<h2>Pulse Dashboard</h2>
-
-**Real-time Playwright Test Monitoring & Analysis**  
-
-A Next.js component & CLI tool for visualizing Playwright test executions. Provides real-time insights, historical trends, and failure analysis.  
-
-**Key Features**:
-
-- Interactive test result visualization  
-- Historical trend analysis  
-- Failure pattern identification  
-
-**Quick Start**:
-
-```bash
-npx pulse-dashboard
-  or,
-npm run pulse-dashboard
-```
-
-*(Run from project root containing `pulse-report/` directory)*  
-
-**NPM Package**: [playwright-pulse-report](https://www.npmjs.com/package/@arghajit/playwright-pulse-report) 
-
-**Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
-
-*Part of the Playwright Pulse Report ecosystem*
-
 ---
 
 ## ⚙️ Advanced Configuration
@@ -301,6 +269,37 @@ export default defineConfig({
 - It then automatically reads both report-1.json and report-2.json, merges them, and updates the main playwright-pulse-report.json with the combined results.
 
 ***This ensures your final report is always a complete summary of all sequential test runs.***
+
+---
+
+<img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-logo.png" alt="pulse dashboard" title="pulse dashboard" height="35px" width="60px" align="left" padding="5px"/>
+<h2>Pulse Dashboard</h2>
+
+**Real-time Playwright Test Monitoring & Analysis**  
+
+A Next.js component & CLI tool for visualizing Playwright test executions. Provides real-time insights, historical trends, and failure analysis.  
+
+**Key Features**:
+
+- Interactive test result visualization  
+- Historical trend analysis  
+- Failure pattern identification  
+
+**Quick Start**:
+
+```bash
+npx pulse-dashboard
+  or,
+npm run pulse-dashboard
+```
+
+*(Run from project root containing `pulse-report/` directory)*  
+
+**NPM Package**: [playwright-pulse-report](https://www.npmjs.com/package/@arghajit/playwright-pulse-report) 
+
+**Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
+
+*Part of the Playwright Pulse Report ecosystem*
 
 ---
 
