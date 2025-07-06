@@ -16,23 +16,23 @@
 
 ## **Version 0.2.4**
 
-**🚀 Update Highlights**
+**🚀 Update Highlights**  
 
-- **🔧 Improvements**:
-  - Added `resetOnEachRun` config variable to handle Test sequential run, default value is `true`.
+- **🔧 Improvements**:  
+  - Added `resetOnEachRun` config variable to handle Test sequential run, default value is `true`.  
   - Added Gitlab, jenkins CI/CD workflow in the documentation website.
 
 ---
 
 ## **Version 0.2.3**
+  
+**🚀 Update Highlights**  
 
-**🚀 Update Highlights**
-
-- **🐛 Bug Fixes**:
-  - Resolved issues with inconsistent test suite durations.
-  - Fixed layout glitches in the HTML report on smaller screens.
-- **🔧 Improvements**:
-  - Added Worker Index in the test details tab.
+- **🐛 Bug Fixes**:  
+  - Resolved issues with inconsistent test suite durations.  
+  - Fixed layout glitches in the HTML report on smaller screens. 
+- **🔧 Improvements**:  
+  - Added Worker Index in the test details tab.  
   - Added `generate-trend` command for only test-history generation.
 
 ---
