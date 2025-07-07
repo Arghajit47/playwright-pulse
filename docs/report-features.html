@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Report Features - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png">
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -15,301 +17,263 @@
       ☰
     </button>
     <div class="page-wrapper">
-      <nav class="top-nav">
-        <a href="index.html" class="nav-logo"
-          ><img
-            src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png"
+      <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <img
+            src="./asset/FullLogo.png"
             alt="Playwright Pulse Report Banner"
             class="sidebar-banner"
-        /></a>
-        <div class="tab-buttons">
-          <a href="index.html" class="tab-button">Getting Started</a>
-          <a href="reporters-scripts.html" class="tab-button"
-            >Reporters & Scripts</a
-          >
-          <a href="report-features.html" class="tab-button active">Report Features</a>
-          <a href="advanced-usage.html" class="tab-button">Advanced Usage</a>
-          <a href="comparison.html" class="tab-button">Comparison</a>
-          <a href="reference.html" class="tab-button">Reference</a>
-          <a
-            href="https://postman-test-bit.github.io/pulse-dashboard/"
-            class="tab-button external-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Pulse Dashboard
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
-              ></path>
-            </svg>
-          </a>
+          />
         </div>
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li>
+            <a href="report-features.html" class="active">Report Features</a>
+          </li>
+          <li><a href="advanced-usage.html">Advanced Usage</a></li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html">Reference</a></li>
+          <li>
+            <a
+              href="https://postman-test-bit.github.io/pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
       </nav>
-      <div class="content-area">
-        <aside class="sidebar" id="sidebar">
-          <ul class="sidebar-nav">
-            <li><a href="#feature-dashboard">Dashboard View</a></li>
-            <li><a href="#feature-test-runs">Test Run Summary</a></li>
-            <li><a href="#feature-test-history">Test History</a></li>
-            <li><a href="#feature-ai-analysis">AI Analysis</a></li>
-            <li><a href="#screenshots-gallery">Screenshots</a></li>
-          </ul>
-        </aside>
-        <main class="main-content">
-          <h1>Report Features</h1>
-          <p>
-            The generated HTML report is a powerful single-page application with
-            several views.
-          </p>
-
-          <section id="feature-dashboard">
-            <h2>Dashboard View</h2>
-            <p>
-              The default view provides a high-level overview of the test run.
-            </p>
-            <div class="screenshots-grid">
-              <div class="screenshot-item">
-                <img
-                  src="./asset/Dashboard.png"
-                  alt="Dashboard Overview"
-                />
-                <p><strong>Dashboard Overview</strong></p>
-              </div>
-            </div>
-            <h4>Key Components:</h4>
-            <ul>
-              <li>
-                <strong>Summary Cards:</strong> At-a-glance metrics for Total
-                Tests, Passed, Failed, Skipped, Average Test Time, and Total Run
-                Duration.
-              </li>
-              <li>
-                <strong>Test Distribution Pie Chart:</strong> A visual breakdown
-                of test results by status.
-              </li>
-              <li>
-                <strong>System Environment Widget:</strong> Displays information
-                about the execution environment, including Host, OS, CPU model &
-                cores, Memory, Node.js version, and more.
-              </li>
-              <li>
-                <strong>Test Suites Widget:</strong> Lists all test suites that
-                were run, showing the test count and pass/fail/skip status for
-                each.
-              </li>
-            </ul>
-          </section>
-
-          <section id="feature-test-runs">
-            <h2>Test Run Summary View</h2>
-            <p>
-              This tab provides a detailed, filterable list of every test case
-              in the run.
-            </p>
-            <div class="screenshots-grid">
-              <div class="screenshot-item">
-                <img
-                  src="./asset/Passed Test Details.png"
-                  alt="Test Run Details"
-                />
-                <p><strong>Passed Test Run Details</strong></p>
-              </div>
-            </div>
-            <div class="screenshots-grid">
-              <div class="screenshot-item">
-                <img
-                  src="./asset/Failed Test Details.png"
-                  alt="Test Run Details"
-                />
-                <p><strong>Failed Test Run Details</strong></p>
-              </div>
-            </div>
-            <h4>Key Components:</h4>
-            <ul>
-              <li>
-                <strong>Filtering:</strong> Powerful filters allow you to narrow
-                down the view by test name, status (Passed, Failed, Skipped),
-                and browser.
-              </li>
-              <li>
-                <strong>Expandable Test Cases:</strong> Click on any test case
-                to expand it and view its details.
-              </li>
-              <li>
-                <strong>Step-by-Step Execution:</strong> See a full breakdown of
-                every test step, including duration and status. Nested steps are
-                indented for clarity.
-              </li>
-              <li>
-                <strong>Error Details:</strong> For failed tests, the exact
-                error message and a color-coded stack trace are displayed. A
-                "Copy Error Prompt" button is available for easy debugging.
-              </li>
-              <li>
-                <strong>Attachments:</strong> All associated screenshots,
-                videos, and trace files are displayed as thumbnails and are
-                viewable or downloadable directly from the report.
-              </li>
-              <li>
-                <strong>Console Logs:</strong> Any <code>stdout</code> or
-                <code>stderr</code> output captured during the test is displayed
-                in its own section.
-              </li>
-            </ul>
-          </section>
-
-          <section id="feature-test-history">
-            <h2>Test History View</h2>
-            <p>
-              This tab visualizes trends and historical data from the last 15
-              test runs (powered by the <code>generate-trend</code> script).
-            </p>
-            <div class="screenshots-grid">
-              <div class="screenshot-item">
-                <img
-                  src="./asset/Test History.png"
-                  alt="Test Trends"
-                />
-                <p><strong>Execution Trend Charts</strong></p>
-              </div>
-            </div>
-            <h4>Key Components:</h4>
-            <ul>
-              <li>
-                <strong>Execution Trend Charts:</strong> Two main charts show
-                the evolution of your test suite over time:
-                <ul>
-                  <li>
-                    <strong>Test Volume & Outcome Trends:</strong> A line chart
-                    tracking the total, passed, failed, and skipped test counts
-                    across runs.
-                  </li>
-                  <li>
-                    <strong>Execution Duration Trends:</strong> An area chart
-                    showing how the total run duration has changed over time.
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <strong>Individual Test History:</strong> A grid of cards, one
-                for each unique test case. Each card shows:
-                <ul>
-                  <li>The latest status of the test.</li>
-                  <li>
-                    A mini-chart showing the duration and status of that
-                    specific test over the last 15 runs.
-                  </li>
-                  <li>
-                    A collapsible details section with a table of its full run
-                    history.
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </section>
-
-          <section id="feature-ai-analysis">
-            <h2>AI Analysis View</h2>
-            <p>
-              This tab embeds an external web tool to provide AI-powered
-              analysis of your test results, helping to identify flakiness,
-              performance bottlenecks, and failure patterns.
-            </p>
-            <div class="note">
-              The AI Analysis tool is an embedded third-party application and
-              requires an internet connection to function.
-            </div>
-          </section>
-
-          <section id="screenshots-gallery">
-            <h2>Screenshots</h2>
-            <div class="screenshots-grid">
-              <div class="screenshot-item">
-                <a
-                  href="./asset/Dashboard.png"
-                  target="_blank"
-                  ><img
-                    src="./asset/Dashboard.png"
-                    alt="Dashboard Overview"
-                /></a>
-                <p><strong>Dashboard Overview</strong></p>
-              </div>
-              <div class="screenshot-item">
-                <a
-                  href="./asset/Failed Test Details.png"
-                  target="_blank"
-                  ><img
-                    src="./asset/Failed Test Details.png"
-                    alt="Test Details"
-                /></a>
-                <p><strong>Failed Test Details</strong></p>
-              </div>
-              <div class="screenshot-item">
-                <a
-                  href="./asset/Passed Test Details.png"
-                  target="_blank"
-                  ><img
-                    src="./asset/Passed Test Details.png"
-                    alt="Test Details"
-                /></a>
-                <p><strong>Passed Test Details</strong></p>
-              </div>
-              <div class="screenshot-item">
-                <a
-                  href="./asset/Test History.png"
-                  target="_blank"
-                  ><img
-                    src="./asset/Test History.png"
-                    alt="Test Trends"
-                /></a>
-                <p><strong>Test Trends</strong></p>
-              </div>
-              <div class="screenshot-item">
-                <a
-                  href="./asset/email report.png"
-                  target="_blank"
-                  ><img
-                    src="./asset/email report.png"
-                    alt="Test Trends"
-                /></a>
-                <p><strong>Email Report Template</strong></p>
-              </div>
-              <div class="screenshot-item">
-                <a
-                  href="./asset/AI Failure Analyzer.png"
-                  target="_blank"
-                  ><img
-                    src="./asset/AI Failure Analyzer.png"
-                    alt="Test Trends"
-                /></a>
-                <p><strong>AI Failure Analyzer</strong></p>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
-    <div class="overlay" id="overlay"></div>
-    <footer>
-      <div class="footer-content">
-        <img
-          src="https://i.postimg.cc/XqVn1NhF/pulse.png"
-          alt="Pulse Logo"
-          class="footer-logo"
-        />
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Report Features</h1>
         <p>
-          © 2025 Playwright Pulse Report. Crafted by
-          <a
-            href="https://github.com/arghajit47"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Arghajit Singha</a
-          >
-          with precision
+          The generated HTML report is a powerful single-page application with
+          several views.
         </p>
-      </div>
-    </footer>
+
+        <section id="feature-dashboard">
+          <h2>Dashboard View</h2>
+          <p>
+            The default view provides a high-level overview of the test run.
+          </p>
+          <div class="screenshots-grid">
+            <div class="screenshot-item">
+              <img src="./asset/Dashboard.png" alt="Dashboard Overview" />
+              <p><strong>Dashboard Overview</strong></p>
+            </div>
+          </div>
+          <h4>Key Components:</h4>
+          <ul>
+            <li>
+              <strong>Summary Cards:</strong> At-a-glance metrics for Total
+              Tests, Passed, Failed, Skipped, Average Test Time, and Total Run
+              Duration.
+            </li>
+            <li>
+              <strong>Test Distribution Pie Chart:</strong> A visual breakdown
+              of test results by status.
+            </li>
+            <li>
+              <strong>System Environment Widget:</strong> Displays information
+              about the execution environment.
+            </li>
+            <li>
+              <strong>Test Suites Widget:</strong> Lists all test suites that
+              were run, showing the test count and pass/fail/skip status for
+              each.
+            </li>
+          </ul>
+        </section>
+
+        <section id="feature-test-runs">
+          <h2>Test Run Summary View</h2>
+          <p>
+            This tab provides a detailed, filterable list of every test case in
+            the run.
+          </p>
+          <div class="screenshots-grid">
+            <div class="screenshot-item">
+              <img
+                src="./asset/Passed Test Details.png"
+                alt="Passed Test Run Details"
+              />
+              <p><strong>Passed Test Details</strong></p>
+            </div>
+            <div class="screenshot-item">
+              <img
+                src="./asset/Failed Test Details.png"
+                alt="Failed Test Run Details"
+              />
+              <p><strong>Failed Test Details</strong></p>
+            </div>
+          </div>
+          <h4>Key Components:</h4>
+          <ul>
+            <li>
+              <strong>Filtering:</strong> Powerful filters allow you to narrow
+              down the view by test name, status (Passed, Failed, Skipped), and
+              browser.
+            </li>
+            <li>
+              <strong>Expandable Test Cases:</strong> Click on any test case to
+              expand it and view its details.
+            </li>
+            <li>
+              <strong>Step-by-Step Execution:</strong> See a full breakdown of
+              every test step, including duration and status. Nested steps are
+              indented for clarity.
+            </li>
+            <li>
+              <strong>Error Details:</strong> For failed tests, the exact error
+              message and a color-coded stack trace are displayed. A "Copy Error
+              Prompt" button is available for easy debugging.
+            </li>
+            <li>
+              <strong>Attachments:</strong> All associated screenshots, videos,
+              traces and other attachment (html, csv, json, text, xml, etc.)
+              files are displayed as thumbnails and are viewable or downloadable
+              directly from the report.
+            </li>
+            <li>
+              <strong>Console Logs:</strong> Any <code>stdout</code> or
+              <code>stderr</code> output captured during the test is displayed
+              in its own section.
+            </li>
+          </ul>
+        </section>
+
+        <section id="feature-test-history">
+          <h2>Test History View</h2>
+          <p>
+            This tab visualizes trends and historical data from the last 15 test
+            runs.
+          </p>
+          <div class="screenshots-grid">
+            <div class="screenshot-item">
+              <img
+                src="./asset/Test History.png"
+                alt="Test History and Trends"
+              />
+              <p><strong>Execution Trend Charts</strong></p>
+            </div>
+            <div class="screenshot-item">
+              <img
+                src="./asset/Test History long.png"
+                alt="Test History & Worker Trends"
+              />
+              <p><strong>Test History & Worker Trends</strong></p>
+            </div>
+            <div class="screenshot-item">
+              <img
+                src="./asset/Test Details for Worker.png"
+                alt="Test Details for Workers"
+              />
+              <p><strong>Test Details for Workers</strong></p>
+            </div>
+          </div>
+          <h4>Key Components:</h4>
+          <ul>
+            <li>
+              <strong>Execution Trend Charts:</strong> Two main charts show the
+              evolution of your test suite over time:
+              <ul>
+                <li>
+                  <strong>Test Volume &amp; Outcome Trends:</strong> A line
+                  chart tracking the total, passed, failed, and skipped test
+                  counts across runs.
+                </li>
+                <li>
+                  <strong>Execution Duration Trends:</strong> An area chart
+                  showing how the total run duration has changed over time.
+                </li>
+              </ul>
+            </li>
+            <li>
+              <strong>Test Distribution by Worker:</strong> Bar chart for no. of
+              tests, outcomes with respect to each worker.
+            </li>
+            <li>
+              <strong>Individual Test History:</strong> A grid of cards, one for
+              each unique test case. Each card shows:
+              <ul>
+                <li>The latest status of the test.</li>
+                <li>
+                  A mini-chart showing the duration and status of that specific
+                  test over the last 15 runs.
+                </li>
+                <li>
+                  A collapsible details section with a table of its full run
+                  history.
+                </li>
+              </ul>
+            </li>
+          </ul>
+          <ul></ul>
+        </section>
+
+        <section id="feature-ai-analysis">
+          <h2>AI Analysis View</h2>
+          <p>
+            This tab embeds an external web tool to provide AI-powered analysis
+            of your test results.
+          </p>
+          <div class="screenshots-grid">
+            <div class="screenshot-item">
+              <img
+                src="./asset/AI Failure Analyzer.png"
+                alt="AI Failure Analyzer"
+              />
+              <p><strong>AI Failure Analyzer</strong></p>
+            </div>
+          </div>
+          <div class="note">
+            The AI Analysis tool is an embedded third-party application and
+            requires an internet connection to function.
+          </div>
+        </section>
+
+        <section id="email-report">
+          <h2>Email Report</h2>
+          <div class="note">
+            Email will be sent with a light-weight html file, which can be
+            opened in mail preview application.
+          </div>
+          <strong>1. Configure `.env`:</strong>
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript">RECIPIENT_EMAIL_1=recipient1@example.com
+RECIPIENT_EMAIL_2=recipient2@example.com
+# ... up to 5 recipients</code></pre>
+          </div>
+          <strong>2. Send report:</strong>
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript">npx send-email</code></pre>
+          </div>
+          or,
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript">npm run send-email</code></pre>
+          </div>
+          <div class="screenshots-grid">
+            <div class="screenshot-item">
+              <img src="./asset/email-template.png" alt="Email template" />
+              <p><strong>Email template</strong></p>
+            </div>
+            <div class="screenshot-item">
+              <img src="./asset/email report.png" alt="Email Report HTML" />
+              <p><strong>Email Report HTML</strong></p>
+            </div>
+          </div>
+          <div class="note">
+            Email will be received from
+            <code>personalpostmanreporter@gmail.com</code> email ID, if needed
+            kindly check the spam/junk folder to receive the mail.
+          </div>
+        </section>
+      </main>
+    </div>
     <script src="script.js"></script>
   </body>
 </html>

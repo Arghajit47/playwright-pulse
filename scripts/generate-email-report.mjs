@@ -240,8 +240,8 @@ function generateMinifiedHTML(reportData) {
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/v817w4sg/logo.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
     <title>Playwright Pulse Summary Report</title>
     <style>
         :root {
@@ -299,8 +299,8 @@ function generateMinifiedHTML(reportData) {
             color: var(--primary-color);
         }
         #report-logo {
-            height: 36px;
-            width: 36px;
+            height: 40px;
+            width: 55px;
         }
         .run-info {
             font-size: 0.9em;
@@ -482,7 +482,7 @@ function generateMinifiedHTML(reportData) {
     <div class="container">
         <header class="report-header">
             <div class="report-header-title">
-                <img id="report-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMNCA3bDggNSA4LTUtOC01eiIgZmlsbD0iIzNmNTFiNSIvPjxwYXRoIGQ9Ik0xMiA2TDQgMTFsOCA1IDgtNS04LTV6IiBmaWxsPSIjNDI4NWY0Ii8+PHBhdGggZD0iTTEyIDEwbC04IDUgOCA1IDgtNS04LTV6IiBmaWxsPSIjM2Q1NWI0Ii8+PC9zdmc+" alt="Report Logo">
+                <img id="report-logo" src="https://i.postimg.cc/v817w4sg/logo.png" alt="Report Logo">
                 <h1>Playwright Pulse Summary</h1>
             </div>
             <div class="run-info">
@@ -548,7 +548,7 @@ function generateMinifiedHTML(reportData) {
         <footer class="report-footer">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
                 <span>Created for</span>
-                <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer">
+                <a href="https://playwright-pulse-report.netlify.app/" target="_blank" rel="noopener noreferrer">
                     Pulse Email Report
                 </a>
             </div>

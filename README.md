@@ -122,7 +122,7 @@ npx generate-report
    npx send-email
    ```
 
-NOTE: The email will be send with a light-weight html file, which can be opened in mail preview application.
+NOTE: Email will be sent with a light-weight html file, which can be opened in mail preview application.
 
 ## 🤖 AI Analysis
 
