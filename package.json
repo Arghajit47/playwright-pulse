@@ -1,5 +1,5 @@
 {
-  "name": "@arghajit/dummy",
+  "name": "@arghajit/playwright-pulse-report",
   "author": "Arghajit Singha",
   "version": "0.2.5",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
