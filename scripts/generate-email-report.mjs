@@ -548,7 +548,7 @@ function generateMinifiedHTML(reportData) {
         <footer class="report-footer">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
                 <span>Created for</span>
-                <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer">
+                <a href="https://playwright-pulse-report.netlify.app/" target="_blank" rel="noopener noreferrer">
                     Pulse Email Report
                 </a>
             </div>
