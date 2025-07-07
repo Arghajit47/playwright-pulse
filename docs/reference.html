@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Reference - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png">
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -15,193 +17,148 @@
       ☰
     </button>
     <div class="page-wrapper">
-      <nav class="top-nav">
-        <a href="index.html" class="nav-logo"
-          ><img
-            src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png"
+      <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <img
+            src="./asset/FullLogo.png"
             alt="Playwright Pulse Report Banner"
             class="sidebar-banner"
-        /></a>
-        <div class="tab-buttons">
-          <a href="index.html" class="tab-button">Getting Started</a>
-          <a href="reporters-scripts.html" class="tab-button"
-            >Reporters & Scripts</a
-          >
-          <a href="report-features.html" class="tab-button">Report Features</a>
-          <a href="advanced-usage.html" class="tab-button">Advanced Usage</a>
-          <a href="comparison.html" class="tab-button">Comparison</a>
-          <a href="reference.html" class="tab-button active">Reference</a>
-          <a
-            href="https://postman-test-bit.github.io/pulse-dashboard/"
-            class="tab-button external-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Pulse Dashboard
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
-              ></path>
-            </svg>
-          </a>
+          />
         </div>
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li><a href="advanced-usage.html">Advanced Usage</a></li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html" class="active">Reference</a></li>
+          <li>
+            <a
+              href="https://postman-test-bit.github.io/pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
       </nav>
-      <div class="content-area">
-        <aside class="sidebar" id="sidebar">
-          <ul class="sidebar-nav">
-            <li><a href="#changelog">Changelog</a></li>
-            <li><a href="#support-credits">Support & Credits</a></li>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Reference</h1>
+        <section id="changelog">
+          <h2>Changelog</h2>
+          <h4>Version 0.2.5</h4>
+          <ul>
+            <li>
+              <strong>Added:</strong> <b>Test Distribution by Worker</b> chart,
+              which shows Total no. of skipped, passed and failed test cases in
+              Test History tab, for both static and attachment based report.
+            </li>
+            <li>
+              <strong>Added:</strong> <b>Copy Console</b> for Console Log
+              (stdout) for each test.
+            </li>
+            <li>
+              <strong>Added:</strong> <b>View</b> options to All kind of
+              attachments for both static and attachment based report.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Optimized report generation for
+              large datasets. Added accurate browser name, version, and OS to
+              test suites.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Revamped the entire UI design of Documentation website.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Changed The logo for the Playwright Pulse Report, throughout all the reporters.
+            </li>
+            <li>
+              <strong>Bug Fixes:</strong> Resolved issues with <code>failed to load
+              attachments</code> in static report.
+            </li>
+            <li>
+              <strong>Bug Fixes:</strong> Fixed issues with <b>Copy Prompt</b>
+              button, in Test Details tab.
+            </li>
           </ul>
-        </aside>
-        <main class="main-content">
-          <h1>Reference</h1>
-          <section id="changelog">
-            <h2>Changelog</h2>
-            <h4>Version 0.2.3</h4>
-            <ul>
-              <li>
-                <strong>Added:</strong> Introduced HTML, JSON, TEXT, CSV, PDF files as attachment support.
-              </li>
-              <li>
-                <strong>Improvements:</strong> Optimized report generation for
-                large datasets and enhanced error handling. Added accurate
-                browser name, version, and OS, workerIndex to test suites. Implemented filters in
-                lightweight HTML for email reports.
-              </li>
-            </ul>
-            <h4>Version 0.2.2</h4>
-            <ul>
-              <li>
-                <strong>Added:</strong> Introduced 'System Information' widget
-                to visualize details about the test execution environment (Host,
-                OS, CPU, Memory, Node, etc.).
-              </li>
-              <li>
-                <strong>Enhanced Analytics:</strong> Improved accuracy in
-                history trend calculations and added support for filtering
-                trends by date range. Added workerIndex support for individual
-                tests.
-              </li>
-              <li>
-                <strong>Bug Fixes:</strong> Resolved issues with inconsistent
-                test suite durations and fixed layout glitches on smaller
-                screens.
-              </li>
-              <li>
-                <strong>Improvements:</strong> Optimized report generation for
-                large datasets and enhanced error handling. Added accurate
-                browser name, version, and OS to test suites. Implemented
-                lightweight HTML for email reports.
-              </li>
-            </ul>
-            <h4>Version 0.2.1</h4>
-            <ul>
-              <li>
-                <strong>Feature:</strong> Added history trends for the last 15
-                runs for test suites, suite duration, and individual tests.
-              </li>
-              <li>
-                <strong>Fixed:</strong> Corrected Project Name components in the
-                test suite view.
-              </li>
-            </ul>
-            <h4>Version 0.2.0</h4>
-            <ul>
-              <li>
-                <strong>Major Update:</strong> Refined UI for static HTML
-                reports.
-              </li>
-              <li>
-                <strong>Feature:</strong> Implemented History Trends for test
-                suites, duration, and individual test executions.
-              </li>
-            </ul>
-            <h4>Version 0.1.6</h4>
-            <ul>
-              <li>
-                <strong>Fix:</strong> Addressed and fixed email report
-                generation issues.
-              </li>
-            </ul>
-            <h4>Version 0.1.5</h4>
-            <ul>
-              <li>
-                <strong>Enhancement:</strong> Updated and fixed various styling
-                issues in the report.
-              </li>
-            </ul>
-            <h4>Version 0.1.4</h4>
-            <ul>
-              <li>
-                <strong>Feature:</strong> Added the AI Analyzer tab and
-                integration into the report.
-              </li>
-            </ul>
-            <h4>Version 0.1.3</h4>
-            <ul>
-              <li>
-                <strong>Feature:</strong> Introduced the capability to generate
-                and send email-able reports.
-              </li>
-            </ul>
-            <h4>Version 0.1.2</h4>
-            <ul>
-              <li>
-                <strong>Improvement:</strong> Fixed browser filtering logic and
-                added a Browser Tag to the Test Suite Card for easier
-                identification.
-              </li>
-            </ul>
-            <h4>Version 0.1.1</h4>
-            <ul>
-              <li>
-                <strong>Performance:</strong> Added initial support for test
-                sharding.
-              </li>
-            </ul>
-          </section>
-          <section id="support-credits">
-            <h2>Support & Credits</h2>
-            <p>
-              For any issues, bug reports, or feature requests, please contact
-              the author, Arghajit Singha, via email at
-              <a href="mailto:arghajitsingha47@gmail.com"
-                >arghajitsingha47@gmail.com</a
-              >.
-            </p>
-            <p>
-              Special thanks to
-              <a
-                href="https://www.linkedin.com/in/suman-vishwakarma-426108185/"
-                target="_blank"
-                >Suman Vishwakarma</a
-              >
-              for continuous UAT feedback and support.
-            </p>
-          </section>
-        </main>
-      </div>
+          <h4>Version 0.2.4</h4>
+          <ul>
+            <li>
+              <strong>Improvements:</strong> Added <code>resetOnEachRun</code> config
+              variable to handle Test sequential run, default value is <code>true</code>.
+            </li>
+            <li>
+              <strong>Documentation:</strong> Added Gitlab, jenkins CI/CD
+              workflow in the documentation website.
+            </li>
+          </ul>
+          <h4>Version 0.2.3</h4>
+          <ul>
+            <li>
+              <strong>Added:</strong> Support for HTML, JSON, TEXT, CSV, and PDF
+              file attachments.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Optimized report generation for
+              large datasets. Added accurate browser name, version, and OS to
+              test suites.
+            </li>
+          </ul>
+          <h4>Version 0.2.2</h4>
+          <ul>
+            <li>
+              <strong>Added:</strong> Introduced <b>System Information</b> widget to
+              visualize details about the test execution environment.
+            </li>
+            <li>
+              <strong>Enhanced Analytics:</strong> Improved accuracy in history
+              trend calculations.
+            </li>
+          </ul>
+          <h4>Version 0.2.1</h4>
+          <ul>
+            <li>
+              <strong>Feature:</strong> Added history trends for the last 15
+              runs for test suites, suite duration, and individual tests.
+            </li>
+            <li>
+              <strong>Fixed:</strong> Corrected Project Name components in the
+              test suite view.
+            </li>
+          </ul>
+          <h4>Version 0.2.0</h4>
+          <ul>
+            <li>
+              <strong>Major Update:</strong> Refined UI for static HTML reports
+              and implemented History Trends.
+            </li>
+          </ul>
+        </section>
+
+        <section id="support-credits">
+          <h2>Support & Credits</h2>
+          <p>
+            For any issues, bug reports, or feature requests, please contact me, Arghajit Singha, via email at
+            <a href="mailto:arghajitsingha47@gmail.com"
+              >arghajitsingha47@gmail.com</a
+            >.
+          </p>
+          <p>
+            Special thanks to
+            <a
+              href="https://www.linkedin.com/in/suman-vishwakarma-426108185/"
+              target="_blank"
+              >Suman Vishwakarma</a
+            >
+            for continuous UAT feedback and support.
+          </p>
+        </section>
+      </main>
     </div>
-    <div class="overlay" id="overlay"></div>
-    <footer>
-      <div class="footer-content">
-        <img
-          src="https://i.postimg.cc/XqVn1NhF/pulse.png"
-          alt="Pulse Logo"
-          class="footer-logo"
-        />
-        <p>
-          © 2025 Playwright Pulse Report. Crafted by
-          <a
-            href="https://github.com/arghajit47"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Arghajit Singha</a
-          >
-          with precision
-        </p>
-      </div>
-    </footer>
     <script src="script.js"></script>
   </body>
 </html>

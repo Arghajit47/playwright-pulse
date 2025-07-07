@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Advanced Usage - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png">
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -15,169 +17,93 @@
       ☰
     </button>
     <div class="page-wrapper">
-      <nav class="top-nav">
-        <a href="index.html" class="nav-logo"
-          ><img
-            src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png"
+      <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <img
+            src="./asset/FullLogo.png"
             alt="Playwright Pulse Report Banner"
             class="sidebar-banner"
-        /></a>
-        <div class="tab-buttons">
-          <a href="index.html" class="tab-button">Getting Started</a>
-          <a href="reporters-scripts.html" class="tab-button"
-            >Reporters & Scripts</a
-          >
-          <a href="report-features.html" class="tab-button">Report Features</a>
-          <a href="advanced-usage.html" class="tab-button active"
-            >Advanced Usage</a
-          >
-          <a href="comparison.html" class="tab-button">Comparison</a>
-          <a href="reference.html" class="tab-button">Reference</a>
-          <a
-            href="https://postman-test-bit.github.io/pulse-dashboard/"
-            class="tab-button external-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Pulse Dashboard
-            <svg viewBox="0 0 24 24">
-              <path
-                d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6-6-6z M18 6v12h2V6h-2z"
-              ></path>
-            </svg>
-          </a>
+          />
         </div>
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li>
+            <a href="advanced-usage.html" class="active">Advanced Usage</a>
+          </li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html">Reference</a></li>
+          <li>
+            <a
+              href="https://postman-test-bit.github.io/pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
       </nav>
-      <div class="content-area">
-        <aside class="sidebar" id="sidebar">
-          <ul class="sidebar-nav">
-            <li><a href="#advanced-config">Full Configuration</a></li>
-            <li><a href="#advanced-sharding">Sharding Deep Dive</a></li>
-            <li><a href="#advanced-ci">CI/CD Workflow</a></li>
-            <li><a href="#advanced-folder-structure">Folder Structure</a></li>
-            <li>
-              <a href="#advanced-sequential-runs">Sequential Test Runs</a>
-            </li>
-          </ul>
-        </aside>
-        <main class="main-content">
-          <h1>Advanced Usage</h1>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Advanced Usage</h1>
+        <section id="advanced-config">
+          <h2>Full Configuration</h2>
+          <p>
+            The reporter can be configured with the following options in your
+            <code>playwright.config.ts</code>:
+          </p>
+          <table>
+            <thead>
+              <tr>
+                <th>Option</th>
+                <th>Type</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>outputDir</code></td>
+                <td><code>string</code></td>
+                <td><code>'pulse-report'</code></td>
+                <td>The directory where all report assets will be saved.</td>
+              </tr>
+              <tr>
+                <td><code>outputFile</code></td>
+                <td><code>string</code></td>
+                <td><code>'playwright-pulse-report.json'</code></td>
+                <td>The name of the main JSON data file.</td>
+              </tr>
+              <tr>
+                <td><code>resetOnEachRun</code></td>
+                <td><code>boolean</code></td>
+                <td><code>true</code></td>
+                <td>
+                  If <code>false</code>, the reporter will merge results from
+                  sequential runs in the same job.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
 
-          <section id="advanced-config">
-            <h2>Full Configuration</h2>
-            <p>
-              The reporter can be configured with the following options in your
-              <code>playwright.config.ts</code>:
-            </p>
-            <table>
-              <thead>
-                <tr>
-                  <th>Option</th>
-                  <th>Type</th>
-                  <th>Default</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>outputDir</code></td>
-                  <td><code>string</code></td>
-                  <td><code>'pulse-report'</code></td>
-                  <td>
-                    The directory where all report assets (JSON, attachments,
-                    HTML) will be saved, relative to the Playwright config file.
-                  </td>
-                </tr>
-                <tr>
-                  <td><code>outputFile</code></td>
-                  <td><code>string</code></td>
-                  <td><code>'playwright-pulse-report.json'</code></td>
-                  <td>
-                    The name of the main JSON data file generated by the
-                    reporter.
-                  </td>
-                </tr>
-                <tr>
-                  <td><code>resetOnEachRun</code></td>
-                  <td><code>boolean</code></td>
-                  <td><code>true</code></td>
-                  <td>
-                    If <code>false</code>, the reporter will not clear previous
-                    results and instead merge them. Use this for sequential `npx
-                    playwright test` runs in the same job.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </section>
-
-          <section id="advanced-sharding">
-            <h2>Sharding Deep Dive</h2>
-            <p>
-              Sharding is a powerful technique for speeding up test runs.
-              Playwright Pulse Report is built to handle this seamlessly. Here
-              is the detailed workflow:
-            </p>
-            <ol>
-              <li>
-                <strong>Test Execution:</strong> When you run
-                <code>npx playwright test --shard=1/4</code>, the core reporter
-                detects it's running in a sharded environment.
-              </li>
-              <li>
-                <strong>Temporary Files:</strong> Instead of creating the final
-                report, each shard's reporter writes its results to a temporary
-                file in the <code>outputDir</code>, e.g.,
-                <code>.pulse-shard-results-0.json</code>,
-                <code>.pulse-shard-results-1.json</code>, etc.
-              </li>
-              <li>
-                <strong>CI Artifacts:</strong> In a CI environment, you should
-                configure each shard's job to upload its entire
-                <code>pulse-report</code> directory as an artifact.
-              </li>
-              <li>
-                <strong>Merge Job:</strong> A final CI job, which runs after all
-                shard jobs have succeeded, downloads all the sharded artifacts.
-              </li>
-              <li>
-                <strong>Merging:</strong> You then run the
-                <code>npx merge-pulse-report</code> command. It scans the
-                directory for the temporary shard files and combines them into a
-                single, authoritative <code>playwright-pulse-report.json</code>.
-              </li>
-              <li>
-                <strong>Final Report Generation:</strong> Finally, you run
-                <code>npx generate-pulse-report</code> on this merged JSON file
-                to create the complete, unified HTML report.
-              </li>
-            </ol>
-          </section>
-
-          <section id="advanced-ci">
-            <h2>CI/CD Workflow for Sharding</h2>
-            <div class="ci-buttons">
-              <button onclick="showCode('github')" class="active">
-                GitHub Actions
-              </button>
-              <button onclick="showCode('gitlab')">GitLab CI/CD</button>
-              <button onclick="showCode('jenkins')">Jenkins</button>
-            </div>
-
-            <div id="github-code" class="code-container">
-              <p>
-                This GitHub Actions workflow demonstrates the full, robust
-                process for running sharded tests and generating a merged
-                report.
-              </p>
-              <pre><code class="language-yaml">name: Playwright Tests with Pulse Report
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+        <section id="advanced-ci">
+          <h2>CI/CD Workflow for Sharding</h2>
+          <div class="ci-buttons">
+            <button onclick="showCode('github')" class="active">
+              GitHub Actions
+            </button>
+            <button onclick="showCode('gitlab')">GitLab CI/CD</button>
+            <button onclick="showCode('jenkins')">Jenkins</button>
+          </div>
+          <div id="github-code" class="code-container">
+            <pre><code class="language-yaml"># .github/workflows/playwright.yml
+name: Playwright Tests with Pulse Report
+on: [push]
 jobs:
   test:
     timeout-minutes: 60
@@ -185,32 +111,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4] # Adjust the number of shards as needed
-
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Install dependencies
-        run: npm ci
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-      - name: Run Playwright tests for shard ${{ matrix.shard }}
-        run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
-
-      - name: Upload pulse report for shard ${{ matrix.shard }}
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
           name: pulse-report-shard-${{ matrix.shard }}
           path: pulse-report/
           retention-days: 1
 
-  merge-and-publish-report:
-    # This job runs only after all test shards have completed
+  merge-report:
     needs: test
-    if: always() # Ensure this job runs even if some shards fail
+    if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -218,86 +137,54 @@ jobs:
         with:
           node-version: 18
       - run: npm ci
-
-      - name: Download all sharded report artifacts
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          path: pulse-report # Download all artifacts into this single directory
+          path: pulse-report
           pattern: pulse-report-shard-*
           merge-multiple: true
-
-      - name: Merge sharded JSON reports
-        run: npx merge-pulse-report
-
-      - name: Generate final static HTML report
-        run: npx generate-pulse-report
-
-      - name: Upload Final Merged Report
-        uses: actions/upload-artifact@v4
+      - run: npx merge-pulse-report
+      - run: npx generate-pulse-report
+      - uses: actions/upload-artifact@v4
         with:
           name: final-playwright-pulse-report
           path: pulse-report/playwright-pulse-static-report.html
           retention-days: 7</code></pre>
-            </div>
-
-            <div id="gitlab-code" class="code-container" style="display: none">
-              <p>
-                This GitLab pipeline workflow demonstrates the full, robust
-                process for running sharded tests and generating a merged
-                report.
-              </p>
-              <pre><code class="language-yaml">stages:
+          </div>
+          <div id="gitlab-code" class="code-container" style="display: none">
+            <pre><code class="language-yaml"># .gitlab-ci.yml
+stages:
   - test
-  - merge-report
-
-variables:
-  NODE_VERSION: "18"
+  - merge
 
 playwright-test:
   stage: test
-  parallel: 4  # This creates 4 parallel jobs, equivalent to your 4 shards
-  image: node:$NODE_VERSION
-  before_script:
+  parallel: 4
+  image: node:18
+  script:
     - npm ci
     - npx playwright install --with-deps
-  script:
     - npx playwright test --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
   artifacts:
     when: always
-    paths:
-      - pulse-report/
+    paths: [pulse-report/]
     expire_in: 1 day
-    name: "pulse-report-shard-$CI_NODE_INDEX"
 
-merge-and-publish-report:
-  stage: merge-report
+merge-and-publish:
+  stage: merge
   needs: ["playwright-test"]
-  image: node:$NODE_VERSION
-  before_script:
-    - npm ci
+  image: node:18
   script:
-    # Download all shard reports (GitLab handles this automatically with needs: artifacts)
+    - npm ci
     - npx merge-pulse-report
     - npx generate-pulse-report
   artifacts:
-    paths:
-      - pulse-report/playwright-pulse-static-report.html
-    expire_in: 7 days
-    name: "final-playwright-pulse-report"</code></pre>
-            </div>
-
-            <div id="jenkins-code" class="code-container" style="display: none">
-              <p>
-                This Jenkins workflow demonstrates the full, robust process for
-                running sharded tests and generating a merged report.
-              </p>
-              <pre><code class="language-yaml">pipeline {
+    paths: [pulse-report/playwright-pulse-static-report.html]
+    expire_in: 7 days</code></pre>
+          </div>
+          <div id="jenkins-code" class="code-container" style="display: none">
+            <pre><code class="language-groovy">// Jenkinsfile
+pipeline {
     agent any
-    
-    environment {
-        NODE_VERSION = '18'
-    }
-    
     stages {
         stage('Setup') {
             steps {
@@ -305,172 +192,57 @@ merge-and-publish-report:
                 sh 'npx playwright install --with-deps'
             }
         }
-        
         stage('Parallel Tests') {
             parallel {
-                stage('Shard 1') {
-                    steps {
-                        sh 'npx playwright test --shard=1/4'
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: 'pulse-report/**', fingerprint: true, allowEmptyArchive: true
-                        }
-                    }
-                }
-                stage('Shard 2') {
-                    steps {
-                        sh 'npx playwright test --shard=2/4'
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: 'pulse-report/**', fingerprint: true, allowEmptyArchive: true
-                        }
-                    }
-                }
-                stage('Shard 3') {
-                    steps {
-                        sh 'npx playwright test --shard=3/4'
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: 'pulse-report/**', fingerprint: true, allowEmptyArchive: true
-                        }
-                    }
-                }
-                stage('Shard 4') {
-                    steps {
-                        sh 'npx playwright test --shard=4/4'
-                    }
-                    post {
-                        always {
-                            archiveArtifacts artifacts: 'pulse-report/**', fingerprint: true, allowEmptyArchive: true
-                        }
-                    }
+                stage('Shard 1') { steps { sh 'npx playwright test --shard=1/4' } }
+                stage('Shard 2') { steps { sh 'npx playwright test --shard=2/4' } }
+                stage('Shard 3') { steps { sh 'npx playwright test --shard=3/4' } }
+                stage('Shard 4') { steps { sh 'npx playwright test --shard=4/4' } }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'pulse-report/**', allowEmptyArchive: true
                 }
             }
         }
-        
         stage('Merge and Publish Report') {
             steps {
-                script {
-                    // In Jenkins, you would need to implement logic to collect all shard reports
-                    // This might involve using stash/unstash or other Jenkins mechanisms
-                    // The following is a conceptual example
-                    
-                    // Collect all shard reports (implementation depends on your Jenkins setup)
-                    // unstash 'shard-1-report'
-                    // unstash 'shard-2-report'
-                    // unstash 'shard-3-report'
-                    // unstash 'shard-4-report'
-                    
-                    sh 'npx merge-pulse-report'
-                    sh 'npx generate-pulse-report'
-                    
-                    archiveArtifacts artifacts: 'pulse-report/playwright-pulse-static-report.html', fingerprint: true
-                    
-                    // Optional: Publish HTML report using Jenkins HTML Publisher plugin
-                    // publishHTML target: [
-                    //     allowMissing: false,
-                    //     alwaysLinkToLastBuild: false,
-                    //     keepAll: true,
-                    //     reportDir: 'pulse-report',
-                    //     reportFiles: 'playwright-pulse-static-report.html',
-                    //     reportName: 'Playwright Pulse Report'
-                    // ]
-                }
+                // Logic to unstash artifacts from all shards would go here
+                sh 'npx merge-pulse-report'
+                sh 'npx generate-pulse-report'
+                archiveArtifacts artifacts: 'pulse-report/playwright-pulse-static-report.html'
             }
-        }
-    }
-    
-    post {
-        always {
-            // Clean up or additional post-build actions
         }
     }
 }</code></pre>
-            </div>
-          </section>
+          </div>
+        </section>
 
-          <section id="advanced-folder-structure">
-            <h2>File & Folder Structure</h2>
-            <p>
-              After a test run and report generation, your output directory will
-              be structured as follows:
-            </p>
-            <pre>
-pulse-report/
-├── attachments/
-│   ├── test_id_1/
-│   │   ├── 0-167...-screenshot.png
-│   │   └── 1-167...-video.webm
-│   └── test_id_2/
-│       └── 0-167...-trace.zip
-├── history/
-│   ├── trend-1678886400000.json
-│   └── trend-1678890000000.json
-├── playwright-pulse-report.json
-├── playwright-pulse-static-report.html
-└── pulse-email-summary.html
-                </pre
-            >
-            <ul>
-              <li>
-                <code>attachments/</code>: Contains all captured media,
-                organized into subfolders named after unique test IDs to prevent
-                naming collisions.
-              </li>
-              <li>
-                <code>history/</code>: Stores the JSON snapshots of the last 15
-                runs, used to build trend charts. Managed by the
-                <code>generate-trend</code> script.
-              </li>
-              <li>
-                <code>playwright-pulse-report.json</code>: The raw, master JSON
-                data for the most recent test run.
-              </li>
-              <li>
-                <code>playwright-pulse-static-report.html</code>: The final,
-                self-contained HTML report.
-              </li>
-              <li>
-                <code>pulse-email-summary.html</code>: The lightweight summary
-                generated for email distribution.
-              </li>
-            </ul>
-          </section>
+        <section id="sequential-run">
+          <h2>Handling Sequential Test Runs</h2>
+          <span
+            >By default, the reporter will overwrite the
+            `playwright-pulse-report.json` file on each new test run. This is
+            usually what we want. However, if we run tests sequentially in the
+            same job, like this:</span
+          >
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript">npx playwright test test1.spec.ts && npx playwright test test2.spec.ts</code></pre>
+          </div>
+          <span
+            >By default, In this above scenario, the report from test1 will be
+            lost. To solve this, you can use the resetOnEachRun option.</span
+          >
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript"># playwright.config.ts
 
-          <section id="advanced-sequential-runs">
-            <h2>Handling Sequential Test Runs</h2>
-            <p>
-              A common scenario, especially in complex CI pipelines, is to run
-              multiple Playwright commands back-to-back. By default, each
-              <code>npx playwright test</code> command will overwrite the
-              previous report, leading to incomplete data.
-            </p>
-            <h4>The Problem</h4>
-            <p>
-              Consider the following command which executes two different test
-              suites sequentially:
-            </p>
-            <pre><code class="language-bash">npx playwright test --grep @smoke || true && npx playwright test --grep @regression</code></pre>
-            <p>
-              Without special handling, the final report would only contain the
-              results from the <code>@regression</code> suite.
-            </p>
-            <h4>The Solution: `resetOnEachRun: false`</h4>
-            <p>
-              To solve this, the reporter includes a `resetOnEachRun` option.
-              When set to <code>false</code>, the reporter switches to a
-              merge-on-every-run strategy.
-            </p>
-            <pre><code class="language-typescript">// playwright.config.ts
+
 import { defineConfig } from "@playwright/test";
 import * as path from "path";
-
+              
 // Define where the final report JSON and HTML should go
 const PULSE_REPORT_DIR = path.resolve(__dirname, "pulse-report"); // Example: a directory in your project root
-
+              
 export default defineConfig({
   reporter: [
     ["list"],
@@ -485,75 +257,42 @@ export default defineConfig({
   ],
   // ...
 });</code></pre>
-            <h4>Workflow with `resetOnEachRun: false`</h4>
-            <ol>
-              <li>
-                <strong>First Test Run:</strong> The reporter executes and
-                generates its JSON data. It saves this data to a uniquely named
-                file inside <code>pulse-report/pulse-results/</code>. It then
-                creates the main <code>playwright-pulse-report.json</code>.
-              </li>
-              <li>
-                <strong>Second Test Run:</strong> The reporter runs again,
-                saving its own unique JSON file to the
-                <code>pulse-report/pulse-results/</code> directory.
-              </li>
-              <li>
-                <strong>Automatic Merge:</strong> After saving its file, the
-                reporter immediately reads <strong>all</strong> JSON files
-                within the `pulse-results` directory, merges them into a single
-                comprehensive dataset, and overwrites the main
-                <code>playwright-pulse-report.json</code> with this new,
-                combined data.
-              </li>
-            </ol>
-            <div class="note">
-              This approach ensures that after your entire command finishes, the
-              final report is a complete and accurate reflection of all test
-              suites that were executed.
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
-    <div class="overlay" id="overlay"></div>
-    <footer>
-      <div class="footer-content">
-        <img
-          src="https://i.postimg.cc/XqVn1NhF/pulse.png"
-          alt="Pulse Logo"
-          class="footer-logo"
-        />
-        <p>
-          © 2025 Playwright Pulse Report. Crafted by
-          <a
-            href="https://github.com/arghajit47"
-            target="_blank"
-            rel="noopener noreferrer"
-            >Arghajit Singha</a
+          </div>
+          <strong>How it works when resetOnEachRun: false:</strong><br /><br />
+          <span>
+            - On the first run, it saves report-1.json to a
+            pulse-report/pulse-results directory and creates the main
+            playwright-pulse-report.json from it.</span
+          ><br />
+          <span>
+            - On the second run, it saves report-2.json to the same
+            directory.</span
+          ><br />
+          <span>
+            - It then automatically reads both report-1.json and report-2.json,
+            merges them, and updates the main playwright-pulse-report.json with
+            the combined results.</span
+          ><br /><br />
+          <strong
+            ><i
+              >This ensures your final report is always a complete summary of
+              all sequential test runs.</i
+            ></strong
           >
-          with precision
-        </p>
-      </div>
-    </footer>
+        </section>
+      </main>
+    </div>
     <script src="script.js"></script>
     <script>
       function showCode(platform) {
-        // Hide all code containers
-        document.querySelectorAll(".code-container").forEach((container) => {
-          container.style.display = "none";
-        });
-
-        // Remove active class from all buttons
-        document.querySelectorAll(".ci-buttons button").forEach((button) => {
-          button.classList.remove("active");
-        });
-
-        // Show selected platform's code
+        document
+          .querySelectorAll(".code-container")
+          .forEach((c) => (c.style.display = "none"));
+        document
+          .querySelectorAll(".ci-buttons button")
+          .forEach((b) => b.classList.remove("active"));
         document.getElementById(`${platform}-code`).style.display = "block";
-
-        // Add active class to clicked button
-        event.target.classList.add("active");
+        event.currentTarget.classList.add("active");
       }
     </script>
   </body>
