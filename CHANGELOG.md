@@ -1,5 +1,12 @@
 # 📜 Changelog
 
+## **Version 0.2.6**
+
+**🚀 Update Highlights**
+
+- **🔧 Improvements**:
+  - Added "Error Snippet" logs for failed test cases.
+
 ## **Version 0.2.5**
 
 **🚀 Update Highlights**
