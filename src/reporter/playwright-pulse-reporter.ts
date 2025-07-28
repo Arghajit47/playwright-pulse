@@ -301,6 +301,7 @@ export class PlaywrightPulseReporter implements Reporter {
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
       stackTrace: result.error?.stack,
+      snippet: result.error?.snippet,
       codeSnippet: codeSnippet,
       tags: test.tags.map((tag) =>
         tag.startsWith("@") ? tag.substring(1) : tag

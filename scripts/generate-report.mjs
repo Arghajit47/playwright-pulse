@@ -1700,6 +1700,13 @@ function generateHTML(reportData, trendData = null) {
                 </div>`
               : ""
           }
+          ${
+            test.snippet
+              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                  test.snippet
+                )}</code></pre></div>`
+              : ""
+          }
           <h4>Steps</h4>
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
           ${(() => {
