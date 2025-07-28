@@ -197,7 +197,7 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const browserDetails = this.getBrowserDetails(test);
         const testStatus = convertStatus(result.status, test);
@@ -252,6 +252,7 @@ class PlaywrightPulseReporter {
             steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
             errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
             stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
+            snippet: (_j = result.error) === null || _j === void 0 ? void 0 : _j.snippet,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
@@ -276,16 +277,16 @@ class PlaywrightPulseReporter {
                 await this._ensureDirExists(path.dirname(absoluteDestPath));
                 await fs.copyFile(attachment.path, absoluteDestPath);
                 if (attachment.contentType.startsWith("image/")) {
-                    (_j = pulseResult.screenshots) === null || _j === void 0 ? void 0 : _j.push(relativeDestPath);
+                    (_k = pulseResult.screenshots) === null || _k === void 0 ? void 0 : _k.push(relativeDestPath);
                 }
                 else if (attachment.contentType.startsWith("video/")) {
-                    (_k = pulseResult.videoPath) === null || _k === void 0 ? void 0 : _k.push(relativeDestPath);
+                    (_l = pulseResult.videoPath) === null || _l === void 0 ? void 0 : _l.push(relativeDestPath);
                 }
                 else if (attachment.name === "trace") {
                     pulseResult.tracePath = relativeDestPath;
                 }
                 else {
-                    (_l = pulseResult.attachments) === null || _l === void 0 ? void 0 : _l.push({
+                    (_m = pulseResult.attachments) === null || _m === void 0 ? void 0 : _m.push({
                         name: attachment.name,
                         path: relativeDestPath,
                         contentType: attachment.contentType,

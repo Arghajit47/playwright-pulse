@@ -1651,7 +1651,32 @@ function generateHTML(reportData, trendData = null) {
                           test.errorMessage
                             ? `<div class="test-error-summary">${formatPlaywrightError(
                                 test.errorMessage
-                              )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
+                              )}<button 
+                        class="copy-error-btn" 
+                        onclick="copyErrorToClipboard(this)"
+                        style="
+                          margin-top: 8px;
+                          padding: 4px 8px;
+                          background: #f0f0f0;
+                          border: 2px solid #ccc;
+                          border-radius: 4px;
+                          cursor: pointer;
+                          font-size: 12px;
+                          border-color: #8B0000;
+                          color: #8B0000;
+                          "
+                            onmouseover="this.style.background='#e0e0e0'"
+                            onmouseout="this.style.background='#f0f0f0'"
+                      > 
+                        Copy Error Prompt
+                      </button></div>`
+                            : ""
+                        }
+                        ${
+                          test.snippet
+                            ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                                test.snippet
+                              )}</code></pre></div>`
                             : ""
                         }
                         <h4>Steps</h4><div class="steps-list">${generateStepsHTML(
