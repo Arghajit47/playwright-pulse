@@ -158,22 +158,18 @@ function formatPlaywrightError(error) {
   return convertPlaywrightErrorToHTML(commandOutput);
 }
 function convertPlaywrightErrorToHTML(str) {
-  return (
-    str
-      // Convert leading spaces to &nbsp; and tabs to &nbsp;&nbsp;&nbsp;&nbsp;
+    if (!str) return "";
+    return str
       .replace(/^(\s+)/gm, (match) =>
-        match.replace(/ /g, "&nbsp;").replace(/\t/g, "&nbsp;&nbsp;")
+        match.replace(/ /g, " ").replace(/\t/g, "  ")
       )
-      // Color and style replacements
       .replace(/<red>/g, '<span style="color: red;">')
       .replace(/<green>/g, '<span style="color: green;">')
       .replace(/<dim>/g, '<span style="opacity: 0.6;">')
-      .replace(/<intensity>/g, '<span style="font-weight: bold;">') // Changed to apply bold
+      .replace(/<intensity>/g, '<span style="font-weight: bold;">')
       .replace(/<\/color>/g, "</span>")
       .replace(/<\/intensity>/g, "</span>")
-      // Convert newlines to <br> after processing other replacements
-      .replace(/\n/g, "<br>")
-  );
+      .replace(/\n/g, "<br>");
 }
 function formatDuration(ms, options = {}) {
   const {
@@ -214,19 +210,12 @@ function formatDuration(ms, options = {}) {
 
   const totalRawSeconds = numMs / MS_PER_SECOND;
 
-  // Decision: Are we going to display hours or minutes?
-  // This happens if the duration is inherently >= 1 minute OR
-  // if it's < 1 minute but ceiling the seconds makes it >= 1 minute.
   if (
     totalRawSeconds < SECONDS_PER_MINUTE &&
     Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE
   ) {
-    // Strictly seconds-only display, use precision.
     return `${totalRawSeconds.toFixed(validPrecision)}s`;
   } else {
-    // Display will include minutes and/or hours, or seconds round up to a minute.
-    // Seconds part should be an integer (ceiling).
-    // Round the total milliseconds UP to the nearest full second.
     const totalMsRoundedUpToSecond =
       Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
 
@@ -238,21 +227,15 @@ function formatDuration(ms, options = {}) {
     const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
     remainingMs %= MS_PER_SECOND * SECONDS_PER_MINUTE;
 
-    const s = Math.floor(remainingMs / MS_PER_SECOND); // This will be an integer
+    const s = Math.floor(remainingMs / MS_PER_SECOND);
 
     const parts = [];
     if (h > 0) {
       parts.push(`${h}h`);
     }
-
-    // Show minutes if:
-    // - hours are present (e.g., "1h 0m 5s")
-    // - OR minutes themselves are > 0 (e.g., "5m 10s")
-    // - OR the original duration was >= 1 minute (ensures "1m 0s" for 60000ms)
     if (h > 0 || m > 0 || numMs >= MS_PER_SECOND * SECONDS_PER_MINUTE) {
       parts.push(`${m}m`);
     }
-
     parts.push(`${s}s`);
 
     return parts.join(" ");
@@ -1023,6 +1006,260 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
     </div>
   `;
 }
+function generateWorkerDistributionChart(results) {
+  if (!results || results.length === 0) {
+    return '<div class="no-data">No test results data available to display worker distribution.</div>';
+  }
+
+  // 1. Sort results by startTime to ensure chronological order
+  const sortedResults = [...results].sort((a, b) => {
+    const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
+    const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  const workerData = sortedResults.reduce((acc, test) => {
+    const workerId =
+      typeof test.workerId !== "undefined" ? test.workerId : "N/A";
+    if (!acc[workerId]) {
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
+    }
+
+    const status = String(test.status).toLowerCase();
+    if (status === "passed" || status === "failed" || status === "skipped") {
+      acc[workerId][status]++;
+    }
+
+    const testTitleParts = test.name.split(" > ");
+    const testTitle =
+      testTitleParts[testTitleParts.length - 1] || "Unnamed Test";
+    // Store both name and status for each test
+    acc[workerId].tests.push({ name: testTitle, status: status });
+
+    return acc;
+  }, {});
+
+  const workerIds = Object.keys(workerData).sort((a, b) => {
+    if (a === "N/A") return 1;
+    if (b === "N/A") return -1;
+    return parseInt(a, 10) - parseInt(b, 10);
+  });
+
+  if (workerIds.length === 0) {
+    return '<div class="no-data">Could not determine worker distribution from test data.</div>';
+  }
+
+  const chartId = `workerDistChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderWorkerDistChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
+  const modalJsNamespace = `modal_funcs_${chartId.replace(/-/g, "_")}`;
+
+  // The categories now just need the name for the axis labels
+  const categories = workerIds.map((id) => `Worker ${id}`);
+
+  // We pass the full data separately to the script
+  const fullWorkerData = workerIds.map((id) => ({
+    id: id,
+    name: `Worker ${id}`,
+    tests: workerData[id].tests,
+  }));
+
+  const passedData = workerIds.map((id) => workerData[id].passed);
+  const failedData = workerIds.map((id) => workerData[id].failed);
+  const skippedData = workerIds.map((id) => workerData[id].skipped);
+
+  const categoriesString = JSON.stringify(categories);
+  const fullDataString = JSON.stringify(fullWorkerData);
+  const seriesString = JSON.stringify([
+    { name: "Passed", data: passedData, color: "var(--success-color)" },
+    { name: "Failed", data: failedData, color: "var(--danger-color)" },
+    { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
+  ]);
+
+  // The HTML now includes the chart container, the modal, and styles for the modal
+  return `
+    <style>
+      .worker-modal-overlay {
+        position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%;
+        overflow: auto; background-color: rgba(0,0,0,0.6);
+        display: none; align-items: center; justify-content: center;
+      }
+      .worker-modal-content {
+        background-color: #3d4043;
+        color: var(--card-background-color);
+        margin: auto; padding: 20px; border: 1px solid var(--border-color, #888);
+        width: 80%; max-width: 700px; border-radius: 8px;
+        position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      }
+      .worker-modal-close {
+        position: absolute; top: 10px; right: 20px;
+        font-size: 28px; font-weight: bold; cursor: pointer;
+        line-height: 1;
+      }
+      .worker-modal-close:hover, .worker-modal-close:focus {
+        color: var(--text-color, #000);
+      }
+      #worker-modal-body-${chartId} ul {
+        list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
+      }
+       #worker-modal-body-${chartId} li {
+         padding: 8px 5px; border-bottom: 1px solid var(--border-color, #eee);
+         font-size: 0.9em;
+      }
+       #worker-modal-body-${chartId} li:last-child {
+         border-bottom: none;
+      }
+       #worker-modal-body-${chartId} li > span {
+         display: inline-block;
+         width: 70px;
+         font-weight: bold;
+         text-align: right;
+         margin-right: 10px;
+      }
+    </style>
+
+    <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}" style="min-height: 350px;">
+      <div class="no-data">Loading Worker Distribution Chart...</div>
+    </div>
+
+    <div id="worker-modal-${chartId}" class="worker-modal-overlay">
+      <div class="worker-modal-content">
+        <span class="worker-modal-close">×</span>
+        <h3 id="worker-modal-title-${chartId}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: #fff"></h3>
+        <div id="worker-modal-body-${chartId}"></div>
+      </div>
+    </div>
+
+    <script>
+      // Namespace for modal functions to avoid global scope pollution
+      window.${modalJsNamespace} = {};
+
+      window.${renderFunctionName} = function() {
+        const chartContainer = document.getElementById('${chartId}');
+        if (!chartContainer) { console.error("Chart container ${chartId} not found."); return; }
+
+        // --- Modal Setup ---
+        const modal = document.getElementById('worker-modal-${chartId}');
+        const modalTitle = document.getElementById('worker-modal-title-${chartId}');
+        const modalBody = document.getElementById('worker-modal-body-${chartId}');
+        const closeModalBtn = modal.querySelector('.worker-modal-close');
+
+        window.${modalJsNamespace}.open = function(worker) {
+          if (!worker) return;
+          modalTitle.textContent = 'Test Details for ' + worker.name;
+
+          let testListHtml = '<ul>';
+          if (worker.tests && worker.tests.length > 0) {
+            worker.tests.forEach(test => {
+                let color = 'inherit';
+                if (test.status === 'passed') color = 'var(--success-color)';
+                else if (test.status === 'failed') color = 'var(--danger-color)';
+                else if (test.status === 'skipped') color = 'var(--warning-color)';
+
+                const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+                testListHtml += \`<li style="color: \${color};"><span style="color: \${color}">[\${test.status.toUpperCase()}]</span> \${escapedName}</li>\`;
+            });
+          } else {
+            testListHtml += '<li>No detailed test data available for this worker.</li>';
+          }
+          testListHtml += '</ul>';
+
+          modalBody.innerHTML = testListHtml;
+          modal.style.display = 'flex';
+        };
+
+        const closeModal = function() {
+          modal.style.display = 'none';
+        };
+
+        closeModalBtn.onclick = closeModal;
+        modal.onclick = function(event) {
+          // Close if clicked on the dark overlay background
+          if (event.target == modal) {
+            closeModal();
+          }
+        };
+
+
+        // --- Highcharts Setup ---
+        if (typeof Highcharts !== 'undefined') {
+          try {
+            chartContainer.innerHTML = '';
+            const fullData = ${fullDataString};
+
+            const chartOptions = {
+              chart: { type: 'bar', height: 350, backgroundColor: 'transparent' },
+              title: { text: null },
+              xAxis: {
+                categories: ${categoriesString},
+                title: { text: 'Worker ID' },
+                labels: { style: { color: 'var(--text-color-secondary)' }}
+              },
+              yAxis: {
+                min: 0,
+                title: { text: 'Number of Tests' },
+                labels: { style: { color: 'var(--text-color-secondary)' }},
+                stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } }
+              },
+              legend: { reversed: true, itemStyle: { fontSize: "12px", color: 'var(--text-color)' } },
+              plotOptions: {
+                series: {
+                  stacking: 'normal',
+                  cursor: 'pointer',
+                  point: {
+                    events: {
+                      click: function () {
+                        // 'this.x' is the index of the category
+                        const workerData = fullData[this.x];
+                        window.${modalJsNamespace}.open(workerData);
+                      }
+                    }
+                  }
+                }
+              },
+              tooltip: {
+                shared: true,
+                headerFormat: '<b>{point.key}</b> (Click for details)<br/>',
+                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                footerFormat: 'Total: <b>{point.total}</b>'
+              },
+              series: ${seriesString},
+              credits: { enabled: false }
+            };
+            Highcharts.chart('${chartId}', chartOptions);
+          } catch (e) {
+            console.error("Error rendering chart ${chartId}:", e);
+            chartContainer.innerHTML = '<div class="no-data">Error rendering worker distribution chart.</div>';
+          }
+        } else {
+          chartContainer.innerHTML = '<div class="no-data">Charting library not available for worker distribution.</div>';
+        }
+      };
+    </script>
+  `;
+}
+const infoTooltip = `
+  <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
+    <span class="info-icon" 
+          style="cursor: pointer; font-size: 1.25rem;"
+          onclick="window.workerInfoPrompt()">ℹ️</span>
+  </span>
+  <script>
+    window.workerInfoPrompt = function() {
+      const message = 'Why is worker -1 special?\\n\\n' +
+                     'Playwright assigns skipped tests to worker -1 because:\\n' +
+                     '1. They don\\'t require browser execution\\n' +
+                     '2. This keeps real workers focused on actual tests\\n' +
+                     '3. Maintains clean reporting\\n\\n' +
+                     'This is an intentional optimization by Playwright.';
+      alert(message);
+    }
+  </script>
+`;
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -1283,260 +1520,91 @@ function generateSuitesWidget(suitesData) {
   </div>
 </div>`;
 }
-function generateWorkerDistributionChart(results) {
-  if (!results || results.length === 0) {
-    return '<div class="no-data">No test results data available to display worker distribution.</div>';
+function generateAIFailureAnalyzerTab(results) {
+  const failedTests = (results || []).filter(test => test.status === 'failed');
+
+  if (failedTests.length === 0) {
+    return `
+      <h2 class="tab-main-title">AI Failure Analysis</h2>
+      <div class="no-data">Congratulations! No failed tests in this run.</div>
+    `;
   }
 
-  // 1. Sort results by startTime to ensure chronological order
-  const sortedResults = [...results].sort((a, b) => {
-    const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
-    const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
-    return timeA - timeB;
-  });
+  // btoa is not available in Node.js environment, so we define a simple polyfill for it.
+  const btoa = (str) => Buffer.from(str).toString('base64');
 
-  const workerData = sortedResults.reduce((acc, test) => {
-    const workerId =
-      typeof test.workerId !== "undefined" ? test.workerId : "N/A";
-    if (!acc[workerId]) {
-      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
-    }
-
-    const status = String(test.status).toLowerCase();
-    if (status === "passed" || status === "failed" || status === "skipped") {
-      acc[workerId][status]++;
-    }
-
-    const testTitleParts = test.name.split(" > ");
-    const testTitle =
-      testTitleParts[testTitleParts.length - 1] || "Unnamed Test";
-    // Store both name and status for each test
-    acc[workerId].tests.push({ name: testTitle, status: status });
-
-    return acc;
-  }, {});
-
-  const workerIds = Object.keys(workerData).sort((a, b) => {
-    if (a === "N/A") return 1;
-    if (b === "N/A") return -1;
-    return parseInt(a, 10) - parseInt(b, 10);
-  });
-
-  if (workerIds.length === 0) {
-    return '<div class="no-data">Could not determine worker distribution from test data.</div>';
-  }
-
-  const chartId = `workerDistChart-${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 7)}`;
-  const renderFunctionName = `renderWorkerDistChart_${chartId.replace(
-    /-/g,
-    "_"
-  )}`;
-  const modalJsNamespace = `modal_funcs_${chartId.replace(/-/g, "_")}`;
-
-  // The categories now just need the name for the axis labels
-  const categories = workerIds.map((id) => `Worker ${id}`);
-
-  // We pass the full data separately to the script
-  const fullWorkerData = workerIds.map((id) => ({
-    id: id,
-    name: `Worker ${id}`,
-    tests: workerData[id].tests,
-  }));
-
-  const passedData = workerIds.map((id) => workerData[id].passed);
-  const failedData = workerIds.map((id) => workerData[id].failed);
-  const skippedData = workerIds.map((id) => workerData[id].skipped);
-
-  const categoriesString = JSON.stringify(categories);
-  const fullDataString = JSON.stringify(fullWorkerData);
-  const seriesString = JSON.stringify([
-    { name: "Passed", data: passedData, color: "var(--success-color)" },
-    { name: "Failed", data: failedData, color: "var(--danger-color)" },
-    { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
-  ]);
-
-  // The HTML now includes the chart container, the modal, and styles for the modal
   return `
-    <style>
-      .worker-modal-overlay {
-        position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%;
-        overflow: auto; background-color: rgba(0,0,0,0.6);
-        display: none; align-items: center; justify-content: center;
-      }
-      .worker-modal-content {
-        background-color: #3d4043;
-        color: var(--card-background-color);
-        margin: auto; padding: 20px; border: 1px solid var(--border-color, #888);
-        width: 80%; max-width: 700px; border-radius: 8px;
-        position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-      }
-      .worker-modal-close {
-        position: absolute; top: 10px; right: 20px;
-        font-size: 28px; font-weight: bold; cursor: pointer;
-        line-height: 1;
-      }
-      .worker-modal-close:hover, .worker-modal-close:focus {
-        color: var(--text-color, #000);
-      }
-      #worker-modal-body-${chartId} ul {
-        list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
-      }
-       #worker-modal-body-${chartId} li {
-         padding: 8px 5px; border-bottom: 1px solid var(--border-color, #eee);
-         font-size: 0.9em;
-      }
-       #worker-modal-body-${chartId} li:last-child {
-         border-bottom: none;
-      }
-       #worker-modal-body-${chartId} li > span {
-         display: inline-block;
-         width: 70px;
-         font-weight: bold;
-         text-align: right;
-         margin-right: 10px;
-      }
-    </style>
+    <h2 class="tab-main-title">AI Failure Analysis</h2>
+    <div class="ai-analyzer-stats">
+        <div class="stat-item">
+            <span class="stat-number">${failedTests.length}</span>
+            <span class="stat-label">Failed Tests</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">${new Set(failedTests.map(t => t.browser)).size}</span>
+            <span class="stat-label">Browsers</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">${(Math.round(failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) / 1000))}s</span>
+            <span class="stat-label">Total Duration</span>
+        </div>
+    </div>
+    <p class="ai-analyzer-description">
+        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for specific failed test.
+    </p>
+    
+    <div class="compact-failure-list">
+      ${failedTests.map(test => {
+    const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
+    const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
+    const truncatedError = (test.errorMessage || "No error message").slice(0, 150) +
+      (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
 
-    <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}" style="min-height: 350px;">
-      <div class="no-data">Loading Worker Distribution Chart...</div>
+    return `
+        <div class="compact-failure-item">
+            <div class="failure-header">
+                <div class="failure-main-info">
+                    <h3 class="failure-title" title="${sanitizeHTML(test.name)}">${sanitizeHTML(testTitle)}</h3>
+                    <div class="failure-meta">
+                        <span class="browser-indicator">${sanitizeHTML(test.browser || 'unknown')}</span>
+                        <span class="duration-indicator">${formatDuration(test.duration)}</span>
+                    </div>
+                </div>
+                <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
+                    <span class="ai-text">AI Fix</span>
+                </button>
+            </div>
+            <div class="failure-error-preview">
+                <div class="error-snippet">${formatPlaywrightError(truncatedError)}</div>
+                <button class="expand-error-btn" onclick="toggleErrorDetails(this)">
+                    <span class="expand-text">Show Full Error</span>
+                    <span class="expand-icon">▼</span>
+                </button>
+            </div>
+            <div class="full-error-details" style="display: none;">
+                <div class="full-error-content">
+                    ${formatPlaywrightError(test.errorMessage || "No detailed error message available")}
+                </div>
+            </div>
+        </div>
+        `
+  }).join('')}
     </div>
 
-    <div id="worker-modal-${chartId}" class="worker-modal-overlay">
-      <div class="worker-modal-content">
-        <span class="worker-modal-close">×</span>
-        <h3 id="worker-modal-title-${chartId}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: #fff"></h3>
-        <div id="worker-modal-body-${chartId}"></div>
+    <!-- AI Fix Modal -->
+    <div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
+      <div class="ai-modal-content" onclick="event.stopPropagation()">
+        <div class="ai-modal-header">
+            <h3 id="ai-fix-modal-title">AI Analysis</h3>
+            <span class="ai-modal-close" onclick="closeAiModal()">×</span>
+        </div>
+        <div class="ai-modal-body" id="ai-fix-modal-content">
+            <!-- Content will be injected by JavaScript -->
+        </div>
       </div>
     </div>
-
-    <script>
-      // Namespace for modal functions to avoid global scope pollution
-      window.${modalJsNamespace} = {};
-
-      window.${renderFunctionName} = function() {
-        const chartContainer = document.getElementById('${chartId}');
-        if (!chartContainer) { console.error("Chart container ${chartId} not found."); return; }
-
-        // --- Modal Setup ---
-        const modal = document.getElementById('worker-modal-${chartId}');
-        const modalTitle = document.getElementById('worker-modal-title-${chartId}');
-        const modalBody = document.getElementById('worker-modal-body-${chartId}');
-        const closeModalBtn = modal.querySelector('.worker-modal-close');
-
-        window.${modalJsNamespace}.open = function(worker) {
-          if (!worker) return;
-          modalTitle.textContent = 'Test Details for ' + worker.name;
-
-          let testListHtml = '<ul>';
-          if (worker.tests && worker.tests.length > 0) {
-            worker.tests.forEach(test => {
-                let color = 'inherit';
-                if (test.status === 'passed') color = 'var(--success-color)';
-                else if (test.status === 'failed') color = 'var(--danger-color)';
-                else if (test.status === 'skipped') color = 'var(--warning-color)';
-
-                const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
-                testListHtml += \`<li style="color: \${color};"><span style="color: \${color}">[\${test.status.toUpperCase()}]</span> \${escapedName}</li>\`;
-            });
-          } else {
-            testListHtml += '<li>No detailed test data available for this worker.</li>';
-          }
-          testListHtml += '</ul>';
-
-          modalBody.innerHTML = testListHtml;
-          modal.style.display = 'flex';
-        };
-
-        const closeModal = function() {
-          modal.style.display = 'none';
-        };
-
-        closeModalBtn.onclick = closeModal;
-        modal.onclick = function(event) {
-          // Close if clicked on the dark overlay background
-          if (event.target == modal) {
-            closeModal();
-          }
-        };
-
-
-        // --- Highcharts Setup ---
-        if (typeof Highcharts !== 'undefined') {
-          try {
-            chartContainer.innerHTML = '';
-            const fullData = ${fullDataString};
-
-            const chartOptions = {
-              chart: { type: 'bar', height: 350, backgroundColor: 'transparent' },
-              title: { text: null },
-              xAxis: {
-                categories: ${categoriesString},
-                title: { text: 'Worker ID' },
-                labels: { style: { color: 'var(--text-color-secondary)' }}
-              },
-              yAxis: {
-                min: 0,
-                title: { text: 'Number of Tests' },
-                labels: { style: { color: 'var(--text-color-secondary)' }},
-                stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } }
-              },
-              legend: { reversed: true, itemStyle: { fontSize: "12px", color: 'var(--text-color)' } },
-              plotOptions: {
-                series: {
-                  stacking: 'normal',
-                  cursor: 'pointer',
-                  point: {
-                    events: {
-                      click: function () {
-                        // 'this.x' is the index of the category
-                        const workerData = fullData[this.x];
-                        window.${modalJsNamespace}.open(workerData);
-                      }
-                    }
-                  }
-                }
-              },
-              tooltip: {
-                shared: true,
-                headerFormat: '<b>{point.key}</b> (Click for details)<br/>',
-                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
-                footerFormat: 'Total: <b>{point.total}</b>'
-              },
-              series: ${seriesString},
-              credits: { enabled: false }
-            };
-            Highcharts.chart('${chartId}', chartOptions);
-          } catch (e) {
-            console.error("Error rendering chart ${chartId}:", e);
-            chartContainer.innerHTML = '<div class="no-data">Error rendering worker distribution chart.</div>';
-          }
-        } else {
-          chartContainer.innerHTML = '<div class="no-data">Charting library not available for worker distribution.</div>';
-        }
-      };
-    </script>
   `;
 }
-const infoTooltip = `
-  <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
-    <span class="info-icon" 
-          style="cursor: pointer; font-size: 1.25rem;"
-          onclick="window.workerInfoPrompt()">ℹ️</span>
-  </span>
-  <script>
-    window.workerInfoPrompt = function() {
-      const message = 'Why is worker -1 special?\\n\\n' +
-                     'Playwright assigns skipped tests to worker -1 because:\\n' +
-                     '1. They don\\'t require browser execution\\n' +
-                     '2. This keeps real workers focused on actual tests\\n' +
-                     '3. Maintains clean reporting\\n\\n' +
-                     'This is an intentional optimization by Playwright.';
-      alert(message);
-    }
-  </script>
-`;
 function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results || []);
@@ -1563,7 +1631,7 @@ function generateHTML(reportData, trendData = null) {
     if (!results || results.length === 0)
       return '<div class="no-tests">No test results found in this run.</div>';
     return results
-      .map((test) => {
+      .map((test, testIndex) => {
         const browser = test.browser || "unknown";
         const testFileParts = test.name.split(" > ");
         const testTitle =
@@ -1651,32 +1719,7 @@ function generateHTML(reportData, trendData = null) {
                           test.errorMessage
                             ? `<div class="test-error-summary">${formatPlaywrightError(
                                 test.errorMessage
-                              )}<button 
-                        class="copy-error-btn" 
-                        onclick="copyErrorToClipboard(this)"
-                        style="
-                          margin-top: 8px;
-                          padding: 4px 8px;
-                          background: #f0f0f0;
-                          border: 2px solid #ccc;
-                          border-radius: 4px;
-                          cursor: pointer;
-                          font-size: 12px;
-                          border-color: #8B0000;
-                          color: #8B0000;
-                          "
-                            onmouseover="this.style.background='#e0e0e0'"
-                            onmouseout="this.style.background='#f0f0f0'"
-                      > 
-                        Copy Error Prompt
-                      </button></div>`
-                            : ""
-                        }
-                        ${
-                          test.snippet
-                            ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-                                test.snippet
-                              )}</code></pre></div>`
+                              )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                             : ""
                         }
                         <h4>Steps</h4><div class="steps-list">${generateStepsHTML(
@@ -1887,7 +1930,7 @@ function generateHTML(reportData, trendData = null) {
     <link rel="icon" type="image/png" href="https://i.postimg.cc/v817w4sg/logo.png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
     <script src="https://code.highcharts.com/highcharts.js" defer></script>
-    <title>Playwright Pulse Report</title>
+    <title>Playwright Pulse Report (Static Report)</title>
     <style>
         :root { 
           --primary-color: #3f51b5; --secondary-color: #ff4081; --accent-color: #673ab7; --accent-color-alt: #FF9800;
@@ -1899,8 +1942,6 @@ function generateHTML(reportData, trendData = null) {
         }
         .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
         .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
-        
-        /* General Highcharts styling */
         .highcharts-background { fill: transparent; }
         .highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
         .highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
@@ -2028,8 +2069,24 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
         .no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
         .no-data-chart {font-size: 0.95em; padding: 18px;}
-        #test-ai iframe { border: 1px solid var(--border-color); width: 100%; height: 85vh; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); }
-        #test-ai p {margin-bottom: 18px; font-size: 1em; color: var(--text-color-secondary);}
+        .ai-failure-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }
+        .ai-failure-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 5px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+        .ai-failure-card-header { padding: 15px 20px; border-bottom: 1px solid var(--light-gray-color); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+        .ai-failure-card-header h3 { margin: 0; font-size: 1.1em; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ai-failure-card-body { padding: 20px; }
+        .ai-fix-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 18px; font-size: 1em; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .ai-fix-btn:hover { background-color: var(--accent-color); transform: translateY(-2px); }
+        .ai-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 1050; animation: fadeIn 0.3s; }
+        .ai-modal-content { background-color: var(--card-background-color); color: var(--text-color); border-radius: var(--border-radius); width: 90%; max-width: 800px; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
+        .ai-modal-header { padding: 18px 25px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+        .ai-modal-header h3 { margin: 0; font-size: 1.25em; }
+        .ai-modal-close { font-size: 2rem; font-weight: 300; cursor: pointer; color: var(--dark-gray-color); line-height: 1; transition: color 0.2s; }
+        .ai-modal-close:hover { color: var(--danger-color); }
+        .ai-modal-body { padding: 25px; overflow-y: auto; }
+        .ai-modal-body h4 { margin-top: 18px; margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color); }
+        .ai-modal-body p { margin-bottom: 15px; }
+        .ai-loader { margin: 40px auto; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .trace-preview { padding: 1rem; text-align: center; background: #f5f5f5; border-bottom: 1px solid #e1e1e1; }
         .trace-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
         .trace-name { word-break: break-word; font-size: 0.9rem; }
@@ -2042,10 +2099,36 @@ function generateHTML(reportData, trendData = null) {
         .filters button.clear-filters-btn { background-color: var(--medium-gray-color); color: var(--text-color); }
         .filters button.clear-filters-btn:hover { background-color: var(--dark-gray-color); color: #fff; }
         .copy-btn {color: var(--primary-color); background: #fefefe; border-radius: 8px; cursor: pointer; border-color: var(--primary-color); font-size: 1em; margin-left: 93%; font-weight: 600;}
+        .ai-analyzer-stats { display: flex; gap: 20px; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: var(--border-radius); justify-content: center; }
+        .stat-item { text-align: center; color: white; }
+        .stat-number { display: block; font-size: 2em; font-weight: 700; line-height: 1;}
+        .stat-label { font-size: 0.9em; opacity: 0.9; font-weight: 500;}
+        .ai-analyzer-description { margin-bottom: 25px; font-size: 1em; color: var(--text-color-secondary); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;}
+        .compact-failure-list { display: flex; flex-direction: column; gap: 15px; }
+        .compact-failure-item { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 4px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease;}
+        .compact-failure-item:hover { transform: translateY(-2px); box-shadow: var(--box-shadow); }
+        .failure-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; gap: 15px;}
+        .failure-main-info { flex: 1; min-width: 0; }
+        .failure-title { margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .failure-meta { display: flex; gap: 12px; align-items: center;}
+        .browser-indicator, .duration-indicator { font-size: 0.85em; padding: 3px 8px; border-radius: 12px; font-weight: 500;}
+        .browser-indicator { background: var(--info-color); color: white; }
+        .duration-indicator { background: var(--medium-gray-color); color: var(--text-color); }
+        .compact-ai-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap;}
+        .compact-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
+        .ai-text { font-size: 0.95em; }
+        .failure-error-preview { padding: 0 20px 18px 20px; border-top: 1px solid var(--light-gray-color);}
+        .error-snippet { background: rgba(244, 67, 54, 0.05); border: 1px solid rgba(244, 67, 54, 0.2); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4;}
+        .expand-error-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;}
+        .expand-error-btn:hover { background: var(--light-gray-color); border-color: var(--medium-gray-color); }
+        .expand-icon { transition: transform 0.2s ease; font-size: 0.8em;}
+        .expand-error-btn.expanded .expand-icon { transform: rotate(180deg); }
+        .full-error-details { padding: 0 20px 20px 20px; border-top: 1px solid var(--light-gray-color); margin-top: 0;}
+        .full-error-content { background: rgba(244, 67, 54, 0.05); border: 1px solid rgba(244, 67, 54, 0.2); border-radius: 6px; padding: 15px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4; max-height: 300px; overflow-y: auto;}
         @media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
         @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
-        @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} }
-        @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} }
+        @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
+        @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
         .trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
         .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
         .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
@@ -2071,7 +2154,7 @@ function generateHTML(reportData, trendData = null) {
             <button class="tab-button active" data-tab="dashboard">Dashboard</button>
             <button class="tab-button" data-tab="test-runs">Test Run Summary</button>
             <button class="tab-button" data-tab="test-history">Test History</button>
-            <button class="tab-button" data-tab="test-ai">AI Analysis</button>
+            <button class="tab-button" data-tab="ai-failure-analyzer">AI Failure Analyzer</button>
         </div>
         <div id="dashboard" class="tab-content active">
             <div class="dashboard-grid">
@@ -2166,8 +2249,8 @@ function generateHTML(reportData, trendData = null) {
               : '<div class="no-data">Individual test history data not available.</div>'
           }
         </div>
-        <div id="test-ai" class="tab-content">
-             <iframe data-src="https://ai-test-analyser.netlify.app/" width="100%" height="100%" frameborder="0" allowfullscreen class="lazy-load-iframe" title="AI Test Analyser" style="border: none; height: 100vh;"></iframe>
+        <div id="ai-failure-analyzer" class="tab-content">
+            ${generateAIFailureAnalyzerTab(results)}
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
@@ -2199,7 +2282,127 @@ function generateHTML(reportData, trendData = null) {
             button.textContent = 'Failed';
              setTimeout(() => { button.textContent = 'Copy'; }, 2000);
         });
-    } 
+    }
+
+    function getAIFix(button) {
+        const modal = document.getElementById('ai-fix-modal');
+        const modalContent = document.getElementById('ai-fix-modal-content');
+        const modalTitle = document.getElementById('ai-fix-modal-title');
+        
+        modal.style.display = 'flex';
+        modalTitle.textContent = 'Analyzing...';
+        modalContent.innerHTML = '<div class="ai-loader"></div>';
+
+        try {
+            const testJson = button.dataset.testJson;
+            const test = JSON.parse(atob(testJson));
+
+            const testName = test.name || 'Unknown Test';
+            const failureLogsAndErrors = [
+                'Error Message:',
+                test.errorMessage || 'Not available.',
+                '\\n\\n--- stdout ---',
+                (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
+                '\\n\\n--- stderr ---',
+                (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
+            ].join('\\n');
+            const codeSnippet = test.snippet || '';
+
+            const shortTestName = testName.split(' > ').pop();
+            modalTitle.textContent = \`Analysis for: \${shortTestName}\`;
+            
+            const apiUrl = 'https://ai-test-analyser.netlify.app/api/analyze';
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testName: testName,
+                    failureLogsAndErrors: failureLogsAndErrors,
+                    codeSnippet: codeSnippet,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { 
+                        throw new Error(\`API request failed with status \${response.status}: \${text || response.statusText}\`);
+                    });
+                }
+                return response.text();
+            })
+            .then(text => {
+                if (!text) {
+                    throw new Error("The AI analyzer returned an empty response. This might happen during high load or if the request was blocked. Please try again in a moment.");
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse JSON:", text);
+                    throw new Error(\`The AI analyzer returned an invalid response. \${e.message}\`);
+                }
+            })
+            .then(data => {
+                const escapeHtml = (unsafe) => {
+                    if (typeof unsafe !== 'string') return '';
+                    return unsafe
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#039;");
+                };
+
+                const analysisHtml = \`<h4>Analysis</h4><p>\${escapeHtml(data.rootCause) || 'No analysis provided.'}</p>\`;
+                
+                let suggestionsHtml = '<h4>Suggestions</h4>';
+                if (data.suggestedFixes && data.suggestedFixes.length > 0) {
+                    suggestionsHtml += '<div class="suggestions-list" style="margin-top: 15px;">';
+                    data.suggestedFixes.forEach(fix => {
+                        suggestionsHtml += \`
+                            <div class="suggestion-item" style="margin-bottom: 22px; border-left: 3px solid var(--accent-color-alt); padding-left: 15px;">
+                                <p style="margin: 0 0 8px 0; font-weight: 500;">\${escapeHtml(fix.description)}</p>
+                                \${fix.codeSnippet ? \`<div class="code-section"><pre><code>\${escapeHtml(fix.codeSnippet)}</code></pre></div>\` : ''}
+                            </div>
+                        \`;
+                    });
+                    suggestionsHtml += '</div>';
+                } else {
+                    suggestionsHtml += \`<div class="code-section"><pre><code>No suggestion provided.</code></pre></div>\`;
+                }
+                
+                modalContent.innerHTML = analysisHtml + suggestionsHtml;
+            })
+            .catch(err => {
+                console.error('AI Fix Error:', err);
+                modalContent.innerHTML = \`<div class="test-error-summary"><strong>Error:</strong> Failed to get AI analysis. Please check the console for details. <br><br> \${err.message}</div>\`;
+            });
+
+        } catch (e) {
+            console.error('Error processing test data for AI Fix:', e);
+            modalTitle.textContent = 'Error';
+            modalContent.innerHTML = \`<div class="test-error-summary">Could not process test data. Is it formatted correctly?</div>\`;
+        }
+    }
+
+    function closeAiModal() {
+        const modal = document.getElementById('ai-fix-modal');
+        if(modal) modal.style.display = 'none';
+    }
+
+    function toggleErrorDetails(button) {
+        const errorDetails = button.closest('.compact-failure-item').querySelector('.full-error-details');
+        const expandText = button.querySelector('.expand-text');
+        
+        if (errorDetails.style.display === 'none' || !errorDetails.style.display) {
+            errorDetails.style.display = 'block';
+            expandText.textContent = 'Hide Full Error';
+            button.classList.add('expanded');
+        } else {
+            errorDetails.style.display = 'none';
+            expandText.textContent = 'Show Full Error';
+            button.classList.remove('expanded');
+        }
+    }
+     
     function initializeReportInteractivity() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -2212,9 +2415,6 @@ function generateHTML(reportData, trendData = null) {
                 const activeContent = document.getElementById(tabId);
                 if (activeContent) {
                     activeContent.classList.add('active');
-                    // Check if IntersectionObserver is already handling elements in this tab
-                    // For simplicity, we assume if an element is observed, it will be handled when it becomes visible.
-                    // If IntersectionObserver is not supported, already-visible elements would have been loaded by fallback.
                 }
             });
         });
@@ -2352,65 +2552,36 @@ function generateHTML(reportData, trendData = null) {
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
 
     function copyErrorToClipboard(button) {
-  // 1. Find the main error container, which should always be present.
-  const errorContainer = button.closest('.test-error-summary');
-  if (!errorContainer) {
-    console.error("Could not find '.test-error-summary' container. The report's HTML structure might have changed.");
-    return;
-  }
+      const errorContainer = button.closest('.test-error-summary');
+      if (!errorContainer) {
+        console.error("Could not find '.test-error-summary' container.");
+        return;
+      }
+      let errorText;
+      const stackTraceElement = errorContainer.querySelector('.stack-trace');
+      if (stackTraceElement) {
+        errorText = stackTraceElement.textContent;
+      } else {
+        const clonedContainer = errorContainer.cloneNode(true);
+        const buttonInClone = clonedContainer.querySelector('button');
+        if (buttonInClone) buttonInClone.remove();
+        errorText = clonedContainer.textContent;
+      }
 
-  let errorText;
-
-  // 2. First, try to find the preferred .stack-trace element (the "happy path").
-  const stackTraceElement = errorContainer.querySelector('.stack-trace');
-
-  if (stackTraceElement) {
-    // If it exists, use its text content. This handles standard assertion errors.
-    errorText = stackTraceElement.textContent;
-  } else {
-    // 3. FALLBACK: If .stack-trace doesn't exist, this is likely an unstructured error.
-    // We clone the container to avoid manipulating the live DOM or copying the button's own text.
-    const clonedContainer = errorContainer.cloneNode(true);
-    
-    // Remove the button from our clone before extracting the text.
-    const buttonInClone = clonedContainer.querySelector('button');
-    if (buttonInClone) {
-      buttonInClone.remove();
+      if (!errorText) {
+        button.textContent = 'Nothing to copy';
+        setTimeout(() => { button.textContent = 'Copy Error'; }, 2000);
+        return;
+      }
+      navigator.clipboard.writeText(errorText.trim()).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => { button.textContent = originalText; }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        button.textContent = 'Failed';
+      });
     }
-    
-    // Use the text content of the cleaned container as the fallback.
-    errorText = clonedContainer.textContent;
-  }
-
-  // 4. Proceed with the clipboard logic, ensuring text is not null and is trimmed.
-  if (!errorText) {
-    console.error('Could not extract error text.');
-    button.textContent = 'Nothing to copy';
-    setTimeout(() => { button.textContent = 'Copy Error'; }, 2000);
-    return;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = errorText.trim(); // Trim whitespace for a cleaner copy.
-  textarea.style.position = 'fixed'; // Prevent screen scroll
-  textarea.style.top = '-9999px';
-  document.body.appendChild(textarea);
-  textarea.select();
-
-  try {
-    const successful = document.execCommand('copy');
-    const originalText = button.textContent;
-    button.textContent = successful ? 'Copied!' : 'Failed';
-    setTimeout(() => {
-      button.textContent = originalText;
-    }, 2000);
-  } catch (err) {
-    console.error('Failed to copy: ', err);
-    button.textContent = 'Failed';
-  }  
-
-  document.body.removeChild(textarea);
-}
 </script>
 </body>
 </html>
