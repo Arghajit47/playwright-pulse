@@ -6,6 +6,9 @@
 
 - **🔧 Improvements**:
   - Added "Error Snippet" logs for failed test cases.
+  - Added "AI Failure Analyzer" for failed test cases, which provides a detailed analysis of the failure, like; possible causes, recommended solutions including the code snippets, for specific failure scenarios automatically.
+  - Static report embeds all the attachments, so no need to have attachments/ directory when viewing the report with better user experience.
+  - Made the static report responsive, less initial load time consuming and dark themed, for better user experience.
 
 ## **Version 0.2.5**
 
@@ -52,7 +55,8 @@
 
 **🚀 Update Highlights**
 
-- **🏷️ Added** Introduced 'System Information' widget to visualize Details about the test execution environment, like; Host, Os, Cpu Model & Cores, Memory, Node, V8, Cwd.
+- **🏷️ Improvements** 
+  - Introduced 'System Information' widget to visualize Details about the test execution environment, like; Host, Os, Cpu Model & Cores, Memory, Node, V8, Cwd.
 - **📊 Enhanced Analytics**:
   - Improved accuracy in history trend calculations.
   - Added support for filtering trends by date range.

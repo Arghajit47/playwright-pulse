@@ -6,7 +6,11 @@ import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
 
-// Use dynamic import for chalk as it's ESM only
+/**
+ * Dynamically imports the 'chalk' library for terminal string styling.
+ * This is necessary because chalk is an ESM-only module.
+ * If the import fails, a fallback object with plain console log functions is used.
+ */
 let chalk;
 try {
   chalk = (await import("chalk")).default;
@@ -22,12 +26,30 @@ try {
   };
 }
 
-// Default configuration
+/**
+ * @constant {string} DEFAULT_OUTPUT_DIR
+ * The default directory where the report will be generated.
+ */
 const DEFAULT_OUTPUT_DIR = "pulse-report";
+
+/**
+ * @constant {string} DEFAULT_JSON_FILE
+ * The default name for the JSON file containing the test data.
+ */
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
+
+/**
+ * @constant {string} DEFAULT_HTML_FILE
+ * The default name for the generated HTML report file.
+ */
 const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
 
 // Helper functions
+/**
+ * Converts a string with ANSI escape codes to an HTML string with inline styles.
+ * @param {string} text The text with ANSI codes.
+ * @returns {string} The converted HTML string.
+ */
 export function ansiToHtml(text) {
   if (!text) {
     return "";
@@ -141,6 +163,11 @@ export function ansiToHtml(text) {
   }
   return html;
 }
+/**
+ * Sanitizes an HTML string by replacing special characters with their corresponding HTML entities.
+ * @param {string} str The HTML string to sanitize.
+ * @returns {string} The sanitized HTML string.
+ */
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
   return String(str).replace(
@@ -149,28 +176,52 @@ function sanitizeHTML(str) {
       ({ "&": "&", "<": "<", ">": ">", '"': '"', "'": "'" }[match] || match)
   );
 }
+/**
+ * Capitalizes the first letter of a string and converts the rest to lowercase.
+ * @param {string} str The string to capitalize.
+ * @returns {string} The capitalized string.
+ */
 function capitalize(str) {
   if (!str) return "";
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
+/**
+ * Formats a Playwright error object or message into an HTML string.
+ * @param {Error|string} error The error object or message string.
+ * @returns {string} The formatted HTML error string.
+ */
 function formatPlaywrightError(error) {
   const commandOutput = ansiToHtml(error || error.message);
   return convertPlaywrightErrorToHTML(commandOutput);
 }
+/**
+ * Converts a string containing Playwright-style error formatting to HTML.
+ * @param {string} str The error string.
+ * @returns {string} The HTML-formatted error string.
+ */
 function convertPlaywrightErrorToHTML(str) {
-    if (!str) return "";
-    return str
-      .replace(/^(\s+)/gm, (match) =>
-        match.replace(/ /g, " ").replace(/\t/g, "  ")
-      )
-      .replace(/<red>/g, '<span style="color: red;">')
-      .replace(/<green>/g, '<span style="color: green;">')
-      .replace(/<dim>/g, '<span style="opacity: 0.6;">')
-      .replace(/<intensity>/g, '<span style="font-weight: bold;">')
-      .replace(/<\/color>/g, "</span>")
-      .replace(/<\/intensity>/g, "</span>")
-      .replace(/\n/g, "<br>");
+  if (!str) return "";
+  return str
+    .replace(/^(\s+)/gm, (match) =>
+      match.replace(/ /g, " ").replace(/\t/g, "  ")
+    )
+    .replace(/<red>/g, '<span style="color: red;">')
+    .replace(/<green>/g, '<span style="color: green;">')
+    .replace(/<dim>/g, '<span style="opacity: 0.6;">')
+    .replace(/<intensity>/g, '<span style="font-weight: bold;">')
+    .replace(/<\/color>/g, "</span>")
+    .replace(/<\/intensity>/g, "</span>")
+    .replace(/\n/g, "<br>");
 }
+/**
+ * Formats a duration in milliseconds into a human-readable string (e.g., '1h 2m 3s', '4.5s').
+ * @param {number} ms The duration in milliseconds.
+ * @param {object} [options={}] Formatting options.
+ * @param {number} [options.precision=1] The number of decimal places for seconds.
+ * @param {string} [options.invalidInputReturn="N/A"] The string to return for invalid input.
+ * @param {string|null} [options.defaultForNullUndefinedNegative=null] The value for null, undefined, or negative inputs.
+ * @returns {string} The formatted duration string.
+ */
 function formatDuration(ms, options = {}) {
   const {
     precision = 1,
@@ -241,6 +292,12 @@ function formatDuration(ms, options = {}) {
     return parts.join(" ");
   }
 }
+/**
+ * Generates HTML and JavaScript for a Highcharts line chart to display test result trends over multiple runs.
+ * @param {object} trendData The trend data.
+ * @param {Array<object>} trendData.overall An array of run objects with test statistics.
+ * @returns {string} The HTML string for the test trends chart.
+ */
 function generateTestTrendsChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for test counts.</div>';
@@ -336,6 +393,12 @@ function generateTestTrendsChart(trendData) {
       </script>
   `;
 }
+/**
+ * Generates HTML and JavaScript for a Highcharts area chart to display test duration trends.
+ * @param {object} trendData Data for duration trends.
+ * @param {Array<object>} trendData.overall Array of objects, each representing a test run with a duration.
+ * @returns {string} The HTML string for the duration trend chart.
+ */
 function generateDurationTrendChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for durations.</div>';
@@ -420,6 +483,11 @@ function generateDurationTrendChart(trendData) {
       </script>
   `;
 }
+/**
+ * Formats a date string or Date object into a more readable format (e.g., "MM/DD/YY HH:MM").
+ * @param {string|Date} dateStrOrDate The date string or Date object to format.
+ * @returns {string} The formatted date string, or "N/A" for invalid dates.
+ */
 function formatDate(dateStrOrDate) {
   if (!dateStrOrDate) return "N/A";
   try {
@@ -438,6 +506,12 @@ function formatDate(dateStrOrDate) {
     return "Invalid Date Format";
   }
 }
+/**
+ * Generates a small area chart showing the duration history of a single test across multiple runs.
+ * The status of each run is indicated by the color of the marker.
+ * @param {Array<object>} history An array of run objects, each with status and duration.
+ * @returns {string} The HTML string for the test history chart.
+ */
 function generateTestHistoryChart(history) {
   if (!history || history.length === 0)
     return '<div class="no-data-chart">No data for chart</div>';
@@ -548,6 +622,13 @@ function generateTestHistoryChart(history) {
       </script>
   `;
 }
+/**
+ * Generates a Highcharts pie chart to visualize the distribution of test statuses.
+ * @param {Array<object>} data The data for the pie chart, with each object having a 'label' and 'value'.
+ * @param {number} [chartWidth=300] The width of the chart.
+ * @param {number} [chartHeight=300] The height of the chart.
+ * @returns {string} The HTML string for the pie chart.
+ */
 function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   if (total === 0) {
@@ -677,6 +758,12 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       </div>
   `;
 }
+/**
+ * Generates an HTML dashboard to display environment details.
+ * @param {object} environment The environment information.
+ * @param {number} [dashboardHeight=600] The height of the dashboard.
+ * @returns {string} The HTML string for the environment dashboard.
+ */
 function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
   // Format memory for display
   const formattedMemory = environment.memory.replace(/(\d+\.\d{2})GB/, "$1 GB");
@@ -692,176 +779,176 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
   return `
     <div class="environment-dashboard-wrapper" id="${dashboardId}">
       <style>
-        .environment-dashboard-wrapper *,
-        .environment-dashboard-wrapper *::before,
-        .environment-dashboard-wrapper *::after {
-          box-sizing: border-box;
-        }
+.environment-dashboard-wrapper *,
+.environment-dashboard-wrapper *::before,
+.environment-dashboard-wrapper *::after {
+box-sizing: border-box;
+}
 
-        .environment-dashboard-wrapper {
-          --primary-color: #007bff;
-          --primary-light-color: #e6f2ff;
-          --secondary-color: #6c757d;
-          --success-color: #28a745;
-          --success-light-color: #eaf6ec;
-          --warning-color: #ffc107;
-          --warning-light-color: #fff9e6;
-          --danger-color: #dc3545;
-          
-          --background-color: #ffffff; 
-          --card-background-color: #ffffff; 
-          --text-color: #212529; 
-          --text-color-secondary: #6c757d; 
-          --border-color: #dee2e6; 
-          --border-light-color: #f1f3f5;
-          --icon-color: #495057;
-          --chip-background: #e9ecef;
-          --chip-text: #495057;
-          --shadow-color: rgba(0, 0, 0, 0.075);
+.environment-dashboard-wrapper {
+--primary-color: #4a9eff;
+--primary-light-color: #1a2332;
+--secondary-color: #9ca3af;
+--success-color: #34d399;
+--success-light-color: #1a2e23;
+--warning-color: #fbbf24;
+--warning-light-color: #2d2a1a;
+--danger-color: #f87171;
 
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
-          background-color: var(--background-color);
-          border-radius: 12px; 
-          box-shadow: 0 6px 12px var(--shadow-color);
-          padding: 24px; 
-          color: var(--text-color);
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          grid-template-rows: auto 1fr; 
-          gap: 20px; 
-          font-size: 14px; 
-        }
-        
-        .env-dashboard-header {
-          grid-column: 1 / -1;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 16px; 
-          margin-bottom: 8px; 
-        }
-        
-        .env-dashboard-title {
-          font-size: 1.5rem; 
-          font-weight: 600;
-          color: var(--text-color); 
-          margin: 0;
-        }
-        
-        .env-dashboard-subtitle {
-          font-size: 0.875rem; 
-          color: var(--text-color-secondary);
-          margin-top: 4px;
-        }
-        
-        .env-card {
-          background-color: var(--card-background-color);
-          border-radius: 8px;
-          padding: ${cardContentPadding}px;
-          box-shadow: 0 3px 6px var(--shadow-color);
-          height: ${cardHeight}px;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden; 
-        }
-        
-        .env-card-header {
-          font-weight: 600;
-          font-size: 1rem; 
-          margin-bottom: 12px;
-          color: var(--text-color);
-          display: flex;
-          align-items: center;
-          padding-bottom: 8px;
-          border-bottom: 1px solid var(--border-light-color);
-        }
-        
-        .env-card-header svg {
-          margin-right: 10px; 
-          width: 18px; 
-          height: 18px;
-          fill: var(--icon-color);
-        }
+--background-color: #1f2937;
+--card-background-color: #374151;
+--text-color: #f9fafb;
+--text-color-secondary: #d1d5db;
+--border-color: #4b5563;
+--border-light-color: #374151;
+--icon-color: #d1d5db;
+--chip-background: #4b5563;
+--chip-text: #f9fafb;
+--shadow-color: rgba(0, 0, 0, 0.3);
 
-        .env-card-content {
-          flex-grow: 1; 
-          overflow-y: auto; 
-          padding-right: 5px; 
-        }
-        
-        .env-detail-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center; 
-          padding: 10px 0; 
-          border-bottom: 1px solid var(--border-light-color);
-          font-size: 0.875rem;
-        }
-        
-        .env-detail-row:last-child {
-          border-bottom: none;
-        }
-        
-        .env-detail-label {
-          color: var(--text-color-secondary);
-          font-weight: 500;
-          margin-right: 10px; 
-        }
-        
-        .env-detail-value {
-          color: var(--text-color);
-          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-          text-align: right;
-          word-break: break-all; 
-        }
-        
-        .env-chip {
-          display: inline-block;
-          padding: 4px 10px; 
-          border-radius: 16px; 
-          font-size: 0.75rem; 
-          font-weight: 500;
-          line-height: 1.2;
-          background-color: var(--chip-background);
-          color: var(--chip-text);
-        }
-        
-        .env-chip-primary {
-          background-color: var(--primary-light-color);
-          color: var(--primary-color);
-        }
-        
-        .env-chip-success {
-          background-color: var(--success-light-color);
-          color: var(--success-color);
-        }
-        
-        .env-chip-warning {
-          background-color: var(--warning-light-color);
-          color: var(--warning-color);
-        }
-        
-        .env-cpu-cores {
-          display: flex;
-          align-items: center;
-          gap: 6px; 
-        }
-        
-        .env-core-indicator {
-          width: 12px; 
-          height: 12px;
-          border-radius: 50%;
-          background-color: var(--success-color);
-          border: 1px solid rgba(0,0,0,0.1); 
-        }
-        
-        .env-core-indicator.inactive {
-          background-color: var(--border-light-color);
-          opacity: 0.7; 
-          border-color: var(--border-color);
-        }
-      </style>
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+background-color: var(--background-color);
+border-radius: 12px;
+box-shadow: 0 6px 12px var(--shadow-color);
+padding: 24px;
+color: var(--text-color);
+display: grid;
+grid-template-columns: 1fr 1fr;
+grid-template-rows: auto 1fr;
+gap: 20px;
+font-size: 14px;
+}
+
+.env-dashboard-header {
+grid-column: 1 / -1;
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 1px solid var(--border-color);
+padding-bottom: 16px;
+margin-bottom: 8px;
+}
+
+.env-dashboard-title {
+font-size: 1.5rem;
+font-weight: 600;
+color: var(--text-color);
+margin: 0;
+}
+
+.env-dashboard-subtitle {
+font-size: 0.875rem;
+color: var(--text-color-secondary);
+margin-top: 4px;
+}
+
+.env-card {
+background-color: var(--card-background-color);
+border-radius: 8px;
+padding: ${cardContentPadding}px;
+box-shadow: 0 3px 6px var(--shadow-color);
+height: ${cardHeight}px;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+
+.env-card-header {
+font-weight: 600;
+font-size: 1rem;
+margin-bottom: 12px;
+color: var(--text-color);
+display: flex;
+align-items: center;
+padding-bottom: 8px;
+border-bottom: 1px solid var(--border-light-color);
+}
+
+.env-card-header svg {
+margin-right: 10px;
+width: 18px;
+height: 18px;
+fill: var(--icon-color);
+}
+
+.env-card-content {
+flex-grow: 1;
+overflow-y: auto;
+padding-right: 5px;
+}
+
+.env-detail-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px 0;
+border-bottom: 1px solid var(--border-light-color);
+font-size: 0.875rem;
+}
+
+.env-detail-row:last-child {
+border-bottom: none;
+}
+
+.env-detail-label {
+color: var(--text-color-secondary);
+font-weight: 500;
+margin-right: 10px;
+}
+
+.env-detail-value {
+color: var(--text-color);
+font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+text-align: right;
+word-break: break-all;
+}
+
+.env-chip {
+display: inline-block;
+padding: 4px 10px;
+border-radius: 16px;
+font-size: 0.75rem;
+font-weight: 500;
+line-height: 1.2;
+background-color: var(--chip-background);
+color: var(--chip-text);
+}
+
+.env-chip-primary {
+background-color: var(--primary-light-color);
+color: var(--primary-color);
+}
+
+.env-chip-success {
+background-color: var(--success-light-color);
+color: var(--success-color);
+}
+
+.env-chip-warning {
+background-color: var(--warning-light-color);
+color: var(--warning-color);
+}
+
+.env-cpu-cores {
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.env-core-indicator {
+width: 12px;
+height: 12px;
+border-radius: 50%;
+background-color: var(--success-color);
+border: 1px solid rgba(255,255,255,0.2);
+}
+
+.env-core-indicator.inactive {
+background-color: var(--border-light-color);
+opacity: 0.7;
+border-color: var(--border-color);
+}
+</style>
       
       <div class="env-dashboard-header">
         <div>
@@ -1006,6 +1093,11 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
     </div>
   `;
 }
+/**
+ * Generates a Highcharts bar chart to visualize the distribution of test results across different workers.
+ * @param {Array<object>} results The test results data.
+ * @returns {string} The HTML string for the worker distribution chart and its associated modal.
+ */
 function generateWorkerDistributionChart(results) {
   if (!results || results.length === 0) {
     return '<div class="no-data">No test results data available to display worker distribution.</div>';
@@ -1082,45 +1174,46 @@ function generateWorkerDistributionChart(results) {
 
   // The HTML now includes the chart container, the modal, and styles for the modal
   return `
-    <style>
-      .worker-modal-overlay {
-        position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%;
-        overflow: auto; background-color: rgba(0,0,0,0.6);
-        display: none; align-items: center; justify-content: center;
-      }
-      .worker-modal-content {
-        background-color: #3d4043;
-        color: var(--card-background-color);
-        margin: auto; padding: 20px; border: 1px solid var(--border-color, #888);
-        width: 80%; max-width: 700px; border-radius: 8px;
-        position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-      }
-      .worker-modal-close {
-        position: absolute; top: 10px; right: 20px;
-        font-size: 28px; font-weight: bold; cursor: pointer;
-        line-height: 1;
-      }
-      .worker-modal-close:hover, .worker-modal-close:focus {
-        color: var(--text-color, #000);
-      }
-      #worker-modal-body-${chartId} ul {
-        list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
-      }
-       #worker-modal-body-${chartId} li {
-         padding: 8px 5px; border-bottom: 1px solid var(--border-color, #eee);
-         font-size: 0.9em;
-      }
-       #worker-modal-body-${chartId} li:last-child {
-         border-bottom: none;
-      }
-       #worker-modal-body-${chartId} li > span {
-         display: inline-block;
-         width: 70px;
-         font-weight: bold;
-         text-align: right;
-         margin-right: 10px;
-      }
-    </style>
+<style>
+.worker-modal-overlay {
+position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%;
+overflow: auto; background-color: rgba(0,0,0,0.8);
+display: none; align-items: center; justify-content: center;
+}
+.worker-modal-content {
+background-color: #1f2937;
+color: #f9fafb;
+margin: auto; padding: 20px; border: 1px solid #4b5563;
+width: 80%; max-width: 700px; border-radius: 8px;
+position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+}
+.worker-modal-close {
+position: absolute; top: 10px; right: 20px;
+font-size: 28px; font-weight: bold; cursor: pointer;
+line-height: 1; color: #d1d5db;
+}
+.worker-modal-close:hover, .worker-modal-close:focus {
+color: #f9fafb;
+}
+#worker-modal-body-${chartId} ul {
+list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
+}
+#worker-modal-body-${chartId} li {
+padding: 8px 5px; border-bottom: 1px solid #4b5563;
+font-size: 0.9em; color: #f9fafb;
+}
+#worker-modal-body-${chartId} li:last-child {
+border-bottom: none;
+}
+#worker-modal-body-${chartId} li > span {
+display: inline-block;
+width: 70px;
+font-weight: bold;
+text-align: right;
+margin-right: 10px;
+color: #d1d5db;
+}
+</style>
 
     <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}" style="min-height: 350px;">
       <div class="no-data">Loading Worker Distribution Chart...</div>
@@ -1147,42 +1240,63 @@ function generateWorkerDistributionChart(results) {
         const modalTitle = document.getElementById('worker-modal-title-${chartId}');
         const modalBody = document.getElementById('worker-modal-body-${chartId}');
         const closeModalBtn = modal.querySelector('.worker-modal-close');
+        if (modal && modal.parentElement !== document.body) {
+          document.body.appendChild(modal);
+        }
+
+        // Lightweight HTML escaper for client-side use
+        function __escHtml(s){return String(s==null?'':s).replace(/[&<>\"]/g,function(ch){return ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':'&quot;';});}
 
         window.${modalJsNamespace}.open = function(worker) {
           if (!worker) return;
-          modalTitle.textContent = 'Test Details for ' + worker.name;
+          try {
+            modalTitle.textContent = 'Test Details for ' + worker.name;
 
-          let testListHtml = '<ul>';
-          if (worker.tests && worker.tests.length > 0) {
-            worker.tests.forEach(test => {
-                let color = 'inherit';
-                if (test.status === 'passed') color = 'var(--success-color)';
-                else if (test.status === 'failed') color = 'var(--danger-color)';
-                else if (test.status === 'skipped') color = 'var(--warning-color)';
+            let testListHtml = '<ul>';
+            if (worker.tests && worker.tests.length > 0) {
+              worker.tests.forEach(test => {
+                  let color = 'inherit';
+                  if (test.status === 'passed') color = 'var(--success-color)';
+                  else if (test.status === 'failed') color = 'var(--danger-color)';
+                  else if (test.status === 'skipped') color = 'var(--warning-color)';
 
-                const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
-                testListHtml += \`<li style="color: \${color};"><span style="color: \${color}">[\${test.status.toUpperCase()}]</span> \${escapedName}</li>\`;
-            });
-          } else {
-            testListHtml += '<li>No detailed test data available for this worker.</li>';
+                  const safeName = __escHtml(test.name);
+                  testListHtml += '<li style="color: ' + color + ';"><span style="color: ' + color + '">[' + String(test.status).toUpperCase() + ']</span> ' + safeName + '</li>';
+              });
+            } else {
+              testListHtml += '<li>No detailed test data available for this worker.</li>';
+            }
+            testListHtml += '</ul>';
+
+            modalBody.innerHTML = testListHtml;
+            if (typeof openModal === 'function') openModal(); else modal.style.display = 'flex';
+          } catch (err) {
+            console.error('Failed to open worker modal:', err);
           }
-          testListHtml += '</ul>';
-
-          modalBody.innerHTML = testListHtml;
-          modal.style.display = 'flex';
         };
 
         const closeModal = function() {
           modal.style.display = 'none';
+          try { document.body.style.overflow = ''; } catch (_) {}
         };
 
-        closeModalBtn.onclick = closeModal;
-        modal.onclick = function(event) {
-          // Close if clicked on the dark overlay background
-          if (event.target == modal) {
+        const openModal = function() {
+          modal.style.display = 'flex';
+          try { document.body.style.overflow = 'hidden'; } catch (_) {}
+        };
+
+        if (closeModalBtn) closeModalBtn.onclick = closeModal;
+        modal.addEventListener('click', function(event) {
+          if (event.target === modal) {
             closeModal();
           }
-        };
+        });
+
+        document.addEventListener('keydown', function escHandler(e) {
+          if (modal.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
+            closeModal();
+          }
+        });
 
 
         // --- Highcharts Setup ---
@@ -1242,6 +1356,10 @@ function generateWorkerDistributionChart(results) {
     </script>
   `;
 }
+/**
+ * A tooltip providing information about why worker -1 is special in Playwright.
+ * @type {string}
+ */
 const infoTooltip = `
   <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
     <span class="info-icon" 
@@ -1260,6 +1378,11 @@ const infoTooltip = `
     }
   </script>
 `;
+/**
+ * Generates the HTML content for the test history section.
+ * @param {object} trendData - The historical trend data.
+ * @returns {string} The HTML string for the test history content.
+ */
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -1379,6 +1502,11 @@ function generateTestHistoryContent(trendData) {
     </div>
   `;
 }
+/**
+ * Gets the CSS class for a given test status.
+ * @param {string} status - The test status.
+ * @returns {string} The CSS class for the status.
+ */
 function getStatusClass(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -1391,6 +1519,11 @@ function getStatusClass(status) {
       return "status-unknown";
   }
 }
+/**
+ * Gets the icon for a given test status.
+ * @param {string} status - The test status.
+ * @returns {string} The icon for the status.
+ */
 function getStatusIcon(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -1403,6 +1536,11 @@ function getStatusIcon(status) {
       return "❓";
   }
 }
+/**
+ * Processes test results to extract suite data.
+ * @param {Array<object>} results - The test results.
+ * @returns {Array<object>} An array of suite data objects.
+ */
 function getSuitesData(results) {
   const suitesMap = new Map();
   if (!results || results.length === 0) return [];
@@ -1451,6 +1589,16 @@ function getSuitesData(results) {
   });
   return Array.from(suitesMap.values());
 }
+/**
+ * Returns an icon for a given content type.
+ * @param {string} contentType - The content type of the file.
+ * @returns {string} The icon for the content type.
+ */
+/**
+ * Returns an icon for a given content type.
+ * @param {string} contentType - The content type of the file.
+ * @returns {string} The icon for the content type.
+ */
 function getAttachmentIcon(contentType) {
   if (!contentType) return "📎"; // Handle undefined/null
 
@@ -1464,6 +1612,16 @@ function getAttachmentIcon(contentType) {
   if (normalizedType.startsWith("text/")) return "📝";
   return "📎";
 }
+/**
+ * Generates the HTML for the suites widget.
+ * @param {Array} suitesData - The data for the suites.
+ * @returns {string} The HTML for the suites widget.
+ */
+/**
+ * Generates the HTML for the suites widget.
+ * @param {Array} suitesData - The data for the suites.
+ * @returns {string} The HTML for the suites widget.
+ */
 function generateSuitesWidget(suitesData) {
   if (!suitesData || suitesData.length === 0) {
     return `<div class="suites-widget"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
@@ -1520,8 +1678,15 @@ function generateSuitesWidget(suitesData) {
   </div>
 </div>`;
 }
+/**
+ * Generates the HTML for the AI failure analyzer tab.
+ * @param {Array} results - The results of the test run.
+ * @returns {string} The HTML for the AI failure analyzer tab.
+ */
 function generateAIFailureAnalyzerTab(results) {
-  const failedTests = (results || []).filter(test => test.status === 'failed');
+  const failedTests = (results || []).filter(
+    (test) => test.status === "failed"
+  );
 
   if (failedTests.length === 0) {
     return `
@@ -1531,7 +1696,7 @@ function generateAIFailureAnalyzerTab(results) {
   }
 
   // btoa is not available in Node.js environment, so we define a simple polyfill for it.
-  const btoa = (str) => Buffer.from(str).toString('base64');
+  const btoa = (str) => Buffer.from(str).toString("base64");
 
   return `
     <h2 class="tab-main-title">AI Failure Analysis</h2>
@@ -1541,11 +1706,16 @@ function generateAIFailureAnalyzerTab(results) {
             <span class="stat-label">Failed Tests</span>
         </div>
         <div class="stat-item">
-            <span class="stat-number">${new Set(failedTests.map(t => t.browser)).size}</span>
+            <span class="stat-number">${
+              new Set(failedTests.map((t) => t.browser)).size
+            }</span>
             <span class="stat-label">Browsers</span>
         </div>
         <div class="stat-item">
-            <span class="stat-number">${(Math.round(failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) / 1000))}s</span>
+            <span class="stat-number">${Math.round(
+              failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) /
+                1000
+            )}s</span>
             <span class="stat-label">Total Duration</span>
         </div>
     </div>
@@ -1554,20 +1724,28 @@ function generateAIFailureAnalyzerTab(results) {
     </p>
     
     <div class="compact-failure-list">
-      ${failedTests.map(test => {
-    const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
-    const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
-    const truncatedError = (test.errorMessage || "No error message").slice(0, 150) +
-      (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
+      ${failedTests
+        .map((test) => {
+          const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
+          const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
+          const truncatedError =
+            (test.errorMessage || "No error message").slice(0, 150) +
+            (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
 
-    return `
+          return `
         <div class="compact-failure-item">
             <div class="failure-header">
                 <div class="failure-main-info">
-                    <h3 class="failure-title" title="${sanitizeHTML(test.name)}">${sanitizeHTML(testTitle)}</h3>
+                    <h3 class="failure-title" title="${sanitizeHTML(
+                      test.name
+                    )}">${sanitizeHTML(testTitle)}</h3>
                     <div class="failure-meta">
-                        <span class="browser-indicator">${sanitizeHTML(test.browser || 'unknown')}</span>
-                        <span class="duration-indicator">${formatDuration(test.duration)}</span>
+                        <span class="browser-indicator">${sanitizeHTML(
+                          test.browser || "unknown"
+                        )}</span>
+                        <span class="duration-indicator">${formatDuration(
+                          test.duration
+                        )}</span>
                     </div>
                 </div>
                 <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
@@ -1575,7 +1753,9 @@ function generateAIFailureAnalyzerTab(results) {
                 </button>
             </div>
             <div class="failure-error-preview">
-                <div class="error-snippet">${formatPlaywrightError(truncatedError)}</div>
+                <div class="error-snippet">${formatPlaywrightError(
+                  truncatedError
+                )}</div>
                 <button class="expand-error-btn" onclick="toggleErrorDetails(this)">
                     <span class="expand-text">Show Full Error</span>
                     <span class="expand-icon">▼</span>
@@ -1583,28 +1763,24 @@ function generateAIFailureAnalyzerTab(results) {
             </div>
             <div class="full-error-details" style="display: none;">
                 <div class="full-error-content">
-                    ${formatPlaywrightError(test.errorMessage || "No detailed error message available")}
+                    ${formatPlaywrightError(
+                      test.errorMessage || "No detailed error message available"
+                    )}
                 </div>
             </div>
         </div>
-        `
-  }).join('')}
-    </div>
-
-    <!-- AI Fix Modal -->
-    <div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
-      <div class="ai-modal-content" onclick="event.stopPropagation()">
-        <div class="ai-modal-header">
-            <h3 id="ai-fix-modal-title">AI Analysis</h3>
-            <span class="ai-modal-close" onclick="closeAiModal()">×</span>
-        </div>
-        <div class="ai-modal-body" id="ai-fix-modal-content">
-            <!-- Content will be injected by JavaScript -->
-        </div>
-      </div>
+        `;
+        })
+        .join("")}
     </div>
   `;
 }
+/**
+ * Generates the HTML report.
+ * @param {object} reportData - The data for the report.
+ * @param {object} trendData - The data for the trend chart.
+ * @returns {string} The HTML report.
+ */
 function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results || []);
@@ -1627,11 +1803,16 @@ function generateHTML(reportData, trendData = null) {
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
 
-  function generateTestCasesHTML() {
+  /**
+   * Generates the HTML for the test cases.
+   * @returns {string} The HTML for the test cases.
+   */
+  function generateTestCasesHTML(subset = results, baseIndex = 0) {
     if (!results || results.length === 0)
       return '<div class="no-tests">No test results found in this run.</div>';
-    return results
-      .map((test, testIndex) => {
+    return subset
+      .map((test, i) => {
+        const testIndex = baseIndex + i;
         const browser = test.browser || "unknown";
         const testFileParts = test.name.split(" > ");
         const testTitle =
@@ -1670,6 +1851,42 @@ function generateHTML(reportData, trendData = null) {
                     }<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                   : ""
               }${
+                (() => {
+                  if (!step.attachments || step.attachments.length === 0) return "";
+                  return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
+                    .map((attachment) => {
+                      try {
+                        const attachmentPath = path.resolve(
+                          DEFAULT_OUTPUT_DIR,
+                          attachment.path
+                        );
+                        if (!fsExistsSync(attachmentPath)) {
+                          return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                            attachment.name
+                          )}</div>`;
+                        }
+                        const attachmentBase64 = readFileSync(attachmentPath).toString("base64");
+                        const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+                        return `<div class="attachment-item generic-attachment">
+                                  <div class="attachment-icon">${getAttachmentIcon(attachment.contentType)}</div>
+                                  <div class="attachment-caption">
+                                    <span class="attachment-name" title="${sanitizeHTML(attachment.name)}">${sanitizeHTML(attachment.name)}</span>
+                                    <span class="attachment-type">${sanitizeHTML(attachment.contentType)}</span>
+                                  </div>
+                                  <div class="attachment-info">
+                                    <div class="trace-actions">
+                                      <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
+                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(attachment.name)}">Download</a>
+                                    </div>
+                                  </div>
+                                </div>`;
+                      } catch (e) {
+                        return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(attachment.name)}</div>`;
+                      }
+                    })
+                    .join("")}</div></div>`;
+                })()
+              }${
                 hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
                       step.steps,
@@ -1686,7 +1903,7 @@ function generateHTML(reportData, trendData = null) {
           test.tags || []
         )
           .join(",")
-          .toLowerCase()}">
+          .toLowerCase()}" data-test-id="${sanitizeHTML(String(test.id || testIndex))}">
                     <div class="test-case-header" role="button" aria-expanded="false"><div class="test-case-summary"><span class="status-badge ${getStatusClass(
                       test.status
                     )}">${String(
@@ -1722,6 +1939,13 @@ function generateHTML(reportData, trendData = null) {
                               )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                             : ""
                         }
+                        ${
+                          test.snippet
+                            ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                                test.snippet
+                              )}</code></pre></div>`
+                            : ""
+                        }
                         <h4>Steps</h4><div class="steps-list">${generateStepsHTML(
                           test.steps
                         )}</div>
@@ -1745,9 +1969,12 @@ function generateHTML(reportData, trendData = null) {
                         })()}
                         ${
                           test.stderr && test.stderr.length > 0
-                            ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log">${test.stderr
-                                .map((line) => sanitizeHTML(line))
-                                .join("\\n")}</pre></div>`
+                            ? (() => {
+                                const logId = `stderr-log-${test.id || testIndex}`;
+                                return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre id="${logId}" class="console-log stderr-log">${test.stderr
+                                  .map((line) => sanitizeHTML(line))
+                                  .join("\\n")}</pre></div>`;
+                              })()
                             : ""
                         }
                         
@@ -1772,7 +1999,7 @@ function generateHTML(reportData, trendData = null) {
                                   readFileSync(imagePath).toString("base64");
                                 return `<div class="attachment-item"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" data-src="data:image/png;base64,${base64ImageData}" alt="Screenshot ${
                                   index + 1
-                                }" class="lazy-load-image"><div class="attachment-info"><div class="trace-actions"><a href="data:image/png;base64,${base64ImageData}" target="_blank" download="screenshot-${index}.png">Download</a></div></div></div>`;
+                                }" class="lazy-load-image"><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="data:image/png;base64,${base64ImageData}" class="lazy-load-attachment" target="_blank" download="screenshot-${index}.png">Download</a></div></div></div>`;
                               } catch (e) {
                                 return `<div class="attachment-item error">Failed to load screenshot: ${sanitizeHTML(
                                   screenshotPath
@@ -1813,7 +2040,7 @@ function generateHTML(reportData, trendData = null) {
                                     avi: "video/x-msvideo",
                                   }[fileExtension] || "video/mp4";
                                 const videoDataUri = `data:${mimeType};base64,${videoBase64}`;
-                                return `<div class="attachment-item video-item"><video controls preload="none" class="lazy-load-video"><source data-src="${videoDataUri}" type="${mimeType}"></video><div class="attachment-info"><div class="trace-actions"><a href="${videoDataUri}" target="_blank" download="video-${index}.${fileExtension}">Download</a></div></div></div>`;
+                                return `<div class="attachment-item video-item"><video controls preload="none" class="lazy-load-video"><source data-src="${videoDataUri}" type="${mimeType}"></video><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="${videoDataUri}" class="lazy-load-attachment" target="_blank" download="video-${index}.${fileExtension}">Download</a></div></div></div>`;
                               } catch (e) {
                                 return `<div class="attachment-item error">Failed to load video: ${sanitizeHTML(
                                   videoPath
@@ -1889,8 +2116,8 @@ function generateHTML(reportData, trendData = null) {
                                           </div>
                                           <div class="attachment-info">
                                             <div class="trace-actions">
-                                              <a href="${attachmentDataUri}" target="_blank" class="view-full">View</a>
-                                              <a href="${attachmentDataUri}" download="${sanitizeHTML(
+                                              <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
+                                              <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
                                   attachment.name
                                 )}">Download</a>
                                             </div>
@@ -1931,211 +2158,240 @@ function generateHTML(reportData, trendData = null) {
     <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
     <script src="https://code.highcharts.com/highcharts.js" defer></script>
     <title>Playwright Pulse Report (Static Report)</title>
-    <style>
-        :root { 
-          --primary-color: #3f51b5; --secondary-color: #ff4081; --accent-color: #673ab7; --accent-color-alt: #FF9800;
-          --success-color: #4CAF50; --danger-color: #F44336; --warning-color: #FFC107; --info-color: #2196F3;
-          --light-gray-color: #f5f5f5; --medium-gray-color: #e0e0e0; --dark-gray-color: #757575;
-          --text-color: #333; --text-color-secondary: #555; --border-color: #ddd; --background-color: #f8f9fa;
-          --card-background-color: #fff; --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          --border-radius: 8px; --box-shadow: 0 5px 15px rgba(0,0,0,0.08); --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05); --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
-        }
-        .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
-        .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
-        .highcharts-background { fill: transparent; }
-        .highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
-        .highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
-        .highcharts-axis-title { fill: var(--text-color) !important; }
-        .highcharts-tooltip > span { background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }
-        body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
-        .container { padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec); }
-        .header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
-        .header-title { display: flex; align-items: center; gap: 15px; }
-        .header h1 { margin: 0; font-size: 1.85em; font-weight: 600; color: var(--primary-color); }
-        #report-logo { height: 40px; width: 55px; }
-        .run-info { font-size: 0.9em; text-align: right; color: var(--text-color-secondary); line-height:1.5;}
-        .run-info strong { color: var(--text-color); }
-        .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 30px; overflow-x: auto; }
-        .tab-button { padding: 15px 25px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 1.1em; font-weight: 600; color: black; transition: color 0.2s ease, border-color 0.2s ease; white-space: nowrap; }
-        .tab-button:hover { color: var(--accent-color); }
-        .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-        .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px; margin-bottom: 35px; }
-        .summary-card { background-color: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; text-align: center; box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease; }
-        .summary-card:hover { transform: translateY(-5px); box-shadow: var(--box-shadow); }
-        .summary-card h3 { margin: 0 0 10px; font-size: 1.05em; font-weight: 500; color: var(--text-color-secondary); }
-        .summary-card .value { font-size: 2.4em; font-weight: 600; margin-bottom: 8px; }
-        .summary-card .trend-percentage { font-size: 1em; color: var(--dark-gray-color); }
-        .status-passed .value, .stat-passed svg { color: var(--success-color); }
-        .status-failed .value, .stat-failed svg { color: var(--danger-color); }
-        .status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
-        .dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: stretch; }
-        .pie-chart-wrapper, .suites-widget, .trend-chart { background-color: var(--card-background-color); padding: 28px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
-        .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color); }
-        .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { flex-grow: 1; min-height: 250px; }
-        .status-badge-small-tooltip { padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }
-        .status-badge-small-tooltip.status-passed { background-color: var(--success-color); }
-        .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
-        .status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
-        .status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
-        .suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
-        .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .suite-card { border: 1px solid var(--border-color); border-left-width: 5px; border-radius: calc(var(--border-radius) / 1.5); padding: 20px; background-color: var(--card-background-color); transition: box-shadow 0.2s ease, border-left-color 0.2s ease; }
-        .suite-card:hover { box-shadow: var(--box-shadow); }
-        .suite-card.status-passed { border-left-color: var(--success-color); }
-        .suite-card.status-failed { border-left-color: var(--danger-color); }
-        .suite-card.status-skipped { border-left-color: var(--warning-color); }
-        .suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
-        .browser-tag { font-size: 0.8em; background-color: var(--medium-gray-color); color: var(--text-color-secondary); padding: 3px 8px; border-radius: 4px; white-space: nowrap;}
-        .suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
-        .suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
-        .suite-stats span { display: flex; align-items: center; gap: 6px; }
-        .suite-stats svg { vertical-align: middle; font-size: 1.15em; }
-        .filters { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px; padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-inset); border-color: black; border-style: groove; }
-        .filters input, .filters select, .filters button { padding: 11px 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1em; }
-        .filters input { flex-grow: 1; min-width: 240px;}
-        .filters select {min-width: 180px;}
-        .filters button { background-color: var(--primary-color); color: white; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; border: none; }
-        .filters button:hover { background-color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.15);}
-        .test-case { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--card-background-color); box-shadow: var(--box-shadow-light); overflow: hidden; }
-        .test-case-header { padding: 10px 15px; background-color: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid transparent; transition: background-color 0.2s ease; }
-        .test-case-header:hover { background-color: #f4f6f8; } 
-        .test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: #f9fafb; }
-        .test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
-        .test-case-title { font-weight: 600; color: var(--text-color); font-size: 1em; }
-        .test-case-browser { font-size: 0.9em; color: var(--text-color-secondary); }
-        .test-case-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: var(--text-color-secondary); flex-shrink: 0; }
-        .test-duration { background-color: var(--light-gray-color); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;}
-        .status-badge { padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .status-badge.status-passed { background-color: var(--success-color); }
-        .status-badge.status-failed { background-color: var(--danger-color); }
-        .status-badge.status-skipped { background-color: var(--warning-color); }
-        .status-badge.status-unknown { background-color: var(--dark-gray-color); }
-        .tag { display: inline-block; background: linear-gradient( #fff, #333, #000); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; font-weight: 400; }
-        .test-case-content { display: none; padding: 20px; border-top: 1px solid var(--border-color); background-color: #fcfdff; }
-        .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
-        .test-case-content p { margin-bottom: 10px; font-size: 1em; }
-        .test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(244,67,54,0.05); border: 1px solid rgba(244,67,54,0.2); border-left: 4px solid var(--danger-color); border-radius: 4px; }
-        .test-error-summary h4 { color: var(--danger-color); margin-top:0;}
-        .test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
-        .steps-list { margin: 18px 0; }
-        .step-item { margin-bottom: 8px; padding-left: calc(var(--depth, 0) * 28px); } 
-        .step-header { display: flex; align-items: center; cursor: pointer; padding: 10px 14px; border-radius: 6px; background-color: #fff; border: 1px solid var(--light-gray-color); transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
-        .step-header:hover { background-color: #f0f2f5; border-color: var(--medium-gray-color); box-shadow: var(--box-shadow-inset); }
-        .step-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1em; }
-        .step-title { flex: 1; font-size: 1em; }
-        .step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
-        .step-details { display: none; padding: 14px; margin-top: 8px; background: #fdfdfd; border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
-        .step-info { margin-bottom: 8px; }
-        .test-error-summary { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
-        .test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-        .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 
-        .step-hook .step-title { font-style: italic; color: var(--info-color)}
-        .nested-steps { margin-top: 12px; }
-        .attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
-        .attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }
-        .attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
-        .attachment-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff; box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
-        .attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
-        .attachment-item img, .attachment-item video { width: 100%; height: 180px; object-fit: cover; display: block; background-color: #eee; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
-        .attachment-info { padding: 12px; margin-top: auto; background-color: #fafafa;}
-        .attachment-item a:hover img { opacity: 0.85; }
-        .attachment-caption { padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }
-        .video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        .video-item a:hover, .trace-item a:hover { text-decoration: underline; }
-        .code-section pre { background-color: #2d2d2d; color: #f0f0f0; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
-        .trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
-        .test-history-container h2.tab-main-title { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
-        .test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
-        .test-history-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
-        .test-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--light-gray-color); }
-        .test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* This was h3, changed to p for consistency with user file */
-        .test-history-header p { font-weight: 500 } /* Added this */
-        .test-history-trend { margin-bottom: 20px; min-height: 110px; }
-        .test-history-trend div[id^="testHistoryChart-"] { display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; }
-        .test-history-details-collapsible summary { cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }
-        .test-history-details-collapsible summary:hover {text-decoration: underline;}
-        .test-history-details table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
-        .test-history-details th, .test-history-details td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--light-gray-color); }
-        .test-history-details th { background-color: var(--light-gray-color); font-weight: 600; }
-        .status-badge-small { padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; display: inline-block; }
-        .status-badge-small.status-passed { background-color: var(--success-color); }
-        .status-badge-small.status-failed { background-color: var(--danger-color); }
-        .status-badge-small.status-skipped { background-color: var(--warning-color); }
-        .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
-        .no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
-        .no-data-chart {font-size: 0.95em; padding: 18px;}
-        .ai-failure-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }
-        .ai-failure-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 5px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
-        .ai-failure-card-header { padding: 15px 20px; border-bottom: 1px solid var(--light-gray-color); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
-        .ai-failure-card-header h3 { margin: 0; font-size: 1.1em; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ai-failure-card-body { padding: 20px; }
-        .ai-fix-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 18px; font-size: 1em; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
-        .ai-fix-btn:hover { background-color: var(--accent-color); transform: translateY(-2px); }
-        .ai-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.65); display: none; align-items: center; justify-content: center; z-index: 1050; animation: fadeIn 0.3s; }
-        .ai-modal-content { background-color: var(--card-background-color); color: var(--text-color); border-radius: var(--border-radius); width: 90%; max-width: 800px; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
-        .ai-modal-header { padding: 18px 25px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .ai-modal-header h3 { margin: 0; font-size: 1.25em; }
-        .ai-modal-close { font-size: 2rem; font-weight: 300; cursor: pointer; color: var(--dark-gray-color); line-height: 1; transition: color 0.2s; }
-        .ai-modal-close:hover { color: var(--danger-color); }
-        .ai-modal-body { padding: 25px; overflow-y: auto; }
-        .ai-modal-body h4 { margin-top: 18px; margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color); }
-        .ai-modal-body p { margin-bottom: 15px; }
-        .ai-loader { margin: 40px auto; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .trace-preview { padding: 1rem; text-align: center; background: #f5f5f5; border-bottom: 1px solid #e1e1e1; }
-        .trace-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
-        .trace-name { word-break: break-word; font-size: 0.9rem; }
-        .trace-actions { display: flex; gap: 0.5rem; }
-        .trace-actions a { flex: 1; text-align: center; padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: 4px; text-decoration: none; background: cornflowerblue; color: aliceblue; }
-        .view-trace { background: #3182ce; color: white; }
-        .view-trace:hover { background: #2c5282; }
-        .download-trace { background: #e2e8f0; color: #2d3748; }
-        .download-trace:hover { background: #cbd5e0; }
-        .filters button.clear-filters-btn { background-color: var(--medium-gray-color); color: var(--text-color); }
-        .filters button.clear-filters-btn:hover { background-color: var(--dark-gray-color); color: #fff; }
-        .copy-btn {color: var(--primary-color); background: #fefefe; border-radius: 8px; cursor: pointer; border-color: var(--primary-color); font-size: 1em; margin-left: 93%; font-weight: 600;}
-        .ai-analyzer-stats { display: flex; gap: 20px; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: var(--border-radius); justify-content: center; }
-        .stat-item { text-align: center; color: white; }
-        .stat-number { display: block; font-size: 2em; font-weight: 700; line-height: 1;}
-        .stat-label { font-size: 0.9em; opacity: 0.9; font-weight: 500;}
-        .ai-analyzer-description { margin-bottom: 25px; font-size: 1em; color: var(--text-color-secondary); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;}
-        .compact-failure-list { display: flex; flex-direction: column; gap: 15px; }
-        .compact-failure-item { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 4px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease;}
-        .compact-failure-item:hover { transform: translateY(-2px); box-shadow: var(--box-shadow); }
-        .failure-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; gap: 15px;}
-        .failure-main-info { flex: 1; min-width: 0; }
-        .failure-title { margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-        .failure-meta { display: flex; gap: 12px; align-items: center;}
-        .browser-indicator, .duration-indicator { font-size: 0.85em; padding: 3px 8px; border-radius: 12px; font-weight: 500;}
-        .browser-indicator { background: var(--info-color); color: white; }
-        .duration-indicator { background: var(--medium-gray-color); color: var(--text-color); }
-        .compact-ai-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap;}
-        .compact-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); }
-        .ai-text { font-size: 0.95em; }
-        .failure-error-preview { padding: 0 20px 18px 20px; border-top: 1px solid var(--light-gray-color);}
-        .error-snippet { background: rgba(244, 67, 54, 0.05); border: 1px solid rgba(244, 67, 54, 0.2); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4;}
-        .expand-error-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;}
-        .expand-error-btn:hover { background: var(--light-gray-color); border-color: var(--medium-gray-color); }
-        .expand-icon { transition: transform 0.2s ease; font-size: 0.8em;}
-        .expand-error-btn.expanded .expand-icon { transform: rotate(180deg); }
-        .full-error-details { padding: 0 20px 20px 20px; border-top: 1px solid var(--light-gray-color); margin-top: 0;}
-        .full-error-content { background: rgba(244, 67, 54, 0.05); border: 1px solid rgba(244, 67, 54, 0.2); border-radius: 6px; padding: 15px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4; max-height: 300px; overflow-y: auto;}
-        @media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
-        @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
-        @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
-        @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
-        .trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
-        .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
-        .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
-        .attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
-        .attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-        .attachment-type { font-size: 0.8rem; color: var(--text-color-secondary); }
-    </style>
+    
+<style>
+:root {
+--primary-color: #60a5fa; --secondary-color: #f472b6; --accent-color: #a78bfa; --accent-color-alt: #fb923c;
+--success-color: #34d399; --danger-color: #f87171; --warning-color: #fbbf24; --info-color: #60a5fa;
+--light-gray-color: #374151; --medium-gray-color: #4b5563; --dark-gray-color: #9ca3af;
+--text-color: #f9fafb; --text-color-secondary: #d1d5db; --border-color: #4b5563; --background-color: #111827;
+--card-background-color: #1f2937; --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+--border-radius: 8px; --box-shadow: 0 5px 15px rgba(0,0,0,0.3); --box-shadow-light: 0 3px 8px rgba(0,0,0,0.2); --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+.trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
+.lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
+.highcharts-background { fill: transparent; }
+.highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
+.highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
+.highcharts-axis-title { fill: var(--text-color) !important; }
+.highcharts-tooltip > span { background-color: rgba(31,41,55,0.95) !important; border-color: rgba(31,41,55,0.95) !important; color: #f9fafb !important; padding: 10px !important; border-radius: 6px !important; }
+body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
+.container { padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#1f2937, #374151, #1f2937); }
+.header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
+.header-title { display: flex; align-items: center; gap: 15px; }
+.header h1 { margin: 0; font-size: 1.85em; font-weight: 600; color: var(--primary-color); }
+#report-logo { height: 40px; width: 55px; }
+.run-info { font-size: 0.9em; text-align: right; color: var(--text-color-secondary); line-height:1.5;}
+.run-info strong { color: var(--text-color); }
+.tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 30px; overflow-x: auto; }
+.tab-button { padding: 15px 25px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 1.1em; font-weight: 600; color: var(--text-color); transition: color 0.2s ease, border-color 0.2s ease; white-space: nowrap; }
+.tab-button:hover { color: var(--accent-color); }
+.tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+.tab-content { display: none; animation: fadeIn 0.4s ease-out; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px; margin-bottom: 35px; }
+.summary-card { background-color: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; text-align: center; box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.summary-card:hover { transform: translateY(-5px); box-shadow: var(--box-shadow); }
+.summary-card h3 { margin: 0 0 10px; font-size: 1.05em; font-weight: 500; color: var(--text-color-secondary); }
+.summary-card .value { font-size: 2.4em; font-weight: 600; margin-bottom: 8px; }
+.summary-card .trend-percentage { font-size: 1em; color: var(--dark-gray-color); }
+.status-passed .value, .stat-passed svg { color: var(--success-color); }
+.status-failed .value, .stat-failed svg { color: var(--danger-color); }
+.status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
+.dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: stretch; }
+.pie-chart-wrapper, .suites-widget, .trend-chart { background-color: var(--card-background-color); padding: 28px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+.pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color); }
+.trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { flex-grow: 1; min-height: 250px; }
+.status-badge-small-tooltip { padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }
+.status-badge-small-tooltip.status-passed { background-color: var(--success-color); }
+.status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
+.status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
+.status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
+.suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
+.suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.suite-card { border: 1px solid var(--border-color); border-left-width: 5px; border-radius: calc(var(--border-radius) / 1.5); padding: 20px; background-color: var(--card-background-color); transition: box-shadow 0.2s ease, border-left-color 0.2s ease; }
+.suite-card:hover { box-shadow: var(--box-shadow); }
+.suite-card.status-passed { border-left-color: var(--success-color); }
+.suite-card.status-failed { border-left-color: var(--danger-color); }
+.suite-card.status-skipped { border-left-color: var(--warning-color); }
+.suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
+.browser-tag { font-size: 0.8em; background-color: var(--medium-gray-color); color: var(--text-color-secondary); padding: 3px 8px; border-radius: 4px; white-space: nowrap;}
+.suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
+.suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
+.suite-stats span { display: flex; align-items: center; gap: 6px; }
+.suite-stats svg { vertical-align: middle; font-size: 1.15em; }
+.filters { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px; padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-inset); border: 1px solid var(--border-color); }
+.filters input, .filters select, .filters button { padding: 11px 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1em; background-color: var(--card-background-color); color: var(--text-color); }
+.filters input { flex-grow: 1; min-width: 240px;}
+.filters select {min-width: 180px;}
+.filters button { background-color: var(--primary-color); color: white; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; border: none; }
+.filters button:hover { background-color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+.test-case { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--card-background-color); box-shadow: var(--box-shadow-light); overflow: hidden; }
+.test-case-header { padding: 10px 15px; background-color: var(--card-background-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid transparent; transition: background-color 0.2s ease; }
+.test-case-header:hover { background-color: var(--light-gray-color); }
+.test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: var(--light-gray-color); }
+.test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
+.test-case-title { font-weight: 600; color: var(--text-color); font-size: 1em; }
+.test-case-browser { font-size: 0.9em; color: var(--text-color-secondary); }
+.test-case-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: var(--text-color-secondary); flex-shrink: 0; }
+.test-duration { background-color: var(--light-gray-color); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;}
+.status-badge { padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.status-badge.status-passed { background-color: var(--success-color); }
+.status-badge.status-failed { background-color: var(--danger-color); }
+.status-badge.status-skipped { background-color: var(--warning-color); }
+.status-badge.status-unknown { background-color: var(--dark-gray-color); }
+.tag { display: inline-block; background: linear-gradient(#4b5563, #1f2937, #111827); color: #f9fafb; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; font-weight: 400; }
+.test-case-content { display: none; padding: 20px; border-top: 1px solid var(--border-color); background-color: var(--light-gray-color); }
+.test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
+.test-case-content p { margin-bottom: 10px; font-size: 1em; }
+.test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-left: 4px solid var(--danger-color); border-radius: 4px; }
+.test-error-summary h4 { color: var(--danger-color); margin-top:0;}
+.test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
+.steps-list { margin: 18px 0; }
+@supports (content-visibility: auto) {
+.tab-content,
+#test-runs .test-case,
+.attachments-section,
+.test-history-card,
+.trend-chart,
+.suite-card {
+content-visibility: auto;
+contain-intrinsic-size: 1px 600px;
+}
+}
+.test-case,
+.test-history-card,
+.suite-card,
+.attachments-section {
+contain: content;
+}
+.attachments-grid .attachment-item img.lazy-load-image {
+width: 100%;
+aspect-ratio: 4 / 3;
+object-fit: cover;
+}
+.attachments-grid .attachment-item.video-item {
+aspect-ratio: 16 / 9;
+}
+
+.step-item { margin-bottom: 8px; padding-left: calc(var(--depth, 0) * 28px); }
+.step-header { display: flex; align-items: center; cursor: pointer; padding: 10px 14px; border-radius: 6px; background-color: var(--card-background-color); border: 1px solid var(--light-gray-color); transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.step-header:hover { background-color: var(--light-gray-color); border-color: var(--medium-gray-color); box-shadow: var(--box-shadow-inset); }
+.step-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1em; }
+.step-title { flex: 1; font-size: 1em; }
+.step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
+.step-details { display: none; padding: 14px; margin-top: 8px; background: var(--light-gray-color); border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
+.step-info { margin-bottom: 8px; }
+.test-error-summary { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(248,113,113,0.1); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
+.test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.2); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.step-hook { background-color: rgba(96,165,250,0.1); border-left: 3px solid var(--info-color) !important; }
+.step-hook .step-title { font-style: italic; color: var(--info-color)}
+.nested-steps { margin-top: 12px; }
+.attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
+.attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }
+.attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
+.attachment-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--card-background-color); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
+.attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
+.attachment-item img, .attachment-item video { width: 100%; height: 180px; object-fit: cover; display: block; background-color: var(--medium-gray-color); border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
+.attachment-info { padding: 12px; margin-top: auto; background-color: var(--light-gray-color);}
+.attachment-item a:hover img { opacity: 0.85; }
+.attachment-caption { padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }
+.video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
+.video-item a:hover, .trace-item a:hover { text-decoration: underline; }
+.code-section pre { background-color: #111827; color: #f9fafb; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
+.trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
+.test-history-container h2.tab-main-title { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
+.test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
+.test-history-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+.test-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--light-gray-color); }
+.test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.test-history-header p { font-weight: 500 }
+.test-history-trend { margin-bottom: 20px; min-height: 110px; }
+.test-history-trend div[id^="testHistoryChart-"] { display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; }
+.test-history-details-collapsible summary { cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }
+.test-history-details-collapsible summary:hover {text-decoration: underline;}
+.test-history-details table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+.test-history-details th, .test-history-details td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--light-gray-color); }
+.test-history-details th { background-color: var(--light-gray-color); font-weight: 600; }
+.status-badge-small { padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; display: inline-block; }
+.status-badge-small.status-passed { background-color: var(--success-color); }
+.status-badge-small.status-failed { background-color: var(--danger-color); }
+.status-badge-small.status-skipped { background-color: var(--warning-color); }
+.status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
+.no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
+.no-data-chart {font-size: 0.95em; padding: 18px;}
+.ai-failure-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }
+.ai-failure-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 5px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+.ai-failure-card-header { padding: 15px 20px; border-bottom: 1px solid var(--light-gray-color); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.ai-failure-card-header h3 { margin: 0; font-size: 1.1em; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-failure-card-body { padding: 20px; }
+.ai-fix-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 18px; font-size: 1em; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+.ai-fix-btn:hover { background-color: var(--accent-color); transform: translateY(-2px); }
+.ai-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1050; animation: fadeIn 0.3s; }
+.ai-modal-content { background-color: var(--card-background-color); color: var(--text-color); border-radius: var(--border-radius); width: 90%; max-width: 800px; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
+.ai-modal-header { padding: 18px 25px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.ai-modal-header h3 { margin: 0; font-size: 1.25em; }
+.ai-modal-close { font-size: 2rem; font-weight: 300; cursor: pointer; color: var(--dark-gray-color); line-height: 1; transition: color 0.2s; }
+.ai-modal-close:hover { color: var(--danger-color); }
+.ai-modal-body { padding: 25px; overflow-y: auto; }
+.ai-modal-body h4 { margin-top: 18px; margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color); }
+.ai-modal-body p { margin-bottom: 15px; }
+.ai-loader { margin: 40px auto; border: 5px solid var(--medium-gray-color); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.trace-preview { padding: 1rem; text-align: center; background: var(--light-gray-color); border-bottom: 1px solid var(--border-color); }
+.trace-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+.trace-name { word-break: break-word; font-size: 0.9rem; }
+.trace-actions { display: flex; gap: 0.5rem; }
+.trace-actions a { flex: 1; text-align: center; padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: 4px; text-decoration: none; background: var(--primary-color); color: white; }
+.view-trace { background: var(--primary-color); color: white; }
+.view-trace:hover { background: var(--accent-color); }
+.download-trace { background: var(--medium-gray-color); color: var(--text-color); }
+.download-trace:hover { background: var(--dark-gray-color); }
+.filters button.clear-filters-btn { background-color: var(--medium-gray-color); color: var(--text-color); }
+.filters button.clear-filters-btn:hover { background-color: var(--dark-gray-color); color: #fff; }
+.copy-btn {color: var(--primary-color); background: var(--card-background-color); border-radius: 8px; cursor: pointer; border-color: var(--primary-color); font-size: 1em; margin-left: 93%; font-weight: 600;}
+.ai-analyzer-stats { display: flex; gap: 20px; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); border-radius: var(--border-radius); justify-content: center; }
+.stat-item { text-align: center; color: white; }
+.stat-number { display: block; font-size: 2em; font-weight: 700; line-height: 1;}
+.stat-label { font-size: 0.9em; opacity: 0.9; font-weight: 500;}
+.ai-analyzer-description { margin-bottom: 25px; font-size: 1em; color: var(--text-color-secondary); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;}
+.compact-failure-list { display: flex; flex-direction: column; gap: 15px; }
+.compact-failure-item { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 4px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease;}
+.compact-failure-item:hover { transform: translateY(-2px); box-shadow: var(--box-shadow); }
+.failure-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; gap: 15px;}
+.failure-main-info { flex: 1; min-width: 0; }
+.failure-title { margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.failure-meta { display: flex; gap: 12px; align-items: center;}
+.browser-indicator, .duration-indicator { font-size: 0.85em; padding: 3px 8px; border-radius: 12px; font-weight: 500;}
+.browser-indicator { background: var(--info-color); color: white; }
+#load-more-tests { font-size: 16px; padding: 4px; background-color: var(--light-gray-color); border-radius: 4px; color: var(--text-color); }
+.duration-indicator { background: var(--medium-gray-color); color: var(--text-color); }
+.compact-ai-btn { background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap;}
+.compact-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(55, 65, 81, 0.4); }
+.ai-text { font-size: 0.95em; }
+.failure-error-preview { padding: 0 20px 18px 20px; border-top: 1px solid var(--light-gray-color);}
+.error-snippet { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4;}
+.expand-error-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;}
+.expand-error-btn:hover { background: var(--light-gray-color); border-color: var(--medium-gray-color); }
+.expand-icon { transition: transform 0.2s ease; font-size: 0.8em;}
+.expand-error-btn.expanded .expand-icon { transform: rotate(180deg); }
+.full-error-details { padding: 0 20px 20px 20px; border-top: 1px solid var(--light-gray-color); margin-top: 0;}
+.full-error-content { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 15px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4; max-height: 300px; overflow-y: auto;}
+@media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
+@media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
+@media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
+@media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
+.trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
+.generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
+.attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+.attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
+.attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.attachment-type { font-size: 0.8rem; color: var(--text-color-secondary); }
+.footer-text { color: white }
+</style>
 </head>
 <body>
     <div class="container">
@@ -2214,7 +2470,18 @@ function generateHTML(reportData, trendData = null) {
                   .join("")}</select>
                 <button id="expand-all-tests">Expand All</button> <button id="collapse-all-tests">Collapse All</button> <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
-            <div class="test-cases-list">${generateTestCasesHTML()}</div>
+            <div class="test-cases-list">${generateTestCasesHTML(
+              results.slice(0, 50),
+              0
+            )}</div>
+            ${
+              results.length > 50
+                ? `<div class="load-more-wrapper"><button id="load-more-tests">Load more</button></div><script type="application/json" id="remaining-tests-b64">${Buffer.from(
+                    generateTestCasesHTML(results.slice(50), 50),
+                    "utf8"
+                  ).toString("base64")}</script>`
+                : ``
+            }
         </div>
         <div id="test-history" class="tab-content">
           <h2 class="tab-main-title">Execution Trends</h2>
@@ -2254,7 +2521,7 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
-                <span>Created by</span>
+                <span class="footer-text">Created by</span>
                 <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
             </div>
             <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">Crafted with precision</div>
@@ -2290,6 +2557,7 @@ function generateHTML(reportData, trendData = null) {
         const modalTitle = document.getElementById('ai-fix-modal-title');
         
         modal.style.display = 'flex';
+        document.body.style.setProperty('overflow', 'hidden', 'important');
         modalTitle.textContent = 'Analyzing...';
         modalContent.innerHTML = '<div class="ai-loader"></div>';
 
@@ -2386,6 +2654,7 @@ function generateHTML(reportData, trendData = null) {
     function closeAiModal() {
         const modal = document.getElementById('ai-fix-modal');
         if(modal) modal.style.display = 'none';
+        document.body.style.setProperty('overflow', '', 'important');
     }
 
     function toggleErrorDetails(button) {
@@ -2420,10 +2689,46 @@ function generateHTML(reportData, trendData = null) {
         });
         // --- Test Run Summary Filters ---
         const nameFilter = document.getElementById('filter-name');
+        function ensureAllTestsAppended() {
+            const node = document.getElementById('remaining-tests-b64');
+            const loadMoreBtn = document.getElementById('load-more-tests');
+            if (!node) return;
+            const b64 = (node.textContent || '').trim();
+            function b64ToUtf8(b64Str) {
+                try { return decodeURIComponent(escape(window.atob(b64Str))); }
+                catch (e) { return window.atob(b64Str); }
+            }
+            const html = b64ToUtf8(b64);
+            const container = document.querySelector('#test-runs .test-cases-list');
+            if (container) container.insertAdjacentHTML('beforeend', html);
+            if (loadMoreBtn) loadMoreBtn.remove();
+            node.remove();
+        }
+        const loadMoreBtn = document.getElementById('load-more-tests');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                const node = document.getElementById('remaining-tests-b64');
+                if (!node) return;
+                const b64 = (node.textContent || '').trim();
+                function b64ToUtf8(b64Str) {
+                    try { return decodeURIComponent(escape(window.atob(b64Str))); }
+                    catch (e) { return window.atob(b64Str); }
+                }
+                const html = b64ToUtf8(b64);
+                const container = document.querySelector('#test-runs .test-cases-list');
+                if (container) container.insertAdjacentHTML('beforeend', html);
+                loadMoreBtn.remove();
+                node.remove();
+            });
+        }
+
+
+
         const statusFilter = document.getElementById('filter-status');
         const browserFilter = document.getElementById('filter-browser');
         const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); 
         function filterTestCases() { 
+            ensureAllTestsAppended();
             const nameValue = nameFilter ? nameFilter.value.toLowerCase() : "";
             const statusValue = statusFilter ? statusFilter.value : "";
             const browserValue = browserFilter ? browserFilter.value : "";
@@ -2442,7 +2747,10 @@ function generateHTML(reportData, trendData = null) {
         if(statusFilter) statusFilter.addEventListener('change', filterTestCases);
         if(browserFilter) browserFilter.addEventListener('change', filterTestCases);
         if(clearRunSummaryFiltersBtn) clearRunSummaryFiltersBtn.addEventListener('click', () => {
-            if(nameFilter) nameFilter.value = ''; if(statusFilter) statusFilter.value = ''; if(browserFilter) browserFilter.value = '';
+            ensureAllTestsAppended();
+            if(nameFilter) nameFilter.value = '';
+            if(statusFilter) statusFilter.value = '';
+            if(browserFilter) browserFilter.value = '';
             filterTestCases();
         });
         // --- Test History Filters ---
@@ -2483,12 +2791,6 @@ function generateHTML(reportData, trendData = null) {
                  headerElement.setAttribute('aria-expanded', String(!isExpanded));
             }
         }
-        document.querySelectorAll('#test-runs .test-case-header').forEach(header => {
-            header.addEventListener('click', () => toggleElementDetails(header)); 
-        });
-        document.querySelectorAll('#test-runs .step-header').forEach(header => {
-            header.addEventListener('click', () => toggleElementDetails(header, '.step-details'));
-        });
         const expandAllBtn = document.getElementById('expand-all-tests');
         const collapseAllBtn = document.getElementById('collapse-all-tests');
         function setAllTestRunDetailsVisibility(displayMode, ariaState) {
@@ -2499,31 +2801,89 @@ function generateHTML(reportData, trendData = null) {
         }
         if (expandAllBtn) expandAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('block', 'true'));
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
-        // --- Intersection Observer for Lazy Loading ---
-        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe, .lazy-load-image, .lazy-load-video, .lazy-load-attachment');
+        document.addEventListener('click', (e) => {
+            const inHighcharts = e.target && e.target.closest && e.target.closest('.highcharts-container');
+            if (inHighcharts) {
+                return;
+            }
+            const header = e.target.closest('#test-runs .test-case-header');
+            if (header) {
+                let contentElement = header.parentElement.querySelector('.test-case-content');
+                if (contentElement) {
+                    const isExpanded = contentElement.style.display === 'block';
+                    contentElement.style.display = isExpanded ? 'none' : 'block';
+                    header.setAttribute('aria-expanded', String(!isExpanded));
+                }
+                return;
+            }
+            const stepHeader = e.target.closest('#test-runs .step-header');
+            if (stepHeader) {
+                let details = stepHeader.nextElementSibling;
+                if (details && details.matches('.step-details')) {
+                    const isExpanded = details.style.display === 'block';
+                    details.style.display = isExpanded ? 'none' : 'block';
+                    stepHeader.setAttribute('aria-expanded', String(!isExpanded));
+                }
+                return;
+            }
+            const img = e.target.closest('img.lazy-load-image');
+            if (img && img.dataset && img.dataset.src) {
+                if (e.preventDefault) e.preventDefault();
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+                const parentLink = img.closest('a.lazy-load-attachment');
+                if (parentLink && parentLink.dataset && parentLink.dataset.href) {
+                    parentLink.href = parentLink.dataset.href;
+                    parentLink.removeAttribute('data-href');
+                }
+                return;
+            }
+            const video = e.target.closest('video.lazy-load-video');
+            if (video) {
+                if (e.preventDefault) e.preventDefault();
+                const s = video.querySelector('source');
+                if (s && s.dataset && s.dataset.src && !s.src) {
+                    s.src = s.dataset.src;
+                    s.removeAttribute('data-src');
+                    video.load();
+                } else if (video.dataset && video.dataset.src && !video.src) {
+                    video.src = video.dataset.src;
+                    video.removeAttribute('data-src');
+                    video.load();
+                }
+                return;
+            }
+            const a = e.target.closest('a.lazy-load-attachment');
+            if (a && a.dataset && a.dataset.href) {
+                e.preventDefault();
+                a.href = a.dataset.href;
+                a.removeAttribute('data-href');
+                a.click();
+                return;
+            }
+        });
+        document.addEventListener('play', (e) => {
+            const video = e.target && e.target.closest ? e.target.closest('video.lazy-load-video') : null;
+            if (video) {
+                const s = video.querySelector('source');
+                if (s && s.dataset && s.dataset.src && !s.src) {
+                    s.src = s.dataset.src;
+                    s.removeAttribute('data-src');
+                    video.load();
+                } else if (video.dataset && video.dataset.src && !video.src) {
+                    video.src = video.dataset.src;
+                    video.removeAttribute('data-src');
+                    video.load();
+                }
+            }
+        }, true);
+        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe');
         if ('IntersectionObserver' in window) {
             let lazyObserver = new IntersectionObserver((entries, observer) => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting) {
                         const element = entry.target;
-                        if (element.classList.contains('lazy-load-image')) {
-                            if (element.dataset.src) {
-                                element.src = element.dataset.src;
-                                element.removeAttribute('data-src');
-                            }
-                        } else if (element.classList.contains('lazy-load-video')) {
-                            const source = element.querySelector('source');
-                            if (source && source.dataset.src) {
-                                source.src = source.dataset.src;
-                                source.removeAttribute('data-src');
-                                element.load();
-                            }
-                        } else if (element.classList.contains('lazy-load-attachment')) {
-                            if (element.dataset.href) {
-                                element.href = element.dataset.href;
-                                element.removeAttribute('data-href');
-                            }
-                        } else if (element.classList.contains('lazy-load-iframe')) {
+                        if (element.classList.contains('lazy-load-iframe')) {
                             if (element.dataset.src) {
                                 element.src = element.dataset.src;
                                 element.removeAttribute('data-src');
@@ -2539,13 +2899,10 @@ function generateHTML(reportData, trendData = null) {
                 });
             }, { rootMargin: "0px 0px 200px 0px" });
             lazyLoadElements.forEach(el => lazyObserver.observe(el));
-        } else { // Fallback for browsers without IntersectionObserver
+        } else {
             lazyLoadElements.forEach(element => {
-                if (element.classList.contains('lazy-load-image') && element.dataset.src) element.src = element.dataset.src;
-                else if (element.classList.contains('lazy-load-video')) { const source = element.querySelector('source'); if (source && source.dataset.src) { source.src = source.dataset.src; element.load(); } }
-                else if (element.classList.contains('lazy-load-attachment') && element.dataset.href) element.href = element.dataset.href;
-                else if (element.classList.contains('lazy-load-iframe') && element.dataset.src) element.src = element.dataset.src;
-                else if (element.classList.contains('lazy-load-chart')) { const renderFn = element.dataset.renderFunctionName; if(renderFn && window[renderFn]) window[renderFn](); }
+                if (element.classList.contains('lazy-load-iframe') && element.dataset.src) element.src = element.dataset.src;
+                else if (element.classList.contains('lazy-load-chart')) { const renderFn = element.dataset.renderFunctionName; if (renderFn && window[renderFn]) window[renderFn](); }
             });
         }
     }
@@ -2583,6 +2940,20 @@ function generateHTML(reportData, trendData = null) {
       });
     }
 </script>
+
+<!-- AI Fix Modal -->
+<div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
+  <div class="ai-modal-content" onclick="event.stopPropagation()">
+    <div class="ai-modal-header">
+        <h3 id="ai-fix-modal-title">AI Analysis</h3>
+        <span class="ai-modal-close" onclick="closeAiModal()">×</span>
+    </div>
+    <div class="ai-modal-body" id="ai-fix-modal-content">
+        <!-- Content will be injected by JavaScript -->
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
   `;
@@ -2611,6 +2982,11 @@ async function runScript(scriptPath) {
     });
   });
 }
+/**
+ * The main function that orchestrates the generation of the static HTML report.
+ * It reads the latest test run data, loads historical data for trend analysis,
+ * prepares the data, and then generates and writes the final HTML report file.
+ */
 async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
