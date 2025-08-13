@@ -16,7 +16,7 @@ The project provides these utility commands:
 | Command                | Description                                                                 |
 |------------------------|-----------------------------------------------------------------------------|
 | `generate-report`      | Generates playwright-pulse-report.html, Loads screenshots and images dynamically from the attachments/ directory, Produces a lighter HTML file with faster initial load, Requires attachments/ directory to be present when viewing the report                                    |
-| `generate-pulse-report`| Generates `playwright-pulse-static-report.html`, Self-contained, no server required, Preserves all dashboard functionality, all the attachments are embadded in the report, no need to have attachments/ directory when viewing the report                                             |
+| `generate-pulse-report`| Generates `playwright-pulse-static-report.html`, Self-contained, no server required, Preserves all dashboard functionality, all the attachments are embadded in the report, no need to have attachments/ directory when viewing the report, with a dark theme and better initial load handling                                            |
 | `merge-pulse-report`   | Combines multiple parallel test json reports, basically used in sharding                                     |
 | `generate-trend`       | Analyzes historical trends in test results                                  |
 | `generate-email-report`| Generates email-friendly report versions                                    |
