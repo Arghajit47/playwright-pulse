@@ -1773,19 +1773,6 @@ function generateAIFailureAnalyzerTab(results) {
         })
         .join("")}
     </div>
-
-    <!-- AI Fix Modal -->
-    <div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
-      <div class="ai-modal-content" onclick="event.stopPropagation()">
-        <div class="ai-modal-header">
-            <h3 id="ai-fix-modal-title">AI Analysis</h3>
-            <span class="ai-modal-close" onclick="closeAiModal()">×</span>
-        </div>
-        <div class="ai-modal-body" id="ai-fix-modal-content">
-            <!-- Content will be injected by JavaScript -->
-        </div>
-      </div>
-    </div>
   `;
 }
 /**
@@ -2403,6 +2390,7 @@ aspect-ratio: 16 / 9;
 .attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
 .attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .attachment-type { font-size: 0.8rem; color: var(--text-color-secondary); }
+.footer-text { color: white }
 </style>
 </head>
 <body>
@@ -2482,8 +2470,18 @@ aspect-ratio: 16 / 9;
                   .join("")}</select>
                 <button id="expand-all-tests">Expand All</button> <button id="collapse-all-tests">Collapse All</button> <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
-            <div class="test-cases-list">${generateTestCasesHTML(results.slice(0, 50), 0)}</div>
-            ${results.length > 50 ? `<div class="load-more-wrapper"><button id="load-more-tests">Load more</button></div><script type="application/json" id="remaining-tests-b64">${Buffer.from(generateTestCasesHTML(results.slice(50), 50), 'utf8').toString('base64')}</script>` : ``}
+            <div class="test-cases-list">${generateTestCasesHTML(
+              results.slice(0, 50),
+              0
+            )}</div>
+            ${
+              results.length > 50
+                ? `<div class="load-more-wrapper"><button id="load-more-tests">Load more</button></div><script type="application/json" id="remaining-tests-b64">${Buffer.from(
+                    generateTestCasesHTML(results.slice(50), 50),
+                    "utf8"
+                  ).toString("base64")}</script>`
+                : ``
+            }
         </div>
         <div id="test-history" class="tab-content">
           <h2 class="tab-main-title">Execution Trends</h2>
@@ -2523,7 +2521,7 @@ aspect-ratio: 16 / 9;
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
-                <span>Created by</span>
+                <span class="footer-text">Created by</span>
                 <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
             </div>
             <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">Crafted with precision</div>
@@ -2559,6 +2557,7 @@ aspect-ratio: 16 / 9;
         const modalTitle = document.getElementById('ai-fix-modal-title');
         
         modal.style.display = 'flex';
+        document.body.style.setProperty('overflow', 'hidden', 'important');
         modalTitle.textContent = 'Analyzing...';
         modalContent.innerHTML = '<div class="ai-loader"></div>';
 
@@ -2655,6 +2654,7 @@ aspect-ratio: 16 / 9;
     function closeAiModal() {
         const modal = document.getElementById('ai-fix-modal');
         if(modal) modal.style.display = 'none';
+        document.body.style.setProperty('overflow', '', 'important');
     }
 
     function toggleErrorDetails(button) {
@@ -2940,6 +2940,20 @@ aspect-ratio: 16 / 9;
       });
     }
 </script>
+
+<!-- AI Fix Modal -->
+<div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
+  <div class="ai-modal-content" onclick="event.stopPropagation()">
+    <div class="ai-modal-header">
+        <h3 id="ai-fix-modal-title">AI Analysis</h3>
+        <span class="ai-modal-close" onclick="closeAiModal()">×</span>
+    </div>
+    <div class="ai-modal-body" id="ai-fix-modal-content">
+        <!-- Content will be injected by JavaScript -->
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
   `;
