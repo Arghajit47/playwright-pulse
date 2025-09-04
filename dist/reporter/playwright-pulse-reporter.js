@@ -468,7 +468,11 @@ class PlaywrightPulseReporter {
             await this._writeShardResults();
             return;
         }
-        const finalResults = this._getFinalizedResults(this.results);
+        let finalReport;
+        // `this.results` contains all individual run attempts. We will keep them all.
+        const allAttempts = this.results;
+        // Use your existing logic ONLY to get the final statuses for the summary counts.
+        const summaryResults = this._getFinalizedResults(this.results);
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
         const runId = this.currentRunId;
@@ -476,22 +480,27 @@ class PlaywrightPulseReporter {
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
-            totalTests: finalResults.length,
-            passed: finalResults.filter((r) => r.status === "passed").length,
-            failed: finalResults.filter((r) => r.status === "failed").length,
-            skipped: finalResults.filter((r) => r.status === "skipped").length,
-            flaky: finalResults.filter((r) => r.status === "flaky").length,
+            totalTests: summaryResults.length,
+            passed: summaryResults.filter((r) => r.status === "passed").length,
+            failed: summaryResults.filter((r) => r.status === "failed").length,
+            skipped: summaryResults.filter((r) => r.status === "skipped").length,
+            flaky: summaryResults.filter((r) => r.status === "flaky").length,
             duration,
             environment: environmentDetails,
         };
-        let finalReport = undefined;
+        // In the final report object, use the complete list of attempts.
+        finalReport = {
+            run: runData,
+            results: allAttempts, // <<< USE THE FULL LIST HERE
+            metadata: { generatedAt: new Date().toISOString() },
+        };
         if (this.isSharded) {
             finalReport = await this._mergeShardResults(runData);
         }
         else {
             finalReport = {
                 run: runData,
-                results: finalResults, // Cast to any to bypass the type mismatch
+                results: summaryResults, // Cast to any to bypass the type mismatch
                 metadata: { generatedAt: new Date().toISOString() },
             };
         }
