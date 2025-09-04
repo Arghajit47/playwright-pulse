@@ -1,6 +1,6 @@
 {
   "name": "@arghajit/dummy",
-  "version": "0.1.2-beta-1",
+  "version": "0.1.2-beta-2",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://playwright-pulse-report.netlify.app/",
   "keywords": [
@@ -50,7 +50,8 @@
     "report:merge": "node ./scripts/merge-pulse-report.js",
     "report:email": "node ./scripts/sendReport.mjs",
     "report:minify": "node ./scripts/generate-email-report.mjs",
-    "generate-trend": "node ./scripts/generate-trend.mjs"
+    "generate-trend": "node ./scripts/generate-trend.mjs",
+    "deploy": "npm publish --access -public"
   },
   "dependencies": {
     "archiver": "^7.0.1",

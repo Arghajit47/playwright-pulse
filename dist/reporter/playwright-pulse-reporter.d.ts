@@ -21,8 +21,13 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private processStep;
     onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;
     private _getBaseTestId;
-    private _getFinalizedResults;
     private _getStatusOrder;
+    /**
+     * Refactored to group all run attempts for a single logical test case.
+     * @param allAttempts An array of all individual test run attempts.
+     * @returns An array of ConsolidatedTestResult objects, where each object represents one logical test and contains an array of all its runs.
+     */
+    private _getFinalizedResults;
     onError(error: any): void;
     private _getEnvDetails;
     private _writeShardResults;
