@@ -30,8 +30,15 @@ const convertStatus = (
   testCase?: TestCase,
   retryCount: number = 0
 ): ExtendedPulseTestStatus => {
+  // If a test passes on a retry, it's considered flaky regardless of expected status.
+  // This is the most critical check for flaky tests.
+  if (status === "passed" && retryCount > 0) {
+    return "flaky";
+  }
+
+  // Handle expected statuses for the final result.
   if (testCase?.expectedStatus === "failed") {
-    // If expected to fail but passed, it's flaky
+    // If expected to fail but passed, it's flaky.
     if (status === "passed") return "flaky";
     return "failed";
   }
@@ -39,11 +46,7 @@ const convertStatus = (
     return "skipped";
   }
 
-  // If a test passes on a retry, it's considered flaky
-  if (status === "passed" && retryCount > 0) {
-    return "flaky";
-  }
-
+  // Default Playwright status mapping
   switch (status) {
     case "passed":
       return "passed";
@@ -64,6 +67,7 @@ const INDIVIDUAL_REPORTS_SUBDIR = "pulse-results";
 export class PlaywrightPulseReporter implements Reporter {
   private config!: FullConfig;
   private suite!: Suite;
+  // This will now store all individual run attempts for all tests.
   private results: TestResult[] = [];
   private runStartTime!: number;
   private options: PlaywrightPulseReporterOptions;
@@ -310,9 +314,8 @@ export class PlaywrightPulseReporter implements Reporter {
         : undefined,
     };
 
-    // Modify test.id for retries
-    const testIdWithRunCounter =
-      result.retry > 0 ? `${test.id}-${result.retry}` : test.id;
+    // Correctly handle the ID for each run. A unique ID per attempt is crucial.
+    const testIdWithRunCounter = `${test.id}-run-${result.retry}`;
 
     const pulseResult: TestResult = {
       id: testIdWithRunCounter, // Use the modified ID
@@ -325,7 +328,7 @@ export class PlaywrightPulseReporter implements Reporter {
       startTime: startTime,
       endTime: endTime,
       browser: browserDetails,
-      retries: result.retry, // This remains the Playwright retry count (0 for first run, 1 for first retry, etc.)
+      retries: result.retry, // This is the Playwright retry count (0 for first run, 1 for first retry, etc.)
       runCounter: result.retry, // This is your 'runCounter'
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
@@ -389,33 +392,57 @@ export class PlaywrightPulseReporter implements Reporter {
     this.results.push(pulseResult);
   }
 
+  // New method to extract the base test ID, ignoring the run-counter suffix
+  private _getBaseTestId(testResultId: string): string {
+    const parts = testResultId.split("-run-");
+    return parts[0];
+  }
+
   private _getFinalizedResults(allResults: TestResult[]): TestResult[] {
     const finalResultsMap = new Map<string, TestResult>();
+    const allRunsMap = new Map<string, TestResult[]>();
+
+    // First, group all run attempts by their base test ID
     for (const result of allResults) {
-      // The key for de-duplication should now be the base test ID (without the run counter suffix)
-      // This ensures that all runs of a single logical test are considered together.
-      const baseTestId = result.id.split("-").slice(0, -1).join("-"); // Remove '-${runCounter}'
-      const existing = finalResultsMap.get(baseTestId);
+      const baseTestId = this._getBaseTestId(result.id);
+      if (!allRunsMap.has(baseTestId)) {
+        allRunsMap.set(baseTestId, []);
+      }
+      allRunsMap.get(baseTestId)!.push(result);
+    }
 
-      // We want to keep the "most successful" run for the final report.
-      // Priority: passed > flaky > failed > skipped.
-      // If statuses are equal, prefer the one with higher retry count (latest attempt).
-      if (!existing) {
-        finalResultsMap.set(baseTestId, result);
-      } else {
-        const currentStatusOrder = this._getStatusOrder(result.status);
-        const existingStatusOrder = this._getStatusOrder(existing.status);
+    // Now, iterate through the grouped runs to determine the final state
+    for (const [baseTestId, runs] of allRunsMap.entries()) {
+      let finalResult: TestResult | undefined = undefined;
 
-        if (currentStatusOrder < existingStatusOrder) {
-          // Current result is "better" (e.g., passed over failed)
-          finalResultsMap.set(baseTestId, result);
-        } else if (
-          currentStatusOrder === existingStatusOrder &&
-          result.retries > existing.retries
-        ) {
-          // Same status, but current is a later retry, so prefer it
-          finalResultsMap.set(baseTestId, result);
+      // Sort runs to process them in chronological order
+      runs.sort((a, b) => a.runCounter - b.runCounter);
+
+      for (const currentRun of runs) {
+        if (!finalResult) {
+          finalResult = currentRun;
+        } else {
+          // Compare the current run to the best result found so far
+          const currentStatusOrder = this._getStatusOrder(currentRun.status);
+          const finalStatusOrder = this._getStatusOrder(finalResult.status);
+
+          if (currentStatusOrder < finalStatusOrder) {
+            // Current run is "better" (e.g., passed over failed)
+            finalResult = currentRun;
+          } else if (
+            currentStatusOrder === finalStatusOrder &&
+            currentRun.retries > finalResult.retries
+          ) {
+            // Same status, but prefer the latest attempt
+            finalResult = currentRun;
+          }
         }
+      }
+
+      if (finalResult) {
+        // Ensure the ID of the final result is the base test ID for de-duplication
+        finalResult.id = baseTestId;
+        finalResultsMap.set(baseTestId, finalResult);
       }
     }
     return Array.from(finalResultsMap.values());
@@ -597,7 +624,7 @@ export class PlaywrightPulseReporter implements Reporter {
       return;
     }
 
-    // `this.results` now contains all individual run attempts.
+    // Now, `this.results` contains all individual run attempts.
     // _getFinalizedResults will select the "best" run for each logical test.
     const finalResults = this._getFinalizedResults(this.results);
 

@@ -40,8 +40,14 @@ const crypto_1 = require("crypto");
 const ua_parser_js_1 = require("ua-parser-js");
 const os = __importStar(require("os"));
 const convertStatus = (status, testCase, retryCount = 0) => {
+    // If a test passes on a retry, it's considered flaky regardless of expected status.
+    // This is the most critical check for flaky tests.
+    if (status === "passed" && retryCount > 0) {
+        return "flaky";
+    }
+    // Handle expected statuses for the final result.
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
-        // If expected to fail but passed, it's flaky
+        // If expected to fail but passed, it's flaky.
         if (status === "passed")
             return "flaky";
         return "failed";
@@ -49,10 +55,7 @@ const convertStatus = (status, testCase, retryCount = 0) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "skipped") {
         return "skipped";
     }
-    // If a test passes on a retry, it's considered flaky
-    if (status === "passed" && retryCount > 0) {
-        return "flaky";
-    }
+    // Default Playwright status mapping
     switch (status) {
         case "passed":
             return "passed";
@@ -71,6 +74,7 @@ const INDIVIDUAL_REPORTS_SUBDIR = "pulse-results";
 class PlaywrightPulseReporter {
     constructor(options = {}) {
         var _a, _b, _c;
+        // This will now store all individual run attempts for all tests.
         this.results = [];
         this.baseOutputFile = "playwright-pulse-report.json";
         this.isSharded = false;
@@ -252,8 +256,8 @@ class PlaywrightPulseReporter {
                 ? JSON.stringify(this.config.metadata)
                 : undefined,
         };
-        // Modify test.id for retries
-        const testIdWithRunCounter = result.retry > 0 ? `${test.id}-${result.retry}` : test.id;
+        // Correctly handle the ID for each run. A unique ID per attempt is crucial.
+        const testIdWithRunCounter = `${test.id}-run-${result.retry}`;
         const pulseResult = {
             id: testIdWithRunCounter, // Use the modified ID
             runId: this.currentRunId, // Assign the overall run ID
@@ -264,7 +268,7 @@ class PlaywrightPulseReporter {
             startTime: startTime,
             endTime: endTime,
             browser: browserDetails,
-            retries: result.retry, // This remains the Playwright retry count (0 for first run, 1 for first retry, etc.)
+            retries: result.retry, // This is the Playwright retry count (0 for first run, 1 for first retry, etc.)
             runCounter: result.retry, // This is your 'runCounter'
             steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
             errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
@@ -317,31 +321,50 @@ class PlaywrightPulseReporter {
         }
         this.results.push(pulseResult);
     }
+    // New method to extract the base test ID, ignoring the run-counter suffix
+    _getBaseTestId(testResultId) {
+        const parts = testResultId.split("-run-");
+        return parts[0];
+    }
     _getFinalizedResults(allResults) {
         const finalResultsMap = new Map();
+        const allRunsMap = new Map();
+        // First, group all run attempts by their base test ID
         for (const result of allResults) {
-            // The key for de-duplication should now be the base test ID (without the run counter suffix)
-            // This ensures that all runs of a single logical test are considered together.
-            const baseTestId = result.id.split("-").slice(0, -1).join("-"); // Remove '-${runCounter}'
-            const existing = finalResultsMap.get(baseTestId);
-            // We want to keep the "most successful" run for the final report.
-            // Priority: passed > flaky > failed > skipped.
-            // If statuses are equal, prefer the one with higher retry count (latest attempt).
-            if (!existing) {
-                finalResultsMap.set(baseTestId, result);
+            const baseTestId = this._getBaseTestId(result.id);
+            if (!allRunsMap.has(baseTestId)) {
+                allRunsMap.set(baseTestId, []);
             }
-            else {
-                const currentStatusOrder = this._getStatusOrder(result.status);
-                const existingStatusOrder = this._getStatusOrder(existing.status);
-                if (currentStatusOrder < existingStatusOrder) {
-                    // Current result is "better" (e.g., passed over failed)
-                    finalResultsMap.set(baseTestId, result);
+            allRunsMap.get(baseTestId).push(result);
+        }
+        // Now, iterate through the grouped runs to determine the final state
+        for (const [baseTestId, runs] of allRunsMap.entries()) {
+            let finalResult = undefined;
+            // Sort runs to process them in chronological order
+            runs.sort((a, b) => a.runCounter - b.runCounter);
+            for (const currentRun of runs) {
+                if (!finalResult) {
+                    finalResult = currentRun;
                 }
-                else if (currentStatusOrder === existingStatusOrder &&
-                    result.retries > existing.retries) {
-                    // Same status, but current is a later retry, so prefer it
-                    finalResultsMap.set(baseTestId, result);
+                else {
+                    // Compare the current run to the best result found so far
+                    const currentStatusOrder = this._getStatusOrder(currentRun.status);
+                    const finalStatusOrder = this._getStatusOrder(finalResult.status);
+                    if (currentStatusOrder < finalStatusOrder) {
+                        // Current run is "better" (e.g., passed over failed)
+                        finalResult = currentRun;
+                    }
+                    else if (currentStatusOrder === finalStatusOrder &&
+                        currentRun.retries > finalResult.retries) {
+                        // Same status, but prefer the latest attempt
+                        finalResult = currentRun;
+                    }
                 }
+            }
+            if (finalResult) {
+                // Ensure the ID of the final result is the base test ID for de-duplication
+                finalResult.id = baseTestId;
+                finalResultsMap.set(baseTestId, finalResult);
             }
         }
         return Array.from(finalResultsMap.values());
@@ -466,7 +489,7 @@ class PlaywrightPulseReporter {
             await this._writeShardResults();
             return;
         }
-        // `this.results` now contains all individual run attempts.
+        // Now, `this.results` contains all individual run attempts.
         // _getFinalizedResults will select the "best" run for each logical test.
         const finalResults = this._getFinalizedResults(this.results);
         const runEndTime = Date.now();

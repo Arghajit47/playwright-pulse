@@ -20,6 +20,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private getBrowserDetails;
     private processStep;
     onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;
+    private _getBaseTestId;
     private _getFinalizedResults;
     private _getStatusOrder;
     onError(error: any): void;
