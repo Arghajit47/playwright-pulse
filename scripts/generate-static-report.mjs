@@ -1850,43 +1850,53 @@ function generateHTML(reportData, trendData = null) {
                         : ""
                     }<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                   : ""
-              }${
-                (() => {
-                  if (!step.attachments || step.attachments.length === 0) return "";
-                  return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
-                    .map((attachment) => {
-                      try {
-                        const attachmentPath = path.resolve(
-                          DEFAULT_OUTPUT_DIR,
-                          attachment.path
-                        );
-                        if (!fsExistsSync(attachmentPath)) {
-                          return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
-                            attachment.name
-                          )}</div>`;
-                        }
-                        const attachmentBase64 = readFileSync(attachmentPath).toString("base64");
-                        const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
-                        return `<div class="attachment-item generic-attachment">
-                                  <div class="attachment-icon">${getAttachmentIcon(attachment.contentType)}</div>
+              }${(() => {
+                if (!step.attachments || step.attachments.length === 0)
+                  return "";
+                return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
+                  .map((attachment) => {
+                    try {
+                      const attachmentPath = path.resolve(
+                        DEFAULT_OUTPUT_DIR,
+                        attachment.path
+                      );
+                      if (!fsExistsSync(attachmentPath)) {
+                        return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                          attachment.name
+                        )}</div>`;
+                      }
+                      const attachmentBase64 =
+                        readFileSync(attachmentPath).toString("base64");
+                      const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+                      return `<div class="attachment-item generic-attachment">
+                                  <div class="attachment-icon">${getAttachmentIcon(
+                                    attachment.contentType
+                                  )}</div>
                                   <div class="attachment-caption">
-                                    <span class="attachment-name" title="${sanitizeHTML(attachment.name)}">${sanitizeHTML(attachment.name)}</span>
-                                    <span class="attachment-type">${sanitizeHTML(attachment.contentType)}</span>
+                                    <span class="attachment-name" title="${sanitizeHTML(
+                                      attachment.name
+                                    )}">${sanitizeHTML(attachment.name)}</span>
+                                    <span class="attachment-type">${sanitizeHTML(
+                                      attachment.contentType
+                                    )}</span>
                                   </div>
                                   <div class="attachment-info">
                                     <div class="trace-actions">
                                       <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
-                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(attachment.name)}">Download</a>
+                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
+                        attachment.name
+                      )}">Download</a>
                                     </div>
                                   </div>
                                 </div>`;
-                      } catch (e) {
-                        return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(attachment.name)}</div>`;
-                      }
-                    })
-                    .join("")}</div></div>`;
-                })()
-              }${
+                    } catch (e) {
+                      return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
+                        attachment.name
+                      )}</div>`;
+                    }
+                  })
+                  .join("")}</div></div>`;
+              })()}${
                 hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
                       step.steps,
@@ -1903,7 +1913,9 @@ function generateHTML(reportData, trendData = null) {
           test.tags || []
         )
           .join(",")
-          .toLowerCase()}" data-test-id="${sanitizeHTML(String(test.id || testIndex))}">
+          .toLowerCase()}" data-test-id="${sanitizeHTML(
+          String(test.id || testIndex)
+        )}">
                     <div class="test-case-header" role="button" aria-expanded="false"><div class="test-case-summary"><span class="status-badge ${getStatusClass(
                       test.status
                     )}">${String(
@@ -1970,7 +1982,9 @@ function generateHTML(reportData, trendData = null) {
                         ${
                           test.stderr && test.stderr.length > 0
                             ? (() => {
-                                const logId = `stderr-log-${test.id || testIndex}`;
+                                const logId = `stderr-log-${
+                                  test.id || testIndex
+                                }`;
                                 return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre id="${logId}" class="console-log stderr-log">${test.stderr
                                   .map((line) => sanitizeHTML(line))
                                   .join("\\n")}</pre></div>`;
@@ -1984,7 +1998,7 @@ function generateHTML(reportData, trendData = null) {
                             test.screenshots.length === 0
                           )
                             return "";
-                          return `<div class="attachments-section"><h4>Screenshots</h4><div class="attachments-grid">${test.screenshots
+                          return `<div class="attachments-section"><h4>Screenshots (Click to load Images)</h4><div class="attachments-grid">${test.screenshots
                             .map((screenshotPath, index) => {
                               try {
                                 const imagePath = path.resolve(
@@ -2384,7 +2398,7 @@ aspect-ratio: 16 / 9;
 @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
 @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
 @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
-.trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
+.trace-actions a { text-decoration: none; font-weight: 500; font-size: 0.9em; }
 .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
 .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
 .attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
