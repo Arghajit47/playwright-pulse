@@ -12,6 +12,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private isSharded;
     private shardIndex;
     private resetOnEachRun;
+    private currentRunId;
     constructor(options?: PlaywrightPulseReporterOptions);
     printsToStdio(): boolean;
     onBegin(config: FullConfig, suite: Suite): void;
@@ -20,6 +21,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private processStep;
     onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;
     private _getFinalizedResults;
+    private _getStatusOrder;
     onError(error: any): void;
     private _getEnvDetails;
     private _writeShardResults;

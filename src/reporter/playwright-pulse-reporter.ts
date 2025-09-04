@@ -22,16 +22,28 @@ import { randomUUID } from "crypto";
 import { UAParser } from "ua-parser-js";
 import * as os from "os";
 
+// Extend the PulseTestStatus to include 'flaky'
+type ExtendedPulseTestStatus = PulseTestStatus | "flaky";
+
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
-  testCase?: TestCase
-): PulseTestStatus => {
+  testCase?: TestCase,
+  retryCount: number = 0
+): ExtendedPulseTestStatus => {
   if (testCase?.expectedStatus === "failed") {
+    // If expected to fail but passed, it's flaky
+    if (status === "passed") return "flaky";
     return "failed";
   }
   if (testCase?.expectedStatus === "skipped") {
     return "skipped";
   }
+
+  // If a test passes on a retry, it's considered flaky
+  if (status === "passed" && retryCount > 0) {
+    return "flaky";
+  }
+
   switch (status) {
     case "passed":
       return "passed";
@@ -61,6 +73,7 @@ export class PlaywrightPulseReporter implements Reporter {
   private isSharded: boolean = false;
   private shardIndex: number | undefined = undefined;
   private resetOnEachRun: boolean;
+  private currentRunId: string = ""; // Added to store the overall run ID
 
   constructor(options: PlaywrightPulseReporterOptions = {}) {
     this.options = options;
@@ -78,6 +91,9 @@ export class PlaywrightPulseReporter implements Reporter {
     this.config = config;
     this.suite = suite;
     this.runStartTime = Date.now();
+    // Generate the overall runId once at the beginning
+    this.currentRunId = `run-${this.runStartTime}-${randomUUID()}`;
+
     const configDir = this.config.rootDir;
     const configFileDir = this.config.configFile
       ? path.dirname(this.config.configFile)
@@ -119,7 +135,7 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   onTestBegin(test: TestCase): void {
-    console.log(`Starting test: ${test.title}`);
+    // console.log(`Starting test: ${test.title}`); // Removed for brevity in final output
   }
 
   private getBrowserDetails(test: TestCase): string {
@@ -178,15 +194,21 @@ export class PlaywrightPulseReporter implements Reporter {
     step: PwStep,
     testId: string,
     browserDetails: string,
-    testCase?: TestCase
+    testCase?: TestCase,
+    retryCount: number = 0 // Pass retryCount to convertStatus for steps
   ): Promise<PulseTestStep> {
-    let stepStatus: PulseTestStatus = "passed";
+    let stepStatus: ExtendedPulseTestStatus = "passed";
     let errorMessage = step.error?.message || undefined;
 
     if (step.error?.message?.startsWith("Test is skipped:")) {
       stepStatus = "skipped";
     } else {
-      stepStatus = convertStatus(step.error ? "failed" : "passed", testCase);
+      // Use the extended convertStatus
+      stepStatus = convertStatus(
+        step.error ? "failed" : "passed",
+        testCase,
+        retryCount
+      );
     }
 
     const duration = step.duration;
@@ -225,7 +247,8 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
     const browserDetails = this.getBrowserDetails(test);
-    const testStatus = convertStatus(result.status, test);
+    // Use the extended convertStatus, passing result.retry
+    const testStatus = convertStatus(result.status, test, result.retry);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
 
@@ -238,7 +261,8 @@ export class PlaywrightPulseReporter implements Reporter {
           step,
           test.id,
           browserDetails,
-          test
+          test,
+          result.retry // Pass retryCount to processStep
         );
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {
@@ -286,9 +310,13 @@ export class PlaywrightPulseReporter implements Reporter {
         : undefined,
     };
 
+    // Modify test.id for retries
+    const testIdWithRunCounter =
+      result.retry > 0 ? `${test.id}-${result.retry}` : test.id;
+
     const pulseResult: TestResult = {
-      id: test.id,
-      runId: "TBD",
+      id: testIdWithRunCounter, // Use the modified ID
+      runId: this.currentRunId, // Assign the overall run ID
       name: test.titlePath().join(" > "),
       suiteName:
         project?.name || this.config.projects[0]?.name || "Default Suite",
@@ -297,7 +325,8 @@ export class PlaywrightPulseReporter implements Reporter {
       startTime: startTime,
       endTime: endTime,
       browser: browserDetails,
-      retries: result.retry,
+      retries: result.retry, // This remains the Playwright retry count (0 for first run, 1 for first retry, etc.)
+      runCounter: result.retry, // This is your 'runCounter'
       steps: result.steps?.length ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
       stackTrace: result.error?.stack,
@@ -319,7 +348,11 @@ export class PlaywrightPulseReporter implements Reporter {
       if (!attachment.path) continue;
 
       try {
-        const testSubfolder = test.id.replace(/[^a-zA-Z0-9_-]/g, "_");
+        // Use the new testIdWithRunCounter for the subfolder
+        const testSubfolder = testIdWithRunCounter.replace(
+          /[^a-zA-Z0-9_-]/g,
+          "_"
+        );
         const safeAttachmentName = path
           .basename(attachment.path)
           .replace(/[^a-zA-Z0-9_.-]/g, "_");
@@ -359,13 +392,48 @@ export class PlaywrightPulseReporter implements Reporter {
   private _getFinalizedResults(allResults: TestResult[]): TestResult[] {
     const finalResultsMap = new Map<string, TestResult>();
     for (const result of allResults) {
-      const existing = finalResultsMap.get(result.id);
-      // Keep the result with the highest retry attempt for each test ID
-      if (!existing || result.retries >= existing.retries) {
-        finalResultsMap.set(result.id, result);
+      // The key for de-duplication should now be the base test ID (without the run counter suffix)
+      // This ensures that all runs of a single logical test are considered together.
+      const baseTestId = result.id.split("-").slice(0, -1).join("-"); // Remove '-${runCounter}'
+      const existing = finalResultsMap.get(baseTestId);
+
+      // We want to keep the "most successful" run for the final report.
+      // Priority: passed > flaky > failed > skipped.
+      // If statuses are equal, prefer the one with higher retry count (latest attempt).
+      if (!existing) {
+        finalResultsMap.set(baseTestId, result);
+      } else {
+        const currentStatusOrder = this._getStatusOrder(result.status);
+        const existingStatusOrder = this._getStatusOrder(existing.status);
+
+        if (currentStatusOrder < existingStatusOrder) {
+          // Current result is "better" (e.g., passed over failed)
+          finalResultsMap.set(baseTestId, result);
+        } else if (
+          currentStatusOrder === existingStatusOrder &&
+          result.retries > existing.retries
+        ) {
+          // Same status, but current is a later retry, so prefer it
+          finalResultsMap.set(baseTestId, result);
+        }
       }
     }
     return Array.from(finalResultsMap.values());
+  }
+
+  private _getStatusOrder(status: ExtendedPulseTestStatus): number {
+    switch (status) {
+      case "passed":
+        return 1;
+      case "flaky":
+        return 2;
+      case "failed":
+        return 3;
+      case "skipped":
+        return 4;
+      default:
+        return 99; // Unknown status
+    }
   }
 
   onError(error: any): void {
@@ -423,7 +491,7 @@ export class PlaywrightPulseReporter implements Reporter {
   private async _mergeShardResults(
     finalRunData: TestRun
   ): Promise<PlaywrightPulseReport> {
-    let allShardProcessedResults: TestResult[] = [];
+    let allShardRawResults: TestResult[] = []; // Store raw results before final de-duplication
     const totalShards = this.config.shard ? this.config.shard.total : 1;
 
     for (let i = 0; i < totalShards; i++) {
@@ -434,8 +502,7 @@ export class PlaywrightPulseReporter implements Reporter {
       try {
         const content = await fs.readFile(tempFilePath, "utf-8");
         const shardResults = JSON.parse(content) as TestResult[];
-        allShardProcessedResults =
-          allShardProcessedResults.concat(shardResults);
+        allShardRawResults = allShardRawResults.concat(shardResults);
       } catch (error: any) {
         if (error?.code === "ENOENT") {
           console.warn(
@@ -450,9 +517,8 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     }
 
-    const finalResultsList = this._getFinalizedResults(
-      allShardProcessedResults
-    );
+    // Apply _getFinalizedResults after all raw shard results are collected
+    const finalResultsList = this._getFinalizedResults(allShardRawResults);
     finalResultsList.forEach((r) => (r.runId = finalRunData.id));
 
     finalRunData.passed = finalResultsList.filter(
@@ -463,6 +529,10 @@ export class PlaywrightPulseReporter implements Reporter {
     ).length;
     finalRunData.skipped = finalResultsList.filter(
       (r) => r.status === "skipped"
+    ).length;
+    // Add flaky count
+    finalRunData.flaky = finalResultsList.filter(
+      (r) => r.status === "flaky"
     ).length;
     finalRunData.totalTests = finalResultsList.length;
 
@@ -527,38 +597,40 @@ export class PlaywrightPulseReporter implements Reporter {
       return;
     }
 
-    // De-duplicate and handle retries here, in a safe, single-threaded context.
+    // `this.results` now contains all individual run attempts.
+    // _getFinalizedResults will select the "best" run for each logical test.
     const finalResults = this._getFinalizedResults(this.results);
 
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
-    const runId = `run-${this.runStartTime}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`;
+    // Use the stored overall runId
+    const runId = this.currentRunId;
     const environmentDetails = this._getEnvDetails();
 
     const runData: TestRun = {
       id: runId,
       timestamp: new Date(this.runStartTime),
-      // Use the length of the de-duplicated array for all counts
       totalTests: finalResults.length,
       passed: finalResults.filter((r) => r.status === "passed").length,
       failed: finalResults.filter((r) => r.status === "failed").length,
       skipped: finalResults.filter((r) => r.status === "skipped").length,
+      flaky: finalResults.filter((r) => r.status === "flaky").length, // Add flaky count
       duration,
       environment: environmentDetails,
     };
 
+    // Ensure all final results have the correct overall runId
     finalResults.forEach((r) => (r.runId = runId));
 
     let finalReport: PlaywrightPulseReport | undefined = undefined;
 
     if (this.isSharded) {
-      // The _mergeShardResults method will handle its own de-duplication
+      // _mergeShardResults will now perform the final de-duplication across shards
       finalReport = await this._mergeShardResults(runData);
     } else {
       finalReport = {
         run: runData,
-        // Use the de-duplicated results
-        results: finalResults,
+        results: finalResults, // Use the de-duplicated results for a non-sharded run
         metadata: { generatedAt: new Date().toISOString() },
       };
     }
@@ -595,7 +667,6 @@ export class PlaywrightPulseReporter implements Reporter {
         );
       }
     } else {
-      // Logic for appending/merging reports
       const pulseResultsDir = path.join(
         this.outputDir,
         INDIVIDUAL_REPORTS_SUBDIR
@@ -672,7 +743,10 @@ export class PlaywrightPulseReporter implements Reporter {
     const allResultsFromAllFiles: TestResult[] = [];
     let latestTimestamp = new Date(0);
     let lastRunEnvironment: any = undefined;
-    let totalDuration = 0;
+    // We can't simply sum durations across merged files, as the tests might overlap.
+    // The final duration will be derived from the range of start/end times in the final results.
+    let earliestStartTime = Date.now();
+    let latestEndTime = 0;
 
     for (const file of reportFiles) {
       const filePath = path.join(pulseResultsDir, file);
@@ -702,27 +776,31 @@ export class PlaywrightPulseReporter implements Reporter {
       allResultsFromAllFiles
     );
 
-    // Sum the duration from the final, de-duplicated list of tests
-    totalDuration = finalMergedResults.reduce(
-      (acc, r) => acc + (r.duration || 0),
-      0
-    );
+    // Calculate overall duration from the earliest start and latest end of the final merged results
+    for (const res of finalMergedResults) {
+      if (res.startTime.getTime() < earliestStartTime)
+        earliestStartTime = res.startTime.getTime();
+      if (res.endTime.getTime() > latestEndTime)
+        latestEndTime = res.endTime.getTime();
+    }
+    const totalDuration =
+      latestEndTime > earliestStartTime ? latestEndTime - earliestStartTime : 0;
 
     const combinedRun: TestRun = {
       id: `merged-${Date.now()}`,
       timestamp: latestTimestamp,
       environment: lastRunEnvironment,
-      // Recalculate counts based on the truly final, de-duplicated list
       totalTests: finalMergedResults.length,
       passed: finalMergedResults.filter((r) => r.status === "passed").length,
       failed: finalMergedResults.filter((r) => r.status === "failed").length,
       skipped: finalMergedResults.filter((r) => r.status === "skipped").length,
+      flaky: finalMergedResults.filter((r) => r.status === "flaky").length, // Add flaky count
       duration: totalDuration,
     };
 
     const finalReport: PlaywrightPulseReport = {
       run: combinedRun,
-      results: finalMergedResults, // Use the de-duplicated list
+      results: finalMergedResults,
       metadata: {
         generatedAt: new Date().toISOString(),
       },

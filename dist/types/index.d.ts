@@ -1,9 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 export type TestStatus = "passed" | "failed" | "skipped" | "expected-failure" | "unexpected-success" | "explicitly-skipped";
+export type PulseTestStatus = TestStatus | "flaky";
 export interface TestStep {
     id: string;
     title: string;
-    status: TestStatus;
+    status: PulseTestStatus;
     duration: number;
     startTime: Date;
     endTime: Date;
@@ -18,11 +19,12 @@ export interface TestStep {
 export interface TestResult {
     id: string;
     name: string;
-    status: TestStatus;
+    status: PulseTestStatus;
     duration: number;
     startTime: Date;
     endTime: Date;
     retries: number;
+    runCounter: number;
     steps: TestStep[];
     errorMessage?: string;
     stackTrace?: string;
@@ -54,6 +56,7 @@ export interface TestRun {
     passed: number;
     failed: number;
     skipped: number;
+    flaky: number;
     duration: number;
     environment?: EnvDetails;
 }
