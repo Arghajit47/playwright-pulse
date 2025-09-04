@@ -343,7 +343,7 @@ class PlaywrightPulseReporter {
         }
         const finalResults = [];
         for (const [baseId, runs] of groupedResults.entries()) {
-            // Sort runs to find the best status and overall duration
+            // Sort runs to find the best status
             runs.sort((a, b) => this._getStatusOrder(a.status) - this._getStatusOrder(b.status));
             const bestRun = runs[0];
             // Calculate total duration from the earliest start to the latest end time of all runs

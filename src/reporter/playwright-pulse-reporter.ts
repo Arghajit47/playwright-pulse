@@ -472,7 +472,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const finalResults: ConsolidatedTestResult[] = [];
     for (const [baseId, runs] of groupedResults.entries()) {
-      // Sort runs to find the best status and overall duration
+      // Sort runs to find the best status
       runs.sort(
         (a, b) =>
           this._getStatusOrder(a.status) - this._getStatusOrder(b.status)
