@@ -441,10 +441,10 @@ class PlaywrightPulseReporter {
             }
             return value;
         };
-        const properlyTypedResults = JSON.parse(JSON.stringify(finalResultsList), reviveDates);
+        const properlyTypedResults = JSON.parse(JSON.stringify(allShardRawResults), reviveDates);
         return {
             run: finalRunData,
-            results: properlyTypedResults,
+            results: properlyTypedResults, // Fixed: Include ALL retry attempts
             metadata: { generatedAt: new Date().toISOString() },
         };
     }
@@ -606,7 +606,7 @@ class PlaywrightPulseReporter {
             }
         }
         const finalMergedResults = this._getFinalizedResults(allResultsFromAllFiles);
-        for (const res of finalMergedResults) {
+        for (const res of allResultsFromAllFiles) {
             if (res.startTime.getTime() < earliestStartTime)
                 earliestStartTime = res.startTime.getTime();
             if (res.endTime.getTime() > latestEndTime)
@@ -626,7 +626,7 @@ class PlaywrightPulseReporter {
         };
         const finalReport = {
             run: combinedRun,
-            results: finalMergedResults,
+            results: allResultsFromAllFiles, // Fixed: Include ALL retry attempts
             metadata: {
                 generatedAt: new Date().toISOString(),
             },
@@ -638,7 +638,7 @@ class PlaywrightPulseReporter {
                 return value;
             }, 2));
             if (this.printsToStdio()) {
-                console.log(`PlaywrightPulseReporter: ✅ Merged report with ${finalMergedResults.length} total results saved to ${finalOutputPath}`);
+                console.log(`PlaywrightPulseReporter: ✅ Merged report with ${allResultsFromAllFiles.length} total retry attempts (${finalMergedResults.length} unique tests) saved to ${finalOutputPath}`);
             }
         }
         catch (err) {

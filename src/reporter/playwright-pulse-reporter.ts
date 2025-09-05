@@ -614,13 +614,13 @@ export class PlaywrightPulseReporter implements Reporter {
       return value;
     };
     const properlyTypedResults = JSON.parse(
-      JSON.stringify(finalResultsList),
+      JSON.stringify(allShardRawResults),
       reviveDates
     );
 
     return {
       run: finalRunData,
-      results: properlyTypedResults,
+      results: properlyTypedResults, // Fixed: Include ALL retry attempts
       metadata: { generatedAt: new Date().toISOString() },
     };
   }
@@ -843,7 +843,7 @@ export class PlaywrightPulseReporter implements Reporter {
       allResultsFromAllFiles
     );
 
-    for (const res of finalMergedResults) {
+    for (const res of allResultsFromAllFiles) {
       if (res.startTime.getTime() < earliestStartTime)
         earliestStartTime = res.startTime.getTime();
       if (res.endTime.getTime() > latestEndTime)
@@ -866,7 +866,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const finalReport: PlaywrightPulseReport = {
       run: combinedRun,
-      results: finalMergedResults as any,
+      results: allResultsFromAllFiles as any, // Fixed: Include ALL retry attempts
       metadata: {
         generatedAt: new Date().toISOString(),
       },
@@ -886,7 +886,7 @@ export class PlaywrightPulseReporter implements Reporter {
       );
       if (this.printsToStdio()) {
         console.log(
-          `PlaywrightPulseReporter: ✅ Merged report with ${finalMergedResults.length} total results saved to ${finalOutputPath}`
+          `PlaywrightPulseReporter: ✅ Merged report with ${allResultsFromAllFiles.length} total retry attempts (${finalMergedResults.length} unique tests) saved to ${finalOutputPath}`
         );
       }
     } catch (err: any) {
