@@ -33,7 +33,6 @@ export type TestStatus =
     startTime: Date;
     endTime: Date;
     retries: number;
-    runCounter: number; // This is your 'runCounter'
     steps: TestStep[];
     errorMessage?: string;
     stackTrace?: string;

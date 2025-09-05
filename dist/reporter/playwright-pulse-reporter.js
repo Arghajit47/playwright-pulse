@@ -244,11 +244,10 @@ class PlaywrightPulseReporter {
                 ? JSON.stringify(this.config.metadata)
                 : undefined,
         };
-        // Correctly handle the ID for each run attempt.
-        const testIdWithRunCounter = `${test.id}-run-${result.retry}`;
+        const testIdWithRetries = `${test.id}-${result.retry}`;
         const pulseResult = {
-            id: testIdWithRunCounter,
-            runId: this.currentRunId,
+            id: testIdWithRetries, // Modified: Use retry number instead of "run-X"
+            runId: this.currentRunId, // Keep same runId for all retries of the same test
             name: test.titlePath().join(" > "),
             suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
             status: testStatus,
@@ -256,8 +255,7 @@ class PlaywrightPulseReporter {
             startTime: startTime,
             endTime: endTime,
             browser: browserDetails,
-            retries: result.retry,
-            runCounter: result.retry,
+            retries: result.retry, // This is the retry count (0 for initial run, 1+ for retries)
             steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
             errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
             stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
@@ -276,7 +274,7 @@ class PlaywrightPulseReporter {
             if (!attachment.path)
                 continue;
             try {
-                const testSubfolder = testIdWithRunCounter.replace(/[^a-zA-Z0-9_-]/g, "_");
+                const testSubfolder = testIdWithRetries.replace(/[^a-zA-Z0-9_-]/g, "_");
                 const safeAttachmentName = path
                     .basename(attachment.path)
                     .replace(/[^a-zA-Z0-9_.-]/g, "_");
@@ -308,10 +306,12 @@ class PlaywrightPulseReporter {
         }
         this.results.push(pulseResult);
     }
-    // New method to extract the base test ID, ignoring the run-counter suffix
     _getBaseTestId(testResultId) {
-        const parts = testResultId.split("-run-");
-        return parts[0];
+        const parts = testResultId.split("-");
+        if (parts.length > 1 && !isNaN(parseInt(parts[parts.length - 1]))) {
+            return parts.slice(0, -1).join("-");
+        }
+        return testResultId;
     }
     _getStatusOrder(status) {
         switch (status) {
@@ -328,7 +328,9 @@ class PlaywrightPulseReporter {
         }
     }
     /**
-     * Refactored to group all run attempts for a single logical test case.
+     * Modified: Groups all run attempts for a single logical test case.
+     * This ensures that tests with multiple retries are counted as single test case
+     * while preserving all retry data in the JSON report.
      * @param allAttempts An array of all individual test run attempts.
      * @returns An array of ConsolidatedTestResult objects, where each object represents one logical test and contains an array of all its runs.
      */
@@ -343,9 +345,17 @@ class PlaywrightPulseReporter {
         }
         const finalResults = [];
         for (const [baseId, runs] of groupedResults.entries()) {
-            // Sort runs to find the best status
+            // Sort runs to find the best status (passed > flaky > failed > skipped)
             runs.sort((a, b) => this._getStatusOrder(a.status) - this._getStatusOrder(b.status));
             const bestRun = runs[0];
+            let overallStatus = bestRun.status;
+            if (runs.length > 1) {
+                const hasPassedRun = runs.some((run) => run.status === "passed");
+                const hasFailedRun = runs.some((run) => run.status === "failed");
+                if (hasPassedRun && hasFailedRun) {
+                    overallStatus = "flaky";
+                }
+            }
             // Calculate total duration from the earliest start to the latest end time of all runs
             const startTimes = runs.map((run) => run.startTime.getTime());
             const endTimes = runs.map((run) => run.endTime.getTime());
@@ -354,13 +364,13 @@ class PlaywrightPulseReporter {
                 id: baseId,
                 name: bestRun.name,
                 suiteName: bestRun.suiteName,
-                status: bestRun.status,
+                status: overallStatus, // Use the determined overall status
                 duration: overallDuration,
                 startTime: new Date(Math.min(...startTimes)),
                 endTime: new Date(Math.max(...endTimes)),
                 browser: bestRun.browser,
                 tags: bestRun.tags,
-                runs: runs.sort((a, b) => a.runCounter - b.runCounter), // Sort runs chronologically for the report
+                runs: runs.sort((a, b) => a.retries - b.retries), // Sort runs chronologically for the report
             });
         }
         return finalResults;
@@ -469,9 +479,7 @@ class PlaywrightPulseReporter {
             return;
         }
         let finalReport;
-        // `this.results` contains all individual run attempts. We will keep them all.
         const allAttempts = this.results;
-        // Use your existing logic ONLY to get the final statuses for the summary counts.
         const summaryResults = this._getFinalizedResults(this.results);
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
@@ -480,7 +488,7 @@ class PlaywrightPulseReporter {
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
-            totalTests: summaryResults.length,
+            totalTests: summaryResults.length, // Count each logical test once
             passed: summaryResults.filter((r) => r.status === "passed").length,
             failed: summaryResults.filter((r) => r.status === "failed").length,
             skipped: summaryResults.filter((r) => r.status === "skipped").length,
@@ -488,10 +496,9 @@ class PlaywrightPulseReporter {
             duration,
             environment: environmentDetails,
         };
-        // In the final report object, use the complete list of attempts.
         finalReport = {
             run: runData,
-            results: allAttempts, // <<< USE THE FULL LIST HERE
+            results: allAttempts, // Include all retry attempts in the JSON
             metadata: { generatedAt: new Date().toISOString() },
         };
         if (this.isSharded) {
@@ -500,7 +507,7 @@ class PlaywrightPulseReporter {
         else {
             finalReport = {
                 run: runData,
-                results: summaryResults, // Cast to any to bypass the type mismatch
+                results: allAttempts, // Modified: Use all attempts instead of consolidated
                 metadata: { generatedAt: new Date().toISOString() },
             };
         }
@@ -581,8 +588,6 @@ class PlaywrightPulseReporter {
             try {
                 const content = await fs.readFile(filePath, "utf-8");
                 const json = JSON.parse(content);
-                // This is the tricky part. We need to handle both old and new report formats.
-                // Assuming the `results` array might contain the old, single-run objects or the new, consolidated ones.
                 if (json.results) {
                     json.results.forEach((testResult) => {
                         // Check if the TestResult has a 'runs' array (new format)
@@ -591,7 +596,7 @@ class PlaywrightPulseReporter {
                         }
                         else {
                             // This is the old format (single run). We'll treat it as a single attempt.
-                            allResultsFromAllFiles.push(testResult); // Cast to any to get properties
+                            allResultsFromAllFiles.push(testResult);
                         }
                     });
                 }
@@ -612,7 +617,7 @@ class PlaywrightPulseReporter {
             id: `merged-${Date.now()}`,
             timestamp: latestTimestamp,
             environment: lastRunEnvironment,
-            totalTests: finalMergedResults.length,
+            totalTests: finalMergedResults.length, // Count each logical test once
             passed: finalMergedResults.filter((r) => r.status === "passed").length,
             failed: finalMergedResults.filter((r) => r.status === "failed").length,
             skipped: finalMergedResults.filter((r) => r.status === "skipped").length,

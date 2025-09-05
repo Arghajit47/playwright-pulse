@@ -24,7 +24,6 @@ export interface TestResult {
     startTime: Date;
     endTime: Date;
     retries: number;
-    runCounter: number;
     steps: TestStep[];
     errorMessage?: string;
     stackTrace?: string;
