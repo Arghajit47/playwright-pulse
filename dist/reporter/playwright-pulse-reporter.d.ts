@@ -23,13 +23,16 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private _getBaseTestId;
     private _getStatusOrder;
     /**
-     * Fixed: Groups all run attempts for a single logical test case and determines flaky status.
-     * This ensures that tests with multiple retries are counted as single test case
-     * while preserving all retry data in the JSON report.
+     * Groups all run attempts for a single logical test case and creates consolidated test results.
+     * This matches Playwright's default structure where retry attempts are grouped under one test entry.
      * @param allAttempts An array of all individual test run attempts.
-     * @returns Summary statistics for the test run.
+     * @returns An array of ConsolidatedTestResult objects, where each object represents one logical test with all its retry attempts.
      */
     private _getFinalizedResults;
+    /**
+     * Helper method to get summary statistics from consolidated results
+     */
+    private _getSummaryStats;
     onError(error: any): void;
     private _getEnvDetails;
     private _writeShardResults;
