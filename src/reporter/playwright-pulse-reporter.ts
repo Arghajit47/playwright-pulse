@@ -389,7 +389,10 @@ export class PlaywrightPulseReporter implements Reporter {
       if (!attachment.path) continue;
 
       try {
-        const testSubfolder = testIdWithRetries.replace(/[^a-zA-Z0-9_-]/g, "_");
+        const testSubfolder = testIdWithRetries.replace(
+          /[^a-zA-Z0-9_-]/g,
+          "_"
+        );
         const safeAttachmentName = path
           .basename(attachment.path)
           .replace(/[^a-zA-Z0-9_.-]/g, "_");
@@ -450,7 +453,7 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   /**
-   * Modified: Groups all run attempts for a single logical test case.
+   * Modified: Groups all run attempts for a single logical test case and updates flaky status.
    * This ensures that tests with multiple retries are counted as single test case
    * while preserving all retry data in the JSON report.
    * @param allAttempts An array of all individual test run attempts.
@@ -470,21 +473,32 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const finalResults: ConsolidatedTestResult[] = [];
     for (const [baseId, runs] of groupedResults.entries()) {
-      // Sort runs to find the best status (passed > flaky > failed > skipped)
+      let overallStatus: PulseTestStatus = "passed";
+      if (runs.length > 1) {
+        const hasPassedRun = runs.some(run => run.status === "passed");
+        const hasFailedRun = runs.some(run => run.status === "failed");
+        if (hasPassedRun && hasFailedRun) {
+          overallStatus = "flaky";
+          runs.forEach(run => {
+            if (run.status === "passed" || run.status === "failed") {
+              run.status = "flaky";
+            }
+          });
+        } else if (hasFailedRun) {
+          overallStatus = "failed";
+        } else if (runs.some(run => run.status === "skipped")) {
+          overallStatus = "skipped";
+        }
+      } else {
+        overallStatus = runs[0].status;
+      }
+
+      // Sort runs to find the best representative run for metadata
       runs.sort(
         (a, b) =>
           this._getStatusOrder(a.status) - this._getStatusOrder(b.status)
       );
       const bestRun = runs[0];
-
-      let overallStatus = bestRun.status;
-      if (runs.length > 1) {
-        const hasPassedRun = runs.some((run) => run.status === "passed");
-        const hasFailedRun = runs.some((run) => run.status === "failed");
-        if (hasPassedRun && hasFailedRun) {
-          overallStatus = "flaky";
-        }
-      }
 
       // Calculate total duration from the earliest start to the latest end time of all runs
       const startTimes = runs.map((run) => run.startTime.getTime());

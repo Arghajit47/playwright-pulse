@@ -23,7 +23,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private _getBaseTestId;
     private _getStatusOrder;
     /**
-     * Modified: Groups all run attempts for a single logical test case.
+     * Modified: Groups all run attempts for a single logical test case and updates flaky status.
      * This ensures that tests with multiple retries are counted as single test case
      * while preserving all retry data in the JSON report.
      * @param allAttempts An array of all individual test run attempts.
