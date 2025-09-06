@@ -28,7 +28,7 @@ import * as os from "os";
 
 // This is the new type for a single test run attempt, matching your `onTestEnd` object.
 interface TestRunAttempt {
-  id: string; // Will include retry counter (e.g., "testId-0", "testId-1")
+  id: string; // Use consistent test ID (no retry suffix modification)
   runId: string; // Identifier for the test run this belongs to
   name: string;
   suiteName: string | undefined; // This needs to be optional based on your error
@@ -77,13 +77,8 @@ interface ConsolidatedTestResult {
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
-  testCase?: TestCase,
-  retryCount: number = 0
+  testCase?: TestCase
 ): PulseTestStatus => {
-  if (status === "passed" && retryCount > 0) {
-    return "flaky";
-  }
-
   if (testCase?.expectedStatus === "failed") {
     if (status === "passed") return "flaky";
     return "failed";
@@ -240,8 +235,7 @@ export class PlaywrightPulseReporter implements Reporter {
     step: PwStep,
     testId: string,
     browserDetails: string,
-    testCase?: TestCase,
-    retryCount: number = 0
+    testCase?: TestCase
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
     let errorMessage = step.error?.message || undefined;
@@ -249,11 +243,7 @@ export class PlaywrightPulseReporter implements Reporter {
     if (step.error?.message?.startsWith("Test is skipped:")) {
       stepStatus = "skipped";
     } else {
-      stepStatus = convertStatus(
-        step.error ? "failed" : "passed",
-        testCase,
-        retryCount
-      );
+      stepStatus = convertStatus(step.error ? "failed" : "passed", testCase);
     }
 
     const duration = step.duration;
@@ -292,7 +282,7 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
     const browserDetails = this.getBrowserDetails(test);
-    const testStatus = convertStatus(result.status, test, result.retry);
+    const testStatus = convertStatus(result.status, test);
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
 
@@ -305,8 +295,7 @@ export class PlaywrightPulseReporter implements Reporter {
           step,
           test.id,
           browserDetails,
-          test,
-          result.retry
+          test
         );
         processed.push(processedStep);
         if (step.steps && step.steps.length > 0) {
@@ -354,10 +343,8 @@ export class PlaywrightPulseReporter implements Reporter {
         : undefined,
     };
 
-    const testIdWithRetries = `${test.id}-${result.retry}`;
-
     const pulseResult: TestRunAttempt = {
-      id: testIdWithRetries, // Modified: Use retry number instead of "run-X"
+      id: test.id, // Fixed: Use consistent test ID across all retries
       runId: this.currentRunId, // Keep same runId for all retries of the same test
       name: test.titlePath().join(" > "),
       suiteName:
@@ -389,7 +376,7 @@ export class PlaywrightPulseReporter implements Reporter {
       if (!attachment.path) continue;
 
       try {
-        const testSubfolder = testIdWithRetries.replace(
+        const testSubfolder = `${test.id}-${result.retry}`.replace(
           /[^a-zA-Z0-9_-]/g,
           "_"
         );
@@ -430,10 +417,6 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   private _getBaseTestId(testResultId: string): string {
-    const parts = testResultId.split("-");
-    if (parts.length > 1 && !isNaN(parseInt(parts[parts.length - 1]))) {
-      return parts.slice(0, -1).join("-");
-    }
     return testResultId;
   }
 
@@ -453,15 +436,19 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   /**
-   * Modified: Groups all run attempts for a single logical test case and updates flaky status.
+   * Fixed: Groups all run attempts for a single logical test case and determines flaky status.
    * This ensures that tests with multiple retries are counted as single test case
    * while preserving all retry data in the JSON report.
    * @param allAttempts An array of all individual test run attempts.
-   * @returns An array of ConsolidatedTestResult objects, where each object represents one logical test and contains an array of all its runs.
+   * @returns Summary statistics for the test run.
    */
-  private _getFinalizedResults(
-    allAttempts: TestRunAttempt[]
-  ): ConsolidatedTestResult[] {
+  private _getFinalizedResults(allAttempts: TestRunAttempt[]): {
+    passed: number;
+    failed: number;
+    skipped: number;
+    flaky: number;
+    totalTests: number;
+  } {
     const groupedResults = new Map<string, TestRunAttempt[]>();
     for (const attempt of allAttempts) {
       const baseTestId = this._getBaseTestId(attempt.id);
@@ -471,55 +458,58 @@ export class PlaywrightPulseReporter implements Reporter {
       groupedResults.get(baseTestId)!.push(attempt);
     }
 
-    const finalResults: ConsolidatedTestResult[] = [];
+    let passed = 0;
+    let failed = 0;
+    let skipped = 0;
+    let flaky = 0;
+
     for (const [baseId, runs] of groupedResults.entries()) {
       let overallStatus: PulseTestStatus = "passed";
+
       if (runs.length > 1) {
-        const hasPassedRun = runs.some(run => run.status === "passed");
-        const hasFailedRun = runs.some(run => run.status === "failed");
+        const hasPassedRun = runs.some((run) => run.status === "passed");
+        const hasFailedRun = runs.some((run) => run.status === "failed");
+
         if (hasPassedRun && hasFailedRun) {
           overallStatus = "flaky";
-          runs.forEach(run => {
+          runs.forEach((run) => {
             if (run.status === "passed" || run.status === "failed") {
               run.status = "flaky";
             }
           });
         } else if (hasFailedRun) {
           overallStatus = "failed";
-        } else if (runs.some(run => run.status === "skipped")) {
+        } else if (runs.some((run) => run.status === "skipped")) {
           overallStatus = "skipped";
         }
       } else {
         overallStatus = runs[0].status;
       }
 
-      // Sort runs to find the best representative run for metadata
-      runs.sort(
-        (a, b) =>
-          this._getStatusOrder(a.status) - this._getStatusOrder(b.status)
-      );
-      const bestRun = runs[0];
-
-      // Calculate total duration from the earliest start to the latest end time of all runs
-      const startTimes = runs.map((run) => run.startTime.getTime());
-      const endTimes = runs.map((run) => run.endTime.getTime());
-      const overallDuration = Math.max(...endTimes) - Math.min(...startTimes);
-
-      finalResults.push({
-        id: baseId,
-        name: bestRun.name,
-        suiteName: bestRun.suiteName,
-        status: overallStatus, // Use the determined overall status
-        duration: overallDuration,
-        startTime: new Date(Math.min(...startTimes)),
-        endTime: new Date(Math.max(...endTimes)),
-        browser: bestRun.browser,
-        tags: bestRun.tags,
-        runs: runs.sort((a, b) => a.retries - b.retries), // Sort runs chronologically for the report
-      });
+      // Count each logical test once
+      switch (overallStatus) {
+        case "passed":
+          passed++;
+          break;
+        case "failed":
+          failed++;
+          break;
+        case "skipped":
+          skipped++;
+          break;
+        case "flaky":
+          flaky++;
+          break;
+      }
     }
 
-    return finalResults;
+    return {
+      passed,
+      failed,
+      skipped,
+      flaky,
+      totalTests: groupedResults.size,
+    };
   }
 
   onError(error: any): void {
@@ -603,21 +593,13 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     }
 
-    const finalResultsList = this._getFinalizedResults(allShardRawResults);
+    const summaryStats = this._getFinalizedResults(allShardRawResults);
 
-    finalRunData.passed = finalResultsList.filter(
-      (r) => r.status === "passed"
-    ).length;
-    finalRunData.failed = finalResultsList.filter(
-      (r) => r.status === "failed"
-    ).length;
-    finalRunData.skipped = finalResultsList.filter(
-      (r) => r.status === "skipped"
-    ).length;
-    finalRunData.flaky = finalResultsList.filter(
-      (r) => r.status === "flaky"
-    ).length;
-    finalRunData.totalTests = finalResultsList.length;
+    finalRunData.passed = summaryStats.passed;
+    finalRunData.failed = summaryStats.failed;
+    finalRunData.skipped = summaryStats.skipped;
+    finalRunData.flaky = summaryStats.flaky;
+    finalRunData.totalTests = summaryStats.totalTests;
 
     const reviveDates = (key: string, value: any): any => {
       const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -634,7 +616,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     return {
       run: finalRunData,
-      results: properlyTypedResults, // Fixed: Include ALL retry attempts
+      results: properlyTypedResults, // Include ALL retry attempts
       metadata: { generatedAt: new Date().toISOString() },
     };
   }
@@ -683,7 +665,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
     const allAttempts = this.results;
 
-    const summaryResults = this._getFinalizedResults(this.results);
+    const summaryStats = this._getFinalizedResults(this.results);
 
     const runEndTime = Date.now();
     const duration = runEndTime - this.runStartTime;
@@ -693,19 +675,13 @@ export class PlaywrightPulseReporter implements Reporter {
     const runData: TestRun = {
       id: runId,
       timestamp: new Date(this.runStartTime),
-      totalTests: summaryResults.length, // Count each logical test once
-      passed: summaryResults.filter((r) => r.status === "passed").length,
-      failed: summaryResults.filter((r) => r.status === "failed").length,
-      skipped: summaryResults.filter((r) => r.status === "skipped").length,
-      flaky: summaryResults.filter((r) => r.status === "flaky").length,
+      totalTests: summaryStats.totalTests, // Fixed: Count each logical test once
+      passed: summaryStats.passed,
+      failed: summaryStats.failed,
+      skipped: summaryStats.skipped,
+      flaky: summaryStats.flaky,
       duration,
       environment: environmentDetails,
-    };
-
-    finalReport = {
-      run: runData,
-      results: allAttempts, // Include all retry attempts in the JSON
-      metadata: { generatedAt: new Date().toISOString() },
     };
 
     if (this.isSharded) {
@@ -713,7 +689,7 @@ export class PlaywrightPulseReporter implements Reporter {
     } else {
       finalReport = {
         run: runData,
-        results: allAttempts, // Modified: Use all attempts instead of consolidated
+        results: allAttempts, // Include all retry attempts in the JSON
         metadata: { generatedAt: new Date().toISOString() },
       };
     }
@@ -853,9 +829,7 @@ export class PlaywrightPulseReporter implements Reporter {
       }
     }
 
-    const finalMergedResults = this._getFinalizedResults(
-      allResultsFromAllFiles
-    );
+    const summaryStats = this._getFinalizedResults(allResultsFromAllFiles);
 
     for (const res of allResultsFromAllFiles) {
       if (res.startTime.getTime() < earliestStartTime)
@@ -870,17 +844,17 @@ export class PlaywrightPulseReporter implements Reporter {
       id: `merged-${Date.now()}`,
       timestamp: latestTimestamp,
       environment: lastRunEnvironment,
-      totalTests: finalMergedResults.length, // Count each logical test once
-      passed: finalMergedResults.filter((r) => r.status === "passed").length,
-      failed: finalMergedResults.filter((r) => r.status === "failed").length,
-      skipped: finalMergedResults.filter((r) => r.status === "skipped").length,
-      flaky: finalMergedResults.filter((r) => r.status === "flaky").length,
+      totalTests: summaryStats.totalTests, // Fixed: Count each logical test once
+      passed: summaryStats.passed,
+      failed: summaryStats.failed,
+      skipped: summaryStats.skipped,
+      flaky: summaryStats.flaky,
       duration: totalDuration,
     };
 
     const finalReport: PlaywrightPulseReport = {
       run: combinedRun,
-      results: allResultsFromAllFiles as any, // Fixed: Include ALL retry attempts
+      results: allResultsFromAllFiles as any, // Include ALL retry attempts
       metadata: {
         generatedAt: new Date().toISOString(),
       },
@@ -900,7 +874,7 @@ export class PlaywrightPulseReporter implements Reporter {
       );
       if (this.printsToStdio()) {
         console.log(
-          `PlaywrightPulseReporter: ✅ Merged report with ${allResultsFromAllFiles.length} total retry attempts (${finalMergedResults.length} unique tests) saved to ${finalOutputPath}`
+          `PlaywrightPulseReporter: ✅ Merged report with ${allResultsFromAllFiles.length} total retry attempts (${summaryStats.totalTests} unique tests) saved to ${finalOutputPath}`
         );
       }
     } catch (err: any) {

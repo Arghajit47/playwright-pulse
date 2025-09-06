@@ -39,10 +39,7 @@ const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const ua_parser_js_1 = require("ua-parser-js");
 const os = __importStar(require("os"));
-const convertStatus = (status, testCase, retryCount = 0) => {
-    if (status === "passed" && retryCount > 0) {
-        return "flaky";
-    }
+const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         if (status === "passed")
             return "flaky";
@@ -165,7 +162,7 @@ class PlaywrightPulseReporter {
         }
         return finalString.trim();
     }
-    async processStep(step, testId, browserDetails, testCase, retryCount = 0) {
+    async processStep(step, testId, browserDetails, testCase) {
         var _a, _b, _c, _d;
         let stepStatus = "passed";
         let errorMessage = ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined;
@@ -173,7 +170,7 @@ class PlaywrightPulseReporter {
             stepStatus = "skipped";
         }
         else {
-            stepStatus = convertStatus(step.error ? "failed" : "passed", testCase, retryCount);
+            stepStatus = convertStatus(step.error ? "failed" : "passed", testCase);
         }
         const duration = step.duration;
         const startTime = new Date(step.startTime);
@@ -206,13 +203,13 @@ class PlaywrightPulseReporter {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const browserDetails = this.getBrowserDetails(test);
-        const testStatus = convertStatus(result.status, test, result.retry);
+        const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
         const processAllSteps = async (steps) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, test.id, browserDetails, test, result.retry);
+                const processedStep = await this.processStep(step, test.id, browserDetails, test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     processedStep.steps = await processAllSteps(step.steps);
@@ -244,9 +241,8 @@ class PlaywrightPulseReporter {
                 ? JSON.stringify(this.config.metadata)
                 : undefined,
         };
-        const testIdWithRetries = `${test.id}-${result.retry}`;
         const pulseResult = {
-            id: testIdWithRetries, // Modified: Use retry number instead of "run-X"
+            id: test.id, // Fixed: Use consistent test ID across all retries
             runId: this.currentRunId, // Keep same runId for all retries of the same test
             name: test.titlePath().join(" > "),
             suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
@@ -274,7 +270,7 @@ class PlaywrightPulseReporter {
             if (!attachment.path)
                 continue;
             try {
-                const testSubfolder = testIdWithRetries.replace(/[^a-zA-Z0-9_-]/g, "_");
+                const testSubfolder = `${test.id}-${result.retry}`.replace(/[^a-zA-Z0-9_-]/g, "_");
                 const safeAttachmentName = path
                     .basename(attachment.path)
                     .replace(/[^a-zA-Z0-9_.-]/g, "_");
@@ -307,10 +303,6 @@ class PlaywrightPulseReporter {
         this.results.push(pulseResult);
     }
     _getBaseTestId(testResultId) {
-        const parts = testResultId.split("-");
-        if (parts.length > 1 && !isNaN(parseInt(parts[parts.length - 1]))) {
-            return parts.slice(0, -1).join("-");
-        }
         return testResultId;
     }
     _getStatusOrder(status) {
@@ -328,11 +320,11 @@ class PlaywrightPulseReporter {
         }
     }
     /**
-     * Modified: Groups all run attempts for a single logical test case and updates flaky status.
+     * Fixed: Groups all run attempts for a single logical test case and determines flaky status.
      * This ensures that tests with multiple retries are counted as single test case
      * while preserving all retry data in the JSON report.
      * @param allAttempts An array of all individual test run attempts.
-     * @returns An array of ConsolidatedTestResult objects, where each object represents one logical test and contains an array of all its runs.
+     * @returns Summary statistics for the test run.
      */
     _getFinalizedResults(allAttempts) {
         const groupedResults = new Map();
@@ -343,15 +335,18 @@ class PlaywrightPulseReporter {
             }
             groupedResults.get(baseTestId).push(attempt);
         }
-        const finalResults = [];
+        let passed = 0;
+        let failed = 0;
+        let skipped = 0;
+        let flaky = 0;
         for (const [baseId, runs] of groupedResults.entries()) {
             let overallStatus = "passed";
             if (runs.length > 1) {
-                const hasPassedRun = runs.some(run => run.status === "passed");
-                const hasFailedRun = runs.some(run => run.status === "failed");
+                const hasPassedRun = runs.some((run) => run.status === "passed");
+                const hasFailedRun = runs.some((run) => run.status === "failed");
                 if (hasPassedRun && hasFailedRun) {
                     overallStatus = "flaky";
-                    runs.forEach(run => {
+                    runs.forEach((run) => {
                         if (run.status === "passed" || run.status === "failed") {
                             run.status = "flaky";
                         }
@@ -360,34 +355,36 @@ class PlaywrightPulseReporter {
                 else if (hasFailedRun) {
                     overallStatus = "failed";
                 }
-                else if (runs.some(run => run.status === "skipped")) {
+                else if (runs.some((run) => run.status === "skipped")) {
                     overallStatus = "skipped";
                 }
             }
             else {
                 overallStatus = runs[0].status;
             }
-            // Sort runs to find the best representative run for metadata
-            runs.sort((a, b) => this._getStatusOrder(a.status) - this._getStatusOrder(b.status));
-            const bestRun = runs[0];
-            // Calculate total duration from the earliest start to the latest end time of all runs
-            const startTimes = runs.map((run) => run.startTime.getTime());
-            const endTimes = runs.map((run) => run.endTime.getTime());
-            const overallDuration = Math.max(...endTimes) - Math.min(...startTimes);
-            finalResults.push({
-                id: baseId,
-                name: bestRun.name,
-                suiteName: bestRun.suiteName,
-                status: overallStatus, // Use the determined overall status
-                duration: overallDuration,
-                startTime: new Date(Math.min(...startTimes)),
-                endTime: new Date(Math.max(...endTimes)),
-                browser: bestRun.browser,
-                tags: bestRun.tags,
-                runs: runs.sort((a, b) => a.retries - b.retries), // Sort runs chronologically for the report
-            });
+            // Count each logical test once
+            switch (overallStatus) {
+                case "passed":
+                    passed++;
+                    break;
+                case "failed":
+                    failed++;
+                    break;
+                case "skipped":
+                    skipped++;
+                    break;
+                case "flaky":
+                    flaky++;
+                    break;
+            }
         }
-        return finalResults;
+        return {
+            passed,
+            failed,
+            skipped,
+            flaky,
+            totalTests: groupedResults.size,
+        };
     }
     onError(error) {
         var _a;
@@ -441,12 +438,12 @@ class PlaywrightPulseReporter {
                 }
             }
         }
-        const finalResultsList = this._getFinalizedResults(allShardRawResults);
-        finalRunData.passed = finalResultsList.filter((r) => r.status === "passed").length;
-        finalRunData.failed = finalResultsList.filter((r) => r.status === "failed").length;
-        finalRunData.skipped = finalResultsList.filter((r) => r.status === "skipped").length;
-        finalRunData.flaky = finalResultsList.filter((r) => r.status === "flaky").length;
-        finalRunData.totalTests = finalResultsList.length;
+        const summaryStats = this._getFinalizedResults(allShardRawResults);
+        finalRunData.passed = summaryStats.passed;
+        finalRunData.failed = summaryStats.failed;
+        finalRunData.skipped = summaryStats.skipped;
+        finalRunData.flaky = summaryStats.flaky;
+        finalRunData.totalTests = summaryStats.totalTests;
         const reviveDates = (key, value) => {
             const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
             if (typeof value === "string" && isoDateRegex.test(value)) {
@@ -458,7 +455,7 @@ class PlaywrightPulseReporter {
         const properlyTypedResults = JSON.parse(JSON.stringify(allShardRawResults), reviveDates);
         return {
             run: finalRunData,
-            results: properlyTypedResults, // Fixed: Include ALL retry attempts
+            results: properlyTypedResults, // Include ALL retry attempts
             metadata: { generatedAt: new Date().toISOString() },
         };
     }
@@ -494,7 +491,7 @@ class PlaywrightPulseReporter {
         }
         let finalReport;
         const allAttempts = this.results;
-        const summaryResults = this._getFinalizedResults(this.results);
+        const summaryStats = this._getFinalizedResults(this.results);
         const runEndTime = Date.now();
         const duration = runEndTime - this.runStartTime;
         const runId = this.currentRunId;
@@ -502,18 +499,13 @@ class PlaywrightPulseReporter {
         const runData = {
             id: runId,
             timestamp: new Date(this.runStartTime),
-            totalTests: summaryResults.length, // Count each logical test once
-            passed: summaryResults.filter((r) => r.status === "passed").length,
-            failed: summaryResults.filter((r) => r.status === "failed").length,
-            skipped: summaryResults.filter((r) => r.status === "skipped").length,
-            flaky: summaryResults.filter((r) => r.status === "flaky").length,
+            totalTests: summaryStats.totalTests, // Fixed: Count each logical test once
+            passed: summaryStats.passed,
+            failed: summaryStats.failed,
+            skipped: summaryStats.skipped,
+            flaky: summaryStats.flaky,
             duration,
             environment: environmentDetails,
-        };
-        finalReport = {
-            run: runData,
-            results: allAttempts, // Include all retry attempts in the JSON
-            metadata: { generatedAt: new Date().toISOString() },
         };
         if (this.isSharded) {
             finalReport = await this._mergeShardResults(runData);
@@ -521,7 +513,7 @@ class PlaywrightPulseReporter {
         else {
             finalReport = {
                 run: runData,
-                results: allAttempts, // Modified: Use all attempts instead of consolidated
+                results: allAttempts, // Include all retry attempts in the JSON
                 metadata: { generatedAt: new Date().toISOString() },
             };
         }
@@ -619,7 +611,7 @@ class PlaywrightPulseReporter {
                 console.warn(`Pulse Reporter: Could not parse report file ${filePath}. Skipping. Error: ${err.message}`);
             }
         }
-        const finalMergedResults = this._getFinalizedResults(allResultsFromAllFiles);
+        const summaryStats = this._getFinalizedResults(allResultsFromAllFiles);
         for (const res of allResultsFromAllFiles) {
             if (res.startTime.getTime() < earliestStartTime)
                 earliestStartTime = res.startTime.getTime();
@@ -631,16 +623,16 @@ class PlaywrightPulseReporter {
             id: `merged-${Date.now()}`,
             timestamp: latestTimestamp,
             environment: lastRunEnvironment,
-            totalTests: finalMergedResults.length, // Count each logical test once
-            passed: finalMergedResults.filter((r) => r.status === "passed").length,
-            failed: finalMergedResults.filter((r) => r.status === "failed").length,
-            skipped: finalMergedResults.filter((r) => r.status === "skipped").length,
-            flaky: finalMergedResults.filter((r) => r.status === "flaky").length,
+            totalTests: summaryStats.totalTests, // Fixed: Count each logical test once
+            passed: summaryStats.passed,
+            failed: summaryStats.failed,
+            skipped: summaryStats.skipped,
+            flaky: summaryStats.flaky,
             duration: totalDuration,
         };
         const finalReport = {
             run: combinedRun,
-            results: allResultsFromAllFiles, // Fixed: Include ALL retry attempts
+            results: allResultsFromAllFiles, // Include ALL retry attempts
             metadata: {
                 generatedAt: new Date().toISOString(),
             },
@@ -652,7 +644,7 @@ class PlaywrightPulseReporter {
                 return value;
             }, 2));
             if (this.printsToStdio()) {
-                console.log(`PlaywrightPulseReporter: ✅ Merged report with ${allResultsFromAllFiles.length} total retry attempts (${finalMergedResults.length} unique tests) saved to ${finalOutputPath}`);
+                console.log(`PlaywrightPulseReporter: ✅ Merged report with ${allResultsFromAllFiles.length} total retry attempts (${summaryStats.totalTests} unique tests) saved to ${finalOutputPath}`);
             }
         }
         catch (err) {
