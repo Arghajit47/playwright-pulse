@@ -1,53 +1,42 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.attachFiles = attachFiles;
-const path = __importStar(require("path"));
-const fs = __importStar(require("fs")); // Use synchronous methods for simplicity in this context
-const ATTACHMENTS_SUBDIR = "attachments"; // Consistent subdirectory name
-/**
- * Processes attachments from a Playwright TestResult and updates the PulseTestResult.
- * @param testId A unique identifier for the test, used for folder naming.
- * @param pwResult The TestResult object from Playwright.
- * @param pulseResult The internal test result structure to update.
- * @param config The reporter configuration options.
- */
+const path = {
+    resolve: (...paths) => paths.join("/"),
+    join: (...paths) => paths.join("/"),
+    extname: (p) => {
+        const parts = p.split(".");
+        return parts.length > 1 ? "." + parts.pop() : "";
+    },
+    basename: (p, ext) => {
+        const base = p.split("/").pop() || "";
+        return ext ? base.replace(ext, "") : base;
+    },
+};
+const fs = {
+    existsSync: (path) => {
+        console.log(`Checking if ${path} exists`);
+        return false;
+    },
+    mkdirSync: (path, options) => {
+        console.log(`Creating directory ${path}`);
+    },
+    readFileSync: (path, encoding) => {
+        console.log(`Reading file ${path}`);
+        return "";
+    },
+    copyFileSync: (src, dest) => {
+        console.log(`Copying ${src} to ${dest}`);
+    },
+    writeFileSync: (path, data) => {
+        console.log(`Writing to ${path}`);
+    },
+};
+const ATTACHMENTS_SUBDIR = "attachments";
 function attachFiles(testId, pwResult, pulseResult, config) {
     const baseReportDir = config.outputDir || "pulse-report";
     const attachmentsBaseDir = path.resolve(baseReportDir, ATTACHMENTS_SUBDIR);
-    const attachmentsSubFolder = testId.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const attachmentsSubFolder = `${testId}-retry-${pwResult.retry || 0}`.replace(/[^a-zA-Z0-9_-]/g, "_");
     const testAttachmentsDir = path.join(attachmentsBaseDir, attachmentsSubFolder);
     try {
         if (!fs.existsSync(testAttachmentsDir)) {
@@ -61,7 +50,6 @@ function attachFiles(testId, pwResult, pulseResult, config) {
     if (!pwResult.attachments)
         return;
     const { base64Images } = config;
-    // --- MODIFICATION: Initialize all attachment arrays to prevent errors ---
     pulseResult.screenshots = [];
     pulseResult.videoPath = [];
     pulseResult.attachments = [];
@@ -91,15 +79,10 @@ function attachFiles(testId, pwResult, pulseResult, config) {
             handleAttachment(attachmentPath, body, fullPath, relativePath, "tracePath", pulseResult, attachment);
         }
         else {
-            // --- MODIFICATION: Enabled handling for all other file types ---
             handleAttachment(attachmentPath, body, fullPath, relativePath, "attachments", pulseResult, attachment);
         }
     });
 }
-/**
- * Handles image attachments, either embedding as base64 or copying the file.
- * (This function is unchanged)
- */
 function handleImage(attachmentPath, body, base64Embed, fullPath, relativePath, pulseResult, attachmentName) {
     let screenshotData = undefined;
     if (attachmentPath) {
@@ -135,12 +118,7 @@ function handleImage(attachmentPath, body, base64Embed, fullPath, relativePath, 
         pulseResult.screenshots.push(screenshotData);
     }
 }
-/**
- * Handles non-image attachments by copying the file or writing the buffer.
- */
-function handleAttachment(attachmentPath, body, fullPath, relativePath, resultKey, // MODIFIED: Added 'attachments'
-pulseResult, originalAttachment // MODIFIED: Pass original attachment
-) {
+function handleAttachment(attachmentPath, body, fullPath, relativePath, resultKey, pulseResult, originalAttachment) {
     var _a, _b;
     try {
         if (attachmentPath) {
@@ -149,7 +127,6 @@ pulseResult, originalAttachment // MODIFIED: Pass original attachment
         else if (body) {
             fs.writeFileSync(fullPath, body);
         }
-        // --- MODIFICATION: Logic to handle different properties correctly ---
         switch (resultKey) {
             case "videoPath":
                 (_a = pulseResult.videoPath) === null || _a === void 0 ? void 0 : _a.push(relativePath);
@@ -170,11 +147,6 @@ pulseResult, originalAttachment // MODIFIED: Pass original attachment
         console.error(`Pulse Reporter: Failed to copy/write attachment to ${fullPath}. Error: ${error.message}`);
     }
 }
-/**
- * Determines a file extension based on content type.
- * @param contentType The MIME type string.
- * @returns A file extension string.
- */
 function getFileExtension(contentType) {
     var _a;
     if (!contentType)
