@@ -304,6 +304,49 @@ class PlaywrightPulseReporter {
             totalTests: consolidatedResults.length,
         };
     }
+    _getSummaryStatsFromAttempts(attempts) {
+        let passed = 0;
+        let failed = 0;
+        let skipped = 0;
+        let flaky = 0;
+        const groupedByTest = new Map();
+        for (const attempt of attempts) {
+            const baseId = attempt.id.replace(/-\d+$/, "");
+            if (!groupedByTest.has(baseId)) {
+                groupedByTest.set(baseId, []);
+            }
+            groupedByTest.get(baseId).push(attempt);
+        }
+        for (const attempt of attempts) {
+            const baseId = attempt.id.replace(/-\d+$/, "");
+            const testAttempts = groupedByTest.get(baseId);
+            const hasFailures = testAttempts.some((a) => a.status === "failed");
+            const hasPasses = testAttempts.some((a) => a.status === "passed");
+            if (hasFailures && hasPasses) {
+                flaky++;
+            }
+            else {
+                switch (attempt.status) {
+                    case "passed":
+                        passed++;
+                        break;
+                    case "failed":
+                        failed++;
+                        break;
+                    case "skipped":
+                        skipped++;
+                        break;
+                }
+            }
+        }
+        return {
+            passed,
+            failed,
+            skipped,
+            flaky,
+            totalTests: attempts.length,
+        };
+    }
     onError(error) {
         console.error("Pulse Reporter: Error occurred:", error);
     }
@@ -315,15 +358,11 @@ class PlaywrightPulseReporter {
             cpu: os.arch(),
         };
     }
-    async _writeShardResults(consolidatedResults) {
+    async _writeShardResults(individualResults) {
         const tempFilePath = path.join(this.outputDir, `shard-${this.shardIndex || 0}-results.json`);
         try {
             await this._ensureDirExists(path.dirname(tempFilePath));
-            const allAttempts = [];
-            for (const result of consolidatedResults) {
-                allAttempts.push(...result.results);
-            }
-            await fs.promises.writeFile(tempFilePath, JSON.stringify(allAttempts, null, 2));
+            await fs.promises.writeFile(tempFilePath, JSON.stringify(individualResults, null, 2));
         }
         catch (error) {
             console.error("Pulse Reporter: Error writing shard results:", error);
@@ -332,7 +371,6 @@ class PlaywrightPulseReporter {
     async _mergeShardResults(allShardResults) {
         try {
             const allAttempts = allShardResults.flat();
-            const consolidatedResults = this._getFinalizedResults(allAttempts);
             const reviveDates = (key, value) => {
                 if (typeof value === "string" &&
                     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
@@ -340,7 +378,7 @@ class PlaywrightPulseReporter {
                 }
                 return value;
             };
-            const properlyTypedResults = JSON.parse(JSON.stringify(consolidatedResults), reviveDates);
+            const properlyTypedResults = JSON.parse(JSON.stringify(allAttempts), reviveDates);
             return properlyTypedResults;
         }
         catch (error) {
@@ -370,8 +408,8 @@ class PlaywrightPulseReporter {
     }
     async onEnd(result) {
         try {
-            const consolidatedResults = this._getFinalizedResults(this.testResults);
-            const stats = this._getSummaryStats(consolidatedResults);
+            const individualResults = this.testResults;
+            const stats = this._getSummaryStatsFromAttempts(individualResults);
             const runData = {
                 id: this.currentRunId,
                 startTime: new Date(),
@@ -382,7 +420,7 @@ class PlaywrightPulseReporter {
             };
             const finalReport = {
                 run: runData,
-                results: consolidatedResults,
+                results: individualResults,
                 summary: stats,
             };
             const jsonReplacer = (key, value) => {
@@ -392,7 +430,7 @@ class PlaywrightPulseReporter {
                 return value;
             };
             if (this.shardIndex !== undefined) {
-                await this._writeShardResults(consolidatedResults);
+                await this._writeShardResults(individualResults);
                 console.log(`Pulse Reporter: Shard ${this.shardIndex} results written.`);
             }
             else {
@@ -428,19 +466,13 @@ class PlaywrightPulseReporter {
                 const content = await fs.promises.readFile(filePath, "utf-8");
                 const report = JSON.parse(content);
                 if (report.results) {
-                    for (const consolidatedResult of report.results) {
-                        if (consolidatedResult.results &&
-                            consolidatedResult.results.length > 0) {
-                            allAttempts.push(...consolidatedResult.results);
-                        }
-                    }
+                    allAttempts.push(...report.results);
                 }
                 if ((_a = report.run) === null || _a === void 0 ? void 0 : _a.duration) {
                     totalDuration += report.run.duration;
                 }
             }
-            const consolidatedResults = this._getFinalizedResults(allAttempts);
-            const stats = this._getSummaryStats(consolidatedResults);
+            const stats = this._getSummaryStatsFromAttempts(allAttempts);
             const combinedRun = {
                 id: this.currentRunId,
                 startTime: new Date(),
@@ -451,7 +483,7 @@ class PlaywrightPulseReporter {
             };
             const finalReport = {
                 run: combinedRun,
-                results: consolidatedResults,
+                results: allAttempts,
                 summary: stats,
             };
             return finalReport;

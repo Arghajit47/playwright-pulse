@@ -231,7 +231,7 @@ interface TestRun {
 
 interface PlaywrightPulseReport {
   run: TestRun;
-  results: ConsolidatedTestResult[];
+  results: TestRunAttempt[];
   summary: {
     passed: number;
     failed: number;
@@ -551,6 +551,60 @@ export class PlaywrightPulseReporter implements Reporter {
     };
   }
 
+  private _getSummaryStatsFromAttempts(attempts: TestRunAttempt[]): {
+    passed: number;
+    failed: number;
+    skipped: number;
+    flaky: number;
+    totalTests: number;
+  } {
+    let passed = 0;
+    let failed = 0;
+    let skipped = 0;
+    let flaky = 0;
+
+    const groupedByTest = new Map<string, TestRunAttempt[]>();
+    for (const attempt of attempts) {
+      const baseId = attempt.id.replace(/-\d+$/, "");
+      if (!groupedByTest.has(baseId)) {
+        groupedByTest.set(baseId, []);
+      }
+      groupedByTest.get(baseId)!.push(attempt);
+    }
+
+    for (const attempt of attempts) {
+      const baseId = attempt.id.replace(/-\d+$/, "");
+      const testAttempts = groupedByTest.get(baseId)!;
+
+      const hasFailures = testAttempts.some((a) => a.status === "failed");
+      const hasPasses = testAttempts.some((a) => a.status === "passed");
+
+      if (hasFailures && hasPasses) {
+        flaky++;
+      } else {
+        switch (attempt.status) {
+          case "passed":
+            passed++;
+            break;
+          case "failed":
+            failed++;
+            break;
+          case "skipped":
+            skipped++;
+            break;
+        }
+      }
+    }
+
+    return {
+      passed,
+      failed,
+      skipped,
+      flaky,
+      totalTests: attempts.length,
+    };
+  }
+
   onError(error: Error): void {
     console.error("Pulse Reporter: Error occurred:", error);
   }
@@ -565,7 +619,7 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   private async _writeShardResults(
-    consolidatedResults: ConsolidatedTestResult[]
+    individualResults: TestRunAttempt[]
   ): Promise<void> {
     const tempFilePath = path.join(
       this.outputDir,
@@ -574,13 +628,9 @@ export class PlaywrightPulseReporter implements Reporter {
 
     try {
       await this._ensureDirExists(path.dirname(tempFilePath));
-      const allAttempts: TestRunAttempt[] = [];
-      for (const result of consolidatedResults) {
-        allAttempts.push(...result.results);
-      }
       await fs.promises.writeFile(
         tempFilePath,
-        JSON.stringify(allAttempts, null, 2)
+        JSON.stringify(individualResults, null, 2)
       );
     } catch (error) {
       console.error("Pulse Reporter: Error writing shard results:", error);
@@ -589,10 +639,9 @@ export class PlaywrightPulseReporter implements Reporter {
 
   private async _mergeShardResults(
     allShardResults: TestRunAttempt[][]
-  ): Promise<ConsolidatedTestResult[]> {
+  ): Promise<TestRunAttempt[]> {
     try {
       const allAttempts = allShardResults.flat();
-      const consolidatedResults = this._getFinalizedResults(allAttempts);
 
       const reviveDates = (key: string, value: any) => {
         if (
@@ -604,9 +653,9 @@ export class PlaywrightPulseReporter implements Reporter {
         return value;
       };
       const properlyTypedResults = JSON.parse(
-        JSON.stringify(consolidatedResults),
+        JSON.stringify(allAttempts),
         reviveDates
-      ) as ConsolidatedTestResult[];
+      ) as TestRunAttempt[];
 
       return properlyTypedResults;
     } catch (error) {
@@ -646,8 +695,8 @@ export class PlaywrightPulseReporter implements Reporter {
 
   async onEnd(result: FullResult): Promise<void> {
     try {
-      const consolidatedResults = this._getFinalizedResults(this.testResults);
-      const stats = this._getSummaryStats(consolidatedResults);
+      const individualResults = this.testResults;
+      const stats = this._getSummaryStatsFromAttempts(individualResults);
 
       const runData: TestRun = {
         id: this.currentRunId,
@@ -660,7 +709,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
       const finalReport: PlaywrightPulseReport = {
         run: runData,
-        results: consolidatedResults,
+        results: individualResults,
         summary: stats,
       };
 
@@ -672,7 +721,7 @@ export class PlaywrightPulseReporter implements Reporter {
       };
 
       if (this.shardIndex !== undefined) {
-        await this._writeShardResults(consolidatedResults);
+        await this._writeShardResults(individualResults);
         console.log(
           `Pulse Reporter: Shard ${this.shardIndex} results written.`
         );
@@ -730,22 +779,14 @@ export class PlaywrightPulseReporter implements Reporter {
         const report = JSON.parse(content) as PlaywrightPulseReport;
 
         if (report.results) {
-          for (const consolidatedResult of report.results) {
-            if (
-              consolidatedResult.results &&
-              consolidatedResult.results.length > 0
-            ) {
-              allAttempts.push(...consolidatedResult.results);
-            }
-          }
+          allAttempts.push(...report.results);
         }
         if (report.run?.duration) {
           totalDuration += report.run.duration;
         }
       }
 
-      const consolidatedResults = this._getFinalizedResults(allAttempts);
-      const stats = this._getSummaryStats(consolidatedResults);
+      const stats = this._getSummaryStatsFromAttempts(allAttempts);
 
       const combinedRun: TestRun = {
         id: this.currentRunId,
@@ -758,7 +799,7 @@ export class PlaywrightPulseReporter implements Reporter {
 
       const finalReport: PlaywrightPulseReport = {
         run: combinedRun,
-        results: consolidatedResults,
+        results: allAttempts,
         summary: stats,
       };
 
