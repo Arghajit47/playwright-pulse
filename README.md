@@ -1,6 +1,7 @@
 # Playwright Pluse Report
 
-![Playwright Pulse Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/image.png)  
+![Playwright Pulse Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright-pulse-report.png)
+
 _The ultimate Playwright reporter — Interactive dashboard with historical trend analytics, CI/CD-ready standalone HTML reports, and sharding support for scalable test execution._
 
 ## [Live Demo](https://pulse-report.netlify.app/)
@@ -272,8 +273,7 @@ export default defineConfig({
 
 ---
 
-<img src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-logo.png" alt="pulse dashboard" title="pulse dashboard" height="35px" width="60px" align="left" padding="5px"/>
-<h2>Pulse Dashboard</h2>
+![pulse dashboard](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/pulse_dashboard_full_icon.png)
 
 **Real-time Playwright Test Monitoring & Analysis**  
 

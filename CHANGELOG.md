@@ -1,5 +1,18 @@
 # 📜 Changelog
 
+## **Version 0.2.7**
+
+**🚀 Update Highlights**
+
+- **🔧 Improvements**:
+  - Significantly expanded README with detailed setup instructions and comprehensive usage examples for better onboarding.
+  - Updated development dependencies to latest stable versions.
+  - Increased minimum Node.js engine requirement for enhanced compatibility.
+  - Increased retry attempts for credential fetching in `send-report`, to handle transient network issues.
+- **🐛 Bug Fixes**:
+  - Fixed issues with "Skipping email sending due to missing or failed credential fetch" in send report.
+  - Resolved security vulnerabilities in the npm package.
+
 ## **Version 0.2.6**
 
 **🚀 Update Highlights**

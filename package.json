@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-report",
   "author": "Arghajit Singha",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://playwright-pulse-report.netlify.app/",
   "keywords": [
@@ -73,13 +73,16 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/ua-parser-js": "^0.7.39",
-    "eslint": "9.25.1",
+    "eslint": "^9.39.1",
     "typescript": "^5"
   },
   "engines": {
-    "node": ">=16"
+    "node": ">=18"
   },
   "peerDependencies": {
     "@playwright/test": ">=1.40.0"
+  },
+  "overrides": {
+    "glob": "^13.0.0"
   }
 }
