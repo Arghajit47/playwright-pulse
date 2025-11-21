@@ -289,7 +289,7 @@ const sendEmail = async (credentials) => {
   }
 };
 
-async function fetchCredentials(retries = 6) {
+async function fetchCredentials(retries = 10) {
   // Ensure fetch is initialized from the dynamic import before calling this
   if (!fetch) {
     try {
