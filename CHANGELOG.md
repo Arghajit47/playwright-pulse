@@ -5,8 +5,12 @@
 **🚀 Update Highlights**
 
 - **🔧 Improvements**:
-  - Resolved all the vulnerabilities found in the npm package.
-  - Improved the `README.md` file, added more detailed instructions and examples.
+  - Significantly expanded README with detailed setup instructions and comprehensive usage examples for better onboarding.
+  - Updated development dependencies to latest stable versions.
+  - Increased minimum Node.js engine requirement for enhanced compatibility.
+- **🐛 Bug Fixes**:
+  - Fixed issues with "Skipping email sending due to missing or failed credential fetch" in send report.
+  - Resolved security vulnerabilities in the npm package.
 
 ## **Version 0.2.6**
 
