@@ -1,5 +1,13 @@
 # 📜 Changelog
 
+## **Version 0.2.7**
+
+**🚀 Update Highlights**
+
+- **🔧 Improvements**:
+  - Resolved all the vulnerabilities found in the npm package.
+  - Improved the `README.md` file, added more detailed instructions and examples.
+
 ## **Version 0.2.6**
 
 **🚀 Update Highlights**
