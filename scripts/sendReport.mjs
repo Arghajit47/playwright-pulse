@@ -324,7 +324,7 @@ async function fetchCredentials(retries = 10) {
       });
 
       const fetchPromise = fetch(
-        "https://test-dashboard-66zd.onrender.com/api/getcredentials",
+        "https://get-credentials.netlify.app/api/getcredentials",
         {
           method: "GET",
           headers: {
