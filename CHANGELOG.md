@@ -1,5 +1,12 @@
 # 📜 Changelog
 
+## **Version 0.2.9**
+
+**🚀 Update Highlights**
+
+- **🔧 Improvements**:
+  - Significantly improved the send report feature.
+
 ## **Version 0.2.8**
 
 **🚀 Update Highlights**
