@@ -1,5 +1,9 @@
 # Playwright Pluse Report
 
+[![NPM Version](https://img.shields.io/npm/v/@arghajit/playwright-pulse-report.svg)](https://www.npmjs.com/package/@arghajit/playwright-pulse-report)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![NPM Downloads](https://img.shields.io/npm/dm/@arghajit/playwright-pulse-report.svg)](https://www.npmjs.com/package/@arghajit/playwright-pulse-report)
+
 ![Playwright Pulse Report](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright-pulse-report.png)
 
 _The ultimate Playwright reporter — Interactive dashboard with historical trend analytics, CI/CD-ready standalone HTML reports, and sharding support for scalable test execution._
