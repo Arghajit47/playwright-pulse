@@ -1,5 +1,14 @@
 # 📜 Changelog
 
+## **Version 0.2.10**
+
+**🚀 Update Highlights**
+
+- **🐛 Bug Fixes**:
+  - Fixed the static report related issues, like;
+    - Other attachments are visible in the static report, but was not getting opened in new tab.
+    - Fixed the low vulnerability issues in the npm package.
+
 ## **Version 0.2.9**
 
 **🚀 Update Highlights**
