@@ -2384,7 +2384,7 @@ aspect-ratio: 16 / 9;
 @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
 @media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
 @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
-.trace-actions a { text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }
+.trace-actions a { text-decoration: none; font-weight: 500; font-size: 0.9em; }
 .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
 .attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
 .attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
@@ -2856,9 +2856,45 @@ aspect-ratio: 16 / 9;
             const a = e.target.closest('a.lazy-load-attachment');
             if (a && a.dataset && a.dataset.href) {
                 e.preventDefault();
-                a.href = a.dataset.href;
-                a.removeAttribute('data-href');
-                a.click();
+                
+                // Special handling for view-full links to avoid about:blank issue
+                if (a.classList.contains('view-full')) {
+                    // Extract the data from the data URI
+                    const dataUri = a.dataset.href;
+                    const [header, base64Data] = dataUri.split(',');
+                    const mimeType = header.match(/data:([^;]+)/)[1];
+                    
+                    try {
+                        // Convert base64 to blob
+                        const byteCharacters = atob(base64Data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: mimeType });
+                        
+                        // Create a URL and open it
+                        const blobUrl = URL.createObjectURL(blob);
+                        const newWindow = window.open(blobUrl, '_blank');
+                        
+                        // Clean up the URL after a delay
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                    } catch (error) {
+                        console.error('Failed to open attachment:', error);
+                        // Fallback to original method
+                        a.href = a.dataset.href;
+                        a.removeAttribute('data-href');
+                        a.click();
+                    }
+                } else {
+                    // For download links, use the original method
+                    a.href = a.dataset.href;
+                    a.removeAttribute('data-href');
+                    a.click();
+                }
                 return;
             }
         });
