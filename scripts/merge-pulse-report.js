@@ -39,6 +39,7 @@ function mergeReports(files) {
     combinedRun.failed += run.failed || 0;
     combinedRun.skipped += run.skipped || 0;
     combinedRun.duration += run.duration || 0;
+    combinedRun.environment = run.environment;
 
     if (json.results) {
       combinedResults.push(...json.results);

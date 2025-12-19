@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reference - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="search.css" />
+  </head>
+  <body>
+    <!-- Enhanced Header with Search and Theme Toggle -->
+    <!-- Add this RIGHT AFTER <body data-theme="light"> in ALL your HTML files -->
+    <header class="enhanced-header">
+      <div class="header-left">
+        <img
+          src="./asset/FullLogo.png"
+          alt="Playwright Pulse Report Banner"
+          class="header-logo"
+        />
+      </div>
+
+      <div class="header-controls">
+        <div class="search-container">
+          <div class="search-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="Search documentation..."
+              autocomplete="off"
+            />
+            <button class="clear-search" id="clearSearch">×</button>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </div>
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
+            />
+            <path
+              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="sidebar" id="sidebar">
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li><a href="advanced-usage.html">Advanced Usage</a></li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html" class="active">Reference</a></li>
+          <li>
+            <a
+              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Reference</h1>
+        <section id="changelog">
+          <h2>Changelog</h2>
+          <h4>Version 0.3.0</h4>
+          <ul>
+            <li>
+              <strong>New Feature:</strong> <b>Custom Annotations Support</b> - Added full support for Playwright test annotations in reports. Displays test annotations (e.g., <code>test.skip()</code>, <code>test.fixme()</code>, <code>test.info().annotations.push()</code>) in both static and attachment-based reports. Annotations section appears below "Full Path" in test details showing Type, Description, and Location (file path with line and column numbers).
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>JIRA/Ticket System Integration</b> - Automatically detects JIRA ticket format in annotation descriptions (e.g., <code>JIRA-123</code>, <code>PROJ-456</code>). Annotations with type "issue" or "bug" become clickable links that prompt for your JIRA/Ticket system base URL and open tickets in new browser tab.
+            </li>
+            <li>
+              <strong>Improved:</strong> Enhanced <code>TestResult</code> interface with <code>annotations</code> field. Updated reporter to capture and include test annotations from Playwright test cases.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>UI/UX</b> - Beautiful purple/violet themed annotations section for better visual distinction in reports.
+            </li>
+          </ul>
+          <h4>Version 0.2.10</h4>
+          <ul>
+            <li>
+              <strong>Fixed:</strong> <b>Static report attachments</b> - Other attachments are now properly opened in new tabs in static reports.
+            </li>
+            <li>
+              <strong>Fixed:</strong> <b>Security vulnerabilities</b> - Resolved low severity npm package vulnerabilities.
+            </li>
+          </ul>
+          <h4>Version 0.2.9</h4>
+          <ul>
+            <li>
+              <strong>Improved:</strong> <b>send report</b> feature.
+            </li>
+          </ul>
+          <h4>Version 0.2.8</h4>
+          <ul>
+            <li>
+              <strong>Improved:</strong> <b>Readme file</b> detailed setup instructions and comprehensive usage examples for better onboarding.
+            </li>
+            <li>
+              <strong>Updated:</strong> <b>development dependencies</b> to latest stable versions.
+            </li>
+            <li>
+              <strong>Updated:</strong> <b>Node.js engine requirement</b> for enhanced compatibility.
+            </li>
+            <li>
+              <strong>Updated:</strong> <b>retry attempts</b> for credential fetching in `send-report`, to handle transient network issues.
+            </li>
+            <li>
+              <strong>Fixed:</strong> <b>"Skipping email sending due to missing or failed credential fetch"</b> issue in send report workflow.
+            </li>
+            <li>
+              <strong>Security:</strong> <b>Updated dependencies</b> to address security vulnerabilities in the npm package.
+            </li>
+          </ul>
+          <h4>Version 0.2.6</h4>
+          <ul>
+            <li>
+              <strong>Improved:</strong> <b>Debug logging</b> with entire test
+              code snippet is now attached to the failed test cases.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Official documentation</b> where all
+              the functionalities are explained with required code snippets and
+              with new refreshed UI.
+            </li>
+          </ul>
+          <h4>Version 0.2.5</h4>
+          <ul>
+            <li>
+              <strong>Added:</strong> <b>Test Distribution by Worker</b> chart,
+              which shows Total no. of skipped, passed and failed test cases in
+              Test History tab, for both static and attachment based report.
+            </li>
+            <li>
+              <strong>Added:</strong> <b>Copy Console</b> for Console Log
+              (stdout) for each test.
+            </li>
+            <li>
+              <strong>Added:</strong> <b>View</b> options to All kind of
+              attachments for both static and attachment based report.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Optimized report generation for
+              large datasets. Added accurate browser name, version, and OS to
+              test suites.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Revamped the entire UI design of
+              Documentation website.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Changed The logo for the Playwright
+              Pulse Report, throughout all the reporters.
+            </li>
+            <li>
+              <strong>Bug Fixes:</strong> Resolved issues with
+              <code>failed to load attachments</code> in static report.
+            </li>
+            <li>
+              <strong>Bug Fixes:</strong> Fixed issues with <b>Copy Prompt</b>
+              button, in Test Details tab.
+            </li>
+          </ul>
+          <h4>Version 0.2.4</h4>
+          <ul>
+            <li>
+              <strong>Improvements:</strong> Added
+              <code>resetOnEachRun</code> config variable to handle Test
+              sequential run, default value is <code>true</code>.
+            </li>
+            <li>
+              <strong>Documentation:</strong> Added Gitlab, jenkins CI/CD
+              workflow in the documentation website.
+            </li>
+          </ul>
+          <h4>Version 0.2.3</h4>
+          <ul>
+            <li>
+              <strong>Added:</strong> Support for HTML, JSON, TEXT, CSV, and PDF
+              file attachments.
+            </li>
+            <li>
+              <strong>Improvements:</strong> Optimized report generation for
+              large datasets. Added accurate browser name, version, and OS to
+              test suites.
+            </li>
+          </ul>
+          <h4>Version 0.2.2</h4>
+          <ul>
+            <li>
+              <strong>Added:</strong> Introduced
+              <b>System Information</b> widget to visualize details about the
+              test execution environment.
+            </li>
+            <li>
+              <strong>Enhanced Analytics:</strong> Improved accuracy in history
+              trend calculations.
+            </li>
+          </ul>
+          <h4>Version 0.2.1</h4>
+          <ul>
+            <li>
+              <strong>Feature:</strong> Added history trends for the last 15
+              runs for test suites, suite duration, and individual tests.
+            </li>
+            <li>
+              <strong>Fixed:</strong> Corrected Project Name components in the
+              test suite view.
+            </li>
+          </ul>
+          <h4>Version 0.2.0</h4>
+          <ul>
+            <li>
+              <strong>Major Update:</strong> Refined UI for static HTML reports
+              and implemented History Trends.
+            </li>
+          </ul>
+        </section>
+
+        <section id="support-credits">
+          <h2>Support & Credits</h2>
+          <p>
+            For any issues, bug reports, or feature requests, please contact me,
+            Arghajit Singha, via email at
+            <a href="mailto:arghajitsingha47@gmail.com"
+              >arghajitsingha47@gmail.com</a
+            >.
+          </p>
+          <p>
+            Special thanks to
+            <a
+              href="https://www.linkedin.com/in/suman-vishwakarma-426108185/"
+              target="_blank"
+              >Suman Vishwakarma</a
+            >
+            for continuous UAT feedback and support.
+          </p>
+        </section>
+      </main>
+    </div>
+    <script src="search.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

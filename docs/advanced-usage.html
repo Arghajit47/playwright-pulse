@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Advanced Usage - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="search.css" />
+  </head>
+  <body>
+    <!-- Enhanced Header with Search and Theme Toggle -->
+    <header class="enhanced-header">
+      <div class="header-left">
+        <img
+          src="./asset/FullLogo.png"
+          alt="Playwright Pulse Report Banner"
+          class="header-logo"
+        />
+      </div>
+
+      <div class="header-controls">
+        <div class="search-container">
+          <div class="search-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="Search documentation..."
+              autocomplete="off"
+            />
+            <button class="clear-search" id="clearSearch">×</button>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </div>
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
+            />
+            <path
+              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="sidebar" id="sidebar">
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li>
+            <a href="advanced-usage.html" class="active">Advanced Usage</a>
+          </li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html">Reference</a></li>
+          <li>
+            <a
+              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Advanced Usage</h1>
+        <section id="advanced-config">
+          <h2>Full Configuration</h2>
+          <span>
+            The reporter can be configured with the following options in your
+            <code>playwright.config.ts</code>:
+          </span>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Option</th>
+                  <th>Type</th>
+                  <th>Default</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>outputDir</code></td>
+                  <td><code>string</code></td>
+                  <td><code>'pulse-report'</code></td>
+                  <td>The directory where all report assets will be saved.</td>
+                </tr>
+                <tr>
+                  <td><code>outputFile</code></td>
+                  <td><code>string</code></td>
+                  <td><code>'playwright-pulse-report.json'</code></td>
+                  <td>The name of the main JSON data file.</td>
+                </tr>
+                <tr>
+                  <td><code>resetOnEachRun</code></td>
+                  <td><code>boolean</code></td>
+                  <td><code>true</code></td>
+                  <td>
+                    If <code>false</code>, the reporter will merge results from
+                    sequential runs in the same job.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="advanced-ci">
+          <h2>CI/CD Workflow for Sharding</h2>
+          <div class="ci-buttons">
+            <button onclick="showCode('github', event)" class="active">
+              GitHub Actions
+            </button>
+            <button onclick="showCode('gitlab', event)">GitLab CI/CD</button>
+            <button onclick="showCode('jenkins', event)">Jenkins</button>
+          </div>
+          <div id="github-code" class="code-container">
+            <pre><code class="language-yaml"># .github/workflows/playwright.yml
+name: Playwright Tests with Pulse Report
+on: [push]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-report-shard-${{ matrix.shard }}
+          path: pulse-report/
+          retention-days: 1
+
+  merge-report:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          path: pulse-report
+          pattern: pulse-report-shard-*
+          merge-multiple: true
+      - run: npx merge-pulse-report
+      - run: npx generate-pulse-report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-playwright-pulse-report
+          path: pulse-report/playwright-pulse-static-report.html
+          retention-days: 7</code></pre>
+          </div>
+          <div id="gitlab-code" class="code-container" style="display: none">
+            <pre><code class="language-yaml"># .gitlab-ci.yml
+stages:
+  - test
+  - merge
+
+playwright-test:
+  stage: test
+  parallel: 4
+  image: node:18
+  script:
+    - npm ci
+    - npx playwright install --with-deps
+    - npx playwright test --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
+  artifacts:
+    when: always
+    paths: [pulse-report/]
+    expire_in: 1 day
+
+merge-and-publish:
+  stage: merge
+  needs: ["playwright-test"]
+  image: node:18
+  script:
+    - npm ci
+    - npx merge-pulse-report
+    - npx generate-pulse-report
+  artifacts:
+    paths: [pulse-report/playwright-pulse-static-report.html]
+    expire_in: 7 days</code></pre>
+          </div>
+          <div id="jenkins-code" class="code-container" style="display: none">
+            <pre><code class="language-groovy">// Jenkinsfile
+pipeline {
+    agent any
+    stages {
+        stage('Setup') {
+            steps {
+                sh 'npm ci'
+                sh 'npx playwright install --with-deps'
+            }
+        }
+        stage('Parallel Tests') {
+            parallel {
+                stage('Shard 1') { steps { sh 'npx playwright test --shard=1/4' } }
+                stage('Shard 2') { steps { sh 'npx playwright test --shard=2/4' } }
+                stage('Shard 3') { steps { sh 'npx playwright test --shard=3/4' } }
+                stage('Shard 4') { steps { sh 'npx playwright test --shard=4/4' } }
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'pulse-report/**', allowEmptyArchive: true
+                }
+            }
+        }
+        stage('Merge and Publish Report') {
+            steps {
+                // Logic to unstash artifacts from all shards would go here
+                sh 'npx merge-pulse-report'
+                sh 'npx generate-pulse-report'
+                archiveArtifacts artifacts: 'pulse-report/playwright-pulse-static-report.html'
+            }
+        }
+    }
+}</code></pre>
+          </div>
+        </section>
+
+        <section id="sequential-run">
+          <h2>Handling Sequential Test Runs</h2>
+          <span
+            >By default, the reporter will overwrite the
+            `playwright-pulse-report.json` file on each new test run. This is
+            usually what we want. However, if we run tests sequentially in the
+            same job, like this:</span
+          >
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript">npx playwright test test1.spec.ts && npx playwright test test2.spec.ts</code></pre>
+          </div>
+          <span
+            >By default, In this above scenario, the report from test1 will be
+            lost. To solve this, you can use the resetOnEachRun option.</span
+          >
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript"># playwright.config.ts
+
+
+import { defineConfig } from "@playwright/test";
+import * as path from "path";
+              
+// Define where the final report JSON and HTML should go
+const PULSE_REPORT_DIR = path.resolve(__dirname, "pulse-report"); // Example: a directory in your project root
+              
+export default defineConfig({
+  reporter: [
+    ["list"],
+    [
+      "@arghajit/playwright-pulse-report",
+      {
+        outputDir: PULSE_REPORT_DIR,
+        // Add this option
+        resetOnEachRun: false, // Default is true
+      },
+    ],
+  ],
+  // ...
+});</code></pre>
+          </div>
+          <strong>How it works when resetOnEachRun: false:</strong><br /><br />
+          <span>
+            - On the first run, it saves report-1.json to a
+            pulse-report/pulse-results directory and creates the main
+            playwright-pulse-report.json from it.</span
+          ><br />
+          <span>
+            - On the second run, it saves report-2.json to the same
+            directory.</span
+          ><br />
+          <span>
+            - It then automatically reads both report-1.json and report-2.json,
+            merges them, and updates the main playwright-pulse-report.json with
+            the combined results.</span
+          ><br /><br />
+          <strong
+            ><i
+              >This ensures your final report is always a complete summary of
+              all sequential test runs.</i
+            ></strong
+          >
+        </section>
+      </main>
+    </div>
+    <script src="search.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

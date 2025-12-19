@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporter Comparison - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="search.css" />
+  </head>
+  <body>
+    <!-- Enhanced Header with Search and Theme Toggle -->
+    <!-- Add this RIGHT AFTER <body data-theme="light"> in ALL your HTML files -->
+    <header class="enhanced-header">
+      <div class="header-left">
+        <img
+          src="./asset/FullLogo.png"
+          alt="Playwright Pulse Report Banner"
+          class="header-logo"
+        />
+      </div>
+
+      <div class="header-controls">
+        <div class="search-container">
+          <div class="search-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="Search documentation..."
+              autocomplete="off"
+            />
+            <button class="clear-search" id="clearSearch">×</button>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </div>
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
+            />
+            <path
+              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="sidebar" id="sidebar">
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li><a href="advanced-usage.html">Advanced Usage</a></li>
+          <li><a href="comparison.html" class="active">Comparison</a></li>
+          <li><a href="reference.html">Reference</a></li>
+          <li>
+            <a
+              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Reporter Feature Comparison</h1>
+        <p>
+          Choosing the right reporter depends on your team's specific needs.
+          This table compares the key features of Playwright Pulse Report
+          against other popular options to help you decide.
+        </p>
+
+        <section id="comparison-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Playwright Default</th>
+                <th>Monocart</th>
+                <th>Allure</th>
+                <th>Playwright Pulse</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Primary Purpose</strong></td>
+                <td>Quick, local debugging.</td>
+                <td>Shareable single-run reports.</td>
+                <td>Comprehensive multi-run analytics.</td>
+                <td>
+                  Centralized dashboard for continuous monitoring and trends.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Historical Data</strong></td>
+                <td>⛔️ None</td>
+                <td>⛔️ None</td>
+                <td>✔️ Yes</td>
+                <td>✔️ Core feature</td>
+              </tr>
+              <tr>
+                <td><strong>CI/CD Integration</strong></td>
+                <td>Easy (static folder).</td>
+                <td>Excellent (single HTML file).</td>
+                <td>Complex (needs Java + CLI).</td>
+                <td>Seamless (designed for CI).</td>
+              </tr>
+              <tr>
+                <td><strong>Sharding Support</strong></td>
+                <td>⛔️ None</td>
+                <td>⛔️ None</td>
+                <td>✔️ Yes</td>
+                <td>✔️ Native support with merge script</td>
+              </tr>
+              <tr>
+                <td><strong>Setup Complexity</strong></td>
+                <td>Zero</td>
+                <td>Simple</td>
+                <td>Moderate (Java required)</td>
+                <td>Simple</td>
+              </tr>
+              <tr>
+                <td><strong>System Info</strong></td>
+                <td>⛔️ None</td>
+                <td>✔️ Yes</td>
+                <td>⚠️ Manual</td>
+                <td>✔️ Automatic & detailed</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+    <script src="search.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

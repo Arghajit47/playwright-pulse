@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from "lucide-react";
 export type TestStatus = "passed" | "failed" | "skipped" | "expected-failure" | "unexpected-success" | "explicitly-skipped";
 export interface TestStep {
     id: string;
@@ -26,16 +26,35 @@ export interface TestResult {
     steps: TestStep[];
     errorMessage?: string;
     stackTrace?: string;
+    snippet?: string;
     codeSnippet?: string;
     tags?: string[];
     suiteName?: string;
     runId: string;
     browser: string;
     screenshots?: string[];
-    videoPath?: string;
+    videoPath?: string[];
     tracePath?: string;
+    attachments?: {
+        name: string;
+        path: string;
+        contentType: string;
+    }[];
     stdout?: string[];
     stderr?: string[];
+    workerId?: number;
+    totalWorkers?: number;
+    configFile?: string;
+    metadata?: string;
+    annotations?: {
+        type: string;
+        description?: string;
+        location?: {
+            file: string;
+            line: number;
+            column: number;
+        };
+    }[];
 }
 export interface TestRun {
     id: string;
@@ -45,6 +64,7 @@ export interface TestRun {
     failed: number;
     skipped: number;
     duration: number;
+    environment?: EnvDetails;
 }
 export interface TrendDataPoint {
     date: string;
@@ -62,4 +82,17 @@ export interface PlaywrightPulseReporterOptions {
     outputFile?: string;
     outputDir?: string;
     base64Images?: boolean;
+    resetOnEachRun?: boolean;
+}
+export interface EnvDetails {
+    host: string;
+    os: string;
+    cpu: {
+        model: string;
+        cores: number;
+    };
+    memory: string;
+    node: string;
+    v8: string;
+    cwd: string;
 }

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reporters & Scripts - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="search.css" />
+  </head>
+  <body>
+    <!-- Enhanced Header with Search and Theme Toggle -->
+    <!-- Add this RIGHT AFTER <body data-theme="light"> in ALL your HTML files -->
+    <header class="enhanced-header">
+      <div class="header-left">
+        <img
+          src="./asset/FullLogo.png"
+          alt="Playwright Pulse Report Banner"
+          class="header-logo"
+        />
+      </div>
+
+      <div class="header-controls">
+        <div class="search-container">
+          <div class="search-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="Search documentation..."
+              autocomplete="off"
+            />
+            <button class="clear-search" id="clearSearch">×</button>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </div>
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
+            />
+            <path
+              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="sidebar" id="sidebar">
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li>
+            <a href="reporters-scripts.html" class="active"
+              >Reporters & Scripts</a
+            >
+          </li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li><a href="advanced-usage.html">Advanced Usage</a></li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html">Reference</a></li>
+          <li>
+            <a
+              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Reporters & Scripts</h1>
+        <p>
+          The package is composed of a core reporter and a set of CLI scripts
+          for processing the collected data.
+        </p>
+
+        <section id="core-reporter">
+          <h2>The Core Reporter</h2>
+          <p>
+            The main logic resides in <code>playwright-pulse-reporter.ts</code>,
+            which implements Playwright's <code>Reporter</code> interface.
+          </p>
+          <h4>How it Works</h4>
+          <ul>
+            <li>
+              <strong>Event-Driven:</strong> It hooks into Playwright's test
+              execution lifecycle using methods like <code>onBegin</code>,
+              <code>onTestEnd</code>, and <code>onEnd</code>.
+            </li>
+            <li>
+              <strong>Data Collection:</strong> It captures comprehensive data
+              for each test, including status, duration, retries, steps, errors,
+              console output, and tags.
+            </li>
+            <li>
+              <strong>Attachment Handling:</strong> When a test completes, the
+              reporter automatically processes its attachments. It copies
+              screenshots, videos, and trace files into a structured
+              <code>pulse-report/attachments/</code> directory.
+            </li>
+            <li>
+              <strong>Sharding Awareness:</strong> The reporter is aware of
+              sharding. When run in a sharded environment, it saves its results
+              to a temporary file (e.g.,
+              <code>.pulse-shard-results-0.json</code>) instead of writing the
+              final report.
+            </li>
+            <li>
+              <strong>JSON Output:</strong> At the end of a non-sharded run (or
+              after merging shards), it generates the master
+              <code>playwright-pulse-report.json</code> file.
+            </li>
+          </ul>
+        </section>
+
+        <section id="cli-scripts">
+          <h2>Command-Line Scripts</h2>
+          <p>
+            These scripts transform the raw JSON data into viewable reports.
+            They are designed to be run after
+            <code>npx playwright test</code> has completed.
+          </p>
+          <h4>generate-pulse-report</h4>
+          <ul>
+            <li>
+              <strong>Purpose:</strong> Creates the primary, fully
+              self-contained static HTML report with embedded attachments.
+            </li>
+            <li>
+              <strong>Command:</strong> <code>npx generate-pulse-report</code>
+            </li>
+            <li>
+              <strong>Output:</strong>
+              <code>pulse-report/playwright-pulse-static-report.html</code>
+            </li>
+          </ul>
+          <h4>generate-report</h4>
+          <ul>
+            <li>
+              <strong>Purpose:</strong> Creates a lightweight HTML report that
+              loads attachments dynamically from the
+              <code>attachments/</code> folder.
+            </li>
+            <li><strong>Command:</strong> <code>npx generate-report</code></li>
+            <li>
+              <strong>Output:</strong>
+              <code>pulse-report/playwright-pulse-report.html</code>
+            </li>
+          </ul>
+          <h4>merge-pulse-report</h4>
+          <ul>
+            <li>
+              <strong>Purpose:</strong> Merges test results from multiple shards
+              into a single master JSON file.
+            </li>
+            <li>
+              <strong>Command:</strong> <code>npx merge-pulse-report</code>
+            </li>
+          </ul>
+          <h4>send-email</h4>
+          <ul>
+            <li>
+              <strong>Purpose:</strong> To generate and distribute a lightweight
+              summary report via email.
+            </li>
+            <li><strong>Command:</strong> <code>npx send-email</code></li>
+          </ul>
+        </section>
+
+        <section id="optional-cli-scripts">
+          <h2>Optional CLI Scripts</h2>
+          <p>
+            These scripts are integrated into the main scripts but can be run
+            standalone for specific purposes.
+          </p>
+          <h4>generate-trend</h4>
+          <ul>
+            <li>
+              <strong>Purpose:</strong> Archives the current test run's data to
+              enable historical trend analysis.
+            </li>
+            <li><strong>Command:</strong> <code>npx generate-trend</code></li>
+            <li>
+              <strong>Details:</strong> The main report generation scripts call
+              this automatically. You would run this manually if you only need
+              to update historical data without generating a full HTML report.
+            </li>
+          </ul>
+          <h4>generate-email-report</h4>
+          <ul>
+            <li>
+              <strong>Purpose:</strong> Generates the lightweight email summary
+              without sending it.
+            </li>
+            <li>
+              <strong>Command:</strong> <code>npx generate-email-report</code>
+            </li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    <script src="search.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from "lucide-react";
 
 export type TestStatus =
   | "passed"
@@ -22,7 +22,6 @@ export interface TestStep {
   isHook?: boolean;
   hookType?: "before" | "after";
   steps?: TestStep[]; // Nested steps
-  // Removed step-level attachments as the new logic handles them at the result level
 }
 
 export interface TestResult {
@@ -36,17 +35,41 @@ export interface TestResult {
   steps: TestStep[];
   errorMessage?: string;
   stackTrace?: string;
+  snippet?: string; // For AI analysis
   codeSnippet?: string; // For AI analysis
   tags?: string[];
   suiteName?: string;
-  runId: string; // Identifier for the test run this result belongs to
+  runId: string; // Identifier for the test run this belongs to
   browser: string; // Browser name (e.g., "chromium", "firefox", "webkit")
-  // New fields for refined attachment handling
-  screenshots?: string[]; // Array of paths or base64 data URIs for screenshots
-  videoPath?: string; // Relative path to the video file
-  tracePath?: string; // Relative path to the trace file
+
+  // --- MODIFIED & NEW ATTACHMENT FIELDS ---
+  screenshots?: string[];
+  videoPath?: string[]; // MODIFIED: Now an array to support multiple videos
+  tracePath?: string;
+
+  // NEW: A generic array for other file types (HTML, PDF, JSON, etc.)
+  attachments?: {
+    name: string; // Original name of the attachment (e.g., "user-data.json")
+    path: string; // Relative path within the report's attachments directory
+    contentType: string; // MIME type (e.g., "application/json", "text/html")
+  }[];
+
   stdout?: string[]; // Standard output captured during the test
   stderr?: string[]; // Standard error captured during the test
+  workerId?: number;
+  totalWorkers?: number;
+  configFile?: string;
+  metadata?: string;
+
+  annotations?: {
+    type: string;
+    description?: string;
+    location?: {
+      file: string;
+      line: number;
+      column: number;
+    };
+  }[];
 }
 
 export interface TestRun {
@@ -57,6 +80,7 @@ export interface TestRun {
   failed: number;
   skipped: number;
   duration: number; // total duration for the run
+  environment?: EnvDetails;
 }
 
 export interface TrendDataPoint {
@@ -77,5 +101,20 @@ export interface SummaryMetric {
 export interface PlaywrightPulseReporterOptions {
   outputFile?: string;
   outputDir?: string;
-  base64Images?: boolean; // Option to embed images as base64
+  base64Images?: boolean;
+  resetOnEachRun?: boolean;
+}
+
+// Add this new interface
+export interface EnvDetails {
+  host: string;
+  os: string;
+  cpu: {
+    model: string;
+    cores: number;
+  };
+  memory: string;
+  node: string;
+  v8: string;
+  cwd: string;
 }

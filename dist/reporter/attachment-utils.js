@@ -45,11 +45,10 @@ const ATTACHMENTS_SUBDIR = "attachments"; // Consistent subdirectory name
  * @param config The reporter configuration options.
  */
 function attachFiles(testId, pwResult, pulseResult, config) {
-    const baseReportDir = config.outputDir || "pulse-report"; // Base output directory
-    // Ensure attachments are relative to the main outputDir
-    const attachmentsBaseDir = path.resolve(baseReportDir, ATTACHMENTS_SUBDIR); // Absolute path for FS operations
-    const attachmentsSubFolder = testId.replace(/[^a-zA-Z0-9_-]/g, "_"); // Sanitize testId for folder name
-    const testAttachmentsDir = path.join(attachmentsBaseDir, attachmentsSubFolder); // e.g., pulse-report/attachments/test_id_abc
+    const baseReportDir = config.outputDir || "pulse-report";
+    const attachmentsBaseDir = path.resolve(baseReportDir, ATTACHMENTS_SUBDIR);
+    const attachmentsSubFolder = testId.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const testAttachmentsDir = path.join(attachmentsBaseDir, attachmentsSubFolder);
     try {
         if (!fs.existsSync(testAttachmentsDir)) {
             fs.mkdirSync(testAttachmentsDir, { recursive: true });
@@ -57,53 +56,49 @@ function attachFiles(testId, pwResult, pulseResult, config) {
     }
     catch (error) {
         console.error(`Pulse Reporter: Failed to create attachments directory: ${testAttachmentsDir}`, error);
-        return; // Stop processing if directory creation fails
+        return;
     }
     if (!pwResult.attachments)
         return;
-    const { base64Images } = config; // Get base64 embedding option
-    pulseResult.screenshots = []; // Initialize screenshots array
+    const { base64Images } = config;
+    // --- MODIFICATION: Initialize all attachment arrays to prevent errors ---
+    pulseResult.screenshots = [];
+    pulseResult.videoPath = [];
+    pulseResult.attachments = [];
     pwResult.attachments.forEach((attachment) => {
         const { contentType, name, path: attachmentPath, body } = attachment;
-        // Skip attachments without path or body
         if (!attachmentPath && !body) {
             console.warn(`Pulse Reporter: Attachment "${name}" for test ${testId} has no path or body. Skipping.`);
             return;
         }
-        // Determine filename
-        const safeName = name.replace(/[^a-zA-Z0-9_.-]/g, "_"); // Sanitize original name
+        const safeName = name.replace(/[^a-zA-Z0-9_.-]/g, "_");
         const extension = attachmentPath
             ? path.extname(attachmentPath)
             : `.${getFileExtension(contentType)}`;
         const baseFilename = attachmentPath
             ? path.basename(attachmentPath, extension)
             : safeName;
-        // Ensure unique filename within the test's attachment folder
         const fileName = `${baseFilename}_${Date.now()}${extension}`;
-        // Relative path for storing in JSON (relative to baseReportDir)
         const relativePath = path.join(ATTACHMENTS_SUBDIR, attachmentsSubFolder, fileName);
-        // Full path for file system operations
         const fullPath = path.join(testAttachmentsDir, fileName);
         if (contentType === null || contentType === void 0 ? void 0 : contentType.startsWith("image/")) {
-            // Handle all image types consistently
             handleImage(attachmentPath, body, base64Images, fullPath, relativePath, pulseResult, name);
         }
         else if (name === "video" || (contentType === null || contentType === void 0 ? void 0 : contentType.startsWith("video/"))) {
-            handleAttachment(attachmentPath, body, fullPath, relativePath, "videoPath", pulseResult);
+            handleAttachment(attachmentPath, body, fullPath, relativePath, "videoPath", pulseResult, attachment);
         }
         else if (name === "trace" || contentType === "application/zip") {
-            // Trace files are zips
-            handleAttachment(attachmentPath, body, fullPath, relativePath, "tracePath", pulseResult);
+            handleAttachment(attachmentPath, body, fullPath, relativePath, "tracePath", pulseResult, attachment);
         }
         else {
-            // Handle other generic attachments if needed (e.g., log files)
-            // console.log(`Pulse Reporter: Processing generic attachment "${name}" (Type: ${contentType}) for test ${testId}`);
-            // handleAttachment(attachmentPath, body, fullPath, relativePath, 'otherAttachments', pulseResult); // Example for storing other types
+            // --- MODIFICATION: Enabled handling for all other file types ---
+            handleAttachment(attachmentPath, body, fullPath, relativePath, "attachments", pulseResult, attachment);
         }
     });
 }
 /**
  * Handles image attachments, either embedding as base64 or copying the file.
+ * (This function is unchanged)
  */
 function handleImage(attachmentPath, body, base64Embed, fullPath, relativePath, pulseResult, attachmentName) {
     let screenshotData = undefined;
@@ -123,14 +118,10 @@ function handleImage(attachmentPath, body, base64Embed, fullPath, relativePath, 
         }
     }
     else if (body) {
-        // Always embed if only body is available
         screenshotData = `data:image/${getFileExtension(attachmentName)};base64,${body.toString("base64")}`;
         if (!base64Embed) {
-            // Optionally save the buffer to a file even if embedding is off,
-            // but the primary representation will be base64.
             try {
                 fs.writeFileSync(fullPath, body);
-                // console.log(`Pulse Reporter: Saved screenshot buffer to ${fullPath}`);
             }
             catch (error) {
                 console.error(`Pulse Reporter: Failed to save screenshot buffer: ${fullPath}. Error: ${error.message}`);
@@ -147,21 +138,36 @@ function handleImage(attachmentPath, body, base64Embed, fullPath, relativePath, 
 /**
  * Handles non-image attachments by copying the file or writing the buffer.
  */
-function handleAttachment(attachmentPath, body, fullPath, relativePath, resultKey, // Add more keys if needed
-pulseResult) {
+function handleAttachment(attachmentPath, body, fullPath, relativePath, resultKey, // MODIFIED: Added 'attachments'
+pulseResult, originalAttachment // MODIFIED: Pass original attachment
+) {
+    var _a, _b;
     try {
         if (attachmentPath) {
             fs.copyFileSync(attachmentPath, fullPath);
-            pulseResult[resultKey] = relativePath;
         }
         else if (body) {
             fs.writeFileSync(fullPath, body);
-            pulseResult[resultKey] = relativePath; // Store relative path even if from buffer
+        }
+        // --- MODIFICATION: Logic to handle different properties correctly ---
+        switch (resultKey) {
+            case "videoPath":
+                (_a = pulseResult.videoPath) === null || _a === void 0 ? void 0 : _a.push(relativePath);
+                break;
+            case "tracePath":
+                pulseResult.tracePath = relativePath;
+                break;
+            case "attachments":
+                (_b = pulseResult.attachments) === null || _b === void 0 ? void 0 : _b.push({
+                    name: originalAttachment.name,
+                    path: relativePath,
+                    contentType: originalAttachment.contentType,
+                });
+                break;
         }
     }
     catch (error) {
         console.error(`Pulse Reporter: Failed to copy/write attachment to ${fullPath}. Error: ${error.message}`);
-        // Don't set the path in pulseResult if saving failed
     }
 }
 /**
@@ -172,8 +178,7 @@ pulseResult) {
 function getFileExtension(contentType) {
     var _a;
     if (!contentType)
-        return "bin"; // Default binary extension
-    // More robust mapping
+        return "bin";
     const extensions = {
         "image/png": "png",
         "image/jpeg": "jpg",
@@ -182,9 +187,12 @@ function getFileExtension(contentType) {
         "image/svg+xml": "svg",
         "video/webm": "webm",
         "video/mp4": "mp4",
-        "application/zip": "zip", // For traces
+        "application/zip": "zip",
         "text/plain": "txt",
         "application/json": "json",
+        "text/html": "html",
+        "application/pdf": "pdf",
+        "text/csv": "csv",
     };
     return (extensions[contentType.toLowerCase()] ||
         ((_a = contentType.split("/")[1]) === null || _a === void 0 ? void 0 : _a.split("+")[0]) ||

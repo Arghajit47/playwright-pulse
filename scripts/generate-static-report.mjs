@@ -1,14 +1,16 @@
 #!/usr/bin/env node
-// Using Node.js syntax compatible with `.mjs`
-import * as fs from "fs/promises";
-import path from "path";
-import * as d3 from "d3";
-import { JSDOM } from "jsdom";
-import * as XLSX from "xlsx";
-import { fork } from "child_process"; // Add this
-import { fileURLToPath } from "url"; // Add this for resolving path in ESM
 
-// Use dynamic import for chalk as it's ESM only
+import * as fs from "fs/promises";
+import { readFileSync, existsSync as fsExistsSync } from "fs";
+import path from "path";
+import { fork } from "child_process";
+import { fileURLToPath } from "url";
+
+/**
+ * Dynamically imports the 'chalk' library for terminal string styling.
+ * This is necessary because chalk is an ESM-only module.
+ * If the import fails, a fallback object with plain console log functions is used.
+ */
 let chalk;
 try {
   chalk = (await import("chalk")).default;
@@ -24,523 +26,473 @@ try {
   };
 }
 
-// Default configuration
+/**
+ * @constant {string} DEFAULT_OUTPUT_DIR
+ * The default directory where the report will be generated.
+ */
 const DEFAULT_OUTPUT_DIR = "pulse-report";
+
+/**
+ * @constant {string} DEFAULT_JSON_FILE
+ * The default name for the JSON file containing the test data.
+ */
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
+
+/**
+ * @constant {string} DEFAULT_HTML_FILE
+ * The default name for the generated HTML report file.
+ */
 const DEFAULT_HTML_FILE = "playwright-pulse-static-report.html";
 
 // Helper functions
-function sanitizeHTML(str) {
-  // CORRECTED VERSION
-  if (str === null || str === undefined) return "";
-  return String(str)
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, `"`)
-    .replace(/'/g, "'");
+/**
+ * Converts a string with ANSI escape codes to an HTML string with inline styles.
+ * @param {string} text The text with ANSI codes.
+ * @returns {string} The converted HTML string.
+ */
+export function ansiToHtml(text) {
+  if (!text) {
+    return "";
+  }
+  const codes = {
+    0: "color:inherit;font-weight:normal;font-style:normal;text-decoration:none;opacity:1;background-color:inherit;",
+    1: "font-weight:bold",
+    2: "opacity:0.6",
+    3: "font-style:italic",
+    4: "text-decoration:underline",
+    30: "color:#000", // black
+    31: "color:#d00", // red
+    32: "color:#0a0", // green
+    33: "color:#aa0", // yellow
+    34: "color:#00d", // blue
+    35: "color:#a0a", // magenta
+    36: "color:#0aa", // cyan
+    37: "color:#aaa", // light grey
+    39: "color:inherit", // default foreground color
+    40: "background-color:#000", // black background
+    41: "background-color:#d00", // red background
+    42: "background-color:#0a0", // green background
+    43: "background-color:#aa0", // yellow background
+    44: "background-color:#00d", // blue background
+    45: "background-color:#a0a", // magenta background
+    46: "background-color:#0aa", // cyan background
+    47: "background-color:#aaa", // light grey background
+    49: "background-color:inherit", // default background color
+    90: "color:#555", // dark grey
+    91: "color:#f55", // light red
+    92: "color:#5f5", // light green
+    93: "color:#ff5", // light yellow
+    94: "color:#55f", // light blue
+    95: "color:#f5f", // light magenta
+    96: "color:#5ff", // light cyan
+    97: "color:#fff", // white
+  };
+
+  let currentStylesArray = [];
+  let html = "";
+  let openSpan = false;
+
+  const applyStyles = () => {
+    if (openSpan) {
+      html += "</span>";
+      openSpan = false;
+    }
+    if (currentStylesArray.length > 0) {
+      const styleString = currentStylesArray.filter((s) => s).join(";");
+      if (styleString) {
+        html += `<span style="${styleString}">`;
+        openSpan = true;
+      }
+    }
+  };
+  const resetAndApplyNewCodes = (newCodesStr) => {
+    const newCodes = newCodesStr.split(";");
+    if (newCodes.includes("0")) {
+      currentStylesArray = [];
+      if (codes["0"]) currentStylesArray.push(codes["0"]);
+    }
+    for (const code of newCodes) {
+      if (code === "0") continue;
+      if (codes[code]) {
+        if (code === "39") {
+          currentStylesArray = currentStylesArray.filter(
+            (s) => !s.startsWith("color:")
+          );
+          currentStylesArray.push("color:inherit");
+        } else if (code === "49") {
+          currentStylesArray = currentStylesArray.filter(
+            (s) => !s.startsWith("background-color:")
+          );
+          currentStylesArray.push("background-color:inherit");
+        } else {
+          currentStylesArray.push(codes[code]);
+        }
+      } else if (code.startsWith("38;2;") || code.startsWith("48;2;")) {
+        const parts = code.split(";");
+        const type = parts[0] === "38" ? "color" : "background-color";
+        if (parts.length === 5) {
+          currentStylesArray = currentStylesArray.filter(
+            (s) => !s.startsWith(type + ":")
+          );
+          currentStylesArray.push(
+            `${type}:rgb(${parts[2]},${parts[3]},${parts[4]})`
+          );
+        }
+      }
+    }
+    applyStyles();
+  };
+  const segments = text.split(/(\x1b\[[0-9;]*m)/g);
+  for (const segment of segments) {
+    if (!segment) continue;
+    if (segment.startsWith("\x1b[") && segment.endsWith("m")) {
+      const command = segment.slice(2, -1);
+      resetAndApplyNewCodes(command);
+    } else {
+      const escapedContent = segment
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+      html += escapedContent;
+    }
+  }
+  if (openSpan) {
+    html += "</span>";
+  }
+  return html;
 }
+/**
+ * Sanitizes an HTML string by replacing special characters with their corresponding HTML entities.
+ * @param {string} str The HTML string to sanitize.
+ * @returns {string} The sanitized HTML string.
+ */
+function sanitizeHTML(str) {
+  if (str === null || str === undefined) return "";
+  return String(str).replace(
+    /[&<>"']/g,
+    (match) =>
+      ({ "&": "&", "<": "<", ">": ">", '"': '"', "'": "'" }[match] || match)
+  );
+}
+/**
+ * Capitalizes the first letter of a string and converts the rest to lowercase.
+ * @param {string} str The string to capitalize.
+ * @returns {string} The capitalized string.
+ */
 function capitalize(str) {
-  if (!str) return ""; // Handle empty string
+  if (!str) return "";
   return str[0].toUpperCase() + str.slice(1).toLowerCase();
 }
-
-// User-provided formatDuration function
-function formatDuration(ms) {
-  if (ms === undefined || ms === null || ms < 0) return "0.0s";
-  return (ms / 1000).toFixed(1) + "s";
+/**
+ * Formats a Playwright error object or message into an HTML string.
+ * @param {Error|string} error The error object or message string.
+ * @returns {string} The formatted HTML error string.
+ */
+function formatPlaywrightError(error) {
+  const commandOutput = ansiToHtml(error || error.message);
+  return convertPlaywrightErrorToHTML(commandOutput);
 }
+/**
+ * Converts a string containing Playwright-style error formatting to HTML.
+ * @param {string} str The error string.
+ * @returns {string} The HTML-formatted error string.
+ */
+function convertPlaywrightErrorToHTML(str) {
+  if (!str) return "";
+  return str
+    .replace(/^(\s+)/gm, (match) =>
+      match.replace(/ /g, " ").replace(/\t/g, "  ")
+    )
+    .replace(/<red>/g, '<span style="color: red;">')
+    .replace(/<green>/g, '<span style="color: green;">')
+    .replace(/<dim>/g, '<span style="opacity: 0.6;">')
+    .replace(/<intensity>/g, '<span style="font-weight: bold;">')
+    .replace(/<\/color>/g, "</span>")
+    .replace(/<\/intensity>/g, "</span>")
+    .replace(/\n/g, "<br>");
+}
+/**
+ * Formats a duration in milliseconds into a human-readable string (e.g., '1h 2m 3s', '4.5s').
+ * @param {number} ms The duration in milliseconds.
+ * @param {object} [options={}] Formatting options.
+ * @param {number} [options.precision=1] The number of decimal places for seconds.
+ * @param {string} [options.invalidInputReturn="N/A"] The string to return for invalid input.
+ * @param {string|null} [options.defaultForNullUndefinedNegative=null] The value for null, undefined, or negative inputs.
+ * @returns {string} The formatted duration string.
+ */
+function formatDuration(ms, options = {}) {
+  const {
+    precision = 1,
+    invalidInputReturn = "N/A",
+    defaultForNullUndefinedNegative = null,
+  } = options;
 
+  const validPrecision = Math.max(0, Math.floor(precision));
+  const zeroWithPrecision = (0).toFixed(validPrecision) + "s";
+  const resolvedNullUndefNegReturn =
+    defaultForNullUndefinedNegative === null
+      ? zeroWithPrecision
+      : defaultForNullUndefinedNegative;
+
+  if (ms === undefined || ms === null) {
+    return resolvedNullUndefNegReturn;
+  }
+
+  const numMs = Number(ms);
+
+  if (Number.isNaN(numMs) || !Number.isFinite(numMs)) {
+    return invalidInputReturn;
+  }
+
+  if (numMs < 0) {
+    return resolvedNullUndefNegReturn;
+  }
+
+  if (numMs === 0) {
+    return zeroWithPrecision;
+  }
+
+  const MS_PER_SECOND = 1000;
+  const SECONDS_PER_MINUTE = 60;
+  const MINUTES_PER_HOUR = 60;
+  const SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+
+  const totalRawSeconds = numMs / MS_PER_SECOND;
+
+  if (
+    totalRawSeconds < SECONDS_PER_MINUTE &&
+    Math.ceil(totalRawSeconds) < SECONDS_PER_MINUTE
+  ) {
+    return `${totalRawSeconds.toFixed(validPrecision)}s`;
+  } else {
+    const totalMsRoundedUpToSecond =
+      Math.ceil(numMs / MS_PER_SECOND) * MS_PER_SECOND;
+
+    let remainingMs = totalMsRoundedUpToSecond;
+
+    const h = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_HOUR));
+    remainingMs %= MS_PER_SECOND * SECONDS_PER_HOUR;
+
+    const m = Math.floor(remainingMs / (MS_PER_SECOND * SECONDS_PER_MINUTE));
+    remainingMs %= MS_PER_SECOND * SECONDS_PER_MINUTE;
+
+    const s = Math.floor(remainingMs / MS_PER_SECOND);
+
+    const parts = [];
+    if (h > 0) {
+      parts.push(`${h}h`);
+    }
+    if (h > 0 || m > 0 || numMs >= MS_PER_SECOND * SECONDS_PER_MINUTE) {
+      parts.push(`${m}m`);
+    }
+    parts.push(`${s}s`);
+
+    return parts.join(" ");
+  }
+}
+/**
+ * Generates HTML and JavaScript for a Highcharts line chart to display test result trends over multiple runs.
+ * @param {object} trendData The trend data.
+ * @param {Array<object>} trendData.overall An array of run objects with test statistics.
+ * @returns {string} The HTML string for the test trends chart.
+ */
 function generateTestTrendsChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for test counts.</div>';
   }
 
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const legendHeight = 60;
-  const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 350 - margin.top - margin.bottom;
-
-  const svg = body
-    .append("svg")
-    .attr(
-      "viewBox",
-      `0 0 ${width + margin.left + margin.right} ${
-        height + margin.top + margin.bottom
-      }`
-    )
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  const chartId = `testTrendsChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderTestTrendsChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
   const runs = trendData.overall;
-  const testCounts = runs.map((r) => r.totalTests);
-  const passedCounts = runs.map((r) => r.passed);
-  const failedCounts = runs.map((r) => r.failed);
-  const skippedCounts = runs.map((r) => r.skipped || 0);
 
-  const yMax = d3.max(
-    [testCounts, passedCounts, failedCounts, skippedCounts].flat()
-  );
-  const x = d3
-    .scalePoint()
-    .domain(runs.map((_, i) => i + 1))
-    .range([0, width])
-    .padding(0.5);
-  const y = d3
-    .scaleLinear()
-    .domain([0, yMax > 0 ? yMax * 1.1 : 10])
-    .range([height, 0]);
-
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `Run ${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(xAxis);
-  chart.append("g").attr("class", "chart-axis y-axis").call(d3.axisLeft(y));
-
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d))
-    .curve(d3.curveMonotoneX);
-  const areaGenerator = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(height)
-    .curve(d3.curveMonotoneX);
-
-  // ✅ Add gradient defs
-  const defs = svg.append("defs");
-
-  const gradients = [
-    { id: "totalGradient", color: "var(--primary-color)" },
-    { id: "passedGradient", color: "var(--success-color)" },
-    { id: "failedGradient", color: "var(--danger-color)" },
-    { id: "skippedGradient", color: "var(--warning-color)" },
-  ];
-
-  gradients.forEach(({ id, color }) => {
-    const gradient = defs
-      .append("linearGradient")
-      .attr("id", id)
-      .attr("x1", "0%")
-      .attr("y1", "0%")
-      .attr("x2", "0%")
-      .attr("y2", "100%");
-    gradient
-      .append("stop")
-      .attr("offset", "0%")
-      .attr("stop-color", color)
-      .attr("stop-opacity", 0.4);
-    gradient
-      .append("stop")
-      .attr("offset", "100%")
-      .attr("stop-color", color)
-      .attr("stop-opacity", 0);
-  });
-
-  // ✅ Render area fills
-  chart
-    .append("path")
-    .datum(testCounts)
-    .attr("fill", "url(#totalGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(passedCounts)
-    .attr("fill", "url(#passedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(failedCounts)
-    .attr("fill", "url(#failedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-  chart
-    .append("path")
-    .datum(skippedCounts)
-    .attr("fill", "url(#skippedGradient)")
-    .attr(
-      "d",
-      areaGenerator.y1((d) => y(d))
-    );
-
-  // ✅ Render lines
-  chart
-    .append("path")
-    .datum(testCounts)
-    .attr("class", "chart-line total-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(passedCounts)
-    .attr("class", "chart-line passed-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(failedCounts)
-    .attr("class", "chart-line failed-line")
-    .attr("d", lineGenerator);
-  chart
-    .append("path")
-    .datum(skippedCounts)
-    .attr("class", "chart-line skipped-line")
-    .attr("d", lineGenerator);
-
-  // ✅ Tooltip
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0)
-    .style("position", "absolute");
-
-  runs.forEach((run, i) => {
-    const categories = [
-      { type: "Total", count: run.totalTests, color: "var(--primary-color)" },
-      { type: "Passed", count: run.passed, color: "var(--success-color)" },
-      { type: "Failed", count: run.failed, color: "var(--danger-color)" },
-      {
-        type: "Skipped",
-        count: run.skipped || 0,
-        color: "var(--warning-color)",
-      },
-    ];
-
-    categories.forEach((category) => {
-      if (typeof category.count !== "number") return;
-
-      chart
-        .append("circle")
-        .attr("class", `hover-point hover-point-${category.type.toLowerCase()}`)
-        .attr("cx", x(i + 1))
-        .attr("cy", y(category.count))
-        .attr("r", 7)
-        .style("fill", "transparent")
-        .style("pointer-events", "all")
-        .on("mouseover", function (event) {
-          tooltip.transition().duration(150).style("opacity", 0.95);
-          tooltip
-            .html(
-              `
-            <strong>Run ${run.runId || i + 1} (${category.type})</strong><br>
-            Date: ${new Date(run.timestamp).toLocaleString()}<br>
-            ${category.type}: ${category.count}<br>
-            ---<br>
-            Total: ${run.totalTests} | Passed: ${run.passed}<br>
-            Failed: ${run.failed} | Skipped: ${run.skipped || 0}<br>
-            Duration: ${formatDuration(run.duration)}`
-            )
-            .style("left", `${event.pageX + 15}px`)
-            .style("top", `${event.pageY - 28}px`);
-
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 5.5)
-            .style("opacity", 1);
-        })
-        .on("mouseout", function () {
-          tooltip.transition().duration(300).style("opacity", 0);
-          d3.selectAll(
-            `.visible-point-${category.type.toLowerCase()}[data-run-index="${i}"]`
-          )
-            .transition()
-            .duration(100)
-            .attr("r", 4)
-            .style("opacity", 0.8);
-        });
-
-      chart
-        .append("circle")
-        .attr(
-          "class",
-          `visible-point visible-point-${category.type.toLowerCase()}`
-        )
-        .attr("data-run-index", i)
-        .attr("cx", x(i + 1))
-        .attr("cy", y(category.count))
-        .attr("r", 4)
-        .style("fill", category.color)
-        .style("opacity", 0.8)
-        .style("pointer-events", "none");
-    });
-  });
-
-  // ✅ Legend
-  const legendData = [
+  const series = [
     {
-      label: "Total",
-      colorClass: "total-line",
-      dotColor: "var(--primary-color)",
+      name: "Total",
+      data: runs.map((r) => r.totalTests),
+      color: "var(--primary-color)",
+      marker: { symbol: "circle" },
     },
     {
-      label: "Passed",
-      colorClass: "passed-line",
-      dotColor: "var(--success-color)",
+      name: "Passed",
+      data: runs.map((r) => r.passed),
+      color: "var(--success-color)",
+      marker: { symbol: "circle" },
     },
     {
-      label: "Failed",
-      colorClass: "failed-line",
-      dotColor: "var(--danger-color)",
+      name: "Failed",
+      data: runs.map((r) => r.failed),
+      color: "var(--danger-color)",
+      marker: { symbol: "circle" },
     },
     {
-      label: "Skipped",
-      colorClass: "skipped-line",
-      dotColor: "var(--warning-color)",
+      name: "Skipped",
+      data: runs.map((r) => r.skipped || 0),
+      color: "var(--warning-color)",
+      marker: { symbol: "circle" },
     },
   ];
+  const runsForTooltip = runs.map((r) => ({
+    runId: r.runId,
+    timestamp: r.timestamp,
+    duration: r.duration,
+  }));
 
-  const legend = chart
-    .append("g")
-    .attr("class", "chart-legend-d3 chart-legend-bottom")
-    .attr(
-      "transform",
-      `translate(${width / 2 - (legendData.length * 80) / 2}, ${height + 40})`
-    );
+  const categoriesString = JSON.stringify(runs.map((run, i) => `Run ${i + 1}`));
+  const seriesString = JSON.stringify(series);
+  const runsForTooltipString = JSON.stringify(runsForTooltip);
 
-  legendData.forEach((item, i) => {
-    const row = legend.append("g").attr("transform", `translate(${i * 80}, 0)`);
-    row
-      .append("line")
-      .attr("x1", 0)
-      .attr("x2", 15)
-      .attr("y1", 5)
-      .attr("y2", 5)
-      .attr("class", `chart-line ${item.colorClass}`)
-      .style("stroke-width", 2.5);
-    row
-      .append("circle")
-      .attr("cx", 7.5)
-      .attr("cy", 5)
-      .attr("r", 3.5)
-      .style("fill", item.dotColor);
-    row
-      .append("text")
-      .attr("x", 22)
-      .attr("y", 10)
-      .text(item.label)
-      .style("font-size", "12px");
-  });
-
-  return `<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+      <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}">
+          <div class="no-data">Loading Test Volume Trends...</div>
+      </div>
+      <script>
+          window.${renderFunctionName} = function() {
+              const chartContainer = document.getElementById('${chartId}');
+              if (!chartContainer) { console.error("Chart container ${chartId} not found for lazy loading."); return; }
+              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                  try {
+                      chartContainer.innerHTML = ''; // Clear placeholder
+                      const chartOptions = {
+                          chart: { type: "line", height: 350, backgroundColor: "transparent" },
+                          title: { text: null },
+                          xAxis: { categories: ${categoriesString}, crosshair: true, labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}},
+                          yAxis: { title: { text: "Test Count", style: { color: 'var(--text-color)'} }, min: 0, labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}},
+                          legend: { layout: "horizontal", align: "center", verticalAlign: "bottom", itemStyle: { fontSize: "12px", color: 'var(--text-color)' }},
+                          plotOptions: { series: { marker: { radius: 4, states: { hover: { radius: 6 }}}, states: { hover: { halo: { size: 5, opacity: 0.1 }}}}, line: { lineWidth: 2.5 }},
+                          tooltip: {
+                              shared: true, useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: { color: '#f5f5f5' },
+                              formatter: function () {
+                                  const runsData = ${runsForTooltipString};
+                                  const pointIndex = this.points[0].point.x;
+                                  const run = runsData[pointIndex];
+                                  let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' + 'Date: ' + new Date(run.timestamp).toLocaleString() + '<br><br>';
+                                  this.points.forEach(point => { tooltip += '<span style="color:' + point.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b><br>'; });
+                                  tooltip += '<br>Duration: ' + formatDuration(run.duration);
+                                  return tooltip;
+                              }
+                          },
+                          series: ${seriesString},
+                          credits: { enabled: false }
+                      };
+                      Highcharts.chart('${chartId}', chartOptions);
+                  } catch (e) {
+                      console.error("Error rendering chart ${chartId} (lazy):", e);
+                      chartContainer.innerHTML = '<div class="no-data">Error rendering test trends chart.</div>';
+                  }
+              } else {
+                  chartContainer.innerHTML = '<div class="no-data">Charting library not available for test trends.</div>';
+              }
+          };
+      </script>
+  `;
 }
-
+/**
+ * Generates HTML and JavaScript for a Highcharts area chart to display test duration trends.
+ * @param {object} trendData Data for duration trends.
+ * @param {Array<object>} trendData.overall Array of objects, each representing a test run with a duration.
+ * @returns {string} The HTML string for the duration trend chart.
+ */
 function generateDurationTrendChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for durations.</div>';
   }
-
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const legendHeight = 30;
-  const margin = { top: 30, right: 20, bottom: 50 + legendHeight, left: 50 };
-  const width = 600 - margin.left - margin.right;
-  const height = 350 - margin.top - margin.bottom;
-
-  const svg = body
-    .append("svg")
-    .attr(
-      "viewBox",
-      `0 0 ${width + margin.left + margin.right} ${
-        height + margin.top + margin.bottom
-      }`
-    )
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
+  const chartId = `durationTrendChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderDurationTrendChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
   const runs = trendData.overall;
-  const durations = runs.map((run) => run.duration / 1000);
 
-  const x = d3
-    .scalePoint()
-    .domain(runs.map((_, i) => i + 1))
-    .range([0, width])
-    .padding(0.5);
+  const accentColorAltRGB = "255, 152, 0"; // Assuming var(--accent-color-alt) is Orange #FF9800
 
-  const yMax = d3.max(durations);
-  const y = d3
-    .scaleLinear()
-    .domain([0, yMax > 0 ? yMax * 1.1 : 10])
-    .range([height, 0]);
+  const chartDataString = JSON.stringify(runs.map((run) => run.duration));
+  const categoriesString = JSON.stringify(runs.map((run, i) => `Run ${i + 1}`));
+  const runsForTooltip = runs.map((r) => ({
+    runId: r.runId,
+    timestamp: r.timestamp,
+    duration: r.duration,
+    totalTests: r.totalTests,
+  }));
+  const runsForTooltipString = JSON.stringify(runsForTooltip);
 
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `Run ${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis")
-    .attr("transform", `translate(0,${height})`)
-    .call(xAxis)
-    .selectAll("text")
-    .text((d) => `Run ${d}`);
+  const seriesStringForRender = `[{
+      name: 'Duration',
+      data: ${chartDataString},
+      color: 'var(--accent-color-alt)',
+      type: 'area',
+      marker: { symbol: 'circle', enabled: true, radius: 4, states: { hover: { radius: 6, lineWidthPlus: 0 } } },
+      fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(${accentColorAltRGB}, 0.4)'], [1, 'rgba(${accentColorAltRGB}, 0.05)']] },
+      lineWidth: 2.5
+  }]`;
 
-  chart
-    .append("g")
-    .attr("class", "chart-axis y-axis")
-    .call(d3.axisLeft(y).tickFormat((d) => `${d}s`));
-
-  // ✅ Gradient fill for area under the line
-  const defs = svg.append("defs");
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "durationGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color-alt)")
-    .attr("stop-opacity", 0);
-
-  // ✅ Line + area generators
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d_val) => y(d_val))
-    .curve(d3.curveMonotoneX);
-
-  const areaGenerator = d3
-    .area()
-    .x((_, i) => x(i + 1))
-    .y0(height)
-    .y1((d_val) => y(d_val))
-    .curve(d3.curveMonotoneX);
-
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("fill", "url(#durationGradient)")
-    .attr("d", areaGenerator);
-
-  chart
-    .append("path")
-    .datum(durations)
-    .attr("class", "chart-line duration-line")
-    .attr("d", lineGenerator);
-
-  // ✅ Tooltip handling
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  runs.forEach((run, i) => {
-    chart
-      .append("circle")
-      .attr("class", "hover-point")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 7)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        tooltip.transition().duration(150).style("opacity", 0.95);
-        tooltip
-          .html(
-            `
-          <strong>Run ${run.runId || i + 1}</strong><br>
-          Date: ${new Date(run.timestamp).toLocaleString()}<br>
-          Duration: ${formatDuration(run.duration)}<br>
-          Tests: ${run.totalTests}`
-          )
-          .style("left", `${event.pageX + 15}px`)
-          .style("top", `${event.pageY - 28}px`);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 5.5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(`.visible-point-duration[data-run-index="${i}"]`)
-          .transition()
-          .duration(100)
-          .attr("r", 4)
-          .style("opacity", 0.8);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point visible-point-duration")
-      .attr("data-run-index", i)
-      .attr("cx", x(i + 1))
-      .attr("cy", y(durations[i]))
-      .attr("r", 4)
-      .style("fill", "var(--accent-color-alt)")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none");
-  });
-
-  const legend = chart
-    .append("g")
-    .attr("class", "chart-legend-d3 chart-legend-bottom")
-    .attr("transform", `translate(${width / 2 - 50}, ${height + 40})`);
-
-  const legendRow = legend.append("g");
-  legendRow
-    .append("line")
-    .attr("x1", 0)
-    .attr("x2", 15)
-    .attr("y1", 5)
-    .attr("y2", 5)
-    .attr("class", "chart-line duration-line")
-    .style("stroke-width", 2.5);
-  legendRow
-    .append("circle")
-    .attr("cx", 7.5)
-    .attr("cy", 5)
-    .attr("r", 3.5)
-    .style("fill", "var(--accent-color-alt)");
-  legendRow
-    .append("text")
-    .attr("x", 22)
-    .attr("y", 10)
-    .text("Duration")
-    .style("font-size", "12px");
-
-  chart
-    .append("text")
-    .attr("class", "chart-title main-chart-title")
-    .attr("x", width / 2)
-    .attr("y", -margin.top / 2 + 10)
-    .attr("text-anchor", "middle");
-
-  return `<div class="trend-chart-container">${body.html()}</div>`;
+  return `
+      <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}">
+          <div class="no-data">Loading Duration Trends...</div>
+      </div>
+      <script>
+          window.${renderFunctionName} = function() {
+              const chartContainer = document.getElementById('${chartId}');
+              if (!chartContainer) { console.error("Chart container ${chartId} not found for lazy loading."); return; }
+              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                  try {
+                      chartContainer.innerHTML = ''; // Clear placeholder
+                      const chartOptions = {
+                          chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
+                          title: { text: null },
+                          xAxis: { categories: ${categoriesString}, crosshair: true, labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' }}},
+                          yAxis: {
+                              title: { text: 'Duration', style: { color: 'var(--text-color)' } },
+                              labels: { formatter: function() { return formatDuration(this.value); }, style: { color: 'var(--text-color-secondary)', fontSize: '12px' }},
+                              min: 0
+                          },
+                          legend: { layout: 'horizontal', align: 'center', verticalAlign: 'bottom', itemStyle: { fontSize: '12px', color: 'var(--text-color)' }},
+                          plotOptions: { area: { lineWidth: 2.5, states: { hover: { lineWidthPlus: 0 } }, threshold: null }},
+                          tooltip: {
+                              shared: true, useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: { color: '#f5f5f5' },
+                              formatter: function () {
+                                  const runsData = ${runsForTooltipString};
+                                  const pointIndex = this.points[0].point.x;
+                                  const run = runsData[pointIndex];
+                                  let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' + 'Date: ' + new Date(run.timestamp).toLocaleString() + '<br>';
+                                  this.points.forEach(point => { tooltip += '<span style="color:' + point.series.color + '">●</span> ' + point.series.name + ': <b>' + formatDuration(point.y) + '</b><br>'; });
+                                  tooltip += '<br>Tests: ' + run.totalTests;
+                                  return tooltip;
+                              }
+                          },
+                          series: ${seriesStringForRender}, // This is already a string representation of an array
+                          credits: { enabled: false }
+                      };
+                      Highcharts.chart('${chartId}', chartOptions);
+                  } catch (e) {
+                      console.error("Error rendering chart ${chartId} (lazy):", e);
+                      chartContainer.innerHTML = '<div class="no-data">Error rendering duration trend chart.</div>';
+                  }
+              } else {
+                  chartContainer.innerHTML = '<div class="no-data">Charting library not available for duration trends.</div>';
+              }
+          };
+      </script>
+  `;
 }
-
+/**
+ * Formats a date string or Date object into a more readable format (e.g., "MM/DD/YY HH:MM").
+ * @param {string|Date} dateStrOrDate The date string or Date object to format.
+ * @returns {string} The formatted date string, or "N/A" for invalid dates.
+ */
 function formatDate(dateStrOrDate) {
   if (!dateStrOrDate) return "N/A";
   try {
     const date = new Date(dateStrOrDate);
     if (isNaN(date.getTime())) return "Invalid Date";
-    // Using a more common and less verbose format
     return (
       date.toLocaleDateString(undefined, {
         year: "2-digit",
@@ -554,338 +506,883 @@ function formatDate(dateStrOrDate) {
     return "Invalid Date Format";
   }
 }
-
+/**
+ * Generates a small area chart showing the duration history of a single test across multiple runs.
+ * The status of each run is indicated by the color of the marker.
+ * @param {Array<object>} history An array of run objects, each with status and duration.
+ * @returns {string} The HTML string for the test history chart.
+ */
 function generateTestHistoryChart(history) {
   if (!history || history.length === 0)
     return '<div class="no-data-chart">No data for chart</div>';
-
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const width = 320;
-  const height = 100;
-  const margin = { top: 10, right: 10, bottom: 30, left: 40 };
-
-  const svg = body
-    .append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chart = svg
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const chartWidth = width - margin.left - margin.right;
-  const chartHeight = height - margin.top - margin.bottom;
-
   const validHistory = history.filter(
     (h) => h && typeof h.duration === "number" && h.duration >= 0
   );
   if (validHistory.length === 0)
     return '<div class="no-data-chart">No valid data for chart</div>';
 
-  const maxDuration = d3.max(validHistory, (d) => d.duration);
+  const chartId = `testHistoryChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderTestHistoryChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
 
-  const x = d3
-    .scalePoint()
-    .domain(validHistory.map((_, i) => i + 1))
-    .range([0, chartWidth])
-    .padding(0.5);
-
-  const y = d3
-    .scaleLinear()
-    .domain([0, maxDuration > 0 ? maxDuration * 1.1 : 1])
-    .range([chartHeight, 0]);
-
-  // Axes
-  const xAxis = d3.axisBottom(x).tickFormat((d) => `R${d}`);
-  chart
-    .append("g")
-    .attr("class", "chart-axis x-axis small-axis")
-    .attr("transform", `translate(0,${chartHeight})`)
-    .call(xAxis)
-    .selectAll("text")
-    .text((d) => `R${d}`);
-
-  chart
-    .append("g")
-    .attr("class", "chart-axis y-axis small-axis")
-    .call(
-      d3
-        .axisLeft(y)
-        .ticks(3)
-        .tickFormat((d) => formatDuration(d))
-    );
-
-  // Gradient
-  const defs = svg.append("defs");
-  const gradient = defs
-    .append("linearGradient")
-    .attr("id", "historyLineGradient")
-    .attr("x1", "0%")
-    .attr("y1", "0%")
-    .attr("x2", "0%")
-    .attr("y2", "100%");
-  gradient
-    .append("stop")
-    .attr("offset", "0%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0.4);
-  gradient
-    .append("stop")
-    .attr("offset", "100%")
-    .attr("stop-color", "var(--accent-color)")
-    .attr("stop-opacity", 0);
-
-  // Line generator with smoothing
-  const lineGenerator = d3
-    .line()
-    .x((_, i) => x(i + 1))
-    .y((d) => y(d.duration))
-    .curve(d3.curveMonotoneX);
-
-  if (validHistory.length > 1) {
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("class", "chart-line history-duration-line")
-      .attr("d", lineGenerator)
-      .style("stroke", "var(--accent-color)");
-
-    // Gradient area fill under line
-    const area = d3
-      .area()
-      .x((_, i) => x(i + 1))
-      .y0(chartHeight)
-      .y1((d) => y(d.duration))
-      .curve(d3.curveMonotoneX);
-
-    chart
-      .append("path")
-      .datum(validHistory)
-      .attr("d", area)
-      .attr("fill", "url(#historyLineGradient)");
-  }
-
-  // Tooltip
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  validHistory.forEach((run, i) => {
-    chart
-      .append("circle")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 6)
-      .style("fill", "transparent")
-      .style("pointer-events", "all")
-      .on("mouseover", function (event) {
-        tooltip.transition().duration(150).style("opacity", 0.95);
-        tooltip
-          .html(
-            `
-          <strong>Run ${run.runId || i + 1}</strong><br>
-          Status: <span class="status-badge-small-tooltip ${getStatusClass(
-            run.status
-          )}">${run.status.toUpperCase()}</span><br>
-          Duration: ${formatDuration(run.duration)}`
-          )
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY - 15}px`);
-        d3.select(this.nextSibling)
-          .transition()
-          .duration(100)
-          .attr("r", 4.5)
-          .style("opacity", 1);
-      })
-      .on("mouseout", function () {
-        tooltip.transition().duration(300).style("opacity", 0);
-        d3.select(this.nextSibling)
-          .transition()
-          .duration(100)
-          .attr("r", 3)
-          .style("opacity", 0.8);
-      });
-
-    chart
-      .append("circle")
-      .attr("class", "visible-point")
-      .attr("cx", x(i + 1))
-      .attr("cy", y(run.duration))
-      .attr("r", 3)
-      .style(
-        "fill",
-        run.status === "passed"
-          ? "var(--success-color)"
-          : run.status === "failed"
-          ? "var(--danger-color)"
-          : "var(--warning-color)"
-      )
-      .style("stroke", "#fff")
-      .style("stroke-width", "0.5px")
-      .style("opacity", 0.8)
-      .style("pointer-events", "none");
+  const seriesDataPoints = validHistory.map((run) => {
+    let color;
+    switch (String(run.status).toLowerCase()) {
+      case "passed":
+        color = "var(--success-color)";
+        break;
+      case "failed":
+        color = "var(--danger-color)";
+        break;
+      case "skipped":
+        color = "var(--warning-color)";
+        break;
+      default:
+        color = "var(--dark-gray-color)";
+    }
+    return {
+      y: run.duration,
+      marker: {
+        fillColor: color,
+        symbol: "circle",
+        radius: 3.5,
+        states: { hover: { radius: 5 } },
+      },
+      status: run.status,
+      runId: run.runId,
+    };
   });
 
-  return body.html();
-}
+  const accentColorRGB = "103, 58, 183"; // Assuming var(--accent-color) is Deep Purple #673ab7
 
-function generatePieChartD3(data, chartWidth = 300, chartHeight = 300) {
-  const { document } = new JSDOM().window;
-  const body = d3.select(document.body);
-
-  const total = data.reduce((sum, d) => sum + d.value, 0);
-  if (total === 0) {
-    return '<div class="no-data">No data for Test Distribution chart.</div>';
-  }
-  const passedPercentage = Math.round(
-    ((data.find((d) => d.label === "Passed")?.value || 0) / total) * 100
+  const categoriesString = JSON.stringify(
+    validHistory.map((_, i) => `R${i + 1}`)
   );
-
-  const legendItemHeight = 22;
-  const legendAreaHeight =
-    data.filter((d) => d.value > 0).length * legendItemHeight;
-  const effectiveChartHeight = chartHeight - legendAreaHeight - 10; // Space for legend below
-
-  const outerRadius = Math.min(chartWidth, effectiveChartHeight) / 2 - 10; // Adjusted radius for legend space
-  const innerRadius = outerRadius * 0.55;
-
-  const pie = d3
-    .pie()
-    .value((d) => d.value)
-    .sort(null);
-  const arcGenerator = d3
-    .arc()
-    .innerRadius(innerRadius)
-    .outerRadius(outerRadius);
-
-  const colorMap = {
-    Passed: "var(--success-color)",
-    Failed: "var(--danger-color)",
-    Skipped: "var(--warning-color)",
-  };
-  const color = d3
-    .scaleOrdinal()
-    .domain(data.map((d) => d.label))
-    .range(data.map((d) => colorMap[d.label] || "#ccc"));
-
-  const svg = body
-    .append("svg")
-    .attr("width", chartWidth) // SVG width is just for the chart
-    .attr("height", chartHeight) // Full height including legend
-    .attr("viewBox", `0 0 ${chartWidth} ${chartHeight}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  const chartGroup = svg
-    .append("g")
-    .attr(
-      "transform",
-      `translate(${chartWidth / 2}, ${effectiveChartHeight / 2 + 5})`
-    ); // Centered in available chart area
-
-  const tooltip = body
-    .append("div")
-    .attr("class", "chart-tooltip")
-    .style("opacity", 0);
-
-  chartGroup
-    .selectAll(".arc-path")
-    .data(pie(data.filter((d) => d.value > 0))) // Filter out zero-value slices for cleaner chart
-    .enter()
-    .append("path")
-    .attr("class", "arc-path")
-    .attr("d", arcGenerator)
-    .attr("fill", (d) => color(d.data.label))
-    .style("stroke", "var(--card-background-color)")
-    .style("stroke-width", 3)
-    .on("mouseover", function (event, d) {
-      d3.select(this)
-        .transition()
-        .duration(150)
-        .attr(
-          "d",
-          d3
-            .arc()
-            .innerRadius(innerRadius)
-            .outerRadius(outerRadius + 6)
-        );
-      tooltip.transition().duration(150).style("opacity", 0.95);
-      tooltip
-        .html(
-          `${d.data.label}: ${d.data.value} (${Math.round(
-            (d.data.value / total) * 100
-          )}%)`
-        )
-        .style("left", event.pageX + 15 + "px")
-        .style("top", event.pageY - 28 + "px");
-    })
-    .on("mouseout", function (event, d) {
-      d3.select(this).transition().duration(150).attr("d", arcGenerator);
-      tooltip.transition().duration(300).style("opacity", 0);
-    });
-
-  chartGroup
-    .append("text")
-    .attr("class", "pie-center-percentage")
-    .attr("text-anchor", "middle")
-    .attr("dy", "0.05em")
-    .text(`${passedPercentage}%`);
-
-  chartGroup
-    .append("text")
-    .attr("class", "pie-center-label")
-    .attr("text-anchor", "middle")
-    .attr("dy", "1.3em")
-    .text("Passed");
-
-  const legend = svg
-    .append("g")
-    .attr("class", "pie-chart-legend-d3 chart-legend-bottom")
-    .attr(
-      "transform",
-      `translate(${chartWidth / 2}, ${effectiveChartHeight + 20})`
-    ); // Position legend below chart
-
-  const legendItems = legend
-    .selectAll(".legend-item")
-    .data(data.filter((d) => d.value > 0))
-    .enter()
-    .append("g")
-    .attr("class", "legend-item")
-    // Position items horizontally, centering the block
-    .attr("transform", (d, i, nodes) => {
-      const numItems = nodes.length;
-      const totalLegendWidth = numItems * 90 - 10; // Approx width of all legend items
-      const startX = -totalLegendWidth / 2;
-      return `translate(${startX + i * 90}, 0)`; // 90 is approx width per item
-    });
-
-  legendItems
-    .append("rect")
-    .attr("width", 12)
-    .attr("height", 12)
-    .style("fill", (d) => color(d.label))
-    .attr("rx", 3)
-    .attr("ry", 3)
-    .attr("y", -6); // Align with text
-
-  legendItems
-    .append("text")
-    .attr("x", 18)
-    .attr("y", 0)
-    .text((d) => `${d.label} (${d.value})`)
-    .style("font-size", "12px")
-    .attr("dominant-baseline", "middle");
+  const seriesDataPointsString = JSON.stringify(seriesDataPoints);
 
   return `
-    <div class="pie-chart-wrapper">
-      <h3>Test Distribution</h3>
-      ${body.html()}
-    </div>`;
+      <div id="${chartId}" style="width: 320px; height: 100px;" class="lazy-load-chart" data-render-function-name="${renderFunctionName}">
+          <div class="no-data-chart">Loading History...</div>
+      </div>
+      <script>
+          window.${renderFunctionName} = function() {
+              const chartContainer = document.getElementById('${chartId}');
+              if (!chartContainer) { console.error("Chart container ${chartId} not found for lazy loading."); return; }
+              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                  try {
+                      chartContainer.innerHTML = ''; // Clear placeholder
+                      const chartOptions = {
+                          chart: { type: 'area', height: 100, width: 320, backgroundColor: 'transparent', spacing: [10,10,15,35] },
+                          title: { text: null },
+                          xAxis: { categories: ${categoriesString}, labels: { style: { fontSize: '10px', color: 'var(--text-color-secondary)' }}},
+                          yAxis: {
+                              title: { text: null },
+                              labels: { formatter: function() { return formatDuration(this.value); }, style: { fontSize: '10px', color: 'var(--text-color-secondary)' }, align: 'left', x: -35, y: 3 },
+                              min: 0, gridLineWidth: 0, tickAmount: 4
+                          },
+                          legend: { enabled: false },
+                          plotOptions: {
+                              area: {
+                                  lineWidth: 2, lineColor: 'var(--accent-color)',
+                                  fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(${accentColorRGB}, 0.4)'],[1, 'rgba(${accentColorRGB}, 0)']]},
+                                  marker: { enabled: true }, threshold: null
+                              }
+                          },
+                          tooltip: {
+                              useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: { color: '#f5f5f5', padding: '8px' },
+                              formatter: function() {
+                                  const pointData = this.point;
+                                  let statusBadgeHtml = '<span style="padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; background-color: ';
+                                  switch(String(pointData.status).toLowerCase()) {
+                                      case 'passed': statusBadgeHtml += 'var(--success-color)'; break;
+                                      case 'failed': statusBadgeHtml += 'var(--danger-color)'; break;
+                                      case 'skipped': statusBadgeHtml += 'var(--warning-color)'; break;
+                                      default: statusBadgeHtml += 'var(--dark-gray-color)';
+                                  }
+                                  statusBadgeHtml += ';">' + String(pointData.status).toUpperCase() + '</span>';
+                                  return '<strong>Run ' + (pointData.runId || (this.point.index + 1)) + '</strong><br>' + 'Status: ' + statusBadgeHtml + '<br>' + 'Duration: ' + formatDuration(pointData.y);
+                              }
+                          },
+                          series: [{ data: ${seriesDataPointsString}, showInLegend: false }],
+                          credits: { enabled: false }
+                      };
+                      Highcharts.chart('${chartId}', chartOptions);
+                  } catch (e) {
+                      console.error("Error rendering chart ${chartId} (lazy):", e);
+                      chartContainer.innerHTML = '<div class="no-data-chart">Error rendering history chart.</div>';
+                  }
+              } else {
+                  chartContainer.innerHTML = '<div class="no-data-chart">Charting library not available for history.</div>';
+              }
+          };
+      </script>
+  `;
+}
+/**
+ * Generates a Highcharts pie chart to visualize the distribution of test statuses.
+ * @param {Array<object>} data The data for the pie chart, with each object having a 'label' and 'value'.
+ * @param {number} [chartWidth=300] The width of the chart.
+ * @param {number} [chartHeight=300] The height of the chart.
+ * @returns {string} The HTML string for the pie chart.
+ */
+function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  if (total === 0) {
+    return '<div class="pie-chart-wrapper"><h3>Test Distribution</h3><div class="no-data">No data for Test Distribution chart.</div></div>';
+  }
+  const passedEntry = data.find((d) => d.label === "Passed");
+  const passedPercentage = Math.round(
+    ((passedEntry ? passedEntry.value : 0) / total) * 100
+  );
+
+  const chartId = `pieChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+
+  const seriesData = [
+    {
+      name: "Tests", // Changed from 'Test Distribution' for tooltip clarity
+      data: data
+        .filter((d) => d.value > 0)
+        .map((d) => {
+          let color;
+          switch (d.label) {
+            case "Passed":
+              color = "var(--success-color)";
+              break;
+            case "Failed":
+              color = "var(--danger-color)";
+              break;
+            case "Skipped":
+              color = "var(--warning-color)";
+              break;
+            default:
+              color = "#CCCCCC"; // A neutral default color
+          }
+          return { name: d.label, y: d.value, color: color };
+        }),
+      size: "100%",
+      innerSize: "55%",
+      dataLabels: { enabled: false },
+      showInLegend: true,
+    },
+  ];
+
+  // Approximate font size for center text, can be adjusted or made dynamic with more client-side JS
+  const centerTitleFontSize =
+    Math.max(12, Math.min(chartWidth, chartHeight) / 12) + "px";
+  const centerSubtitleFontSize =
+    Math.max(10, Math.min(chartWidth, chartHeight) / 18) + "px";
+
+  const optionsObjectString = `
+  {
+      chart: {
+          type: 'pie',
+          width: ${chartWidth},
+          height: ${
+            chartHeight - 40
+          }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
+          backgroundColor: 'transparent',
+          plotShadow: false,
+          spacingBottom: 40 // Ensure space for legend
+      },
+      title: {
+          text: '${passedPercentage}%',
+          align: 'center',
+          verticalAlign: 'middle',
+          y: 5, 
+          style: { fontSize: '${centerTitleFontSize}', fontWeight: 'bold', color: 'var(--primary-color)' }
+      },
+      subtitle: {
+          text: 'Passed',
+          align: 'center',
+          verticalAlign: 'middle',
+          y: 25, 
+          style: { fontSize: '${centerSubtitleFontSize}', color: 'var(--text-color-secondary)' }
+      },
+      tooltip: {
+          pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b> ({point.y})',
+          backgroundColor: 'rgba(10,10,10,0.92)',
+          borderColor: 'rgba(10,10,10,0.92)',
+          style: { color: '#f5f5f5' }
+      },
+      legend: {
+          layout: 'horizontal',
+          align: 'center',
+          verticalAlign: 'bottom',
+          itemStyle: { color: 'var(--text-color)', fontWeight: 'normal', fontSize: '12px' }
+      },
+      plotOptions: {
+          pie: {
+              allowPointSelect: true,
+              cursor: 'pointer',
+              borderWidth: 3,
+              borderColor: 'var(--card-background-color)', // Match D3 style
+              states: {
+                  hover: {
+                      // Using default Highcharts halo which is generally good
+                  }
+              }
+          }
+      },
+      series: ${JSON.stringify(seriesData)},
+      credits: { enabled: false }
+  }
+  `;
+
+  return `
+      <div class="pie-chart-wrapper" style="align-items: center; max-height: 450px">
+          <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
+          <div id="${chartId}" style="width: ${chartWidth}px; height: ${
+    chartHeight - 40
+  }px;"></div>
+          <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                  if (typeof Highcharts !== 'undefined') {
+                      try {
+                          const chartOptions = ${optionsObjectString};
+                          Highcharts.chart('${chartId}', chartOptions);
+                      } catch (e) {
+                          console.error("Error rendering chart ${chartId}:", e);
+                          document.getElementById('${chartId}').innerHTML = '<div class="no-data">Error rendering pie chart.</div>';
+                      }
+                  } else {
+                      document.getElementById('${chartId}').innerHTML = '<div class="no-data">Charting library not available.</div>';
+                  }
+              });
+          </script>
+      </div>
+  `;
+}
+/**
+ * Generates an HTML dashboard to display environment details.
+ * @param {object} environment The environment information.
+ * @param {number} [dashboardHeight=600] The height of the dashboard.
+ * @returns {string} The HTML string for the environment dashboard.
+ */
+function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
+  // Format memory for display
+  const formattedMemory = environment.memory.replace(/(\d+\.\d{2})GB/, "$1 GB");
+
+  // Generate a unique ID for the dashboard
+  const dashboardId = `envDashboard-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+
+  const cardHeight = Math.floor(dashboardHeight * 0.44);
+  const cardContentPadding = 16; // px
+
+  return `
+    <div class="environment-dashboard-wrapper" id="${dashboardId}">
+      <style>
+.environment-dashboard-wrapper *,
+.environment-dashboard-wrapper *::before,
+.environment-dashboard-wrapper *::after {
+box-sizing: border-box;
 }
 
+.environment-dashboard-wrapper {
+--primary-color: #4a9eff;
+--primary-light-color: #1a2332;
+--secondary-color: #9ca3af;
+--success-color: #34d399;
+--success-light-color: #1a2e23;
+--warning-color: #fbbf24;
+--warning-light-color: #2d2a1a;
+--danger-color: #f87171;
+
+--background-color: #1f2937;
+--card-background-color: #374151;
+--text-color: #f9fafb;
+--text-color-secondary: #d1d5db;
+--border-color: #4b5563;
+--border-light-color: #374151;
+--icon-color: #d1d5db;
+--chip-background: #4b5563;
+--chip-text: #f9fafb;
+--shadow-color: rgba(0, 0, 0, 0.3);
+
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+background-color: var(--background-color);
+border-radius: 12px;
+box-shadow: 0 6px 12px var(--shadow-color);
+padding: 24px;
+color: var(--text-color);
+display: grid;
+grid-template-columns: 1fr 1fr;
+grid-template-rows: auto 1fr;
+gap: 20px;
+font-size: 14px;
+}
+
+.env-dashboard-header {
+grid-column: 1 / -1;
+display: flex;
+justify-content: space-between;
+align-items: center;
+border-bottom: 1px solid var(--border-color);
+padding-bottom: 16px;
+margin-bottom: 8px;
+}
+
+.env-dashboard-title {
+font-size: 1.5rem;
+font-weight: 600;
+color: var(--text-color);
+margin: 0;
+}
+
+.env-dashboard-subtitle {
+font-size: 0.875rem;
+color: var(--text-color-secondary);
+margin-top: 4px;
+}
+
+.env-card {
+background-color: var(--card-background-color);
+border-radius: 8px;
+padding: ${cardContentPadding}px;
+box-shadow: 0 3px 6px var(--shadow-color);
+height: ${cardHeight}px;
+display: flex;
+flex-direction: column;
+overflow: hidden;
+}
+
+.env-card-header {
+font-weight: 600;
+font-size: 1rem;
+margin-bottom: 12px;
+color: var(--text-color);
+display: flex;
+align-items: center;
+padding-bottom: 8px;
+border-bottom: 1px solid var(--border-light-color);
+}
+
+.env-card-header svg {
+margin-right: 10px;
+width: 18px;
+height: 18px;
+fill: var(--icon-color);
+}
+
+.env-card-content {
+flex-grow: 1;
+overflow-y: auto;
+padding-right: 5px;
+}
+
+.env-detail-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px 0;
+border-bottom: 1px solid var(--border-light-color);
+font-size: 0.875rem;
+}
+
+.env-detail-row:last-child {
+border-bottom: none;
+}
+
+.env-detail-label {
+color: var(--text-color-secondary);
+font-weight: 500;
+margin-right: 10px;
+}
+
+.env-detail-value {
+color: var(--text-color);
+font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+text-align: right;
+word-break: break-all;
+}
+
+.env-chip {
+display: inline-block;
+padding: 4px 10px;
+border-radius: 16px;
+font-size: 0.75rem;
+font-weight: 500;
+line-height: 1.2;
+background-color: var(--chip-background);
+color: var(--chip-text);
+}
+
+.env-chip-primary {
+background-color: var(--primary-light-color);
+color: var(--primary-color);
+}
+
+.env-chip-success {
+background-color: var(--success-light-color);
+color: var(--success-color);
+}
+
+.env-chip-warning {
+background-color: var(--warning-light-color);
+color: var(--warning-color);
+}
+
+.env-cpu-cores {
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.env-core-indicator {
+width: 12px;
+height: 12px;
+border-radius: 50%;
+background-color: var(--success-color);
+border: 1px solid rgba(255,255,255,0.2);
+}
+
+.env-core-indicator.inactive {
+background-color: var(--border-light-color);
+opacity: 0.7;
+border-color: var(--border-color);
+}
+</style>
+      
+      <div class="env-dashboard-header">
+        <div>
+          <h3 class="env-dashboard-title">System Environment</h3>
+          <p class="env-dashboard-subtitle">Snapshot of the execution environment</p>
+        </div>
+        <span class="env-chip env-chip-primary">${environment.host}</span>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M4 6h16V4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h-2v10H4V6zm18-2h-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v2h20V6a2 2 0 0 0-2-2zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
+          Hardware
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">CPU Model</span>
+            <span class="env-detail-value">${environment.cpu.model}</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">CPU Cores</span>
+            <span class="env-detail-value">
+              <div class="env-cpu-cores">
+                ${Array.from(
+                  { length: Math.max(0, environment.cpu.cores || 0) },
+                  (_, i) =>
+                    `<div class="env-core-indicator ${
+                      i >=
+                      (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
+                        ? "inactive"
+                        : ""
+                    }" title="Core ${i + 1}"></div>`
+                ).join("")}
+                <span>${environment.cpu.cores || "N/A"} cores</span>
+              </div>
+            </span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Memory</span>
+            <span class="env-detail-value">${formattedMemory}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-0.01 18c-2.76 0-5.26-1.12-7.07-2.93A7.973 7.973 0 0 1 4 12c0-2.21.9-4.21 2.36-5.64A7.994 7.994 0 0 1 11.99 4c4.41 0 8 3.59 8 8 0 2.76-1.12 5.26-2.93 7.07A7.973 7.973 0 0 1 11.99 20zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
+          Operating System
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">OS Type</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[0] === "darwin"
+                ? "darwin (macOS)"
+                : environment.os.split(" ")[0] || "Unknown"
+            }</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">OS Version</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[1] || "N/A"
+            }</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Hostname</span>
+            <span class="env-detail-value" title="${environment.host}">${
+    environment.host
+  }</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
+          Node.js Runtime
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">Node Version</span>
+            <span class="env-detail-value">${environment.node}</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">V8 Engine</span>
+            <span class="env-detail-value">${environment.v8}</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Working Dir</span>
+            <span class="env-detail-value" title="${environment.cwd}">${
+    environment.cwd.length > 25
+      ? "..." + environment.cwd.slice(-22)
+      : environment.cwd
+  }</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="env-card">
+        <div class="env-card-header">
+          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h.71C7.37 8.69 9.48 7 12 7c2.76 0 5 2.24 5 5v1h2c1.66 0 3 1.34 3 3s-1.34 3-3 3z"/></svg>
+          System Summary
+        </div>
+        <div class="env-card-content">
+          <div class="env-detail-row">
+            <span class="env-detail-label">Platform Arch</span>
+            <span class="env-detail-value">
+              <span class="env-chip ${
+                environment.os.includes("darwin") &&
+                environment.cpu.model.toLowerCase().includes("apple")
+                  ? "env-chip-success"
+                  : "env-chip-warning"
+              }">
+                ${
+                  environment.os.includes("darwin") &&
+                  environment.cpu.model.toLowerCase().includes("apple")
+                    ? "Apple Silicon"
+                    : environment.cpu.model.toLowerCase().includes("arm") ||
+                      environment.cpu.model.toLowerCase().includes("aarch64")
+                    ? "ARM-based"
+                    : "x86/Other"
+                }
+              </span>
+            </span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Memory per Core</span>
+            <span class="env-detail-value">${
+              environment.cpu.cores > 0
+                ? (
+                    parseFloat(environment.memory) / environment.cpu.cores
+                  ).toFixed(2) + " GB"
+                : "N/A"
+            }</span>
+          </div>
+          <div class="env-detail-row">
+            <span class="env-detail-label">Run Context</span>
+            <span class="env-detail-value">CI/Local Test</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+/**
+ * Generates a Highcharts bar chart to visualize the distribution of test results across different workers.
+ * @param {Array<object>} results The test results data.
+ * @returns {string} The HTML string for the worker distribution chart and its associated modal.
+ */
+function generateWorkerDistributionChart(results) {
+  if (!results || results.length === 0) {
+    return '<div class="no-data">No test results data available to display worker distribution.</div>';
+  }
+
+  // 1. Sort results by startTime to ensure chronological order
+  const sortedResults = [...results].sort((a, b) => {
+    const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
+    const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
+    return timeA - timeB;
+  });
+
+  const workerData = sortedResults.reduce((acc, test) => {
+    const workerId =
+      typeof test.workerId !== "undefined" ? test.workerId : "N/A";
+    if (!acc[workerId]) {
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
+    }
+
+    const status = String(test.status).toLowerCase();
+    if (status === "passed" || status === "failed" || status === "skipped") {
+      acc[workerId][status]++;
+    }
+
+    const testTitleParts = test.name.split(" > ");
+    const testTitle =
+      testTitleParts[testTitleParts.length - 1] || "Unnamed Test";
+    // Store both name and status for each test
+    acc[workerId].tests.push({ name: testTitle, status: status });
+
+    return acc;
+  }, {});
+
+  const workerIds = Object.keys(workerData).sort((a, b) => {
+    if (a === "N/A") return 1;
+    if (b === "N/A") return -1;
+    return parseInt(a, 10) - parseInt(b, 10);
+  });
+
+  if (workerIds.length === 0) {
+    return '<div class="no-data">Could not determine worker distribution from test data.</div>';
+  }
+
+  const chartId = `workerDistChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderWorkerDistChart_${chartId.replace(
+    /-/g,
+    "_"
+  )}`;
+  const modalJsNamespace = `modal_funcs_${chartId.replace(/-/g, "_")}`;
+
+  // The categories now just need the name for the axis labels
+  const categories = workerIds.map((id) => `Worker ${id}`);
+
+  // We pass the full data separately to the script
+  const fullWorkerData = workerIds.map((id) => ({
+    id: id,
+    name: `Worker ${id}`,
+    tests: workerData[id].tests,
+  }));
+
+  const passedData = workerIds.map((id) => workerData[id].passed);
+  const failedData = workerIds.map((id) => workerData[id].failed);
+  const skippedData = workerIds.map((id) => workerData[id].skipped);
+
+  const categoriesString = JSON.stringify(categories);
+  const fullDataString = JSON.stringify(fullWorkerData);
+  const seriesString = JSON.stringify([
+    { name: "Passed", data: passedData, color: "var(--success-color)" },
+    { name: "Failed", data: failedData, color: "var(--danger-color)" },
+    { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
+  ]);
+
+  // The HTML now includes the chart container, the modal, and styles for the modal
+  return `
+<style>
+.worker-modal-overlay {
+position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%;
+overflow: auto; background-color: rgba(0,0,0,0.8);
+display: none; align-items: center; justify-content: center;
+}
+.worker-modal-content {
+background-color: #1f2937;
+color: #f9fafb;
+margin: auto; padding: 20px; border: 1px solid #4b5563;
+width: 80%; max-width: 700px; border-radius: 8px;
+position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.7);
+}
+.worker-modal-close {
+position: absolute; top: 10px; right: 20px;
+font-size: 28px; font-weight: bold; cursor: pointer;
+line-height: 1; color: #d1d5db;
+}
+.worker-modal-close:hover, .worker-modal-close:focus {
+color: #f9fafb;
+}
+#worker-modal-body-${chartId} ul {
+list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
+}
+#worker-modal-body-${chartId} li {
+padding: 8px 5px; border-bottom: 1px solid #4b5563;
+font-size: 0.9em; color: #f9fafb;
+}
+#worker-modal-body-${chartId} li:last-child {
+border-bottom: none;
+}
+#worker-modal-body-${chartId} li > span {
+display: inline-block;
+width: 70px;
+font-weight: bold;
+text-align: right;
+margin-right: 10px;
+color: #d1d5db;
+}
+</style>
+
+    <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}" style="min-height: 350px;">
+      <div class="no-data">Loading Worker Distribution Chart...</div>
+    </div>
+
+    <div id="worker-modal-${chartId}" class="worker-modal-overlay">
+      <div class="worker-modal-content">
+        <span class="worker-modal-close">×</span>
+        <h3 id="worker-modal-title-${chartId}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: #fff"></h3>
+        <div id="worker-modal-body-${chartId}"></div>
+      </div>
+    </div>
+
+    <script>
+      // Namespace for modal functions to avoid global scope pollution
+      window.${modalJsNamespace} = {};
+
+      window.${renderFunctionName} = function() {
+        const chartContainer = document.getElementById('${chartId}');
+        if (!chartContainer) { console.error("Chart container ${chartId} not found."); return; }
+
+        // --- Modal Setup ---
+        const modal = document.getElementById('worker-modal-${chartId}');
+        const modalTitle = document.getElementById('worker-modal-title-${chartId}');
+        const modalBody = document.getElementById('worker-modal-body-${chartId}');
+        const closeModalBtn = modal.querySelector('.worker-modal-close');
+        if (modal && modal.parentElement !== document.body) {
+          document.body.appendChild(modal);
+        }
+
+        // Lightweight HTML escaper for client-side use
+        function __escHtml(s){return String(s==null?'':s).replace(/[&<>\"]/g,function(ch){return ch==='&'?'&amp;':ch==='<'?'&lt;':ch==='>'?'&gt;':'&quot;';});}
+
+        window.${modalJsNamespace}.open = function(worker) {
+          if (!worker) return;
+          try {
+            modalTitle.textContent = 'Test Details for ' + worker.name;
+
+            let testListHtml = '<ul>';
+            if (worker.tests && worker.tests.length > 0) {
+              worker.tests.forEach(test => {
+                  let color = 'inherit';
+                  if (test.status === 'passed') color = 'var(--success-color)';
+                  else if (test.status === 'failed') color = 'var(--danger-color)';
+                  else if (test.status === 'skipped') color = 'var(--warning-color)';
+
+                  const safeName = __escHtml(test.name);
+                  testListHtml += '<li style="color: ' + color + ';"><span style="color: ' + color + '">[' + String(test.status).toUpperCase() + ']</span> ' + safeName + '</li>';
+              });
+            } else {
+              testListHtml += '<li>No detailed test data available for this worker.</li>';
+            }
+            testListHtml += '</ul>';
+
+            modalBody.innerHTML = testListHtml;
+            if (typeof openModal === 'function') openModal(); else modal.style.display = 'flex';
+          } catch (err) {
+            console.error('Failed to open worker modal:', err);
+          }
+        };
+
+        const closeModal = function() {
+          modal.style.display = 'none';
+          try { document.body.style.overflow = ''; } catch (_) {}
+        };
+
+        const openModal = function() {
+          modal.style.display = 'flex';
+          try { document.body.style.overflow = 'hidden'; } catch (_) {}
+        };
+
+        if (closeModalBtn) closeModalBtn.onclick = closeModal;
+        modal.addEventListener('click', function(event) {
+          if (event.target === modal) {
+            closeModal();
+          }
+        });
+
+        document.addEventListener('keydown', function escHandler(e) {
+          if (modal.style.display === 'flex' && (e.key === 'Escape' || e.key === 'Esc')) {
+            closeModal();
+          }
+        });
+
+
+        // --- Highcharts Setup ---
+        if (typeof Highcharts !== 'undefined') {
+          try {
+            chartContainer.innerHTML = '';
+            const fullData = ${fullDataString};
+
+            const chartOptions = {
+              chart: { type: 'bar', height: 350, backgroundColor: 'transparent' },
+              title: { text: null },
+              xAxis: {
+                categories: ${categoriesString},
+                title: { text: 'Worker ID' },
+                labels: { style: { color: 'var(--text-color-secondary)' }}
+              },
+              yAxis: {
+                min: 0,
+                title: { text: 'Number of Tests' },
+                labels: { style: { color: 'var(--text-color-secondary)' }},
+                stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } }
+              },
+              legend: { reversed: true, itemStyle: { fontSize: "12px", color: 'var(--text-color)' } },
+              plotOptions: {
+                series: {
+                  stacking: 'normal',
+                  cursor: 'pointer',
+                  point: {
+                    events: {
+                      click: function () {
+                        // 'this.x' is the index of the category
+                        const workerData = fullData[this.x];
+                        window.${modalJsNamespace}.open(workerData);
+                      }
+                    }
+                  }
+                }
+              },
+              tooltip: {
+                shared: true,
+                headerFormat: '<b>{point.key}</b> (Click for details)<br/>',
+                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                footerFormat: 'Total: <b>{point.total}</b>'
+              },
+              series: ${seriesString},
+              credits: { enabled: false }
+            };
+            Highcharts.chart('${chartId}', chartOptions);
+          } catch (e) {
+            console.error("Error rendering chart ${chartId}:", e);
+            chartContainer.innerHTML = '<div class="no-data">Error rendering worker distribution chart.</div>';
+          }
+        } else {
+          chartContainer.innerHTML = '<div class="no-data">Charting library not available for worker distribution.</div>';
+        }
+      };
+    </script>
+  `;
+}
+/**
+ * A tooltip providing information about why worker -1 is special in Playwright.
+ * @type {string}
+ */
+const infoTooltip = `
+  <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
+    <span class="info-icon" 
+          style="cursor: pointer; font-size: 1.25rem;"
+          onclick="window.workerInfoPrompt()">ℹ️</span>
+  </span>
+  <script>
+    window.workerInfoPrompt = function() {
+      const message = 'Why is worker -1 special?\\n\\n' +
+                     'Playwright assigns skipped tests to worker -1 because:\\n' +
+                     '1. They don\\'t require browser execution\\n' +
+                     '2. This keeps real workers focused on actual tests\\n' +
+                     '3. Maintains clean reporting\\n\\n' +
+                     'This is an intentional optimization by Playwright.';
+      alert(message);
+    }
+  </script>
+`;
+/**
+ * Generates the HTML content for the test history section.
+ * @param {object} trendData - The historical trend data.
+ * @returns {string} The HTML string for the test history content.
+ */
 function generateTestHistoryContent(trendData) {
   if (
     !trendData ||
@@ -895,7 +1392,7 @@ function generateTestHistoryContent(trendData) {
     return '<div class="no-data">No historical test data available.</div>';
   }
 
-  const allTestNamesAndPaths = new Map(); // Store {path: name, title: title}
+  const allTestNamesAndPaths = new Map();
   Object.values(trendData.testRuns).forEach((run) => {
     if (Array.isArray(run)) {
       run.forEach((test) => {
@@ -941,14 +1438,15 @@ function generateTestHistoryContent(trendData) {
   return `
     <div class="test-history-container">
       <div class="filters" style="border-color: black; border-style: groove;">
-        <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
-        <select id="history-filter-status">
-          <option value="">All Statuses</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="skipped">Skipped</option>
-        </select>
-      </div>
+    <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
+    <select id="history-filter-status">
+        <option value="">All Statuses</option>
+        <option value="passed">Passed</option>
+        <option value="failed">Failed</option>
+        <option value="skipped">Skipped</option>
+    </select>
+    <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button>
+</div>
       
       <div class="test-history-grid">
         ${testHistory
@@ -957,7 +1455,6 @@ function generateTestHistoryContent(trendData) {
               test.history.length > 0
                 ? test.history[test.history.length - 1]
                 : { status: "unknown" };
-            // For data-test-name, use the title for filtering as per input placeholder
             return `
             <div class="test-history-card" data-test-name="${sanitizeHTML(
               test.testTitle.toLowerCase()
@@ -967,11 +1464,11 @@ function generateTestHistoryContent(trendData) {
               sanitizeHTML(test.testTitle)
             )}</p>
                 <span class="status-badge ${getStatusClass(latestRun.status)}">
-                  ${latestRun.status.toUpperCase()}
+                  ${String(latestRun.status).toUpperCase()}
                 </span>
               </div>
               <div class="test-history-trend">
-                ${generateTestHistoryChart(test.history)}
+                ${generateTestHistoryChart(test.history)} 
               </div>
               <details class="test-history-details-collapsible">
                 <summary>Show Run Details (${test.history.length})</summary>
@@ -988,7 +1485,7 @@ function generateTestHistoryContent(trendData) {
                           <td>${run.runId}</td>
                           <td><span class="status-badge-small ${getStatusClass(
                             run.status
-                          )}">${run.status.toUpperCase()}</span></td>
+                          )}">${String(run.status).toUpperCase()}</span></td>
                           <td>${formatDuration(run.duration)}</td>
                           <td>${formatDate(run.timestamp)}</td>
                         </tr>`
@@ -1005,7 +1502,11 @@ function generateTestHistoryContent(trendData) {
     </div>
   `;
 }
-
+/**
+ * Gets the CSS class for a given test status.
+ * @param {string} status - The test status.
+ * @returns {string} The CSS class for the status.
+ */
 function getStatusClass(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -1018,7 +1519,11 @@ function getStatusClass(status) {
       return "status-unknown";
   }
 }
-
+/**
+ * Gets the icon for a given test status.
+ * @param {string} status - The test status.
+ * @returns {string} The icon for the status.
+ */
 function getStatusIcon(status) {
   switch (String(status).toLowerCase()) {
     case "passed":
@@ -1031,7 +1536,11 @@ function getStatusIcon(status) {
       return "❓";
   }
 }
-
+/**
+ * Processes test results to extract suite data.
+ * @param {Array<object>} results - The test results.
+ * @returns {Array<object>} An array of suite data objects.
+ */
 function getSuitesData(results) {
   const suitesMap = new Map();
   if (!results || results.length === 0) return [];
@@ -1039,19 +1548,15 @@ function getSuitesData(results) {
   results.forEach((test) => {
     const browser = test.browser || "unknown";
     const suiteParts = test.name.split(" > ");
-    // More robust suite name extraction: use file name if no clear suite, or parent dir if too generic
     let suiteNameCandidate = "Default Suite";
     if (suiteParts.length > 2) {
-      // e.g. file > suite > test
       suiteNameCandidate = suiteParts[1];
     } else if (suiteParts.length > 1) {
-      // e.g. file > test
       suiteNameCandidate = suiteParts[0]
         .split(path.sep)
         .pop()
         .replace(/\.(spec|test)\.(ts|js|mjs|cjs)$/, "");
     } else {
-      // Just file name or malformed
       suiteNameCandidate = test.name
         .split(path.sep)
         .pop()
@@ -1078,19 +1583,45 @@ function getSuitesData(results) {
     if (currentStatus && suite[currentStatus] !== undefined) {
       suite[currentStatus]++;
     }
-
-    if (currentStatus === "failed") {
-      suite.statusOverall = "failed";
-    } else if (
-      currentStatus === "skipped" &&
-      suite.statusOverall !== "failed"
-    ) {
+    if (currentStatus === "failed") suite.statusOverall = "failed";
+    else if (currentStatus === "skipped" && suite.statusOverall !== "failed")
       suite.statusOverall = "skipped";
-    }
   });
   return Array.from(suitesMap.values());
 }
+/**
+ * Returns an icon for a given content type.
+ * @param {string} contentType - The content type of the file.
+ * @returns {string} The icon for the content type.
+ */
+/**
+ * Returns an icon for a given content type.
+ * @param {string} contentType - The content type of the file.
+ * @returns {string} The icon for the content type.
+ */
+function getAttachmentIcon(contentType) {
+  if (!contentType) return "📎"; // Handle undefined/null
 
+  const normalizedType = contentType.toLowerCase();
+
+  if (normalizedType.includes("pdf")) return "📄";
+  if (normalizedType.includes("json")) return "{ }";
+  if (/html/.test(normalizedType)) return "🌐"; // Fixed: regex for any HTML type
+  if (normalizedType.includes("xml")) return "<>";
+  if (normalizedType.includes("csv")) return "📊";
+  if (normalizedType.startsWith("text/")) return "📝";
+  return "📎";
+}
+/**
+ * Generates the HTML for the suites widget.
+ * @param {Array} suitesData - The data for the suites.
+ * @returns {string} The HTML for the suites widget.
+ */
+/**
+ * Generates the HTML for the suites widget.
+ * @param {Array} suitesData - The data for the suites.
+ * @returns {string} The HTML for the suites widget.
+ */
 function generateSuitesWidget(suitesData) {
   if (!suitesData || suitesData.length === 0) {
     return `<div class="suites-widget"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
@@ -1099,12 +1630,12 @@ function generateSuitesWidget(suitesData) {
 <div class="suites-widget">
   <div class="suites-header">
     <h2>Test Suites</h2>
-    <span class="summary-badge">
-      ${suitesData.length} suites • ${suitesData.reduce(
+    <span class="summary-badge">${
+      suitesData.length
+    } suites • ${suitesData.reduce(
     (sum, suite) => sum + suite.count,
     0
-  )} tests
-    </span>
+  )} tests</span>
   </div>
   <div class="suites-grid">
     ${suitesData
@@ -1115,8 +1646,10 @@ function generateSuitesWidget(suitesData) {
         <h3 class="suite-name" title="${sanitizeHTML(
           suite.name
         )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
-        <span class="browser-tag">${sanitizeHTML(suite.browser)}</span>
       </div>
+      <div>🖥️ <span class="browser-tag">${sanitizeHTML(
+        suite.browser
+      )}</span></div>
       <div class="suite-card-body">
         <span class="test-count">${suite.count} test${
           suite.count !== 1 ? "s" : ""
@@ -1145,7 +1678,109 @@ function generateSuitesWidget(suitesData) {
   </div>
 </div>`;
 }
+/**
+ * Generates the HTML for the AI failure analyzer tab.
+ * @param {Array} results - The results of the test run.
+ * @returns {string} The HTML for the AI failure analyzer tab.
+ */
+function generateAIFailureAnalyzerTab(results) {
+  const failedTests = (results || []).filter(
+    (test) => test.status === "failed"
+  );
 
+  if (failedTests.length === 0) {
+    return `
+      <h2 class="tab-main-title">AI Failure Analysis</h2>
+      <div class="no-data">Congratulations! No failed tests in this run.</div>
+    `;
+  }
+
+  // btoa is not available in Node.js environment, so we define a simple polyfill for it.
+  const btoa = (str) => Buffer.from(str).toString("base64");
+
+  return `
+    <h2 class="tab-main-title">AI Failure Analysis</h2>
+    <div class="ai-analyzer-stats">
+        <div class="stat-item">
+            <span class="stat-number">${failedTests.length}</span>
+            <span class="stat-label">Failed Tests</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">${
+              new Set(failedTests.map((t) => t.browser)).size
+            }</span>
+            <span class="stat-label">Browsers</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-number">${Math.round(
+              failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) /
+                1000
+            )}s</span>
+            <span class="stat-label">Total Duration</span>
+        </div>
+    </div>
+    <p class="ai-analyzer-description">
+        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for specific failed test.
+    </p>
+    
+    <div class="compact-failure-list">
+      ${failedTests
+        .map((test) => {
+          const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
+          const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
+          const truncatedError =
+            (test.errorMessage || "No error message").slice(0, 150) +
+            (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
+
+          return `
+        <div class="compact-failure-item">
+            <div class="failure-header">
+                <div class="failure-main-info">
+                    <h3 class="failure-title" title="${sanitizeHTML(
+                      test.name
+                    )}">${sanitizeHTML(testTitle)}</h3>
+                    <div class="failure-meta">
+                        <span class="browser-indicator">${sanitizeHTML(
+                          test.browser || "unknown"
+                        )}</span>
+                        <span class="duration-indicator">${formatDuration(
+                          test.duration
+                        )}</span>
+                    </div>
+                </div>
+                <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
+                    <span class="ai-text">AI Fix</span>
+                </button>
+            </div>
+            <div class="failure-error-preview">
+                <div class="error-snippet">${formatPlaywrightError(
+                  truncatedError
+                )}</div>
+                <button class="expand-error-btn" onclick="toggleErrorDetails(this)">
+                    <span class="expand-text">Show Full Error</span>
+                    <span class="expand-icon">▼</span>
+                </button>
+            </div>
+            <div class="full-error-details" style="display: none;">
+                <div class="full-error-content">
+                    ${formatPlaywrightError(
+                      test.errorMessage || "No detailed error message available"
+                    )}
+                </div>
+            </div>
+        </div>
+        `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+/**
+ * Generates the HTML report.
+ * @param {object} reportData - The data for the report.
+ * @param {object} trendData - The data for the trend chart.
+ * @returns {string} The HTML report.
+ */
 function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results || []);
@@ -1157,7 +1792,6 @@ function generateHTML(reportData, trendData = null) {
     duration: 0,
     timestamp: new Date().toISOString(),
   };
-
   const totalTestsOr1 = runSummary.totalTests || 1;
   const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
   const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
@@ -1169,22 +1803,20 @@ function generateHTML(reportData, trendData = null) {
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
 
-  // Inside generate-static-report.mjs
-
-  function generateTestCasesHTML() {
-    // Make sure this is within the scope where 'results' is defined
-    if (!results || results.length === 0) {
-      // Assuming 'results' is accessible here
+  /**
+   * Generates the HTML for the test cases.
+   * @returns {string} The HTML for the test cases.
+   */
+  function generateTestCasesHTML(subset = results, baseIndex = 0) {
+    if (!results || results.length === 0)
       return '<div class="no-tests">No test results found in this run.</div>';
-    }
-
-    return results
-      .map((test, index) => {
+    return subset
+      .map((test, i) => {
+        const testIndex = baseIndex + i;
         const browser = test.browser || "unknown";
         const testFileParts = test.name.split(" > ");
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
-
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
             return "<div class='no-steps'>No steps recorded for this test.</div>";
@@ -1196,669 +1828,745 @@ function generateHTML(reportData, trendData = null) {
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
-
-              return `
-          <div class="step-item" style="--depth: ${depth};">
-            <div class="step-header ${stepClass}" role="button" aria-expanded="false">
-              <span class="step-icon">${getStatusIcon(step.status)}</span>
-              <span class="step-title">${sanitizeHTML(
+              return `<div class="step-item" style="--depth: ${depth};"><div class="step-header ${stepClass}" role="button" aria-expanded="false"><span class="step-icon">${getStatusIcon(
+                step.status
+              )}</span><span class="step-title">${sanitizeHTML(
                 step.title
-              )}${hookIndicator}</span>
-              <span class="step-duration">${formatDuration(
+              )}${hookIndicator}</span><span class="step-duration">${formatDuration(
                 step.duration
-              )}</span>
-            </div>
-            <div class="step-details" style="display: none;">
-              ${
+              )}</span></div><div class="step-details" style="display: none;">${
                 step.codeLocation
-                  ? `<div class="step-info"><strong>Location:</strong> ${sanitizeHTML(
+                  ? `<div class="step-info code-section"><strong>Location:</strong> ${sanitizeHTML(
                       step.codeLocation
                     )}</div>`
                   : ""
-              }
-              ${
+              }${
                 step.errorMessage
-                  ? `
-                <div class="step-error">
-                  <strong>Error:</strong> ${sanitizeHTML(step.errorMessage)}
-                  ${
-                    step.stackTrace
-                      ? `<pre class="stack-trace">${sanitizeHTML(
-                          step.stackTrace
-                        )}</pre>`
-                      : ""
-                  }
-                </div>`
+                  ? `<div class="test-error-summary">${
+                      step.stackTrace
+                        ? `<div class="stack-trace">${formatPlaywrightError(
+                            step.stackTrace
+                          )}</div>`
+                        : ""
+                    }<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                   : ""
-              }
-              ${
+              }${(() => {
+                if (!step.attachments || step.attachments.length === 0)
+                  return "";
+                return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
+                  .map((attachment) => {
+                    try {
+                      const attachmentPath = path.resolve(
+                        DEFAULT_OUTPUT_DIR,
+                        attachment.path
+                      );
+                      if (!fsExistsSync(attachmentPath)) {
+                        return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                          attachment.name
+                        )}</div>`;
+                      }
+                      const attachmentBase64 =
+                        readFileSync(attachmentPath).toString("base64");
+                      const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+                      return `<div class="attachment-item generic-attachment">
+                                  <div class="attachment-icon">${getAttachmentIcon(
+                                    attachment.contentType
+                                  )}</div>
+                                  <div class="attachment-caption">
+                                    <span class="attachment-name" title="${sanitizeHTML(
+                                      attachment.name
+                                    )}">${sanitizeHTML(attachment.name)}</span>
+                                    <span class="attachment-type">${sanitizeHTML(
+                                      attachment.contentType
+                                    )}</span>
+                                  </div>
+                                  <div class="attachment-info">
+                                    <div class="trace-actions">
+                                      <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
+                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
+                        attachment.name
+                      )}">Download</a>
+                                    </div>
+                                  </div>
+                                </div>`;
+                    } catch (e) {
+                      return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
+                        attachment.name
+                      )}</div>`;
+                    }
+                  })
+                  .join("")}</div></div>`;
+              })()}${
                 hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
                       step.steps,
                       depth + 1
                     )}</div>`
                   : ""
-              }
-            </div>
-          </div>`;
+              }</div></div>`;
             })
             .join("");
         };
-
-        return `
-      <div class="test-case" data-status="${
-        test.status
-      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
-          .join(",")
-          .toLowerCase()}">
-        <div class="test-case-header" role="button" aria-expanded="false">
-          <div class="test-case-summary">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
+        return `<div class="test-case" data-status="${
           test.status
-        ).toUpperCase()}</span>
-            <span class="test-case-title" title="${sanitizeHTML(
-              test.name
-            )}">${sanitizeHTML(testTitle)}</span>
-            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
-          </div>
-          <div class="test-case-meta">
-            ${
-              test.tags && test.tags.length > 0
-                ? test.tags
-                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-                    .join(" ")
-                : ""
-            }
-            <span class="test-duration">${formatDuration(test.duration)}</span>
-          </div>
-        </div>
-        <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
-          ${
-            test.error // This is for the overall test error, not step error
-              ? `<div class="test-error-summary"><h4>Test Error:</h4><pre>${sanitizeHTML(
-                  test.error // Assuming test.error is the message; if it has a stack, that's separate
-                )}</pre></div>`
-              : ""
-          }
+        }" data-browser="${sanitizeHTML(browser)}" data-tags="${(
+          test.tags || []
+        )
+          .join(",")
+          .toLowerCase()}" data-test-id="${sanitizeHTML(
+          String(test.id || testIndex)
+        )}">
+                    <div class="test-case-header" role="button" aria-expanded="false"><div class="test-case-summary"><span class="status-badge ${getStatusClass(
+                      test.status
+                    )}">${String(
+          test.status
+        ).toUpperCase()}</span><span class="test-case-title" title="${sanitizeHTML(
+          test.name
+        )}">${sanitizeHTML(
+          testTitle
+        )}</span><span class="test-case-browser">(${sanitizeHTML(
+          browser
+        )})</span></div><div class="test-case-meta">${
+          test.tags && test.tags.length > 0
+            ? test.tags
+                .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                .join(" ")
+            : ""
+        }<span class="test-duration">${formatDuration(
+          test.duration
+        )}</span></div></div>
+                    <div class="test-case-content" style="display: none;">
+                        <p><strong>Full Path:</strong> ${sanitizeHTML(
+                          test.name
+                        )}</p>
+                        ${
+                          test.annotations && test.annotations.length > 0
+                            ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                                ${test.annotations
+                                  .map((annotation, idx) => {
+                                    const isIssueOrBug =
+                                      annotation.type === "issue" ||
+                                      annotation.type === "bug";
+                                    const descriptionText =
+                                      annotation.description || "";
+                                    const typeLabel = sanitizeHTML(
+                                      annotation.type
+                                    );
+                                    const descriptionHtml =
+                                      isIssueOrBug &&
+                                      descriptionText.match(/^[A-Z]+-\d+$/)
+                                        ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                                            descriptionText
+                                          )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                                            descriptionText
+                                          )}</a>`
+                                        : sanitizeHTML(descriptionText);
+                                    const locationText = annotation.location
+                                      ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                                          annotation.location.file
+                                        )}:${annotation.location.line}:${
+                                          annotation.location.column
+                                        }</div>`
+                                      : "";
+                                    return `<div style="margin-bottom: ${
+                                      idx < test.annotations.length - 1
+                                        ? "10px"
+                                        : "0"
+                                    };">
+                                    <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                                    ${
+                                      descriptionText
+                                        ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                                        : ""
+                                    }
+                                    ${locationText}
+                                  </div>`;
+                                  })
+                                  .join("")}
+                              </div>`
+                            : ""
+                        }
+                        <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
+                          test.workerId
+                        )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
+          test.totalWorkers
+        )}]</p>
+                            ${
+                              test.errorMessage
+                                ? `<div class="test-error-summary">${formatPlaywrightError(
+                                    test.errorMessage
+                                  )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
+                                : ""
+                            }
+                        ${
+                          test.snippet
+                            ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                                test.snippet
+                              )}</code></pre></div>`
+                            : ""
+                        }
+                        <h4>Steps</h4><div class="steps-list">${generateStepsHTML(
+                          test.steps
+                        )}</div>
+                        ${(() => {
+                          if (!test.stdout || test.stdout.length === 0)
+                            return "";
+                          // Create a unique ID for the <pre> element to target it for copying
+                          const logId = `stdout-log-${test.id || testIndex}`;
+                          return `<div class="console-output-section">
+                                        <h4>Console Output (stdout)
+                                        <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy Console</button>
+                                        </h4>
+                                        <div class="log-wrapper">
+                                            <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                            test.stdout
+                              .map((line) => sanitizeHTML(line))
+                              .join("\n")
+                          )}</pre>
+                                        </div>
+                                    </div>`;
+                        })()}
+                        ${
+                          test.stderr && test.stderr.length > 0
+                            ? (() => {
+                                const logId = `stderr-log-${
+                                  test.id || testIndex
+                                }`;
+                                return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre id="${logId}" class="console-log stderr-log">${test.stderr
+                                  .map((line) => sanitizeHTML(line))
+                                  .join("\\n")}</pre></div>`;
+                              })()
+                            : ""
+                        }
+                        
+                        ${(() => {
+                          if (
+                            !test.screenshots ||
+                            test.screenshots.length === 0
+                          )
+                            return "";
+                          return `<div class="attachments-section"><h4>Screenshots</h4><div class="attachments-grid">${test.screenshots
+                            .map((screenshotPath, index) => {
+                              try {
+                                const imagePath = path.resolve(
+                                  DEFAULT_OUTPUT_DIR,
+                                  screenshotPath
+                                );
+                                if (!fsExistsSync(imagePath))
+                                  return `<div class="attachment-item error">Screenshot not found: ${sanitizeHTML(
+                                    screenshotPath
+                                  )}</div>`;
+                                const base64ImageData =
+                                  readFileSync(imagePath).toString("base64");
+                                return `<div class="attachment-item"><img src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" data-src="data:image/png;base64,${base64ImageData}" alt="Screenshot ${
+                                  index + 1
+                                }" class="lazy-load-image"><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="data:image/png;base64,${base64ImageData}" class="lazy-load-attachment" target="_blank" download="screenshot-${index}.png">Download</a></div></div></div>`;
+                              } catch (e) {
+                                return `<div class="attachment-item error">Failed to load screenshot: ${sanitizeHTML(
+                                  screenshotPath
+                                )}</div>`;
+                              }
+                            })
+                            .join("")}</div></div>`;
+                        })()}
 
-          <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
+                        ${(() => {
+                          if (!test.videoPath || test.videoPath.length === 0)
+                            return "";
+                          return `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
+                            .map((videoPath, index) => {
+                              try {
+                                const videoFilePath = path.resolve(
+                                  DEFAULT_OUTPUT_DIR,
+                                  videoPath
+                                );
+                                if (!fsExistsSync(videoFilePath))
+                                  return `<div class="attachment-item error">Video not found: ${sanitizeHTML(
+                                    videoPath
+                                  )}</div>`;
+                                const videoBase64 =
+                                  readFileSync(videoFilePath).toString(
+                                    "base64"
+                                  );
+                                const fileExtension = path
+                                  .extname(videoPath)
+                                  .slice(1)
+                                  .toLowerCase();
+                                const mimeType =
+                                  {
+                                    mp4: "video/mp4",
+                                    webm: "video/webm",
+                                    ogg: "video/ogg",
+                                    mov: "video/quicktime",
+                                    avi: "video/x-msvideo",
+                                  }[fileExtension] || "video/mp4";
+                                const videoDataUri = `data:${mimeType};base64,${videoBase64}`;
+                                return `<div class="attachment-item video-item"><video controls preload="none" class="lazy-load-video"><source data-src="${videoDataUri}" type="${mimeType}"></video><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="${videoDataUri}" class="lazy-load-attachment" target="_blank" download="video-${index}.${fileExtension}">Download</a></div></div></div>`;
+                              } catch (e) {
+                                return `<div class="attachment-item error">Failed to load video: ${sanitizeHTML(
+                                  videoPath
+                                )}</div>`;
+                              }
+                            })
+                            .join("")}</div></div>`;
+                        })()}
 
-          ${/* NEW: stdout and stderr sections START */ ""}
-          ${
-            test.stdout && test.stdout.length > 0
-              ? `
-            <div class="console-output-section">
-              <h4>Console Output (stdout)</h4>
-              <pre class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stdout
-                .map((line) => sanitizeHTML(line))
-                .join("\n")}</pre>
-            </div>`
-              : ""
-          }
-          ${
-            test.stderr && test.stderr.length > 0
-              ? `
-            <div class="console-output-section">
-              <h4>Console Output (stderr)</h4>
-              <pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${test.stderr
-                .map((line) => sanitizeHTML(line))
-                .join("\n")}</pre>
-            </div>`
-              : ""
-          }
-          ${/* NEW: stdout and stderr sections END */ ""}
-          
-          ${
-            test.screenshots && test.screenshots.length > 0
-              ? `
-            <div class="attachments-section">
-              <h4>Screenshots</h4>
-              <div class="attachments-grid">
-                ${test.screenshots
-                  .map((screenshot) => {
-                    // Ensure screenshot.path and screenshot.name are accessed correctly
-                    const imgSrc = sanitizeHTML(screenshot.path || "");
-                    const screenshotName = sanitizeHTML(
-                      screenshot.name || "Screenshot"
-                    );
-                    return imgSrc
-                      ? `
-                  <div class="attachment-item screenshot-item">
-                    <a href="${imgSrc}" target="_blank" title="Click to view ${screenshotName} (full size)">
-                      <img src="${imgSrc}" alt="${screenshotName}" loading="lazy">
-                    </a>
-                    <div class="attachment-caption">${screenshotName}</div>
-                  </div>`
-                      : "";
-                  })
-                  .join("")}
-              </div>
-            </div>`
-              : ""
-          }
-            
-          ${
-            test.videos && test.videos.length > 0
-              ? `
-            <div class="attachments-section">
-              <h4>Videos</h4>
-              ${test.videos
-                .map(
-                  (video) => `
-                <div class="video-item">
-                  <a href="${sanitizeHTML(
-                    video.path
-                  )}" target="_blank">View Video: ${sanitizeHTML(
-                    video.name || path.basename(video.path) // path.basename might not be available if path module not passed/scoped
-                  )}</a>
-                </div>`
-                )
-                .join("")}
-            </div>`
-              : ""
-          }
+                        ${(() => {
+                          if (!test.tracePath) return "";
+                          try {
+                            const traceFilePath = path.resolve(
+                              DEFAULT_OUTPUT_DIR,
+                              test.tracePath
+                            );
+                            if (!fsExistsSync(traceFilePath))
+                              return `<div class="attachments-section"><h4>Trace File</h4><div class="attachment-item error">Trace file not found: ${sanitizeHTML(
+                                test.tracePath
+                              )}</div></div>`;
+                            const traceBase64 =
+                              readFileSync(traceFilePath).toString("base64");
+                            const traceDataUri = `data:application/zip;base64,${traceBase64}`;
+                            return `<div class="attachments-section"><h4>Trace File</h4><div class="attachments-grid"><div class="attachment-item generic-attachment"><div class="attachment-icon">📄</div><div class="attachment-caption"><span class="attachment-name">trace.zip</span></div><div class="attachment-info"><div class="trace-actions"><a href="#" data-href="${traceDataUri}" class="lazy-load-attachment" download="trace.zip">Download Trace</a></div></div></div></div></div>`;
+                          } catch (e) {
+                            return `<div class="attachments-section"><h4>Trace File</h4><div class="attachment-item error">Failed to load trace file.</div></div>`;
+                          }
+                        })()}
+                        
+                        ${(() => {
+                          if (
+                            !test.attachments ||
+                            test.attachments.length === 0
+                          )
+                            return "";
 
-          ${
-            test.traces && test.traces.length > 0
-              ? `
-            <div class="attachments-section">
-                <h4>Traces</h4>
-                ${test.traces
-                  .map(
-                    (trace) => `
-                  <div class="trace-item">
-                    <a href="${sanitizeHTML(
-                      trace.path
-                    )}" target="_blank" download>Download Trace: ${sanitizeHTML(
-                      trace.name || path.basename(trace.path) // path.basename might not be available if path module not passed/scoped
-                    )}</a>
-                    (Open with Playwright Trace Viewer)
-                  </div>`
-                  )
-                  .join("")}
-            </div>`
-              : ""
-          }
+                          return `<div class="attachments-section"><h4>Other Attachments</h4><div class="attachments-grid">${test.attachments
+                            .map((attachment) => {
+                              try {
+                                const attachmentPath = path.resolve(
+                                  DEFAULT_OUTPUT_DIR,
+                                  attachment.path
+                                );
 
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
-                  test.codeSnippet
-                )}</code></pre></div>`
-              : ""
-          }
-        </div>
-      </div>`;
+                                if (!fsExistsSync(attachmentPath)) {
+                                  console.warn(
+                                    `Attachment not found at: ${attachmentPath}`
+                                  );
+                                  return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                                    attachment.name
+                                  )}</div>`;
+                                }
+
+                                const attachmentBase64 =
+                                  readFileSync(attachmentPath).toString(
+                                    "base64"
+                                  );
+                                const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+
+                                return `<div class="attachment-item generic-attachment">
+                                          <div class="attachment-icon">${getAttachmentIcon(
+                                            attachment.contentType
+                                          )}</div>
+                                          <div class="attachment-caption">
+                                            <span class="attachment-name" title="${sanitizeHTML(
+                                              attachment.name
+                                            )}">${sanitizeHTML(
+                                  attachment.name
+                                )}</span>
+                                            <span class="attachment-type">${sanitizeHTML(
+                                              attachment.contentType
+                                            )}</span>
+                                          </div>
+                                          <div class="attachment-info">
+                                            <div class="trace-actions">
+                                              <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
+                                              <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
+                                  attachment.name
+                                )}">Download</a>
+                                            </div>
+                                          </div>
+                                        </div>`;
+                              } catch (e) {
+                                console.error(
+                                  `Failed to process attachment "${attachment.name}":`,
+                                  e
+                                );
+                                return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
+                                  attachment.name
+                                )}</div>`;
+                              }
+                            })
+                            .join("")}</div></div>`;
+                        })()}
+                        
+                        ${
+                          test.codeSnippet
+                            ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${sanitizeHTML(
+                                test.codeSnippet
+                              )}</code></pre></div>`
+                            : ""
+                        }
+                    </div>
+                </div>`;
       })
       .join("");
   }
-
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/XqVn1NhF/pulse.png">
-    <title>Playwright Pulse Report</title>
-    <style>
-        :root {
-          --primary-color: #3f51b5; /* Indigo */
-          --secondary-color: #ff4081; /* Pink */
-          --accent-color: #673ab7; /* Deep Purple */
-          --accent-color-alt: #FF9800; /* Orange for duration charts */
-          --success-color: #4CAF50; /* Green */
-          --danger-color: #F44336; /* Red */
-          --warning-color: #FFC107; /* Amber */
-          --info-color: #2196F3; /* Blue */
-          --light-gray-color: #f5f5f5;
-          --medium-gray-color: #e0e0e0;
-          --dark-gray-color: #757575;
-          --text-color: #333;
-          --text-color-secondary: #555;
-          --border-color: #ddd;
-          --background-color: #f8f9fa; /* Even lighter gray */
-          --card-background-color: #fff;
-          --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-          --border-radius: 8px;
-          --box-shadow: 0 5px 15px rgba(0,0,0,0.08); /* Softer shadow */
-          --box-shadow-light: 0 3px 8px rgba(0,0,0,0.05);
-          --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.07);
-        }
-        
-        body {
-          font-family: var(--font-family);
-          margin: 0;
-          background-color: var(--background-color);
-          color: var(--text-color);
-          line-height: 1.65; /* Increased line height */
-          font-size: 16px;
-        }
-        
-        .container {
-          max-width: 1600px; 
-          padding: 30px; /* Increased padding */
-          border-radius: var(--border-radius);
-          box-shadow: var(--box-shadow);
-          background: repeating-linear-gradient(#f1f8e9, #f9fbe7, #fce4ec);
-        }
-        
-        .header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          flex-wrap: wrap;
-          padding-bottom: 25px;
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: 25px;
-        }
-        .header-title { display: flex; align-items: center; gap: 15px; }
-        .header h1 { margin: 0; font-size: 1.85em; font-weight: 600; color: var(--primary-color); }
-        #report-logo { height: 40px; width: 40px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.1);}
-        .run-info { font-size: 0.9em; text-align: right; color: var(--text-color-secondary); line-height:1.5;}
-        .run-info strong { color: var(--text-color); }
-        
-        .tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 30px; overflow-x: auto; }
-        .tab-button {
-          padding: 15px 25px; background: none; border: none; border-bottom: 3px solid transparent;
-          cursor: pointer; font-size: 1.1em; font-weight: 600; color: black;
-          transition: color 0.2s ease, border-color 0.2s ease; white-space: nowrap;
-        }
-        .tab-button:hover { color: var(--accent-color); }
-        .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
-        .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/v817w4sg/logo.png">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
+    <script src="https://code.highcharts.com/highcharts.js" defer></script>
+    <title>Playwright Pulse Report (Static Report)</title>
+    
+<style>
+:root {
+--primary-color: #60a5fa; --secondary-color: #f472b6; --accent-color: #a78bfa; --accent-color-alt: #fb923c;
+--success-color: #34d399; --danger-color: #f87171; --warning-color: #fbbf24; --info-color: #60a5fa;
+--light-gray-color: #374151; --medium-gray-color: #4b5563; --dark-gray-color: #9ca3af;
+--text-color: #f9fafb; --text-color-secondary: #d1d5db; --border-color: #4b5563; --background-color: #111827;
+--card-background-color: #1f2937; --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+--border-radius: 8px; --box-shadow: 0 5px 15px rgba(0,0,0,0.3); --box-shadow-light: 0 3px 8px rgba(0,0,0,0.2); --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+.trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] { min-height: 100px; }
+.lazy-load-chart .no-data, .lazy-load-chart .no-data-chart { display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }
+.highcharts-background { fill: transparent; }
+.highcharts-title, .highcharts-subtitle { font-family: var(--font-family); }
+.highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
+.highcharts-axis-title { fill: var(--text-color) !important; }
+.highcharts-tooltip > span { background-color: rgba(31,41,55,0.95) !important; border-color: rgba(31,41,55,0.95) !important; color: #f9fafb !important; padding: 10px !important; border-radius: 6px !important; }
+body { font-family: var(--font-family); margin: 0; background-color: var(--background-color); color: var(--text-color); line-height: 1.65; font-size: 16px; }
+.container { padding: 30px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); background: repeating-linear-gradient(#1f2937, #374151, #1f2937); }
+.header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; padding-bottom: 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 25px; }
+.header-title { display: flex; align-items: center; gap: 15px; }
+.header h1 { margin: 0; font-size: 1.85em; font-weight: 600; color: var(--primary-color); }
+#report-logo { height: 40px; width: 55px; }
+.run-info { font-size: 0.9em; text-align: right; color: var(--text-color-secondary); line-height:1.5;}
+.run-info strong { color: var(--text-color); }
+.tabs { display: flex; border-bottom: 2px solid var(--border-color); margin-bottom: 30px; overflow-x: auto; }
+.tab-button { padding: 15px 25px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-size: 1.1em; font-weight: 600; color: var(--text-color); transition: color 0.2s ease, border-color 0.2s ease; white-space: nowrap; }
+.tab-button:hover { color: var(--accent-color); }
+.tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+.tab-content { display: none; animation: fadeIn 0.4s ease-out; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 22px; margin-bottom: 35px; }
+.summary-card { background-color: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; text-align: center; box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.summary-card:hover { transform: translateY(-5px); box-shadow: var(--box-shadow); }
+.summary-card h3 { margin: 0 0 10px; font-size: 1.05em; font-weight: 500; color: var(--text-color-secondary); }
+.summary-card .value { font-size: 2.4em; font-weight: 600; margin-bottom: 8px; }
+.summary-card .trend-percentage { font-size: 1em; color: var(--dark-gray-color); }
+.status-passed .value, .stat-passed svg { color: var(--success-color); }
+.status-failed .value, .stat-failed svg { color: var(--danger-color); }
+.status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
+.dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: stretch; }
+.pie-chart-wrapper, .suites-widget, .trend-chart { background-color: var(--card-background-color); padding: 28px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+.pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color); }
+.trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { flex-grow: 1; min-height: 250px; }
+.status-badge-small-tooltip { padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }
+.status-badge-small-tooltip.status-passed { background-color: var(--success-color); }
+.status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
+.status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
+.status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
+.suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
+.suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.suite-card { border: 1px solid var(--border-color); border-left-width: 5px; border-radius: calc(var(--border-radius) / 1.5); padding: 20px; background-color: var(--card-background-color); transition: box-shadow 0.2s ease, border-left-color 0.2s ease; }
+.suite-card:hover { box-shadow: var(--box-shadow); }
+.suite-card.status-passed { border-left-color: var(--success-color); }
+.suite-card.status-failed { border-left-color: var(--danger-color); }
+.suite-card.status-skipped { border-left-color: var(--warning-color); }
+.suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
+.browser-tag { font-size: 0.8em; background-color: var(--medium-gray-color); color: var(--text-color-secondary); padding: 3px 8px; border-radius: 4px; white-space: nowrap;}
+.suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
+.suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
+.suite-stats span { display: flex; align-items: center; gap: 6px; }
+.suite-stats svg { vertical-align: middle; font-size: 1.15em; }
+.filters { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px; padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-inset); border: 1px solid var(--border-color); }
+.filters input, .filters select, .filters button { padding: 11px 15px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 1em; background-color: var(--card-background-color); color: var(--text-color); }
+.filters input { flex-grow: 1; min-width: 240px;}
+.filters select {min-width: 180px;}
+.filters button { background-color: var(--primary-color); color: white; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; border: none; }
+.filters button:hover { background-color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.3);}
+.test-case { margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--card-background-color); box-shadow: var(--box-shadow-light); overflow: hidden; }
+.test-case-header { padding: 10px 15px; background-color: var(--card-background-color); cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid transparent; transition: background-color 0.2s ease; }
+.test-case-header:hover { background-color: var(--light-gray-color); }
+.test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: var(--light-gray-color); }
+.test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
+.test-case-title { font-weight: 600; color: var(--text-color); font-size: 1em; }
+.test-case-browser { font-size: 0.9em; color: var(--text-color-secondary); }
+.test-case-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: var(--text-color-secondary); flex-shrink: 0; }
+.test-duration { background-color: var(--light-gray-color); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;}
+.status-badge { padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.status-badge.status-passed { background-color: var(--success-color); }
+.status-badge.status-failed { background-color: var(--danger-color); }
+.status-badge.status-skipped { background-color: var(--warning-color); }
+.status-badge.status-unknown { background-color: var(--dark-gray-color); }
+.tag { display: inline-block; background: linear-gradient(#4b5563, #1f2937, #111827); color: #f9fafb; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; font-weight: 400; }
+.test-case-content { display: none; padding: 20px; border-top: 1px solid var(--border-color); background-color: var(--light-gray-color); }
+.test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
+.test-case-content p { margin-bottom: 10px; font-size: 1em; }
+.test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); border-left: 4px solid var(--danger-color); border-radius: 4px; }
+.test-error-summary h4 { color: var(--danger-color); margin-top:0;}
+.test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
+.steps-list { margin: 18px 0; }
+@supports (content-visibility: auto) {
+.tab-content,
+#test-runs .test-case,
+.attachments-section,
+.test-history-card,
+.trend-chart,
+.suite-card {
+content-visibility: auto;
+contain-intrinsic-size: 1px 600px;
+}
+}
+.test-case,
+.test-history-card,
+.suite-card,
+.attachments-section {
+contain: content;
+}
+.attachments-grid .attachment-item img.lazy-load-image {
+width: 100%;
+aspect-ratio: 4 / 3;
+object-fit: cover;
+}
+.attachments-grid .attachment-item.video-item {
+aspect-ratio: 16 / 9;
+}
 
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); 
-          gap: 22px; margin-bottom: 35px;
-        }
-        .summary-card {
-          background-color: var(--card-background-color); border: 1px solid var(--border-color);
-          border-radius: var(--border-radius); padding: 22px; text-align: center;
-          box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        .summary-card:hover { transform: translateY(-5px); box-shadow: var(--box-shadow); }
-        .summary-card h3 { margin: 0 0 10px; font-size: 1.05em; font-weight: 500; color: var(--text-color-secondary); }
-        .summary-card .value { font-size: 2.4em; font-weight: 600; margin-bottom: 8px; }
-        .summary-card .trend-percentage { font-size: 1em; color: var(--dark-gray-color); }
-        .status-passed .value, .stat-passed svg { color: var(--success-color); }
-        .status-failed .value, .stat-failed svg { color: var(--danger-color); }
-        .status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
-        
-        .dashboard-bottom-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Increased minmax */
-            gap: 28px; align-items: stretch; /* Stretch for same height cards */
-        }
-        .pie-chart-wrapper, .suites-widget, .trend-chart {
-            background-color: var(--card-background-color); padding: 28px; /* Increased padding */
-            border-radius: var(--border-radius); box-shadow: var(--box-shadow-light);
-            display: flex; flex-direction: column; /* For internal alignment */
-        }
-        .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .main-chart-title { 
-            text-align: center; margin-top: 0; margin-bottom: 25px; 
-            font-size: 1.25em; font-weight: 600; color: var(--text-color);
-        }
-        .pie-chart-wrapper svg, .trend-chart-container svg { display: block; margin: 0 auto; max-width: 100%; height: auto; flex-grow: 1;}
-        
-        .chart-tooltip {
-          position: absolute; padding: 10px 15px; background: rgba(10,10,10,0.92); color: #f5f5f5; /* Slightly lighter text on dark */
-          border: none; border-radius: 6px; pointer-events: none;
-          font-size: 13px; line-height: 1.5; white-space: nowrap; z-index: 10000;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.35); opacity: 0; transition: opacity 0.15s ease-in-out;
-        }
-        .chart-tooltip strong { color: #fff; font-weight: 600;}
-        .status-badge-small-tooltip { padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }
-        .status-badge-small-tooltip.status-passed { background-color: var(--success-color); }
-        .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
-        .status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
-        .status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
-        
-        .suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
-        .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .suite-card {
-          border: 1px solid var(--border-color); border-left-width: 5px;
-          border-radius: calc(var(--border-radius) / 1.5); padding: 20px;
-          background-color: var(--card-background-color); transition: box-shadow 0.2s ease, border-left-color 0.2s ease;
-        }
-        .suite-card:hover { box-shadow: var(--box-shadow); }
-        .suite-card.status-passed { border-left-color: var(--success-color); }
-        .suite-card.status-failed { border-left-color: var(--danger-color); }
-        .suite-card.status-skipped { border-left-color: var(--warning-color); }
-        .suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
-        .browser-tag { font-size: 0.8em; background-color: var(--medium-gray-color); color: var(--text-color-secondary); padding: 3px 8px; border-radius: 4px; white-space: nowrap;}
-        .suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
-        .suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
-        .suite-stats span { display: flex; align-items: center; gap: 6px; }
-        .suite-stats svg { vertical-align: middle; font-size: 1.15em; }
-
-        .filters {
-          display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 28px;
-          padding: 20px; background-color: var(--light-gray-color); border-radius: var(--border-radius);
-          box-shadow: var(--box-shadow-inset); border-color: black; border-style: groove;
-        }
-        .filters input, .filters select, .filters button {
-          padding: 11px 15px; border: 1px solid var(--border-color);
-          border-radius: 6px; font-size: 1em;
-        }
-        .filters input { flex-grow: 1; min-width: 240px;}
-        .filters select {min-width: 180px;}
-        .filters button { background-color: var(--primary-color); color: white; cursor: pointer; transition: background-color 0.2s ease, box-shadow 0.2s ease; border: none; }
-        .filters button:hover { background-color: var(--accent-color); box-shadow: 0 2px 5px rgba(0,0,0,0.15);}
-
-        .test-case {
-          margin-bottom: 15px; border: 1px solid var(--border-color);
-          border-radius: var(--border-radius); background-color: var(--card-background-color);
-          box-shadow: var(--box-shadow-light); overflow: hidden; 
-        }
-        .test-case-header {
-          padding: 10px 15px; background-color: #fff; cursor: pointer;
-          display: flex; justify-content: space-between; align-items: center;
-          border-bottom: 1px solid transparent; 
-          transition: background-color 0.2s ease;
-        }
-        .test-case-header:hover { background-color: #f4f6f8; } /* Lighter hover */
-        .test-case-header[aria-expanded="true"] { border-bottom-color: var(--border-color); background-color: #f9fafb; }
-        
-        .test-case-summary { display: flex; align-items: center; gap: 14px; flex-grow: 1; flex-wrap: wrap;}
-        .test-case-title { font-weight: 600; color: var(--text-color); font-size: 1em; }
-        .test-case-browser { font-size: 0.9em; color: var(--text-color-secondary); }
-        .test-case-meta { display: flex; align-items: center; gap: 12px; font-size: 0.9em; color: var(--text-color-secondary); flex-shrink: 0; }
-        .test-duration { background-color: var(--light-gray-color); padding: 4px 10px; border-radius: 12px; font-size: 0.9em;}
-        
-        .status-badge {
-          padding: 5px; border-radius: 6px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase;
-          min-width: 70px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .status-badge.status-passed { background-color: var(--success-color); }
-        .status-badge.status-failed { background-color: var(--danger-color); }
-        .status-badge.status-skipped { background-color: var(--warning-color); }
-        .status-badge.status-unknown { background-color: var(--dark-gray-color); }
-        
-        .tag { display: inline-block; background: linear-gradient( #fff, #333, #000); color: #fff; padding: 3px 10px; border-radius: 12px; font-size: 0.85em; margin-right: 6px; font-weight: 400; }
-        
-        .test-case-content { display: none; padding: 20px; border-top: 1px solid var(--border-color); background-color: #fcfdff; }
-        .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
-        .test-case-content p { margin-bottom: 10px; font-size: 1em; }
-        .test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(244,67,54,0.05); border: 1px solid rgba(244,67,54,0.2); border-left: 4px solid var(--danger-color); border-radius: 4px; }
-        .test-error-summary h4 { color: var(--danger-color); margin-top:0;}
-        .test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
-
-        .steps-list { margin: 18px 0; }
-        .step-item { margin-bottom: 8px; padding-left: calc(var(--depth, 0) * 28px); } 
-        .step-header {
-          display: flex; align-items: center; cursor: pointer;
-          padding: 10px 14px; border-radius: 6px; background-color: #fff;
-          border: 1px solid var(--light-gray-color); 
-          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        .step-header:hover { background-color: #f0f2f5; border-color: var(--medium-gray-color); box-shadow: var(--box-shadow-inset); }
-        .step-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1em; }
-        .step-title { flex: 1; font-size: 1em; }
-        .step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
-        .step-details { display: none; padding: 14px; margin-top: 8px; background: #fdfdfd; border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
-        .step-info { margin-bottom: 8px; }
-        .step-error { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
-        .step-error pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-        .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 
-        .step-hook .step-title { font-style: italic; color: var(--info-color)}
-        .nested-steps { margin-top: 12px; }
-
-        .attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
-        .attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }
-        .attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
-        .attachment-item {
-          border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff;
-          box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column;
-          transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
-        }
-        .attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
-        .attachment-item img {
-          width: 100%; height: 180px; object-fit: cover; display: block;
-          border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease;
-        }
-        .attachment-item a:hover img { opacity: 0.85; }
-        .attachment-caption {
-          padding: 12px 15px; font-size: 0.9em; text-align: center;
-          color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color);
-        }
-        .video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
-        .video-item a:hover, .trace-item a:hover { text-decoration: underline; }
-        .code-section pre { background-color: #2d2d2d; color: #f0f0f0; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
-
-        .trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
-        .trend-chart-container svg .chart-axis path, .trend-chart-container svg .chart-axis line { stroke: var(--border-color); shape-rendering: crispEdges;}
-        .trend-chart-container svg .chart-axis text { fill: var(--text-color-secondary); font-size: 12px; }
-        .trend-chart-container svg .main-chart-title { font-size: 1.1em; font-weight: 600; fill: var(--text-color); }
-        .chart-line { fill: none; stroke-width: 2.5px; }
-        .chart-line.total-line { stroke: var(--primary-color); }
-        .chart-line.passed-line { stroke: var(--success-color); }
-        .chart-line.failed-line { stroke: var(--danger-color); }
-        .chart-line.skipped-line { stroke: var(--warning-color); }
-        .chart-line.duration-line { stroke: var(--accent-color-alt); }
-        .chart-line.history-duration-line { stroke: var(--accent-color); stroke-width: 2px;}
-        
-        .pie-center-percentage { font-size: calc(var(--outer-radius, 100px) / 3.5); font-weight: bold; fill: var(--primary-color); } /* Use CSS var if possible */
-        .pie-center-label { font-size: calc(var(--outer-radius, 100px) / 7); fill: var(--text-color-secondary); }
-        .pie-chart-legend-d3 text, .chart-legend-d3 text { fill: var(--text-color); font-size: 12px;}
-        .chart-legend-bottom {font-size: 12px;}
-
-
-        .test-history-container h2 { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
-        .test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
-        .test-history-card {
-            background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius);
-            padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column;
-        }
-        .test-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--light-gray-color); }
-        .test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .test-history-header p { font-weight: 500 }
-        .test-history-trend { margin-bottom: 20px; min-height: 110px; }
-        .test-history-trend svg { display: block; margin: 0 auto; max-width:100%; height: auto;}
-        .test-history-trend .small-axis text {font-size: 11px;}
-        .test-history-details-collapsible summary { cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }
-        .test-history-details-collapsible summary:hover {text-decoration: underline;}
-        .test-history-details table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
-        .test-history-details th, .test-history-details td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--light-gray-color); }
-        .test-history-details th { background-color: var(--light-gray-color); font-weight: 600; }
-        .status-badge-small { 
-            padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; 
-            color: white; text-transform: uppercase; display: inline-block;
-        }
-        .status-badge-small.status-passed { background-color: var(--success-color); }
-        .status-badge-small.status-failed { background-color: var(--danger-color); }
-        .status-badge-small.status-skipped { background-color: var(--warning-color); }
-        .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
-
-
-        .no-data, .no-tests, .no-steps, .no-data-chart { 
-          padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em;
-          background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0;
-          border: 1px dashed var(--medium-gray-color);
-        }
-        .no-data-chart {font-size: 0.95em; padding: 18px;}
-        
-        #test-ai iframe { border: 1px solid var(--border-color); width: 100%; height: 85vh; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); }
-        #test-ai p {margin-bottom: 18px; font-size: 1em; color: var(--text-color-secondary);}
-        pre .stdout-log { background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
-        pre .stderr-log { background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; }
-        /* Responsive Enhancements */
-        @media (max-width: 1200px) {
-            .trend-charts-row { grid-template-columns: 1fr; } /* Stack trend charts earlier */
-        }
-        @media (max-width: 992px) { 
-            .dashboard-bottom-row { grid-template-columns: 1fr; }
-            .pie-chart-wrapper svg { max-width: 350px; }
-            .filters input { min-width: 180px; }
-            .filters select { min-width: 150px; }
-        }
-        @media (max-width: 768px) { 
-          body { font-size: 15px; }
-          .container { margin: 10px; padding: 20px; } /* Adjusted padding */
-          .header { flex-direction: column; align-items: flex-start; gap: 15px; }
-          .header h1 { font-size: 1.6em; }
-          .run-info { text-align: left; font-size:0.9em; }
-          .tabs { margin-bottom: 25px;}
-          .tab-button { padding: 12px 20px; font-size: 1.05em;}
-          .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;}
-          .summary-card .value {font-size: 2em;}
-          .summary-card h3 {font-size: 0.95em;}
-          .filters { flex-direction: column; padding: 18px; gap: 12px;}
-          .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} 
-          .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
-          .test-case-summary {gap: 10px;}
-          .test-case-title {font-size: 1.05em;}
-          .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;}
-          .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;}
-          .test-history-grid {grid-template-columns: 1fr;}
-          .pie-chart-wrapper {min-height: auto;} /* Allow pie chart to shrink */
-          .pie-chart-legend-d3 { transform: translate(calc(50% - 50px), calc(100% - 50px));} /* Adjust legend for mobile for pie */
-
-        }
-        @media (max-width: 480px) { 
-            body {font-size: 14px;}
-            .container {padding: 15px;}
-            .header h1 {font-size: 1.4em;}
-            #report-logo { height: 35px; width: 35px; }
-            .tab-button {padding: 10px 15px; font-size: 1em;}
-            .summary-card .value {font-size: 1.8em;}
-            .attachments-grid {grid-template-columns: 1fr;}
-            .step-item {padding-left: calc(var(--depth, 0) * 18px);} /* Reduced indent */
-            .test-case-content, .step-details {padding: 15px;}
-            .trend-charts-row {gap: 20px;}
-            .trend-chart {padding: 20px;}
-            .chart-legend-bottom { transform: translate(10px, calc(100% - 50px));} /* Adjust general bottom legend for small screens */
-            .chart-legend-bottom g { transform: translate(0,0) !important;} /* Stack legend items vertically */
-            .chart-legend-bottom g text {font-size: 11px;}
-            .chart-legend-bottom g line, .chart-legend-bottom g circle {transform: scale(0.9);}
-        }
-    </style>
+.step-item { margin-bottom: 8px; padding-left: calc(var(--depth, 0) * 28px); }
+.step-header { display: flex; align-items: center; cursor: pointer; padding: 10px 14px; border-radius: 6px; background-color: var(--card-background-color); border: 1px solid var(--light-gray-color); transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.step-header:hover { background-color: var(--light-gray-color); border-color: var(--medium-gray-color); box-shadow: var(--box-shadow-inset); }
+.step-icon { margin-right: 12px; width: 20px; text-align: center; font-size: 1.1em; }
+.step-title { flex: 1; font-size: 1em; }
+.step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
+.step-details { display: none; padding: 14px; margin-top: 8px; background: var(--light-gray-color); border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
+.step-info { margin-bottom: 8px; }
+.test-error-summary { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(248,113,113,0.1); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
+.test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.2); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+.step-hook { background-color: rgba(96,165,250,0.1); border-left: 3px solid var(--info-color) !important; }
+.step-hook .step-title { font-style: italic; color: var(--info-color)}
+.nested-steps { margin-top: 12px; }
+.attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
+.attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }
+.attachments-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }
+.attachment-item { border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: var(--card-background-color); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }
+.attachment-item:hover { transform: translateY(-4px); box-shadow: var(--box-shadow); }
+.attachment-item img, .attachment-item video { width: 100%; height: 180px; object-fit: cover; display: block; background-color: var(--medium-gray-color); border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }
+.attachment-info { padding: 12px; margin-top: auto; background-color: var(--light-gray-color);}
+.attachment-item a:hover img { opacity: 0.85; }
+.attachment-caption { padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }
+.video-item a, .trace-item a { display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }
+.video-item a:hover, .trace-item a:hover { text-decoration: underline; }
+.code-section pre { background-color: #111827; color: #f9fafb; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}
+.trend-charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }
+.test-history-container h2.tab-main-title { font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}
+.test-history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }
+.test-history-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+.test-history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--light-gray-color); }
+.test-history-header h3 { margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.test-history-header p { font-weight: 500 }
+.test-history-trend { margin-bottom: 20px; min-height: 110px; }
+.test-history-trend div[id^="testHistoryChart-"] { display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; }
+.test-history-details-collapsible summary { cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }
+.test-history-details-collapsible summary:hover {text-decoration: underline;}
+.test-history-details table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+.test-history-details th, .test-history-details td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--light-gray-color); }
+.test-history-details th { background-color: var(--light-gray-color); font-weight: 600; }
+.status-badge-small { padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; display: inline-block; }
+.status-badge-small.status-passed { background-color: var(--success-color); }
+.status-badge-small.status-failed { background-color: var(--danger-color); }
+.status-badge-small.status-skipped { background-color: var(--warning-color); }
+.status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
+.no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
+.no-data-chart {font-size: 0.95em; padding: 18px;}
+.ai-failure-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }
+.ai-failure-card { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 5px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
+.ai-failure-card-header { padding: 15px 20px; border-bottom: 1px solid var(--light-gray-color); display: flex; align-items: center; justify-content: space-between; gap: 15px; }
+.ai-failure-card-header h3 { margin: 0; font-size: 1.1em; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ai-failure-card-body { padding: 20px; }
+.ai-fix-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px 18px; font-size: 1em; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+.ai-fix-btn:hover { background-color: var(--accent-color); transform: translateY(-2px); }
+.ai-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1050; animation: fadeIn 0.3s; }
+.ai-modal-content { background-color: var(--card-background-color); color: var(--text-color); border-radius: var(--border-radius); width: 90%; max-width: 800px; max-height: 90vh; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; }
+.ai-modal-header { padding: 18px 25px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
+.ai-modal-header h3 { margin: 0; font-size: 1.25em; }
+.ai-modal-close { font-size: 2rem; font-weight: 300; cursor: pointer; color: var(--dark-gray-color); line-height: 1; transition: color 0.2s; }
+.ai-modal-close:hover { color: var(--danger-color); }
+.ai-modal-body { padding: 25px; overflow-y: auto; }
+.ai-modal-body h4 { margin-top: 18px; margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color); }
+.ai-modal-body p { margin-bottom: 15px; }
+.ai-loader { margin: 40px auto; border: 5px solid var(--medium-gray-color); border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.trace-preview { padding: 1rem; text-align: center; background: var(--light-gray-color); border-bottom: 1px solid var(--border-color); }
+.trace-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+.trace-name { word-break: break-word; font-size: 0.9rem; }
+.trace-actions { display: flex; gap: 0.5rem; }
+.trace-actions a { flex: 1; text-align: center; padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: 4px; text-decoration: none; background: var(--primary-color); color: white; }
+.view-trace { background: var(--primary-color); color: white; }
+.view-trace:hover { background: var(--accent-color); }
+.download-trace { background: var(--medium-gray-color); color: var(--text-color); }
+.download-trace:hover { background: var(--dark-gray-color); }
+.filters button.clear-filters-btn { background-color: var(--medium-gray-color); color: var(--text-color); }
+.filters button.clear-filters-btn:hover { background-color: var(--dark-gray-color); color: #fff; }
+.copy-btn {color: var(--primary-color); background: var(--card-background-color); border-radius: 8px; cursor: pointer; border-color: var(--primary-color); font-size: 1em; margin-left: 93%; font-weight: 600;}
+.ai-analyzer-stats { display: flex; gap: 20px; margin-bottom: 25px; padding: 20px; background: linear-gradient(135deg, #374151 0%, #1f2937 100%); border-radius: var(--border-radius); justify-content: center; }
+.stat-item { text-align: center; color: white; }
+.stat-number { display: block; font-size: 2em; font-weight: 700; line-height: 1;}
+.stat-label { font-size: 0.9em; opacity: 0.9; font-weight: 500;}
+.ai-analyzer-description { margin-bottom: 25px; font-size: 1em; color: var(--text-color-secondary); text-align: center; max-width: 600px; margin-left: auto; margin-right: auto;}
+.compact-failure-list { display: flex; flex-direction: column; gap: 15px; }
+.compact-failure-item { background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 4px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); transition: transform 0.2s ease, box-shadow 0.2s ease;}
+.compact-failure-item:hover { transform: translateY(-2px); box-shadow: var(--box-shadow); }
+.failure-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; gap: 15px;}
+.failure-main-info { flex: 1; min-width: 0; }
+.failure-title { margin: 0 0 8px 0; font-size: 1.1em; font-weight: 600; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.failure-meta { display: flex; gap: 12px; align-items: center;}
+.browser-indicator, .duration-indicator { font-size: 0.85em; padding: 3px 8px; border-radius: 12px; font-weight: 500;}
+.browser-indicator { background: var(--info-color); color: white; }
+#load-more-tests { font-size: 16px; padding: 4px; background-color: var(--light-gray-color); border-radius: 4px; color: var(--text-color); }
+.duration-indicator { background: var(--medium-gray-color); color: var(--text-color); }
+.compact-ai-btn { background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap;}
+.compact-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(55, 65, 81, 0.4); }
+.ai-text { font-size: 0.95em; }
+.failure-error-preview { padding: 0 20px 18px 20px; border-top: 1px solid var(--light-gray-color);}
+.error-snippet { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4;}
+.expand-error-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;}
+.expand-error-btn:hover { background: var(--light-gray-color); border-color: var(--medium-gray-color); }
+.expand-icon { transition: transform 0.2s ease; font-size: 0.8em;}
+.expand-error-btn.expanded .expand-icon { transform: rotate(180deg); }
+.full-error-details { padding: 0 20px 20px 20px; border-top: 1px solid var(--light-gray-color); margin-top: 0;}
+.full-error-content { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 15px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4; max-height: 300px; overflow-y: auto;}
+@media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
+@media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
+@media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
+@media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
+.trace-actions a { text-decoration: none; font-weight: 500; font-size: 0.9em; }
+.generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
+.attachment-icon { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }
+.attachment-caption { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; }
+.attachment-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.attachment-type { font-size: 0.8rem; color: var(--text-color-secondary); }
+.footer-text { color: white }
+</style>
 </head>
 <body>
     <div class="container">
         <header class="header">
             <div class="header-title">
-                <img id="report-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZD0iTTEyIDJMNCA3bDggNSA4LTUtOC01eiIgZmlsbD0iIzNmNTFiNSIvPjxwYXRoIGQ9Ik0xMiA2TDQgMTFsOCA1IDgtNS04LTV6IiBmaWxsPSIjNDI4NWY0Ii8+PHBhdGggZD0iTTEyIDEwbC04IDUgOCA1IDgtNS04LTV6IiBmaWxsPSIjM2Q1NWI0Ii8+PC9zdmc+" alt="Report Logo">
+                <img id="report-logo" src="https://i.postimg.cc/v817w4sg/logo.png" alt="Report Logo">
                 <h1>Playwright Pulse Report</h1>
             </div>
-            <div class="run-info">
-                <strong>Run Date:</strong> ${formatDate(
-                  runSummary.timestamp
-                )}<br>
-                <strong>Total Duration:</strong> ${formatDuration(
-                  runSummary.duration
-                )}
-            </div>
+            <div class="run-info"><strong>Run Date:</strong> ${formatDate(
+              runSummary.timestamp
+            )}<br><strong>Total Duration:</strong> ${formatDuration(
+    runSummary.duration
+  )}</div>
         </header>
-        
         <div class="tabs">
             <button class="tab-button active" data-tab="dashboard">Dashboard</button>
             <button class="tab-button" data-tab="test-runs">Test Run Summary</button>
             <button class="tab-button" data-tab="test-history">Test History</button>
-            <button class="tab-button" data-tab="test-ai">AI Analysis</button>
+            <button class="tab-button" data-tab="ai-failure-analyzer">AI Failure Analyzer</button>
         </div>
-        
         <div id="dashboard" class="tab-content active">
             <div class="dashboard-grid">
-                <div class="summary-card">
-                    <h3>Total Tests</h3><div class="value">${
-                      runSummary.totalTests
-                    }</div>
-                </div>
-                <div class="summary-card status-passed">
-                    <h3>Passed</h3><div class="value">${runSummary.passed}</div>
-                    <div class="trend-percentage">${passPercentage}%</div>
-                </div>
-                <div class="summary-card status-failed">
-                    <h3>Failed</h3><div class="value">${runSummary.failed}</div>
-                    <div class="trend-percentage">${failPercentage}%</div>
-                </div>
-                <div class="summary-card status-skipped">
-                    <h3>Skipped</h3><div class="value">${
-                      runSummary.skipped || 0
-                    }</div>
-                    <div class="trend-percentage">${skipPercentage}%</div>
-                </div>
-                <div class="summary-card">
-                    <h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div>
-                </div>
-                 <div class="summary-card">
-                    <h3>Run Duration</h3><div class="value">${formatDuration(
-                      runSummary.duration
-                    )}</div>
-                </div>
+                <div class="summary-card"><h3>Total Tests</h3><div class="value">${
+                  runSummary.totalTests
+                }</div></div>
+                <div class="summary-card status-passed"><h3>Passed</h3><div class="value">${
+                  runSummary.passed
+                }</div><div class="trend-percentage">${passPercentage}%</div></div>
+                <div class="summary-card status-failed"><h3>Failed</h3><div class="value">${
+                  runSummary.failed
+                }</div><div class="trend-percentage">${failPercentage}%</div></div>
+                <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
+                  runSummary.skipped || 0
+                }</div><div class="trend-percentage">${skipPercentage}%</div></div>
+                <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
+                <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
+                  runSummary.duration
+                )}</div></div>
             </div>
             <div class="dashboard-bottom-row">
-                ${generatePieChartD3(
+              <div style="display: grid; gap: 20px">
+                ${generatePieChart(
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
                     { label: "Skipped", value: runSummary.skipped || 0 },
                   ],
                   400,
-                  350
+                  390
                 )} 
+                ${
+                  runSummary.environment &&
+                  Object.keys(runSummary.environment).length > 0
+                    ? generateEnvironmentDashboard(runSummary.environment)
+                    : '<div class="no-data">Environment data not available.</div>'
+                }
+              </div> 
                 ${generateSuitesWidget(suitesData)}
             </div>
         </div>
-        
         <div id="test-runs" class="tab-content">
             <div class="filters">
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-                <select id="filter-status">
-                    <option value="">All Statuses</option>
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="skipped">Skipped</option>
-                </select>
-                <select id="filter-browser">
-                    <option value="">All Browsers</option>
-                    ${Array.from(
-                      new Set(
-                        (results || []).map((test) => test.browser || "unknown")
-                      )
-                    )
-                      .map(
-                        (browser) =>
-                          `<option value="${sanitizeHTML(
-                            browser
-                          )}">${sanitizeHTML(browser)}</option>`
-                      )
-                      .join("")}
-                </select>
-                <button id="expand-all-tests">Expand All</button>
-                <button id="collapse-all-tests">Collapse All</button>
+                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
+                <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
+                  new Set(
+                    (results || []).map((test) => test.browser || "unknown")
+                  )
+                )
+                  .map(
+                    (browser) =>
+                      `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
+                        browser
+                      )}</option>`
+                  )
+                  .join("")}</select>
+                <button id="expand-all-tests">Expand All</button> <button id="collapse-all-tests">Collapse All</button> <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
-            <div class="test-cases-list">
-                ${generateTestCasesHTML()}
-            </div>
+            <div class="test-cases-list">${generateTestCasesHTML(
+              results.slice(0, 50),
+              0
+            )}</div>
+            ${
+              results.length > 50
+                ? `<div class="load-more-wrapper"><button id="load-more-tests">Load more</button></div><script type="application/json" id="remaining-tests-b64">${Buffer.from(
+                    generateTestCasesHTML(results.slice(50), 50),
+                    "utf8"
+                  ).toString("base64")}</script>`
+                : ``
+            }
         </div>
-
         <div id="test-history" class="tab-content">
           <h2 class="tab-main-title">Execution Trends</h2>
           <div class="trend-charts-row">
-            <div class="trend-chart">
-              <h3 class="chart-title-header">Test Volume & Outcome Trends</h3>
+            <div class="trend-chart"><h3 class="chart-title-header">Test Volume & Outcome Trends</h3>
               ${
                 trendData && trendData.overall && trendData.overall.length > 0
                   ? generateTestTrendsChart(trendData)
                   : '<div class="no-data">Overall trend data not available for test counts.</div>'
               }
             </div>
-            <div class="trend-chart">
-              <h3 class="chart-title-header">Execution Duration Trends</h3>
+            <div class="trend-chart"><h3 class="chart-title-header">Execution Duration Trends</h3>
               ${
                 trendData && trendData.overall && trendData.overall.length > 0
                   ? generateDurationTrendChart(trendData)
                   : '<div class="no-data">Overall trend data not available for durations.</div>'
               }
+              </div>
+          </div>
+          <h2 class="tab-main-title">Test Distribution by Worker ${infoTooltip}</h2>
+          <div class="trend-charts-row">
+             <div class="trend-chart">
+                ${generateWorkerDistributionChart(results)}
             </div>
           </div>
           <h2 class="tab-main-title">Individual Test History</h2>
@@ -1870,61 +2578,162 @@ function generateHTML(reportData, trendData = null) {
               : '<div class="no-data">Individual test history data not available.</div>'
           }
         </div>
-
-        <div id="test-ai" class="tab-content">
-             <iframe 
-            src="https://ai-test-analyser.netlify.app/" 
-            width="100%" 
-            height="100%"
-            frameborder="0"
-            allowfullscreen 
-            style="border: none; height: 100vh;">
-          </iframe>
+        <div id="ai-failure-analyzer" class="tab-content">
+            ${generateAIFailureAnalyzerTab(results)}
         </div>
-        <footer style="
-  padding: 0.5rem;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  text-align: center;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-">
-  <div style="
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #333;
-    font-size: 0.9rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-  ">
-    <img width="48" height="48" src="https://img.icons8.com/emoji/48/index-pointing-at-the-viewer-light-skin-tone-emoji.png" alt="index-pointing-at-the-viewer-light-skin-tone-emoji"/>
-    <span>Created by</span>
-    <a href="https://github.com/Arghajit47"
-       target="_blank"
-       rel="noopener noreferrer"
-       style="
-         color: #7737BF;
-         font-weight: 700;
-         font-style: italic;
-         text-decoration: none;
-         transition: all 0.2s ease;
-       "
-       onmouseover="this.style.color='#BF5C37'"
-       onmouseout="this.style.color='#7737BF'">
-      Arghajit Singha
-    </a>
-  </div>
-  <div style="
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: #666;
-  ">
-    Crafted with precision
-  </div>
-</footer>
+        <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
+                <span class="footer-text">Created by</span>
+                <a href="https://github.com/Arghajit47" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Arghajit Singha</a>
+            </div>
+            <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">Crafted with precision</div>
+        </footer>
     </div>
-    
-    
     <script>
+    // Ensure formatDuration is globally available
+    if (typeof formatDuration === 'undefined') { 
+        function formatDuration(ms) { 
+            if (ms === undefined || ms === null || ms < 0) return "0.0s"; 
+            return (ms / 1000).toFixed(1) + "s"; 
+        }
+    }
+    function copyLogContent(elementId, button) {
+        const logElement = document.getElementById(elementId);
+        if (!logElement) {
+            console.error('Could not find log element with ID:', elementId);
+            return;
+        }
+        navigator.clipboard.writeText(logElement.innerText).then(() => {
+            button.textContent = 'Copied!';
+            setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy log content:', err);
+            button.textContent = 'Failed';
+             setTimeout(() => { button.textContent = 'Copy'; }, 2000);
+        });
+    }
+
+    function getAIFix(button) {
+        const modal = document.getElementById('ai-fix-modal');
+        const modalContent = document.getElementById('ai-fix-modal-content');
+        const modalTitle = document.getElementById('ai-fix-modal-title');
+        
+        modal.style.display = 'flex';
+        document.body.style.setProperty('overflow', 'hidden', 'important');
+        modalTitle.textContent = 'Analyzing...';
+        modalContent.innerHTML = '<div class="ai-loader"></div>';
+
+        try {
+            const testJson = button.dataset.testJson;
+            const test = JSON.parse(atob(testJson));
+
+            const testName = test.name || 'Unknown Test';
+            const failureLogsAndErrors = [
+                'Error Message:',
+                test.errorMessage || 'Not available.',
+                '\\n\\n--- stdout ---',
+                (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
+                '\\n\\n--- stderr ---',
+                (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
+            ].join('\\n');
+            const codeSnippet = test.snippet || '';
+
+            const shortTestName = testName.split(' > ').pop();
+            modalTitle.textContent = \`Analysis for: \${shortTestName}\`;
+            
+            const apiUrl = 'https://ai-test-analyser.netlify.app/api/analyze';
+            fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testName: testName,
+                    failureLogsAndErrors: failureLogsAndErrors,
+                    codeSnippet: codeSnippet,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { 
+                        throw new Error(\`API request failed with status \${response.status}: \${text || response.statusText}\`);
+                    });
+                }
+                return response.text();
+            })
+            .then(text => {
+                if (!text) {
+                    throw new Error("The AI analyzer returned an empty response. This might happen during high load or if the request was blocked. Please try again in a moment.");
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error("Failed to parse JSON:", text);
+                    throw new Error(\`The AI analyzer returned an invalid response. \${e.message}\`);
+                }
+            })
+            .then(data => {
+                const escapeHtml = (unsafe) => {
+                    if (typeof unsafe !== 'string') return '';
+                    return unsafe
+                        .replace(/&/g, "&amp;")
+                        .replace(/</g, "&lt;")
+                        .replace(/>/g, "&gt;")
+                        .replace(/"/g, "&quot;")
+                        .replace(/'/g, "&#039;");
+                };
+
+                const analysisHtml = \`<h4>Analysis</h4><p>\${escapeHtml(data.rootCause) || 'No analysis provided.'}</p>\`;
+                
+                let suggestionsHtml = '<h4>Suggestions</h4>';
+                if (data.suggestedFixes && data.suggestedFixes.length > 0) {
+                    suggestionsHtml += '<div class="suggestions-list" style="margin-top: 15px;">';
+                    data.suggestedFixes.forEach(fix => {
+                        suggestionsHtml += \`
+                            <div class="suggestion-item" style="margin-bottom: 22px; border-left: 3px solid var(--accent-color-alt); padding-left: 15px;">
+                                <p style="margin: 0 0 8px 0; font-weight: 500;">\${escapeHtml(fix.description)}</p>
+                                \${fix.codeSnippet ? \`<div class="code-section"><pre><code>\${escapeHtml(fix.codeSnippet)}</code></pre></div>\` : ''}
+                            </div>
+                        \`;
+                    });
+                    suggestionsHtml += '</div>';
+                } else {
+                    suggestionsHtml += \`<div class="code-section"><pre><code>No suggestion provided.</code></pre></div>\`;
+                }
+                
+                modalContent.innerHTML = analysisHtml + suggestionsHtml;
+            })
+            .catch(err => {
+                console.error('AI Fix Error:', err);
+                modalContent.innerHTML = \`<div class="test-error-summary"><strong>Error:</strong> Failed to get AI analysis. Please check the console for details. <br><br> \${err.message}</div>\`;
+            });
+
+        } catch (e) {
+            console.error('Error processing test data for AI Fix:', e);
+            modalTitle.textContent = 'Error';
+            modalContent.innerHTML = \`<div class="test-error-summary">Could not process test data. Is it formatted correctly?</div>\`;
+        }
+    }
+
+    function closeAiModal() {
+        const modal = document.getElementById('ai-fix-modal');
+        if(modal) modal.style.display = 'none';
+        document.body.style.setProperty('overflow', '', 'important');
+    }
+
+    function toggleErrorDetails(button) {
+        const errorDetails = button.closest('.compact-failure-item').querySelector('.full-error-details');
+        const expandText = button.querySelector('.expand-text');
+        
+        if (errorDetails.style.display === 'none' || !errorDetails.style.display) {
+            errorDetails.style.display = 'block';
+            expandText.textContent = 'Hide Full Error';
+            button.classList.add('expanded');
+        } else {
+            errorDetails.style.display = 'none';
+            expandText.textContent = 'Show Full Error';
+            button.classList.remove('expanded');
+        }
+    }
+     
     function initializeReportInteractivity() {
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -1935,114 +2744,335 @@ function generateHTML(reportData, trendData = null) {
                 button.classList.add('active');
                 const tabId = button.getAttribute('data-tab');
                 const activeContent = document.getElementById(tabId);
-                if (activeContent) activeContent.classList.add('active');
+                if (activeContent) {
+                    activeContent.classList.add('active');
+                }
             });
         });
-
+        // --- Test Run Summary Filters ---
         const nameFilter = document.getElementById('filter-name');
+        function ensureAllTestsAppended() {
+            const node = document.getElementById('remaining-tests-b64');
+            const loadMoreBtn = document.getElementById('load-more-tests');
+            if (!node) return;
+            const b64 = (node.textContent || '').trim();
+            function b64ToUtf8(b64Str) {
+                try { return decodeURIComponent(escape(window.atob(b64Str))); }
+                catch (e) { return window.atob(b64Str); }
+            }
+            const html = b64ToUtf8(b64);
+            const container = document.querySelector('#test-runs .test-cases-list');
+            if (container) container.insertAdjacentHTML('beforeend', html);
+            if (loadMoreBtn) loadMoreBtn.remove();
+            node.remove();
+        }
+        const loadMoreBtn = document.getElementById('load-more-tests');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                const node = document.getElementById('remaining-tests-b64');
+                if (!node) return;
+                const b64 = (node.textContent || '').trim();
+                function b64ToUtf8(b64Str) {
+                    try { return decodeURIComponent(escape(window.atob(b64Str))); }
+                    catch (e) { return window.atob(b64Str); }
+                }
+                const html = b64ToUtf8(b64);
+                const container = document.querySelector('#test-runs .test-cases-list');
+                if (container) container.insertAdjacentHTML('beforeend', html);
+                loadMoreBtn.remove();
+                node.remove();
+            });
+        }
+
+
+
         const statusFilter = document.getElementById('filter-status');
         const browserFilter = document.getElementById('filter-browser');
-
-        function filterTestCases() {
+        const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); 
+        function filterTestCases() { 
+            ensureAllTestsAppended();
             const nameValue = nameFilter ? nameFilter.value.toLowerCase() : "";
             const statusValue = statusFilter ? statusFilter.value : "";
             const browserValue = browserFilter ? browserFilter.value : "";
-            
             document.querySelectorAll('#test-runs .test-case').forEach(testCaseElement => {
                 const titleElement = testCaseElement.querySelector('.test-case-title');
-                // Use the 'title' attribute of .test-case-title for full path filtering
                 const fullTestName = titleElement ? titleElement.getAttribute('title').toLowerCase() : "";
                 const status = testCaseElement.getAttribute('data-status');
                 const browser = testCaseElement.getAttribute('data-browser');
-                
                 const nameMatch = fullTestName.includes(nameValue);
                 const statusMatch = !statusValue || status === statusValue;
                 const browserMatch = !browserValue || browser === browserValue;
-                
                 testCaseElement.style.display = (nameMatch && statusMatch && browserMatch) ? '' : 'none';
             });
         }
         if(nameFilter) nameFilter.addEventListener('input', filterTestCases);
         if(statusFilter) statusFilter.addEventListener('change', filterTestCases);
         if(browserFilter) browserFilter.addEventListener('change', filterTestCases);
-
+        if(clearRunSummaryFiltersBtn) clearRunSummaryFiltersBtn.addEventListener('click', () => {
+            ensureAllTestsAppended();
+            if(nameFilter) nameFilter.value = '';
+            if(statusFilter) statusFilter.value = '';
+            if(browserFilter) browserFilter.value = '';
+            filterTestCases();
+        });
+        // --- Test History Filters ---
         const historyNameFilter = document.getElementById('history-filter-name');
         const historyStatusFilter = document.getElementById('history-filter-status');
-
-        function filterTestHistoryCards() {
+        const clearHistoryFiltersBtn = document.getElementById('clear-history-filters'); 
+        function filterTestHistoryCards() { 
             const nameValue = historyNameFilter ? historyNameFilter.value.toLowerCase() : "";
             const statusValue = historyStatusFilter ? historyStatusFilter.value : "";
-
             document.querySelectorAll('.test-history-card').forEach(card => {
-                // data-test-name now holds the test title (last part of full name)
                 const testTitle = card.getAttribute('data-test-name').toLowerCase(); 
                 const latestStatus = card.getAttribute('data-latest-status');
-
                 const nameMatch = testTitle.includes(nameValue);
                 const statusMatch = !statusValue || latestStatus === statusValue;
-
                 card.style.display = (nameMatch && statusMatch) ? '' : 'none';
             });
         }
         if(historyNameFilter) historyNameFilter.addEventListener('input', filterTestHistoryCards);
         if(historyStatusFilter) historyStatusFilter.addEventListener('change', filterTestHistoryCards);
-
-        function toggleElementDetails(headerElement, contentSelector) {
+        if(clearHistoryFiltersBtn) clearHistoryFiltersBtn.addEventListener('click', () => {
+            if(historyNameFilter) historyNameFilter.value = ''; if(historyStatusFilter) historyStatusFilter.value = '';
+            filterTestHistoryCards();
+        });
+        // --- Expand/Collapse and Toggle Details Logic ---
+        function toggleElementDetails(headerElement, contentSelector) { 
             let contentElement;
-            // For test cases, content is a child of the header's parent.
-            // For steps, content is the direct next sibling.
             if (headerElement.classList.contains('test-case-header')) {
                 contentElement = headerElement.parentElement.querySelector('.test-case-content');
             } else if (headerElement.classList.contains('step-header')) {
                 contentElement = headerElement.nextElementSibling;
-                // Verify it's the correct details div
                 if (!contentElement || !contentElement.matches(contentSelector || '.step-details')) {
                      contentElement = null;
                 }
             }
-
             if (contentElement) {
                  const isExpanded = contentElement.style.display === 'block';
                  contentElement.style.display = isExpanded ? 'none' : 'block';
                  headerElement.setAttribute('aria-expanded', String(!isExpanded));
             }
         }
-        
-        document.querySelectorAll('#test-runs .test-case-header').forEach(header => {
-            header.addEventListener('click', () => toggleElementDetails(header)); 
-        });
-        document.querySelectorAll('#test-runs .step-header').forEach(header => {
-            header.addEventListener('click', () => toggleElementDetails(header, '.step-details'));
-        });
-
         const expandAllBtn = document.getElementById('expand-all-tests');
         const collapseAllBtn = document.getElementById('collapse-all-tests');
-
         function setAllTestRunDetailsVisibility(displayMode, ariaState) {
             document.querySelectorAll('#test-runs .test-case-content').forEach(el => el.style.display = displayMode);
             document.querySelectorAll('#test-runs .step-details').forEach(el => el.style.display = displayMode);
             document.querySelectorAll('#test-runs .test-case-header[aria-expanded]').forEach(el => el.setAttribute('aria-expanded', ariaState));
             document.querySelectorAll('#test-runs .step-header[aria-expanded]').forEach(el => el.setAttribute('aria-expanded', ariaState));
         }
-        
         if (expandAllBtn) expandAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('block', 'true'));
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
+        document.addEventListener('click', (e) => {
+            const inHighcharts = e.target && e.target.closest && e.target.closest('.highcharts-container');
+            if (inHighcharts) {
+                return;
+            }
+            const header = e.target.closest('#test-runs .test-case-header');
+            if (header) {
+                let contentElement = header.parentElement.querySelector('.test-case-content');
+                if (contentElement) {
+                    const isExpanded = contentElement.style.display === 'block';
+                    contentElement.style.display = isExpanded ? 'none' : 'block';
+                    header.setAttribute('aria-expanded', String(!isExpanded));
+                }
+                return;
+            }
+            const stepHeader = e.target.closest('#test-runs .step-header');
+            if (stepHeader) {
+                let details = stepHeader.nextElementSibling;
+                if (details && details.matches('.step-details')) {
+                    const isExpanded = details.style.display === 'block';
+                    details.style.display = isExpanded ? 'none' : 'block';
+                    stepHeader.setAttribute('aria-expanded', String(!isExpanded));
+                }
+                return;
+            }
+            const annotationLink = e.target.closest('a.annotation-link');
+            if (annotationLink) {
+                e.preventDefault();
+                const annotationId = annotationLink.dataset.annotation;
+                if (annotationId) {
+                    const jiraUrl = prompt('Enter your JIRA/Ticket system base URL (e.g., https://your-company.atlassian.net/browse/):', 'https://your-company.atlassian.net/browse/');
+                    if (jiraUrl) {
+                        window.open(jiraUrl + annotationId, '_blank');
+                    }
+                }
+                return;
+            }
+            const img = e.target.closest('img.lazy-load-image');
+            if (img && img.dataset && img.dataset.src) {
+                if (e.preventDefault) e.preventDefault();
+                img.src = img.dataset.src;
+                img.removeAttribute('data-src');
+                const parentLink = img.closest('a.lazy-load-attachment');
+                if (parentLink && parentLink.dataset && parentLink.dataset.href) {
+                    parentLink.href = parentLink.dataset.href;
+                    parentLink.removeAttribute('data-href');
+                }
+                return;
+            }
+            const video = e.target.closest('video.lazy-load-video');
+            if (video) {
+                if (e.preventDefault) e.preventDefault();
+                const s = video.querySelector('source');
+                if (s && s.dataset && s.dataset.src && !s.src) {
+                    s.src = s.dataset.src;
+                    s.removeAttribute('data-src');
+                    video.load();
+                } else if (video.dataset && video.dataset.src && !video.src) {
+                    video.src = video.dataset.src;
+                    video.removeAttribute('data-src');
+                    video.load();
+                }
+                return;
+            }
+            const a = e.target.closest('a.lazy-load-attachment');
+            if (a && a.dataset && a.dataset.href) {
+                e.preventDefault();
+                
+                // Special handling for view-full links to avoid about:blank issue
+                if (a.classList.contains('view-full')) {
+                    // Extract the data from the data URI
+                    const dataUri = a.dataset.href;
+                    const [header, base64Data] = dataUri.split(',');
+                    const mimeType = header.match(/data:([^;]+)/)[1];
+                    
+                    try {
+                        // Convert base64 to blob
+                        const byteCharacters = atob(base64Data);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: mimeType });
+                        
+                        // Create a URL and open it
+                        const blobUrl = URL.createObjectURL(blob);
+                        const newWindow = window.open(blobUrl, '_blank');
+                        
+                        // Clean up the URL after a delay
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                    } catch (error) {
+                        console.error('Failed to open attachment:', error);
+                        // Fallback to original method
+                        a.href = a.dataset.href;
+                        a.removeAttribute('data-href');
+                        a.click();
+                    }
+                } else {
+                    // For download links, use the original method
+                    a.href = a.dataset.href;
+                    a.removeAttribute('data-href');
+                    a.click();
+                }
+                return;
+            }
+        });
+        document.addEventListener('play', (e) => {
+            const video = e.target && e.target.closest ? e.target.closest('video.lazy-load-video') : null;
+            if (video) {
+                const s = video.querySelector('source');
+                if (s && s.dataset && s.dataset.src && !s.src) {
+                    s.src = s.dataset.src;
+                    s.removeAttribute('data-src');
+                    video.load();
+                } else if (video.dataset && video.dataset.src && !video.src) {
+                    video.src = video.dataset.src;
+                    video.removeAttribute('data-src');
+                    video.load();
+                }
+            }
+        }, true);
+        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe');
+        if ('IntersectionObserver' in window) {
+            let lazyObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const element = entry.target;
+                        if (element.classList.contains('lazy-load-iframe')) {
+                            if (element.dataset.src) {
+                                element.src = element.dataset.src;
+                                element.removeAttribute('data-src');
+                            }
+                        } else if (element.classList.contains('lazy-load-chart')) {
+                            const renderFunctionName = element.dataset.renderFunctionName;
+                            if (renderFunctionName && typeof window[renderFunctionName] === 'function') {
+                                window[renderFunctionName]();
+                            }
+                        }
+                        observer.unobserve(element);
+                    }
+                });
+            }, { rootMargin: "0px 0px 200px 0px" });
+            lazyLoadElements.forEach(el => lazyObserver.observe(el));
+        } else {
+            lazyLoadElements.forEach(element => {
+                if (element.classList.contains('lazy-load-iframe') && element.dataset.src) element.src = element.dataset.src;
+                else if (element.classList.contains('lazy-load-chart')) { const renderFn = element.dataset.renderFunctionName; if (renderFn && window[renderFn]) window[renderFn](); }
+            });
+        }
     }
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
-    </script>
+
+    function copyErrorToClipboard(button) {
+      const errorContainer = button.closest('.test-error-summary');
+      if (!errorContainer) {
+        console.error("Could not find '.test-error-summary' container.");
+        return;
+      }
+      let errorText;
+      const stackTraceElement = errorContainer.querySelector('.stack-trace');
+      if (stackTraceElement) {
+        errorText = stackTraceElement.textContent;
+      } else {
+        const clonedContainer = errorContainer.cloneNode(true);
+        const buttonInClone = clonedContainer.querySelector('button');
+        if (buttonInClone) buttonInClone.remove();
+        errorText = clonedContainer.textContent;
+      }
+
+      if (!errorText) {
+        button.textContent = 'Nothing to copy';
+        setTimeout(() => { button.textContent = 'Copy Error'; }, 2000);
+        return;
+      }
+      navigator.clipboard.writeText(errorText.trim()).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        setTimeout(() => { button.textContent = originalText; }, 2000);
+      }).catch(err => {
+        console.error('Failed to copy: ', err);
+        button.textContent = 'Failed';
+      });
+    }
+</script>
+
+<!-- AI Fix Modal -->
+<div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
+  <div class="ai-modal-content" onclick="event.stopPropagation()">
+    <div class="ai-modal-header">
+        <h3 id="ai-fix-modal-title">AI Analysis</h3>
+        <span class="ai-modal-close" onclick="closeAiModal()">×</span>
+    </div>
+    <div class="ai-modal-body" id="ai-fix-modal-content">
+        <!-- Content will be injected by JavaScript -->
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
   `;
 }
-
-// Add this helper function somewhere in generate-static-report.mjs,
-// possibly before your main() function.
-
 async function runScript(scriptPath) {
   return new Promise((resolve, reject) => {
     console.log(chalk.blue(`Executing script: ${scriptPath}...`));
     const process = fork(scriptPath, [], {
-      stdio: "inherit", // This will pipe the child process's stdio to the parent
+      stdio: "inherit",
     });
 
     process.on("error", (err) => {
@@ -2062,193 +3092,195 @@ async function runScript(scriptPath) {
     });
   });
 }
-
+/**
+ * The main function that orchestrates the generation of the static HTML report.
+ * It reads the latest test run data, loads historical data for trend analysis,
+ * prepares the data, and then generates and writes the final HTML report file.
+ */
 async function main() {
-  const __filename = fileURLToPath(import.meta.url); // Get current file path
-  const __dirname = path.dirname(__filename); // Get current directory
-  const trendExcelScriptPath = path.resolve(
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  // Script to archive current run to JSON history (this is your modified "generate-trend.mjs")
+  const archiveRunScriptPath = path.resolve(
     __dirname,
-    "generate-trend-excel.mjs"
-  ); // generate-trend-excel.mjs is in the SAME directory as generate-static-report.mjs
+    "generate-trend.mjs" // Keeping the filename as per your request
+  );
+
   const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
-  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
+  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
-  const trendDataPath = path.resolve(outputDir, "trend.xls");
+
+  const historyDir = path.join(outputDir, "history"); // Directory for historical JSON files
+  const HISTORY_FILE_PREFIX = "trend-"; // Match prefix used in archiving script
+  const MAX_HISTORY_FILES_TO_LOAD_FOR_REPORT = 15; // How many historical runs to show in the report
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
 
-  // --- Step 1: Ensure Excel trend data is generated/updated FIRST ---
+  // Step 1: Ensure current run data is archived to the history folder
   try {
-    await runScript(trendExcelScriptPath);
-    console.log(chalk.green("Excel trend generation completed."));
+    await runScript(archiveRunScriptPath); // This script now handles JSON history
+    console.log(
+      chalk.green("Current run data archiving to history completed.")
+    );
   } catch (error) {
     console.error(
       chalk.red(
-        "Failed to generate/update Excel trend data. HTML report might use stale or no trend data."
+        "Failed to archive current run data. Report might use stale or incomplete historical trends."
       ),
       error
     );
   }
 
-  let reportData;
+  // Step 2: Load current run's data (for non-trend sections of the report)
+  let currentRunReportData;
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
-    reportData = JSON.parse(jsonData);
-    if (!reportData || typeof reportData !== "object" || !reportData.results) {
+    currentRunReportData = JSON.parse(jsonData);
+    if (
+      !currentRunReportData ||
+      typeof currentRunReportData !== "object" ||
+      !currentRunReportData.results
+    ) {
       throw new Error(
         "Invalid report JSON structure. 'results' field is missing or invalid."
       );
     }
-    if (!Array.isArray(reportData.results)) {
-      reportData.results = [];
+    if (!Array.isArray(currentRunReportData.results)) {
+      currentRunReportData.results = [];
       console.warn(
         chalk.yellow(
-          "Warning: 'results' field in JSON was not an array. Treated as empty."
+          "Warning: 'results' field in current run JSON was not an array. Treated as empty."
         )
       );
     }
   } catch (error) {
     console.error(
-      chalk.red(`Error reading or parsing main report JSON: ${error.message}`)
+      chalk.red(
+        `Critical Error: Could not read or parse main report JSON at ${reportJsonPath}: ${error.message}`
+      )
     );
     process.exit(1);
   }
 
-  let trendData = { overall: [], testRuns: {} };
+  // Step 3: Load historical data for trends
+  let historicalRuns = [];
   try {
-    await fs.access(trendDataPath);
-    const excelBuffer = await fs.readFile(trendDataPath);
-    const workbook = XLSX.read(excelBuffer, { type: "buffer" });
+    await fs.access(historyDir);
+    const allHistoryFiles = await fs.readdir(historyDir);
 
-    if (workbook.Sheets["overall"]) {
-      trendData.overall = XLSX.utils
-        .sheet_to_json(workbook.Sheets["overall"])
-        .map((row) => {
-          let timestamp;
-          if (typeof row.TIMESTAMP === "number") {
-            if (XLSX.SSF && typeof XLSX.SSF.parse_date_code === "function") {
-              try {
-                timestamp = XLSX.SSF.parse_date_code(row.TIMESTAMP);
-              } catch (e) {
-                console.warn(
-                  chalk.yellow(
-                    ` - Could not parse Excel date number ${row.TIMESTAMP} for RUN_ID ${row.RUN_ID}. Using current time. Error: ${e.message}`
-                  )
-                );
-                timestamp = new Date(Date.now());
-              }
-            } else {
-              console.warn(
-                chalk.yellow(
-                  ` - XLSX.SSF.parse_date_code is unavailable for RUN_ID ${row.RUN_ID}. Numeric TIMESTAMP ${row.TIMESTAMP} treated as direct JS timestamp or fallback.`
-                )
-              );
-              timestamp = new Date(
-                row.TIMESTAMP > 0 && row.TIMESTAMP < 3000000000000
-                  ? row.TIMESTAMP
-                  : Date.now()
-              ); // Heuristic for JS timestamp
-            }
-          } else if (row.TIMESTAMP) {
-            timestamp = new Date(row.TIMESTAMP);
-          } else {
-            timestamp = new Date(Date.now());
-          }
+    const jsonHistoryFiles = allHistoryFiles
+      .filter(
+        (file) => file.startsWith(HISTORY_FILE_PREFIX) && file.endsWith(".json")
+      )
+      .map((file) => {
+        const timestampPart = file
+          .replace(HISTORY_FILE_PREFIX, "")
+          .replace(".json", "");
+        return {
+          name: file,
+          path: path.join(historyDir, file),
+          timestamp: parseInt(timestampPart, 10),
+        };
+      })
+      .filter((file) => !isNaN(file.timestamp))
+      .sort((a, b) => b.timestamp - a.timestamp);
 
-          return {
-            runId: Number(row.RUN_ID) || 0,
-            duration: Number(row.DURATION) || 0,
-            timestamp: timestamp,
-            totalTests: Number(row.TOTAL_TESTS) || 0,
-            passed: Number(row.PASSED) || 0,
-            failed: Number(row.FAILED) || 0,
-            skipped: Number(row.SKIPPED) || 0, // Ensure skipped is always a number
-          };
-        })
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    }
+    const filesToLoadForTrend = jsonHistoryFiles.slice(
+      0,
+      MAX_HISTORY_FILES_TO_LOAD_FOR_REPORT
+    );
 
-    workbook.SheetNames.forEach((sheetName) => {
-      if (sheetName.toLowerCase().startsWith("test run ")) {
-        trendData.testRuns[sheetName] = XLSX.utils
-          .sheet_to_json(workbook.Sheets[sheetName])
-          .map((test) => {
-            let timestamp;
-            if (typeof test.TIMESTAMP === "number") {
-              if (XLSX.SSF && typeof XLSX.SSF.parse_date_code === "function") {
-                try {
-                  timestamp = XLSX.SSF.parse_date_code(test.TIMESTAMP);
-                } catch (e) {
-                  timestamp = new Date(Date.now());
-                }
-              } else {
-                timestamp = new Date(
-                  test.TIMESTAMP > 0 && test.TIMESTAMP < 3000000000000
-                    ? test.TIMESTAMP
-                    : Date.now()
-                );
-              } // Heuristic
-            } else if (test.TIMESTAMP) {
-              timestamp = new Date(test.TIMESTAMP);
-            } else {
-              timestamp = new Date(Date.now());
-            }
-            return {
-              testName: String(test.TEST_NAME || "Unknown Test"),
-              duration: Number(test.DURATION) || 0,
-              status: String(test.STATUS || "unknown").toLowerCase(),
-              timestamp: timestamp,
-            };
-          });
+    for (const fileMeta of filesToLoadForTrend) {
+      try {
+        const fileContent = await fs.readFile(fileMeta.path, "utf-8");
+        const runJsonData = JSON.parse(fileContent);
+        historicalRuns.push(runJsonData);
+      } catch (fileReadError) {
+        console.warn(
+          chalk.yellow(
+            `Could not read/parse history file ${fileMeta.name}: ${fileReadError.message}`
+          )
+        );
       }
-    });
-    if (
-      trendData.overall.length > 0 ||
-      Object.keys(trendData.testRuns).length > 0
-    ) {
-      console.log(
-        chalk.green(`Trend data loaded successfully from: ${trendDataPath}`)
-      );
-    } else {
-      console.warn(
-        chalk.yellow(
-          `Trend data file found at ${trendDataPath}, but no data was loaded from 'overall' or 'test run' sheets.`
-        )
-      );
     }
+    historicalRuns.reverse(); // Oldest first for charts
+    console.log(
+      chalk.green(
+        `Loaded ${historicalRuns.length} historical run(s) for trend analysis.`
+      )
+    );
   } catch (error) {
     if (error.code === "ENOENT") {
       console.warn(
         chalk.yellow(
-          `Warning: Trend data file not found at ${trendDataPath}. Report will be generated without historical trends.`
+          `History directory '${historyDir}' not found. No historical trends will be displayed.`
         )
       );
     } else {
       console.warn(
         chalk.yellow(
-          `Warning: Could not read or process trend data from ${trendDataPath}. Report will be generated without historical trends. Error: ${error.message}`
+          `Error loading historical data from '${historyDir}': ${error.message}`
         )
       );
     }
   }
 
+  // Step 4: Prepare trendData object
+  const trendData = {
+    overall: [],
+    testRuns: {},
+  };
+
+  if (historicalRuns.length > 0) {
+    historicalRuns.forEach((histRunReport) => {
+      if (histRunReport.run) {
+        const runTimestamp = new Date(histRunReport.run.timestamp);
+        trendData.overall.push({
+          runId: runTimestamp.getTime(),
+          timestamp: runTimestamp,
+          duration: histRunReport.run.duration,
+          totalTests: histRunReport.run.totalTests,
+          passed: histRunReport.run.passed,
+          failed: histRunReport.run.failed,
+          skipped: histRunReport.run.skipped || 0,
+        });
+
+        if (histRunReport.results && Array.isArray(histRunReport.results)) {
+          const runKeyForTestHistory = `test run ${runTimestamp.getTime()}`;
+          trendData.testRuns[runKeyForTestHistory] = histRunReport.results.map(
+            (test) => ({
+              testName: test.name,
+              duration: test.duration,
+              status: test.status,
+              timestamp: new Date(test.startTime),
+            })
+          );
+        }
+      }
+    });
+    trendData.overall.sort(
+      (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+    );
+  }
+
+  // Step 5: Generate and write HTML
   try {
-    const htmlContent = generateHTML(reportData, trendData);
+    const htmlContent = generateHTML(currentRunReportData, trendData);
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Enhanced report generated successfully at: ${reportHtmlPath}`
+        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`
       )
     );
-    console.log(chalk.gray(`   (You can open this file in your browser)`));
+    console.log(chalk.gray(`(You can open this file in your browser)`));
   } catch (error) {
     console.error(chalk.red(`Error generating HTML report: ${error.message}`));
     console.error(chalk.red(error.stack));
     process.exit(1);
   }
 }
-
 main().catch((err) => {
   console.error(
     chalk.red.bold(`Unhandled error during script execution: ${err.message}`)
