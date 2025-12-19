@@ -1850,43 +1850,53 @@ function generateHTML(reportData, trendData = null) {
                         : ""
                     }<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                   : ""
-              }${
-                (() => {
-                  if (!step.attachments || step.attachments.length === 0) return "";
-                  return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
-                    .map((attachment) => {
-                      try {
-                        const attachmentPath = path.resolve(
-                          DEFAULT_OUTPUT_DIR,
-                          attachment.path
-                        );
-                        if (!fsExistsSync(attachmentPath)) {
-                          return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
-                            attachment.name
-                          )}</div>`;
-                        }
-                        const attachmentBase64 = readFileSync(attachmentPath).toString("base64");
-                        const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
-                        return `<div class="attachment-item generic-attachment">
-                                  <div class="attachment-icon">${getAttachmentIcon(attachment.contentType)}</div>
+              }${(() => {
+                if (!step.attachments || step.attachments.length === 0)
+                  return "";
+                return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
+                  .map((attachment) => {
+                    try {
+                      const attachmentPath = path.resolve(
+                        DEFAULT_OUTPUT_DIR,
+                        attachment.path
+                      );
+                      if (!fsExistsSync(attachmentPath)) {
+                        return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                          attachment.name
+                        )}</div>`;
+                      }
+                      const attachmentBase64 =
+                        readFileSync(attachmentPath).toString("base64");
+                      const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+                      return `<div class="attachment-item generic-attachment">
+                                  <div class="attachment-icon">${getAttachmentIcon(
+                                    attachment.contentType
+                                  )}</div>
                                   <div class="attachment-caption">
-                                    <span class="attachment-name" title="${sanitizeHTML(attachment.name)}">${sanitizeHTML(attachment.name)}</span>
-                                    <span class="attachment-type">${sanitizeHTML(attachment.contentType)}</span>
+                                    <span class="attachment-name" title="${sanitizeHTML(
+                                      attachment.name
+                                    )}">${sanitizeHTML(attachment.name)}</span>
+                                    <span class="attachment-type">${sanitizeHTML(
+                                      attachment.contentType
+                                    )}</span>
                                   </div>
                                   <div class="attachment-info">
                                     <div class="trace-actions">
                                       <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
-                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(attachment.name)}">Download</a>
+                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
+                        attachment.name
+                      )}">Download</a>
                                     </div>
                                   </div>
                                 </div>`;
-                      } catch (e) {
-                        return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(attachment.name)}</div>`;
-                      }
-                    })
-                    .join("")}</div></div>`;
-                })()
-              }${
+                    } catch (e) {
+                      return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
+                        attachment.name
+                      )}</div>`;
+                    }
+                  })
+                  .join("")}</div></div>`;
+              })()}${
                 hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
                       step.steps,
@@ -1903,7 +1913,9 @@ function generateHTML(reportData, trendData = null) {
           test.tags || []
         )
           .join(",")
-          .toLowerCase()}" data-test-id="${sanitizeHTML(String(test.id || testIndex))}">
+          .toLowerCase()}" data-test-id="${sanitizeHTML(
+          String(test.id || testIndex)
+        )}">
                     <div class="test-case-header" role="button" aria-expanded="false"><div class="test-case-summary"><span class="status-badge ${getStatusClass(
                       test.status
                     )}">${String(
@@ -1927,18 +1939,66 @@ function generateHTML(reportData, trendData = null) {
                         <p><strong>Full Path:</strong> ${sanitizeHTML(
                           test.name
                         )}</p>
+                        ${
+                          test.annotations && test.annotations.length > 0
+                            ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                                ${test.annotations
+                                  .map((annotation, idx) => {
+                                    const isIssueOrBug =
+                                      annotation.type === "issue" ||
+                                      annotation.type === "bug";
+                                    const descriptionText =
+                                      annotation.description || "";
+                                    const typeLabel = sanitizeHTML(
+                                      annotation.type
+                                    );
+                                    const descriptionHtml =
+                                      isIssueOrBug &&
+                                      descriptionText.match(/^[A-Z]+-\d+$/)
+                                        ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                                            descriptionText
+                                          )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                                            descriptionText
+                                          )}</a>`
+                                        : sanitizeHTML(descriptionText);
+                                    const locationText = annotation.location
+                                      ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                                          annotation.location.file
+                                        )}:${annotation.location.line}:${
+                                          annotation.location.column
+                                        }</div>`
+                                      : "";
+                                    return `<div style="margin-bottom: ${
+                                      idx < test.annotations.length - 1
+                                        ? "10px"
+                                        : "0"
+                                    };">
+                                    <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                                    ${
+                                      descriptionText
+                                        ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                                        : ""
+                                    }
+                                    ${locationText}
+                                  </div>`;
+                                  })
+                                  .join("")}
+                              </div>`
+                            : ""
+                        }
                         <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
                           test.workerId
                         )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
           test.totalWorkers
         )}]</p>
-                        ${
-                          test.errorMessage
-                            ? `<div class="test-error-summary">${formatPlaywrightError(
-                                test.errorMessage
-                              )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
-                            : ""
-                        }
+                            ${
+                              test.errorMessage
+                                ? `<div class="test-error-summary">${formatPlaywrightError(
+                                    test.errorMessage
+                                  )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
+                                : ""
+                            }
                         ${
                           test.snippet
                             ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
@@ -1970,7 +2030,9 @@ function generateHTML(reportData, trendData = null) {
                         ${
                           test.stderr && test.stderr.length > 0
                             ? (() => {
-                                const logId = `stderr-log-${test.id || testIndex}`;
+                                const logId = `stderr-log-${
+                                  test.id || testIndex
+                                }`;
                                 return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre id="${logId}" class="console-log stderr-log">${test.stderr
                                   .map((line) => sanitizeHTML(line))
                                   .join("\\n")}</pre></div>`;
@@ -2823,6 +2885,18 @@ aspect-ratio: 16 / 9;
                     const isExpanded = details.style.display === 'block';
                     details.style.display = isExpanded ? 'none' : 'block';
                     stepHeader.setAttribute('aria-expanded', String(!isExpanded));
+                }
+                return;
+            }
+            const annotationLink = e.target.closest('a.annotation-link');
+            if (annotationLink) {
+                e.preventDefault();
+                const annotationId = annotationLink.dataset.annotation;
+                if (annotationId) {
+                    const jiraUrl = prompt('Enter your JIRA/Ticket system base URL (e.g., https://your-company.atlassian.net/browse/):', 'https://your-company.atlassian.net/browse/');
+                    if (jiraUrl) {
+                        window.open(jiraUrl + annotationId, '_blank');
+                    }
                 }
                 return;
             }

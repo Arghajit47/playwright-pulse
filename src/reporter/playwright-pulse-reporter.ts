@@ -312,6 +312,7 @@ export class PlaywrightPulseReporter implements Reporter {
       attachments: [],
       stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
       stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
+      annotations: test.annotations?.length > 0 ? test.annotations : undefined,
       ...testSpecificData,
     };
 

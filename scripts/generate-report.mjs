@@ -1713,41 +1713,86 @@ function generateHTML(reportData, trendData = null) {
         };
 
         return `
-      <div class="test-case" data-status="${test.status
-          }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
-            .join(",")
-            .toLowerCase()}">
+      <div class="test-case" data-status="${
+        test.status
+      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
+          .join(",")
+          .toLowerCase()}">
         <div class="test-case-header" role="button" aria-expanded="false">
           <div class="test-case-summary">
             <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status
-            ).toUpperCase()}</span>
+          test.status
+        ).toUpperCase()}</span>
             <span class="test-case-title" title="${sanitizeHTML(
               test.name
             )}">${sanitizeHTML(testTitle)}</span>
             <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
           </div>
           <div class="test-case-meta">
-            ${test.tags && test.tags.length > 0
-            ? test.tags
-              .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-              .join(" ")
-            : ""
-          }
+            ${
+              test.tags && test.tags.length > 0
+                ? test.tags
+                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                    .join(" ")
+                : ""
+            }
             <span class="test-duration">${formatDuration(test.duration)}</span>
           </div>
         </div>
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+          ${
+            test.annotations && test.annotations.length > 0
+              ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                  <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                  ${test.annotations
+                    .map((annotation, idx) => {
+                      const isIssueOrBug =
+                        annotation.type === "issue" ||
+                        annotation.type === "bug";
+                      const descriptionText = annotation.description || "";
+                      const typeLabel = sanitizeHTML(annotation.type);
+                      const descriptionHtml =
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
+                          ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                              descriptionText
+                            )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                              descriptionText
+                            )}</a>`
+                          : sanitizeHTML(descriptionText);
+                      const locationText = annotation.location
+                        ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                            annotation.location.file
+                          )}:${annotation.location.line}:${
+                            annotation.location.column
+                          }</div>`
+                        : "";
+                      return `<div style="margin-bottom: ${
+                        idx < test.annotations.length - 1 ? "10px" : "0"
+                      };">
+                      <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                      ${
+                        descriptionText
+                          ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                          : ""
+                      }
+                      ${locationText}
+                    </div>`;
+                    })
+                    .join("")}
+                </div>`
+              : ""
+          }
           <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
             test.workerId
           )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers
-          )}]</p>
-          ${test.errorMessage
-            ? `<div class="test-error-summary">${formatPlaywrightError(
-              test.errorMessage
-            )}
+          test.totalWorkers
+        )}]</p>
+          ${
+            test.errorMessage
+              ? `<div class="test-error-summary">${formatPlaywrightError(
+                  test.errorMessage
+                )}
                 <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
@@ -1768,13 +1813,14 @@ function generateHTML(reportData, trendData = null) {
                         Copy Error Prompt
                       </button>
                 </div>`
-            : ""
+              : ""
           }
-          ${test.snippet
-            ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-              test.snippet
-            )}</code></pre></div>`
-            : ""
+          ${
+            test.snippet
+              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                  test.snippet
+                )}</code></pre></div>`
+              : ""
           }
           <h4>Steps</h4>
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
@@ -1793,75 +1839,86 @@ function generateHTML(reportData, trendData = null) {
                           </div>
                       </div>`;
           })()}
-          ${test.stderr && test.stderr.length > 0
-            ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-              test.stderr.map((line) => sanitizeHTML(line)).join("\n")
-            )}</pre></div>`
-            : ""
+          ${
+            test.stderr && test.stderr.length > 0
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  test.stderr.map((line) => sanitizeHTML(line)).join("\n")
+                )}</pre></div>`
+              : ""
           }
-          ${test.screenshots && test.screenshots.length > 0
-            ? `
+          ${
+            test.screenshots && test.screenshots.length > 0
+              ? `
             <div class="attachments-section">
                 <h4>Screenshots</h4>
                 <div class="attachments-grid">
                 ${test.screenshots
-              .map(
-                (screenshot, index) => `
+                  .map(
+                    (screenshot, index) => `
                     <div class="attachment-item">
-                    <img src="${fixPath(screenshot)}" alt="Screenshot ${index + 1}">
+                    <img src="${fixPath(screenshot)}" alt="Screenshot ${
+                      index + 1
+                    }">
                     <div class="attachment-info">
                         <div class="trace-actions">
-                        <a href="${fixPath(screenshot)}" target="_blank" class="view-full">View Full Image</a>
-                        <a href="${fixPath(screenshot)}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
+                        <a href="${fixPath(
+                          screenshot
+                        )}" target="_blank" class="view-full">View Full Image</a>
+                        <a href="${fixPath(
+                          screenshot
+                        )}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
                         </div>
                     </div>
                     </div>
                 `
-              )
-              .join("")}
+                  )
+                  .join("")}
                 </div>
             </div>
             `
-            : ""
+              : ""
           }
-          ${test.videoPath && test.videoPath.length > 0
-            ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
-              .map((videoUrl, index) => {
-                const fixedVideoUrl = fixPath(videoUrl);
-                const fileExtension = String(fixedVideoUrl)
-                  .split(".")
-                  .pop()
-                  .toLowerCase();
-                const mimeType =
-                  {
-                    mp4: "video/mp4",
-                    webm: "video/webm",
-                    ogg: "video/ogg",
-                    mov: "video/quicktime",
-                    avi: "video/x-msvideo",
-                  }[fileExtension] || "video/mp4";
-                return `<div class="attachment-item video-item">
-                            <video controls width="100%" height="auto" title="Video ${index + 1
-                  }">
+          ${
+            test.videoPath && test.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
+                  .map((videoUrl, index) => {
+                    const fixedVideoUrl = fixPath(videoUrl);
+                    const fileExtension = String(fixedVideoUrl)
+                      .split(".")
+                      .pop()
+                      .toLowerCase();
+                    const mimeType =
+                      {
+                        mp4: "video/mp4",
+                        webm: "video/webm",
+                        ogg: "video/ogg",
+                        mov: "video/quicktime",
+                        avi: "video/x-msvideo",
+                      }[fileExtension] || "video/mp4";
+                    return `<div class="attachment-item video-item">
+                            <video controls width="100%" height="auto" title="Video ${
+                              index + 1
+                            }">
                                 <source src="${sanitizeHTML(
-                    fixedVideoUrl
-                  )}" type="${mimeType}">
+                                  fixedVideoUrl
+                                )}" type="${mimeType}">
                                 Your browser does not support the video tag.
                             </video>
                             <div class="attachment-info">
                                 <div class="trace-actions">
                                 <a href="${sanitizeHTML(
-                    fixedVideoUrl
-                  )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
+                                  fixedVideoUrl
+                                )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
                                 </div>
                             </div>
                         </div>`;
-              })
-              .join("")}</div></div>`
-            : ""
+                  })
+                  .join("")}</div></div>`
+              : ""
           }
-          ${test.tracePath
-            ? `
+          ${
+            test.tracePath
+              ? `
             <div class="attachments-section">
                 <h4>Trace Files</h4>
                 <div class="attachments-grid">
@@ -1869,70 +1926,72 @@ function generateHTML(reportData, trendData = null) {
                         <div class="trace-preview">
                         <span class="trace-icon">📄</span>
                         <span class="trace-name">${sanitizeHTML(
-              path.basename(test.tracePath)
-            )}</span>
+                          path.basename(test.tracePath)
+                        )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                             <a href="${sanitizeHTML(
-              fixPath(test.tracePath)
-            )}" target="_blank" download="${sanitizeHTML(
-              path.basename(test.tracePath)
-            )}" class="download-trace">Download Trace</a>
+                              fixPath(test.tracePath)
+                            )}" target="_blank" download="${sanitizeHTML(
+                  path.basename(test.tracePath)
+                )}" class="download-trace">Download Trace</a>
                         </div>
                         </div>
                     </div>
                 </div>
             </div>
             `
-            : ""
+              : ""
           }
-          ${test.attachments && test.attachments.length > 0
-            ? `
+          ${
+            test.attachments && test.attachments.length > 0
+              ? `
             <div class="attachments-section">
                 <h4>Other Attachments</h4>
                 <div class="attachments-grid">
                 ${test.attachments
-              .map(
-                (attachment) => `
+                  .map(
+                    (attachment) => `
                     <div class="attachment-item generic-attachment">
                         <div class="attachment-icon">${getAttachmentIcon(
-                  attachment.contentType
-                )}</div>
+                          attachment.contentType
+                        )}</div>
                         <div class="attachment-caption">
                         <span class="attachment-name" title="${sanitizeHTML(
-                  attachment.name
-                )}">${sanitizeHTML(attachment.name)}</span>
+                          attachment.name
+                        )}">${sanitizeHTML(attachment.name)}</span>
                         <span class="attachment-type">${sanitizeHTML(
-                  attachment.contentType
-                )}</span>
+                          attachment.contentType
+                        )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                         <a href="${sanitizeHTML(
-                  fixPath(attachment.path)
-                )}" target="_blank" class="view-full">View</a>
+                          fixPath(attachment.path)
+                        )}" target="_blank" class="view-full">View</a>
                             <a href="${sanitizeHTML(
-                  fixPath(attachment.path)
-                )}" target="_blank" download="${sanitizeHTML(
-                  attachment.name
-                )}" class="download-trace">Download</a>
+                              fixPath(attachment.path)
+                            )}" target="_blank" download="${sanitizeHTML(
+                      attachment.name
+                    )}" class="download-trace">Download</a>
                         </div>
                         </div>
                     </div>
                 `
-              )
-              .join("")}
+                  )
+                  .join("")}
                 </div>
             </div>
             `
-            : ""
+              : ""
           }
-          ${test.codeSnippet
-            ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-              sanitizeHTML(test.codeSnippet)
-            )}</code></pre></div>`
-            : ""
+          ${
+            test.codeSnippet
+              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
+                  sanitizeHTML(test.codeSnippet)
+                )}</code></pre></div>`
+              : ""
           }
         </div>
       </div>`;
@@ -2345,8 +2404,8 @@ function generateHTML(reportData, trendData = null) {
                 <h1>Playwright Pulse Report</h1>
             </div>
             <div class="run-info"><strong>Run Date:</strong> ${formatDate(
-    runSummary.timestamp
-  )}<br><strong>Total Duration:</strong> ${formatDuration(
+              runSummary.timestamp
+            )}<br><strong>Total Duration:</strong> ${formatDuration(
     runSummary.duration
   )}</div>
         </header>
@@ -2358,35 +2417,40 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <div id="dashboard" class="tab-content active">
             <div class="dashboard-grid">
-                <div class="summary-card"><h3>Total Tests</h3><div class="value">${runSummary.totalTests
-    }</div></div>
-                <div class="summary-card status-passed"><h3>Passed</h3><div class="value">${runSummary.passed
-    }</div><div class="trend-percentage">${passPercentage}%</div></div>
-                <div class="summary-card status-failed"><h3>Failed</h3><div class="value">${runSummary.failed
-    }</div><div class="trend-percentage">${failPercentage}%</div></div>
-                <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${runSummary.skipped || 0
-    }</div><div class="trend-percentage">${skipPercentage}%</div></div>
+                <div class="summary-card"><h3>Total Tests</h3><div class="value">${
+                  runSummary.totalTests
+                }</div></div>
+                <div class="summary-card status-passed"><h3>Passed</h3><div class="value">${
+                  runSummary.passed
+                }</div><div class="trend-percentage">${passPercentage}%</div></div>
+                <div class="summary-card status-failed"><h3>Failed</h3><div class="value">${
+                  runSummary.failed
+                }</div><div class="trend-percentage">${failPercentage}%</div></div>
+                <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
+                  runSummary.skipped || 0
+                }</div><div class="trend-percentage">${skipPercentage}%</div></div>
                 <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
-      runSummary.duration
-    )}</div></div>
+                  runSummary.duration
+                )}</div></div>
             </div>
             <div class="dashboard-bottom-row">
               <div style="display: grid; gap: 20px">
                 ${generatePieChart(
-      [
-        { label: "Passed", value: runSummary.passed },
-        { label: "Failed", value: runSummary.failed },
-        { label: "Skipped", value: runSummary.skipped || 0 },
-      ],
-      400,
-      390
-    )} 
-                ${runSummary.environment &&
-      Object.keys(runSummary.environment).length > 0
-      ? generateEnvironmentDashboard(runSummary.environment)
-      : '<div class="no-data">Environment data not available.</div>'
-    }
+                  [
+                    { label: "Passed", value: runSummary.passed },
+                    { label: "Failed", value: runSummary.failed },
+                    { label: "Skipped", value: runSummary.skipped || 0 },
+                  ],
+                  400,
+                  390
+                )} 
+                ${
+                  runSummary.environment &&
+                  Object.keys(runSummary.environment).length > 0
+                    ? generateEnvironmentDashboard(runSummary.environment)
+                    : '<div class="no-data">Environment data not available.</div>'
+                }
               </div> 
                 ${generateSuitesWidget(suitesData)}
             </div>
@@ -2396,17 +2460,17 @@ function generateHTML(reportData, trendData = null) {
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
                 <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
                 <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
-      new Set(
-        (results || []).map((test) => test.browser || "unknown")
-      )
-    )
-      .map(
-        (browser) =>
-          `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
-            browser
-          )}</option>`
-      )
-      .join("")}</select>
+                  new Set(
+                    (results || []).map((test) => test.browser || "unknown")
+                  )
+                )
+                  .map(
+                    (browser) =>
+                      `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
+                        browser
+                      )}</option>`
+                  )
+                  .join("")}</select>
                 <button id="expand-all-tests">Expand All</button> <button id="collapse-all-tests">Collapse All</button> <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
             <div class="test-cases-list">${generateTestCasesHTML()}</div>
@@ -2415,16 +2479,18 @@ function generateHTML(reportData, trendData = null) {
           <h2 class="tab-main-title">Execution Trends</h2>
           <div class="trend-charts-row">
             <div class="trend-chart"><h3 class="chart-title-header">Test Volume & Outcome Trends</h3>
-              ${trendData && trendData.overall && trendData.overall.length > 0
-      ? generateTestTrendsChart(trendData)
-      : '<div class="no-data">Overall trend data not available for test counts.</div>'
-    }
+              ${
+                trendData && trendData.overall && trendData.overall.length > 0
+                  ? generateTestTrendsChart(trendData)
+                  : '<div class="no-data">Overall trend data not available for test counts.</div>'
+              }
             </div>
             <div class="trend-chart"><h3 class="chart-title-header">Execution Duration Trends</h3>
-              ${trendData && trendData.overall && trendData.overall.length > 0
-      ? generateDurationTrendChart(trendData)
-      : '<div class="no-data">Overall trend data not available for durations.</div>'
-    }
+              ${
+                trendData && trendData.overall && trendData.overall.length > 0
+                  ? generateDurationTrendChart(trendData)
+                  : '<div class="no-data">Overall trend data not available for durations.</div>'
+              }
             </div>
           </div>
           <h2 class="tab-main-title">Test Distribution by Worker ${infoTooltip}</h2>
@@ -2434,12 +2500,13 @@ function generateHTML(reportData, trendData = null) {
              </div>
           </div>
           <h2 class="tab-main-title">Individual Test History</h2>
-          ${trendData &&
-      trendData.testRuns &&
-      Object.keys(trendData.testRuns).length > 0
-      ? generateTestHistoryContent(trendData)
-      : '<div class="no-data">Individual test history data not available.</div>'
-    }
+          ${
+            trendData &&
+            trendData.testRuns &&
+            Object.keys(trendData.testRuns).length > 0
+              ? generateTestHistoryContent(trendData)
+              : '<div class="no-data">Individual test history data not available.</div>'
+          }
         </div>
         <div id="ai-failure-analyzer" class="tab-content">
             ${generateAIFailureAnalyzerTab(results)}
@@ -2702,6 +2769,19 @@ function getAIFix(button) {
         }
         if (expandAllBtn) expandAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('block', 'true'));
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
+        // --- Annotation Link Handler ---
+        document.querySelectorAll('a.annotation-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const annotationId = link.dataset.annotation;
+                if (annotationId) {
+                    const jiraUrl = prompt('Enter your JIRA/Ticket system base URL (e.g., https://your-company.atlassian.net/browse/):', 'https://your-company.atlassian.net/browse/');
+                    if (jiraUrl) {
+                        window.open(jiraUrl + annotationId, '_blank');
+                    }
+                }
+            });
+        });
         // --- Intersection Observer for Lazy Loading ---
         const lazyLoadElements = document.querySelectorAll('.lazy-load-chart');
         if ('IntersectionObserver' in window) {

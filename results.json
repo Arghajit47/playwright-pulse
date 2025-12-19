@@ -1,0 +1,167 @@
+{
+  "config": {
+    "configFile": "/Users/administrator/juliaHub-assignment/playwright.config.js",
+    "rootDir": "/Users/administrator/juliaHub-assignment/tests",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      ["list", null],
+      ["html", null],
+      [
+        "json",
+        {
+          "outputFile": "results.json"
+        }
+      ],
+      [
+        "/Users/administrator/juliaHub-assignment/node_modules/@arghajit/playwright-pulse-report/dist/reporter/index.js",
+        {
+          "outputDir": "/Users/administrator/juliaHub-assignment/pulse-report"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/administrator/juliaHub-assignment/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Chrome Project",
+        "name": "Chrome Project",
+        "testDir": "/Users/administrator/juliaHub-assignment/tests",
+        "testIgnore": [],
+        "testMatch": ["**/*.@(spec|test).?(c|m)[jt]s?(x)"],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 4,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "new-test.spec.js",
+      "file": "new-test.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Today on Wikipedia shows exactly 5 featured items",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [
+                {
+                  "type": "issue",
+                  "description": "Flaky test - Featured content changes",
+                  "location": {
+                    "file": "/Users/administrator/juliaHub-assignment/tests/new-test.spec.js",
+                    "line": 16,
+                    "column": 6
+                  }
+                },
+                {
+                  "type": "intentional",
+                  "description": "This test lies inside the fixme category",
+                  "location": {
+                    "file": "/Users/administrator/juliaHub-assignment/tests/new-test.spec.js",
+                    "line": 16,
+                    "column": 6
+                  }
+                }
+              ],
+              "expectedStatus": "passed",
+              "projectId": "Chrome Project",
+              "projectName": "Chrome Project",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 2,
+                  "error": {
+                    "message": "Error: browserType.launch: Executable doesn't exist at /Users/administrator/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                    "stack": "Error: browserType.launch: Executable doesn't exist at /Users/administrator/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                  },
+                  "errors": [
+                    {
+                      "message": "Error: browserType.launch: Executable doesn't exist at /Users/administrator/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2025-12-15T09:10:06.962Z",
+                  "annotations": [
+                    {
+                      "type": "issue",
+                      "description": "Flaky test - Featured content changes",
+                      "location": {
+                        "file": "/Users/administrator/juliaHub-assignment/tests/new-test.spec.js",
+                        "line": 16,
+                        "column": 6
+                      }
+                    },
+                    {
+                      "type": "intentional",
+                      "description": "This test lies inside the fixme category",
+                      "location": {
+                        "file": "/Users/administrator/juliaHub-assignment/tests/new-test.spec.js",
+                        "line": 16,
+                        "column": 6
+                      }
+                    }
+                  ],
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/administrator/juliaHub-assignment/test-results/new-test-Today-on-Wikipedia-shows-exactly-5-featured-items-Chrome-Project/trace.zip"
+                    }
+                  ]
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300",
+          "file": "new-test.spec.js",
+          "line": 16,
+          "column": 6
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-15T09:10:06.483Z",
+    "duration": 534.5459999999999,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
