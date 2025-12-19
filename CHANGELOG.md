@@ -1,5 +1,26 @@
 # 📜 Changelog
 
+## **Version 0.3.0**
+
+**🚀 Update Highlights**
+
+- **✨ New Features**:
+  - **Custom Annotations Support**: Added full support for Playwright test annotations in reports
+    - Displays test annotations (e.g., `test.skip()`, `test.fixme()`, `test.info().annotations.push()`) in both static and attachment-based reports
+    - Annotations section appears below "Full Path" in test details with dedicated styling
+    - Shows annotation **Type**, **Description**, and **Location** (file path with line and column numbers)
+  
+  - **JIRA/Ticket System Integration**: Clickable links for bug tracking
+    - Automatically detects JIRA ticket format in annotation descriptions (e.g., `JIRA-123`, `PROJ-456`)
+    - Annotations with type "issue" or "bug" become clickable links
+    - Prompts for your JIRA/Ticket system base URL and opens tickets in new browser tab
+    - Seamless integration with your existing bug tracking workflow
+
+- **🔧 Improvements**:
+  - Enhanced `TestResult` interface with `annotations` field
+  - Updated reporter to capture and include test annotations from Playwright test cases
+  - Beautiful purple/violet themed annotations section for better visual distinction
+
 ## **Version 0.2.10**
 
 **🚀 Update Highlights**
