@@ -1519,7 +1519,9 @@ function getAttachmentIcon(contentType) {
   return "📎";
 }
 function generateAIFailureAnalyzerTab(results) {
-  const failedTests = (results || []).filter(test => test.status === 'failed');
+  const failedTests = (results || []).filter(
+    (test) => test.status === "failed"
+  );
 
   if (failedTests.length === 0) {
     return `
@@ -1529,7 +1531,7 @@ function generateAIFailureAnalyzerTab(results) {
   }
 
   // btoa is not available in Node.js environment, so we define a simple polyfill for it.
-  const btoa = (str) => Buffer.from(str).toString('base64');
+  const btoa = (str) => Buffer.from(str).toString("base64");
 
   return `
     <h2 class="tab-main-title">AI Failure Analysis</h2>
@@ -1539,41 +1541,61 @@ function generateAIFailureAnalyzerTab(results) {
             <span class="stat-label">Failed Tests</span>
         </div>
         <div class="stat-item">
-            <span class="stat-number">${new Set(failedTests.map(t => t.browser)).size}</span>
+            <span class="stat-number">${
+              new Set(failedTests.map((t) => t.browser)).size
+            }</span>
             <span class="stat-label">Browsers</span>
         </div>
         <div class="stat-item">
-            <span class="stat-number">${(Math.round(failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) / 1000))}s</span>
+            <span class="stat-number">${Math.round(
+              failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) /
+                1000
+            )}s</span>
             <span class="stat-label">Total Duration</span>
         </div>
     </div>
     <p class="ai-analyzer-description">
-        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for specific failed test.
+        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for instant analysis or use Copy AI Prompt to analyze with your preferred AI tool.
     </p>
     
     <div class="compact-failure-list">
-      ${failedTests.map(test => {
-    const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
-    const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
-    const truncatedError = (test.errorMessage || "No error message").slice(0, 150) +
-      (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
+      ${failedTests
+        .map((test) => {
+          const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
+          const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
+          const truncatedError =
+            (test.errorMessage || "No error message").slice(0, 150) +
+            (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
 
-    return `
+          return `
         <div class="compact-failure-item">
             <div class="failure-header">
                 <div class="failure-main-info">
-                    <h3 class="failure-title" title="${sanitizeHTML(test.name)}">${sanitizeHTML(testTitle)}</h3>
+                    <h3 class="failure-title" title="${sanitizeHTML(
+                      test.name
+                    )}">${sanitizeHTML(testTitle)}</h3>
                     <div class="failure-meta">
-                        <span class="browser-indicator">${sanitizeHTML(test.browser || 'unknown')}</span>
-                        <span class="duration-indicator">${formatDuration(test.duration)}</span>
+                        <span class="browser-indicator">${sanitizeHTML(
+                          test.browser || "unknown"
+                        )}</span>
+                        <span class="duration-indicator">${formatDuration(
+                          test.duration
+                        )}</span>
                     </div>
                 </div>
-                <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
-                    <span class="ai-text">AI Fix</span>
-                </button>
+                <div class="ai-buttons-group">
+                    <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
+                        <span class="ai-text">AI Fix</span>
+                    </button>
+                    <button class="copy-prompt-btn" onclick="copyAIPrompt(this)" data-test-json="${testJson}" title="Copy AI Prompt">
+                        <span class="copy-prompt-text">Copy AI Prompt</span>
+                    </button>
+                </div>
             </div>
             <div class="failure-error-preview">
-                <div class="error-snippet">${formatPlaywrightError(truncatedError)}</div>
+                <div class="error-snippet">${formatPlaywrightError(
+                  truncatedError
+                )}</div>
                 <button class="expand-error-btn" onclick="toggleErrorDetails(this)">
                     <span class="expand-text">Show Full Error</span>
                     <span class="expand-icon">▼</span>
@@ -1581,12 +1603,15 @@ function generateAIFailureAnalyzerTab(results) {
             </div>
             <div class="full-error-details" style="display: none;">
                 <div class="full-error-content">
-                    ${formatPlaywrightError(test.errorMessage || "No detailed error message available")}
+                    ${formatPlaywrightError(
+                      test.errorMessage || "No detailed error message available"
+                    )}
                 </div>
             </div>
         </div>
-        `
-  }).join('')}
+        `;
+        })
+        .join("")}
     </div>
 
     <!-- AI Fix Modal -->
@@ -1618,7 +1643,7 @@ function generateHTML(reportData, trendData = null) {
   const fixPath = (p) => {
     if (!p) return "";
     // This regex handles both forward slashes and backslashes
-    return p.replace(new RegExp(`^${DEFAULT_OUTPUT_DIR}[\\\\/]`), '');
+    return p.replace(new RegExp(`^${DEFAULT_OUTPUT_DIR}[\\\\/]`), "");
   };
 
   const totalTestsOr1 = runSummary.totalTests || 1;
@@ -1663,20 +1688,23 @@ function generateHTML(reportData, trendData = null) {
               )}</span>
             </div>
             <div class="step-details" style="display: none;">
-              ${step.codeLocation
+              ${
+                step.codeLocation
                   ? `<div class="step-info code-section"><strong>Location:</strong> ${sanitizeHTML(
-                    step.codeLocation
-                  )}</div>`
-                  : ""
-                }
-              ${step.errorMessage
-                  ? `<div class="test-error-summary">
-                      ${step.stackTrace
-                    ? `<div class="stack-trace">${formatPlaywrightError(
-                      step.stackTrace
+                      step.codeLocation
                     )}</div>`
-                    : ""
-                  }
+                  : ""
+              }
+              ${
+                step.errorMessage
+                  ? `<div class="test-error-summary">
+                      ${
+                        step.stackTrace
+                          ? `<div class="stack-trace">${formatPlaywrightError(
+                              step.stackTrace
+                            )}</div>`
+                          : ""
+                      }
                       <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
@@ -1698,14 +1726,15 @@ function generateHTML(reportData, trendData = null) {
                       </button>
                     </div>`
                   : ""
-                }
-              ${hasNestedSteps
+              }
+              ${
+                hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
-                    step.steps,
-                    depth + 1
-                  )}</div>`
+                      step.steps,
+                      depth + 1
+                    )}</div>`
                   : ""
-                }
+              }
             </div>
           </div>`;
             })
@@ -2297,6 +2326,35 @@ function generateHTML(reportData, trendData = null) {
         .ai-text { 
             font-size: 0.95em; 
         }
+        .ai-buttons-group { 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+        }
+        .copy-prompt-btn { 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.3s ease; 
+            white-space: nowrap;
+        }
+        .copy-prompt-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); 
+        }
+        .copy-prompt-btn.copied { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+        }
+        .copy-prompt-text { 
+            font-size: 0.95em; 
+        }
         .failure-error-preview { 
             padding: 0 20px 18px 20px; 
             border-top: 1px solid var(--light-gray-color);
@@ -2372,9 +2430,14 @@ function generateHTML(reportData, trendData = null) {
             .failure-meta { 
                 justify-content: center; 
             }
-            .compact-ai-btn { 
+            .ai-buttons-group { 
+                flex-direction: column; 
+                width: 100%; 
+            }
+            .compact-ai-btn, .copy-prompt-btn { 
                 justify-content: center; 
                 padding: 12px 20px; 
+                width: 100%; 
             }
         }
         @media (max-width: 480px) {
@@ -2648,6 +2711,81 @@ function getAIFix(button) {
     }
 }
 
+
+    function copyAIPrompt(button) {
+        try {
+            const testJson = button.dataset.testJson;
+            const test = JSON.parse(atob(testJson));
+
+            const testName = test.name || 'Unknown Test';
+            const failureLogsAndErrors = [
+                'Error Message:',
+                test.errorMessage || 'Not available.',
+                '\\n\\n--- stdout ---',
+                (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
+                '\\n\\n--- stderr ---',
+                (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
+            ].join('\\n');
+            const codeSnippet = test.snippet || '';
+
+            const aiPrompt = \`You are an expert Playwright test automation engineer specializing in debugging test failures.
+
+INSTRUCTIONS:
+1. Analyze the test failure carefully
+2. Provide a brief root cause analysis
+3. Provide EXACTLY 5 specific, actionable fixes
+4. Each fix MUST include a code snippet (codeSnippet field)
+5. Return ONLY valid JSON, no markdown or extra text
+
+REQUIRED JSON FORMAT:
+{
+  "rootCause": "Brief explanation of why the test failed",
+  "suggestedFixes": [
+    {
+      "description": "Clear explanation of the fix",
+      "codeSnippet": "await page.waitForSelector('.button', { timeout: 5000 });"
+    }
+  ],
+  "affectedTests": ["test1", "test2"]
+}
+
+IMPORTANT:
+- Always return valid JSON only
+- Always provide exactly 5 fixes in suggestedFixes array
+- Each fix must have both description and codeSnippet fields
+- Make code snippets practical and Playwright-specific
+
+---
+
+Test Name: \${testName}
+
+Failure Logs and Errors:
+\${failureLogsAndErrors}
+
+Code Snippet:
+\${codeSnippet}\`;
+
+            navigator.clipboard.writeText(aiPrompt).then(() => {
+                const originalText = button.querySelector('.copy-prompt-text').textContent;
+                button.querySelector('.copy-prompt-text').textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                const shortTestName = testName.split(' > ').pop() || testName;
+                alert(\`AI prompt to generate a suggested fix for "\${shortTestName}" has been copied to your clipboard.\`);
+                
+                setTimeout(() => {
+                    button.querySelector('.copy-prompt-text').textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy AI prompt:', err);
+                alert('Failed to copy AI prompt to clipboard. Please try again.');
+            });
+        } catch (e) {
+            console.error('Error processing test data for AI Prompt copy:', e);
+            alert('Could not process test data. Please try again.');
+        }
+    }
 
     function closeAiModal() {
         const modal = document.getElementById('ai-fix-modal');

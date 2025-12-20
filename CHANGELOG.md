@@ -8,6 +8,7 @@
   - **Custom Annotations Support**: Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
   - **JIRA/Ticket System Integration**: Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
   - **Dynamic Output Directory Support**: All CLI scripts now accept `--outputDir` (or `-o`) argument for custom output directories, supporting any folder name or nested path structure.
+  - **Copy AI Prompt Button**: Added "Copy AI Prompt" button in AI Failure Analyzer that copies a complete, ready-to-use prompt with instructions and test details for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
   
 - **🔧 Improvements**:
   - Migrated from Google Gemini API to Groq API with `llama-3.3-70b-versatile` model for faster and more accurate AI failure analysis.
