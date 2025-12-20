@@ -90,16 +90,28 @@
           <h4>Version 0.3.0</h4>
           <ul>
             <li>
-              <strong>New Feature:</strong> <b>Custom Annotations Support</b> - Added full support for Playwright test annotations in reports. Displays test annotations (e.g., <code>test.skip()</code>, <code>test.fixme()</code>, <code>test.info().annotations.push()</code>) in both static and attachment-based reports. Annotations section appears below "Full Path" in test details showing Type, Description, and Location (file path with line and column numbers).
+              <strong>New Feature:</strong> <b>Custom Annotations Support</b> - Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
             </li>
             <li>
-              <strong>New Feature:</strong> <b>JIRA/Ticket System Integration</b> - Automatically detects JIRA ticket format in annotation descriptions (e.g., <code>JIRA-123</code>, <code>PROJ-456</code>). Annotations with type "issue" or "bug" become clickable links that prompt for your JIRA/Ticket system base URL and open tickets in new browser tab.
+              <strong>New Feature:</strong> <b>JIRA/Ticket System Integration</b> - Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
             </li>
             <li>
-              <strong>Improved:</strong> Enhanced <code>TestResult</code> interface with <code>annotations</code> field. Updated reporter to capture and include test annotations from Playwright test cases.
+              <strong>New Feature:</strong> <b>Dynamic Output Directory Support</b> - All CLI scripts now accept <code>--outputDir</code> (or <code>-o</code>) argument for custom output directories, supporting any folder name or nested path structure.
             </li>
             <li>
-              <strong>Improved:</strong> <b>UI/UX</b> - Beautiful purple/violet themed annotations section for better visual distinction in reports.
+              <strong>Improved:</strong> Migrated from Google Gemini API to Groq API with <code>llama-3.3-70b-versatile</code> model for faster and more accurate AI failure analysis.
+            </li>
+            <li>
+              <strong>Improved:</strong> Enhanced <code>TestResult</code> interface with <code>annotations</code> field for comprehensive test metadata capture.
+            </li>
+            <li>
+              <strong>Improved:</strong> Improved CLI scripts architecture to support dynamic directory paths across all commands.
+            </li>
+            <li>
+              <strong>Improved:</strong> Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
+            </li>
+            <li>
+              <strong>Improved:</strong> Beautiful purple/violet themed <code>annotations</code> section for better visual distinction in reports.
             </li>
           </ul>
           <h4>Version 0.2.10</h4>

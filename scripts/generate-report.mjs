@@ -2897,10 +2897,10 @@ function copyErrorToClipboard(button) {
 </html>
   `;
 }
-async function runScript(scriptPath) {
+async function runScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
     console.log(chalk.blue(`Executing script: ${scriptPath}...`));
-    const process = fork(scriptPath, [], {
+    const process = fork(scriptPath, args, {
       stdio: "inherit",
     });
 
@@ -2925,13 +2925,24 @@ async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
+  const args = process.argv.slice(2);
+  let customOutputDir = null;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--outputDir" || args[i] === "-o") {
+      customOutputDir = args[i + 1];
+      break;
+    }
+  }
+
   // Script to archive current run to JSON history (this is your modified "generate-trend.mjs")
   const archiveRunScriptPath = path.resolve(
     __dirname,
     "generate-trend.mjs" // Keeping the filename as per your request
   );
 
-  const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = customOutputDir
+    ? path.resolve(process.cwd(), customOutputDir)
+    : path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
 
@@ -2944,7 +2955,8 @@ async function main() {
 
   // Step 1: Ensure current run data is archived to the history folder
   try {
-    await runScript(archiveRunScriptPath); // This script now handles JSON history
+    const archiveArgs = customOutputDir ? ["--outputDir", customOutputDir] : [];
+    await runScript(archiveRunScriptPath, archiveArgs);
     console.log(
       chalk.green("Current run data archiving to history completed.")
     );

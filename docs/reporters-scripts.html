@@ -140,6 +140,13 @@
             They are designed to be run after
             <code>npx playwright test</code> has completed.
           </p>
+          
+          <div class="note" style="background-color: #e8f4fd; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <strong>✨ New in v0.3.0:</strong> All CLI scripts now support custom output directories!<br>
+            Use <code>--outputDir &lt;path&gt;</code> or <code>-o &lt;path&gt;</code> to specify a custom location.<br>
+            <strong>Example:</strong> <code>npx generate-pulse-report --outputDir my-reports</code>
+          </div>
+
           <h4>generate-pulse-report</h4>
           <ul>
             <li>
@@ -148,6 +155,9 @@
             </li>
             <li>
               <strong>Command:</strong> <code>npx generate-pulse-report</code>
+            </li>
+            <li>
+              <strong>With Custom Directory:</strong> <code>npx generate-pulse-report --outputDir my-reports</code>
             </li>
             <li>
               <strong>Output:</strong>
@@ -163,6 +173,9 @@
             </li>
             <li><strong>Command:</strong> <code>npx generate-report</code></li>
             <li>
+              <strong>With Custom Directory:</strong> <code>npx generate-report -o my-reports</code>
+            </li>
+            <li>
               <strong>Output:</strong>
               <code>pulse-report/playwright-pulse-report.html</code>
             </li>
@@ -176,6 +189,9 @@
             <li>
               <strong>Command:</strong> <code>npx merge-pulse-report</code>
             </li>
+            <li>
+              <strong>With Custom Directory:</strong> <code>npx merge-pulse-report --outputDir my-reports</code>
+            </li>
           </ul>
           <h4>send-email</h4>
           <ul>
@@ -184,6 +200,9 @@
               summary report via email.
             </li>
             <li><strong>Command:</strong> <code>npx send-email</code></li>
+            <li>
+              <strong>With Custom Directory:</strong> <code>npx send-email --outputDir my-reports</code>
+            </li>
           </ul>
         </section>
 
@@ -201,6 +220,9 @@
             </li>
             <li><strong>Command:</strong> <code>npx generate-trend</code></li>
             <li>
+              <strong>With Custom Directory:</strong> <code>npx generate-trend --outputDir my-reports</code>
+            </li>
+            <li>
               <strong>Details:</strong> The main report generation scripts call
               this automatically. You would run this manually if you only need
               to update historical data without generating a full HTML report.
@@ -214,6 +236,9 @@
             </li>
             <li>
               <strong>Command:</strong> <code>npx generate-email-report</code>
+            </li>
+            <li>
+              <strong>With Custom Directory:</strong> <code>npx generate-email-report -o my-reports</code>
             </li>
           </ul>
         </section>

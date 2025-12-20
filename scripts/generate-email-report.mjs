@@ -23,6 +23,15 @@ const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const MINIFIED_HTML_FILE = "pulse-email-summary.html"; // New minified report
 
+const args = process.argv.slice(2);
+let customOutputDir = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--outputDir" || args[i] === "-o") {
+    customOutputDir = args[i + 1];
+    break;
+  }
+}
+
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
   return String(str).replace(/[&<>"']/g, (match) => {
@@ -652,7 +661,9 @@ function generateMinifiedHTML(reportData) {
   `;
 }
 async function main() {
-  const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = customOutputDir
+    ? path.resolve(process.cwd(), customOutputDir)
+    : path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
   const minifiedReportHtmlPath = path.resolve(outputDir, MINIFIED_HTML_FILE); // Path for the new minified HTML
 

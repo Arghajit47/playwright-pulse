@@ -84,6 +84,42 @@ npx generate-pulse-report  # Generates static HTML
 npx send-email            # Sends email report
 ```
 
+### 4. Custom Output Directory (Optional)
+
+All CLI scripts now support custom output directories, giving you full flexibility over where reports are generated:
+
+```bash
+# Using custom directory
+npx generate-pulse-report --outputDir my-reports
+npx generate-report -o test-results/e2e
+npx send-email --outputDir custom-pulse-reports
+
+# Using nested paths
+npx generate-pulse-report --outputDir reports/integration
+npx merge-pulse-report --outputDir my-test-reports
+```
+
+**Important:** Make sure your `playwright.config.ts` custom directory matches the CLI script:
+
+```typescript
+import { defineConfig } from "@playwright/test";
+import * as path from "path";
+
+const CUSTOM_REPORT_DIR = path.resolve(__dirname, "my-reports");
+
+export default defineConfig({
+  reporter: [
+    ["list"],
+    [
+      "@arghajit/playwright-pulse-report",
+      {
+        outputDir: CUSTOM_REPORT_DIR,  // Must match CLI --outputDir
+      },
+    ],
+  ],
+});
+```
+
 ## 📊 Report Options
 
 ### Option 1: Static HTML Report (Embedded Attachments)

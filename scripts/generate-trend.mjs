@@ -22,8 +22,19 @@ const HISTORY_SUBDIR = "history"; // Subdirectory for historical JSON files
 const HISTORY_FILE_PREFIX = "trend-";
 const MAX_HISTORY_FILES = 15; // Store last 15 runs
 
+const args = process.argv.slice(2);
+let customOutputDir = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--outputDir' || args[i] === '-o') {
+    customOutputDir = args[i + 1];
+    break;
+  }
+}
+
 async function archiveCurrentRunData() {
-  const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = customOutputDir 
+    ? path.resolve(process.cwd(), customOutputDir)
+    : path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
   const currentRunJsonPath = path.join(outputDir, CURRENT_RUN_JSON_FILE);
   const historyDir = path.join(outputDir, HISTORY_SUBDIR);
 

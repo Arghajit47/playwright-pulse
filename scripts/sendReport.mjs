@@ -28,7 +28,16 @@ try {
   };
 }
 
-const reportDir = "./pulse-report";
+const args = process.argv.slice(2);
+let customOutputDir = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--outputDir" || args[i] === "-o") {
+    customOutputDir = args[i + 1];
+    break;
+  }
+}
+
+const reportDir = customOutputDir || "./pulse-report";
 
 let fetch;
 // Ensure fetch is imported and available before it's used in fetchCredentials
@@ -220,9 +229,9 @@ const archiveRunScriptPath = path.resolve(
   "generate-email-report.mjs" // Or input_file_0.mjs if you rename it, or input_file_0.js if you configure package.json
 );
 
-async function runScript(scriptPath) {
+async function runScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
-    const childProcess = fork(scriptPath, [], {
+    const childProcess = fork(scriptPath, args, {
       // Renamed variable
       stdio: "inherit",
     });
@@ -245,7 +254,8 @@ async function runScript(scriptPath) {
 }
 
 const sendEmail = async (credentials) => {
-  await runScript(archiveRunScriptPath);
+  const archiveArgs = customOutputDir ? ["--outputDir", customOutputDir] : [];
+  await runScript(archiveRunScriptPath, archiveArgs);
   try {
     console.log("Starting the sendEmail function...");
 
