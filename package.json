@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.0",
+  "version": "0.3.6",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://playwright-pulse-report.netlify.app/",
   "keywords": [
@@ -26,7 +26,7 @@
   "files": [
     "dist",
     "screenshots",
-    "scripts/generate-static-report.mjs"
+    "scripts"
   ],
   "license": "MIT",
   "bin": {

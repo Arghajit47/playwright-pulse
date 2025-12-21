@@ -10,6 +10,7 @@ import {
 import { fileURLToPath } from "url";
 import { fork } from "child_process"; // This was missing in your sendReport.js but present in generate-email-report.js and needed for runScript
 import "dotenv/config"; // CHANGED for dotenv
+import { getOutputDir } from "./config-reader.mjs";
 
 // Import chalk using top-level await if your Node version supports it (14.8+)
 // or keep the dynamic import if preferred, but ensure chalk is resolved before use.
@@ -28,7 +29,14 @@ try {
   };
 }
 
-const reportDir = "./pulse-report";
+const args = process.argv.slice(2);
+let customOutputDir = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--outputDir" || args[i] === "-o") {
+    customOutputDir = args[i + 1];
+    break;
+  }
+}
 
 let fetch;
 // Ensure fetch is imported and available before it's used in fetchCredentials
@@ -40,11 +48,8 @@ let fetch;
 
 let projectName;
 
-function getUUID() {
-  const reportPath = path.join(
-    process.cwd(),
-    `${reportDir}/playwright-pulse-report.json`
-  );
+function getUUID(reportDir) {
+  const reportPath = path.join(reportDir, "playwright-pulse-report.json");
   console.log("Report path:", reportPath);
 
   if (!fsExistsSync(reportPath)) {
@@ -71,18 +76,15 @@ const formatStartTime = (isoString) => {
   return date.toLocaleString(); // Default locale
 };
 
-const getPulseReportSummary = () => {
-  const reportPath = path.join(
-    process.cwd(),
-    `${reportDir}/playwright-pulse-report.json`
-  );
+const getPulseReportSummary = (reportDir) => {
+  const reportPath = path.join(reportDir, "playwright-pulse-report.json");
 
   if (!fsExistsSync(reportPath)) {
     // CHANGED
     throw new Error("Pulse report file not found.");
   }
 
-  const content = JSON.parse(fsReadFileSync(reportPath, "utf-8")); // CHANGED
+  const content = JSON.parse(fsReadFileSync(reportPath, "utf-8")); // D
   const run = content.run;
 
   const total = run.totalTests || 0;
@@ -220,9 +222,9 @@ const archiveRunScriptPath = path.resolve(
   "generate-email-report.mjs" // Or input_file_0.mjs if you rename it, or input_file_0.js if you configure package.json
 );
 
-async function runScript(scriptPath) {
+async function runScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
-    const childProcess = fork(scriptPath, [], {
+    const childProcess = fork(scriptPath, args, {
       // Renamed variable
       stdio: "inherit",
     });
@@ -244,8 +246,9 @@ async function runScript(scriptPath) {
   });
 }
 
-const sendEmail = async (credentials) => {
-  await runScript(archiveRunScriptPath);
+const sendEmail = async (credentials, reportDir) => {
+  const archiveArgs = customOutputDir ? ["--outputDir", customOutputDir] : [];
+  await runScript(archiveRunScriptPath, archiveArgs);
   try {
     console.log("Starting the sendEmail function...");
 
@@ -259,7 +262,7 @@ const sendEmail = async (credentials) => {
       },
     });
 
-    const reportData = getPulseReportSummary();
+    const reportData = getPulseReportSummary(reportDir);
     const htmlContent = generateHtmlTable(reportData);
 
     const mailOptions = {
@@ -289,7 +292,7 @@ const sendEmail = async (credentials) => {
   }
 };
 
-async function fetchCredentials(retries = 10) {
+async function fetchCredentials(reportDir, retries = 10) {
   // Ensure fetch is initialized from the dynamic import before calling this
   if (!fetch) {
     try {
@@ -304,7 +307,7 @@ async function fetchCredentials(retries = 10) {
   }
 
   const timeout = 10000;
-  const key = getUUID();
+  const key = getUUID(reportDir);
 
   if (!key) {
     console.error(
@@ -384,7 +387,19 @@ const main = async () => {
     }
   }
 
-  const credentials = await fetchCredentials();
+  const reportDir = await getOutputDir(customOutputDir);
+
+  console.log(chalk.blue(`Preparing to send email report...`));
+  console.log(chalk.blue(`Report directory set to: ${reportDir}`));
+  if (customOutputDir) {
+    console.log(chalk.gray(`  (from CLI argument)`));
+  } else {
+    console.log(
+      chalk.gray(`  (auto-detected from playwright.config or using default)`)
+    );
+  }
+
+  const credentials = await fetchCredentials(reportDir);
   if (!credentials) {
     console.warn(
       "Skipping email sending due to missing or failed credential fetch"
@@ -393,7 +408,7 @@ const main = async () => {
   }
   // Removed await delay(10000); // If not strictly needed, remove it.
   try {
-    await sendEmail(credentials);
+    await sendEmail(credentials, reportDir);
   } catch (error) {
     console.error("Error in main function: ", error);
   }

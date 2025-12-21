@@ -5,21 +5,18 @@
 **🚀 Update Highlights**
 
 - **✨ New Features**:
-  - **Custom Annotations Support**: Added full support for Playwright test annotations in reports
-    - Displays test annotations (e.g., `test.skip()`, `test.fixme()`, `test.info().annotations.push()`) in both static and attachment-based reports
-    - Annotations section appears below "Full Path" in test details with dedicated styling
-    - Shows annotation **Type**, **Description**, and **Location** (file path with line and column numbers)
+  - **Custom Annotations Support**: Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
+  - **JIRA/Ticket System Integration**: Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
+  - **Dynamic Output Directory Support**: All CLI scripts now accept `--outputDir` (or `-o`) argument for custom output directories, supporting any folder name or nested path structure.
+  - **Copy AI Prompt Button**: Added "Copy AI Prompt" button in AI Failure Analyzer that copies a complete, ready-to-use prompt with instructions and test details for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
   
-  - **JIRA/Ticket System Integration**: Clickable links for bug tracking
-    - Automatically detects JIRA ticket format in annotation descriptions (e.g., `JIRA-123`, `PROJ-456`)
-    - Annotations with type "issue" or "bug" become clickable links
-    - Prompts for your JIRA/Ticket system base URL and opens tickets in new browser tab
-    - Seamless integration with your existing bug tracking workflow
-
 - **🔧 Improvements**:
-  - Enhanced `TestResult` interface with `annotations` field
-  - Updated reporter to capture and include test annotations from Playwright test cases
-  - Beautiful purple/violet themed annotations section for better visual distinction
+  - Migrated from Google Gemini API to Groq API with `llama-3.3-70b-versatile` model for faster and more accurate AI failure analysis.
+  - Enhanced `TestResult` interface with `annotations` field for comprehensive test metadata capture.
+  - Improved CLI scripts architecture to support dynamic directory paths across all commands.
+  - **Automatic Config Detection**: CLI scripts now automatically read `outputDir` from `playwright.config` file, eliminating the need to manually pass `-o` argument, unless overriding is needed.
+  - Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
+  - Beautiful purple/violet themed annotations section for better visual distinction in reports.
 
 ## **Version 0.2.10**
 
@@ -105,7 +102,7 @@
 
 **🚀 Update Highlights**
 
-- **🏷️ Improvements** 
+- **🏷️ Improvements**
   - Introduced 'System Information' widget to visualize Details about the test execution environment, like; Host, Os, Cpu Model & Cores, Memory, Node, V8, Cwd.
 - **📊 Enhanced Analytics**:
   - Improved accuracy in history trend calculations.

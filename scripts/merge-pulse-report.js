@@ -3,8 +3,29 @@
 const fs = require("fs");
 const path = require("path");
 
-const REPORT_DIR = "./pulse-report"; // Or change this to your reports directory
+const args = process.argv.slice(2);
+let customOutputDir = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === '--outputDir' || args[i] === '-o') {
+    customOutputDir = args[i + 1];
+    break;
+  }
+}
+
 const OUTPUT_FILE = "playwright-pulse-report.json";
+
+async function getReportDir() {
+  if (customOutputDir) {
+    return path.resolve(process.cwd(), customOutputDir);
+  }
+
+  try {
+    const { getOutputDir } = await import("./config-reader.mjs");
+    return await getOutputDir();
+  } catch (error) {
+    return path.resolve(process.cwd(), "pulse-report");
+  }
+}
 
 function getReportFiles(dir) {
   return fs
@@ -15,7 +36,7 @@ function getReportFiles(dir) {
     );
 }
 
-function mergeReports(files) {
+function mergeReports(files, reportDir) {
   let combinedRun = {
     totalTests: 0,
     passed: 0,
@@ -30,7 +51,7 @@ function mergeReports(files) {
   let latestGeneratedAt = "";
 
   for (const file of files) {
-    const filePath = path.join(REPORT_DIR, file);
+    const filePath = path.join(reportDir, file);
     const json = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
     const run = json.run || {};
@@ -66,17 +87,28 @@ function mergeReports(files) {
 }
 
 // Main execution
-const reportFiles = getReportFiles(REPORT_DIR);
+(async () => {
+  const REPORT_DIR = await getReportDir();
 
-if (reportFiles.length === 0) {
-  console.log("No matching JSON report files found.");
-  process.exit(1);
-}
+  console.log(`Report directory set to: ${REPORT_DIR}`);
+  if (customOutputDir) {
+    console.log(`  (from CLI argument)`);
+  } else {
+    console.log(`  (auto-detected from playwright.config or using default)`);
+  }
 
-const merged = mergeReports(reportFiles);
+  const reportFiles = getReportFiles(REPORT_DIR);
 
-fs.writeFileSync(
-  path.join(REPORT_DIR, OUTPUT_FILE),
-  JSON.stringify(merged, null, 2)
-);
-console.log(`✅ Merged report saved as ${OUTPUT_FILE}`);
+  if (reportFiles.length === 0) {
+    console.log("No matching JSON report files found.");
+    process.exit(1);
+  }
+
+  const merged = mergeReports(reportFiles, REPORT_DIR);
+
+  fs.writeFileSync(
+    path.join(REPORT_DIR, OUTPUT_FILE),
+    JSON.stringify(merged, null, 2)
+  );
+  console.log(`✅ Merged report saved as ${OUTPUT_FILE}`);
+})();

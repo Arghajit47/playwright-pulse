@@ -2,6 +2,7 @@
 
 import * as fs from "fs/promises";
 import path from "path";
+import { getOutputDir } from "./config-reader.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -22,6 +23,15 @@ try {
 const DEFAULT_OUTPUT_DIR = "pulse-report";
 const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const MINIFIED_HTML_FILE = "pulse-email-summary.html"; // New minified report
+
+const args = process.argv.slice(2);
+let customOutputDir = null;
+for (let i = 0; i < args.length; i++) {
+  if (args[i] === "--outputDir" || args[i] === "-o") {
+    customOutputDir = args[i + 1];
+    break;
+  }
+}
 
 function sanitizeHTML(str) {
   if (str === null || str === undefined) return "";
@@ -652,9 +662,19 @@ function generateMinifiedHTML(reportData) {
   `;
 }
 async function main() {
-  const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
   const minifiedReportHtmlPath = path.resolve(outputDir, MINIFIED_HTML_FILE); // Path for the new minified HTML
+
+  console.log(chalk.blue(`Generating email report...`));
+  console.log(chalk.blue(`Output directory set to: ${outputDir}`));
+  if (customOutputDir) {
+    console.log(chalk.gray(`  (from CLI argument)`));
+  } else {
+    console.log(
+      chalk.gray(`  (auto-detected from playwright.config or using default)`)
+    );
+  }
 
   // Step 2: Load current run's data
   let currentRunReportData;
