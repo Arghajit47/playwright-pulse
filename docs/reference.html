@@ -87,6 +87,39 @@
         <h1>Reference</h1>
         <section id="changelog">
           <h2>Changelog</h2>
+          <h4>Version 0.3.0</h4>
+          <ul>
+            <li>
+              <strong>New Feature:</strong> <b>Custom Annotations Support</b> - Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>JIRA/Ticket System Integration</b> - Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>Dynamic Output Directory Support</b> - All CLI scripts now accept <code>--outputDir</code> (or <code>-o</code>) argument for custom output directories, supporting any folder name or nested path structure.
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>Copy AI Prompt Button</b> - Added "Copy AI Prompt" button in AI Failure Analyzer that copies a complete, ready-to-use prompt with instructions and test details for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
+            </li>
+            <li>
+              <strong>Improved:</strong> Migrated from Google Gemini API to Groq API with <code>llama-3.3-70b-versatile</code> model for faster and more accurate AI failure analysis.
+            </li>
+            <li>
+              <strong>Improved:</strong> Enhanced <code>TestResult</code> interface with <code>annotations</code> field for comprehensive test metadata capture.
+            </li>
+            <li>
+              <strong>Improved:</strong> Improved CLI scripts architecture to support dynamic directory paths across all commands.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Automatic Config Detection</b> - CLI scripts now automatically read <code>outputDir</code> from <code>playwright.config</code> file, eliminating the need to manually pass <code>-o</code> argument, unless overriding is needed.
+            </li>
+            <li>
+              <strong>Improved:</strong> Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
+            </li>
+            <li>
+              <strong>Improved:</strong> Beautiful purple/violet themed <code>annotations</code> section for better visual distinction in reports.
+            </li>
+          </ul>
           <h4>Version 0.2.10</h4>
           <ul>
             <li>

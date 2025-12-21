@@ -46,6 +46,15 @@ export interface TestResult {
     totalWorkers?: number;
     configFile?: string;
     metadata?: string;
+    annotations?: {
+        type: string;
+        description?: string;
+        location?: {
+            file: string;
+            line: number;
+            column: number;
+        };
+    }[];
 }
 export interface TestRun {
     id: string;

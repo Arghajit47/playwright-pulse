@@ -107,7 +107,12 @@
                   <td><code>outputDir</code></td>
                   <td><code>string</code></td>
                   <td><code>'pulse-report'</code></td>
-                  <td>The directory where all report assets will be saved.</td>
+                  <td>
+                    The directory where all report assets will be saved.
+                    <br><br>
+                    <span style="color: #2196F3; font-weight: 500;">✨ New in v0.3.0:</span> 
+                    All CLI scripts now automatically read this value - no need to pass <code>-o</code> manually!
+                  </td>
                 </tr>
                 <tr>
                   <td><code>outputFile</code></td>
@@ -186,7 +191,7 @@ jobs:
         with:
           name: final-playwright-pulse-report
           path: pulse-report/playwright-pulse-static-report.html
-          retention-days: 7</code></pre>
+          retention-days: 7</code><button class="copy-button">Copy</button></pre>
           </div>
           <div id="gitlab-code" class="code-container" style="display: none">
             <pre><code class="language-yaml"># .gitlab-ci.yml
@@ -217,7 +222,7 @@ merge-and-publish:
     - npx generate-pulse-report
   artifacts:
     paths: [pulse-report/playwright-pulse-static-report.html]
-    expire_in: 7 days</code></pre>
+    expire_in: 7 days</code><button class="copy-button">Copy</button></pre>
           </div>
           <div id="jenkins-code" class="code-container" style="display: none">
             <pre><code class="language-groovy">// Jenkinsfile
@@ -252,7 +257,7 @@ pipeline {
             }
         }
     }
-}</code></pre>
+}</code><button class="copy-button">Copy</button></pre>
           </div>
         </section>
 
@@ -265,7 +270,7 @@ pipeline {
             same job, like this:</span
           >
           <div id="run-execution" class="code-container">
-            <pre><code class="language-javascript">npx playwright test test1.spec.ts && npx playwright test test2.spec.ts</code></pre>
+            <pre><code class="language-javascript">npx playwright test test1.spec.ts && npx playwright test test2.spec.ts</code><button class="copy-button">Copy</button></pre>
           </div>
           <span
             >By default, In this above scenario, the report from test1 will be
@@ -294,7 +299,7 @@ export default defineConfig({
     ],
   ],
   // ...
-});</code></pre>
+});</code><button class="copy-button">Copy</button></pre>
           </div>
           <strong>How it works when resetOnEachRun: false:</strong><br /><br />
           <span>

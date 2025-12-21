@@ -140,6 +140,21 @@
             They are designed to be run after
             <code>npx playwright test</code> has completed.
           </p>
+          
+          <div class="note" style="background-color: #e8f4fd; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <strong>✨ New in v0.3.0:</strong> All CLI scripts now support custom output directories!<br>
+            <strong>🔹 Automatic Detection:</strong> Scripts automatically read <code>outputDir</code> from your <code>playwright.config</code> file<br>
+            <strong>🔹 Manual Override:</strong> Use <code>--outputDir &lt;path&gt;</code> or <code>-o &lt;path&gt;</code> to override the config<br>
+            <strong>🔹 Default Fallback:</strong> Falls back to <code>pulse-report</code> if not configured<br><br>
+            <strong>Example Config:</strong>
+            <pre><code class="language-javascript">reporter: [
+  ['@arghajit/playwright-pulse-report', { 
+    outputDir: 'my-custom-reports' 
+  }]
+]</code><button class="copy-button">Copy</button></pre>
+            Now simply run <code>npx generate-pulse-report</code> - no need for <code>-o</code> argument!
+          </div>
+
           <h4>generate-pulse-report</h4>
           <ul>
             <li>
@@ -147,11 +162,16 @@
               self-contained static HTML report with embedded attachments.
             </li>
             <li>
-              <strong>Command:</strong> <code>npx generate-pulse-report</code>
+              <strong>Basic Command:</strong> <code>npx generate-pulse-report</code>
+              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+            </li>
+            <li>
+              <strong>Manual Override:</strong> <code>npx generate-pulse-report --outputDir my-reports</code>
+              <br><small style="color: #666;">(Overrides config setting)</small>
             </li>
             <li>
               <strong>Output:</strong>
-              <code>pulse-report/playwright-pulse-static-report.html</code>
+              <code>[outputDir]/playwright-pulse-static-report.html</code>
             </li>
           </ul>
           <h4>generate-report</h4>
@@ -161,10 +181,17 @@
               loads attachments dynamically from the
               <code>attachments/</code> folder.
             </li>
-            <li><strong>Command:</strong> <code>npx generate-report</code></li>
+            <li>
+              <strong>Basic Command:</strong> <code>npx generate-report</code>
+              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+            </li>
+            <li>
+              <strong>Manual Override:</strong> <code>npx generate-report -o my-reports</code>
+              <br><small style="color: #666;">(Overrides config setting)</small>
+            </li>
             <li>
               <strong>Output:</strong>
-              <code>pulse-report/playwright-pulse-report.html</code>
+              <code>[outputDir]/playwright-pulse-report.html</code>
             </li>
           </ul>
           <h4>merge-pulse-report</h4>
@@ -174,7 +201,12 @@
               into a single master JSON file.
             </li>
             <li>
-              <strong>Command:</strong> <code>npx merge-pulse-report</code>
+              <strong>Basic Command:</strong> <code>npx merge-pulse-report</code>
+              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+            </li>
+            <li>
+              <strong>Manual Override:</strong> <code>npx merge-pulse-report --outputDir my-reports</code>
+              <br><small style="color: #666;">(Overrides config setting)</small>
             </li>
           </ul>
           <h4>send-email</h4>
@@ -183,7 +215,14 @@
               <strong>Purpose:</strong> To generate and distribute a lightweight
               summary report via email.
             </li>
-            <li><strong>Command:</strong> <code>npx send-email</code></li>
+            <li>
+              <strong>Basic Command:</strong> <code>npx send-email</code>
+              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+            </li>
+            <li>
+              <strong>Manual Override:</strong> <code>npx send-email --outputDir my-reports</code>
+              <br><small style="color: #666;">(Overrides config setting)</small>
+            </li>
           </ul>
         </section>
 
@@ -199,7 +238,14 @@
               <strong>Purpose:</strong> Archives the current test run's data to
               enable historical trend analysis.
             </li>
-            <li><strong>Command:</strong> <code>npx generate-trend</code></li>
+            <li>
+              <strong>Basic Command:</strong> <code>npx generate-trend</code>
+              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+            </li>
+            <li>
+              <strong>Manual Override:</strong> <code>npx generate-trend --outputDir my-reports</code>
+              <br><small style="color: #666;">(Overrides config setting)</small>
+            </li>
             <li>
               <strong>Details:</strong> The main report generation scripts call
               this automatically. You would run this manually if you only need
@@ -213,7 +259,12 @@
               without sending it.
             </li>
             <li>
-              <strong>Command:</strong> <code>npx generate-email-report</code>
+              <strong>Basic Command:</strong> <code>npx generate-email-report</code>
+              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+            </li>
+            <li>
+              <strong>Manual Override:</strong> <code>npx generate-email-report -o my-reports</code>
+              <br><small style="color: #666;">(Overrides config setting)</small>
             </li>
           </ul>
         </section>

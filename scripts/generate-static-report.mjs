@@ -5,6 +5,7 @@ import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
+import { getOutputDir } from "./config-reader.mjs";
 
 /**
  * Dynamically imports the 'chalk' library for terminal string styling.
@@ -1720,7 +1721,7 @@ function generateAIFailureAnalyzerTab(results) {
         </div>
     </div>
     <p class="ai-analyzer-description">
-        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for specific failed test.
+        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for instant analysis or use Copy AI Prompt to analyze with your preferred AI tool.
     </p>
     
     <div class="compact-failure-list">
@@ -1748,9 +1749,14 @@ function generateAIFailureAnalyzerTab(results) {
                         )}</span>
                     </div>
                 </div>
-                <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
-                    <span class="ai-text">AI Fix</span>
-                </button>
+                <div class="ai-buttons-group">
+                    <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
+                        <span class="ai-text">AI Fix</span>
+                    </button>
+                    <button class="copy-prompt-btn" onclick="copyAIPrompt(this)" data-test-json="${testJson}" title="Copy AI Prompt">
+                        <span class="copy-prompt-text">Copy AI Prompt</span>
+                    </button>
+                </div>
             </div>
             <div class="failure-error-preview">
                 <div class="error-snippet">${formatPlaywrightError(
@@ -1850,43 +1856,53 @@ function generateHTML(reportData, trendData = null) {
                         : ""
                     }<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
                   : ""
-              }${
-                (() => {
-                  if (!step.attachments || step.attachments.length === 0) return "";
-                  return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
-                    .map((attachment) => {
-                      try {
-                        const attachmentPath = path.resolve(
-                          DEFAULT_OUTPUT_DIR,
-                          attachment.path
-                        );
-                        if (!fsExistsSync(attachmentPath)) {
-                          return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
-                            attachment.name
-                          )}</div>`;
-                        }
-                        const attachmentBase64 = readFileSync(attachmentPath).toString("base64");
-                        const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
-                        return `<div class="attachment-item generic-attachment">
-                                  <div class="attachment-icon">${getAttachmentIcon(attachment.contentType)}</div>
+              }${(() => {
+                if (!step.attachments || step.attachments.length === 0)
+                  return "";
+                return `<div class="attachments-section"><h4>Step Attachments</h4><div class="attachments-grid">${step.attachments
+                  .map((attachment) => {
+                    try {
+                      const attachmentPath = path.resolve(
+                        DEFAULT_OUTPUT_DIR,
+                        attachment.path
+                      );
+                      if (!fsExistsSync(attachmentPath)) {
+                        return `<div class="attachment-item error">Attachment not found: ${sanitizeHTML(
+                          attachment.name
+                        )}</div>`;
+                      }
+                      const attachmentBase64 =
+                        readFileSync(attachmentPath).toString("base64");
+                      const attachmentDataUri = `data:${attachment.contentType};base64,${attachmentBase64}`;
+                      return `<div class="attachment-item generic-attachment">
+                                  <div class="attachment-icon">${getAttachmentIcon(
+                                    attachment.contentType
+                                  )}</div>
                                   <div class="attachment-caption">
-                                    <span class="attachment-name" title="${sanitizeHTML(attachment.name)}">${sanitizeHTML(attachment.name)}</span>
-                                    <span class="attachment-type">${sanitizeHTML(attachment.contentType)}</span>
+                                    <span class="attachment-name" title="${sanitizeHTML(
+                                      attachment.name
+                                    )}">${sanitizeHTML(attachment.name)}</span>
+                                    <span class="attachment-type">${sanitizeHTML(
+                                      attachment.contentType
+                                    )}</span>
                                   </div>
                                   <div class="attachment-info">
                                     <div class="trace-actions">
                                       <a href="#" data-href="${attachmentDataUri}" class="view-full lazy-load-attachment" target="_blank">View</a>
-                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(attachment.name)}">Download</a>
+                                      <a href="#" data-href="${attachmentDataUri}" class="lazy-load-attachment" download="${sanitizeHTML(
+                        attachment.name
+                      )}">Download</a>
                                     </div>
                                   </div>
                                 </div>`;
-                      } catch (e) {
-                        return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(attachment.name)}</div>`;
-                      }
-                    })
-                    .join("")}</div></div>`;
-                })()
-              }${
+                    } catch (e) {
+                      return `<div class="attachment-item error">Failed to load attachment: ${sanitizeHTML(
+                        attachment.name
+                      )}</div>`;
+                    }
+                  })
+                  .join("")}</div></div>`;
+              })()}${
                 hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
                       step.steps,
@@ -1903,7 +1919,9 @@ function generateHTML(reportData, trendData = null) {
           test.tags || []
         )
           .join(",")
-          .toLowerCase()}" data-test-id="${sanitizeHTML(String(test.id || testIndex))}">
+          .toLowerCase()}" data-test-id="${sanitizeHTML(
+          String(test.id || testIndex)
+        )}">
                     <div class="test-case-header" role="button" aria-expanded="false"><div class="test-case-summary"><span class="status-badge ${getStatusClass(
                       test.status
                     )}">${String(
@@ -1927,18 +1945,66 @@ function generateHTML(reportData, trendData = null) {
                         <p><strong>Full Path:</strong> ${sanitizeHTML(
                           test.name
                         )}</p>
+                        ${
+                          test.annotations && test.annotations.length > 0
+                            ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                                <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                                ${test.annotations
+                                  .map((annotation, idx) => {
+                                    const isIssueOrBug =
+                                      annotation.type === "issue" ||
+                                      annotation.type === "bug";
+                                    const descriptionText =
+                                      annotation.description || "";
+                                    const typeLabel = sanitizeHTML(
+                                      annotation.type
+                                    );
+                                    const descriptionHtml =
+                                      isIssueOrBug &&
+                                      descriptionText.match(/^[A-Z]+-\d+$/)
+                                        ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                                            descriptionText
+                                          )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                                            descriptionText
+                                          )}</a>`
+                                        : sanitizeHTML(descriptionText);
+                                    const locationText = annotation.location
+                                      ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                                          annotation.location.file
+                                        )}:${annotation.location.line}:${
+                                          annotation.location.column
+                                        }</div>`
+                                      : "";
+                                    return `<div style="margin-bottom: ${
+                                      idx < test.annotations.length - 1
+                                        ? "10px"
+                                        : "0"
+                                    };">
+                                    <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                                    ${
+                                      descriptionText
+                                        ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                                        : ""
+                                    }
+                                    ${locationText}
+                                  </div>`;
+                                  })
+                                  .join("")}
+                              </div>`
+                            : ""
+                        }
                         <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
                           test.workerId
                         )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
           test.totalWorkers
         )}]</p>
-                        ${
-                          test.errorMessage
-                            ? `<div class="test-error-summary">${formatPlaywrightError(
-                                test.errorMessage
-                              )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
-                            : ""
-                        }
+                            ${
+                              test.errorMessage
+                                ? `<div class="test-error-summary">${formatPlaywrightError(
+                                    test.errorMessage
+                                  )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)">Copy Error Prompt</button></div>`
+                                : ""
+                            }
                         ${
                           test.snippet
                             ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
@@ -1970,7 +2036,9 @@ function generateHTML(reportData, trendData = null) {
                         ${
                           test.stderr && test.stderr.length > 0
                             ? (() => {
-                                const logId = `stderr-log-${test.id || testIndex}`;
+                                const logId = `stderr-log-${
+                                  test.id || testIndex
+                                }`;
                                 return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre id="${logId}" class="console-log stderr-log">${test.stderr
                                   .map((line) => sanitizeHTML(line))
                                   .join("\\n")}</pre></div>`;
@@ -2369,9 +2437,14 @@ aspect-ratio: 16 / 9;
 .browser-indicator { background: var(--info-color); color: white; }
 #load-more-tests { font-size: 16px; padding: 4px; background-color: var(--light-gray-color); border-radius: 4px; color: var(--text-color); }
 .duration-indicator { background: var(--medium-gray-color); color: var(--text-color); }
+.ai-buttons-group { display: flex; gap: 10px; flex-wrap: wrap; }
 .compact-ai-btn { background: linear-gradient(135deg, #374151 0%, #1f2937 100%); color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap;}
 .compact-ai-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(55, 65, 81, 0.4); }
 .ai-text { font-size: 0.95em; }
+.copy-prompt-btn { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; white-space: nowrap;}
+.copy-prompt-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); }
+.copy-prompt-btn.copied { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.copy-prompt-text { font-size: 0.95em; }
 .failure-error-preview { padding: 0 20px 18px 20px; border-top: 1px solid var(--light-gray-color);}
 .error-snippet { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 12px; margin-bottom: 12px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4;}
 .expand-error-btn { background: none; border: 1px solid var(--border-color); color: var(--text-color-secondary); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;}
@@ -2382,7 +2455,7 @@ aspect-ratio: 16 / 9;
 .full-error-content { background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 6px; padding: 15px; font-family: monospace; font-size: 0.9em; color: var(--danger-color); line-height: 1.4; max-height: 300px; overflow-y: auto;}
 @media (max-width: 1200px) { .trend-charts-row { grid-template-columns: 1fr; } }
 @media (max-width: 992px) { .dashboard-bottom-row { grid-template-columns: 1fr; } .pie-chart-wrapper div[id^="pieChart-"] { max-width: 350px; margin: 0 auto; } .filters input { min-width: 180px; } .filters select { min-width: 150px; } }
-@media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .compact-ai-btn { justify-content: center; padding: 12px 20px; } }
+@media (max-width: 768px) { body { font-size: 15px; } .container { margin: 10px; padding: 20px; } .header { flex-direction: column; align-items: flex-start; gap: 15px; } .header h1 { font-size: 1.6em; } .run-info { text-align: left; font-size:0.9em; } .tabs { margin-bottom: 25px;} .tab-button { padding: 12px 20px; font-size: 1.05em;} .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px;} .summary-card .value {font-size: 2em;} .summary-card h3 {font-size: 0.95em;} .filters { flex-direction: column; padding: 18px; gap: 12px;} .filters input, .filters select, .filters button {width: 100%; box-sizing: border-box;} .test-case-header { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; } .test-case-summary {gap: 10px;} .test-case-title {font-size: 1.05em;} .test-case-meta { flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 8px;} .attachments-grid {grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px;} .test-history-grid {grid-template-columns: 1fr;} .pie-chart-wrapper {min-height: auto;} .ai-failure-cards-grid { grid-template-columns: 1fr; } .ai-analyzer-stats { flex-direction: column; gap: 15px; text-align: center; } .failure-header { flex-direction: column; align-items: stretch; gap: 15px; } .failure-main-info { text-align: center; } .failure-meta { justify-content: center; } .ai-buttons-group { flex-direction: column; width: 100%; } .compact-ai-btn, .copy-prompt-btn { justify-content: center; padding: 12px 20px; width: 100%; } }
 @media (max-width: 480px) { body {font-size: 14px;} .container {padding: 15px;} .header h1 {font-size: 1.4em;} #report-logo { height: 35px; width: 45px; } .tab-button {padding: 10px 15px; font-size: 1em;} .summary-card .value {font-size: 1.8em;} .attachments-grid {grid-template-columns: 1fr;} .step-item {padding-left: calc(var(--depth, 0) * 18px);} .test-case-content, .step-details {padding: 15px;} .trend-charts-row {gap: 20px;} .trend-chart {padding: 20px;} .stat-item .stat-number { font-size: 1.5em; } .failure-header { padding: 15px; } .failure-error-preview, .full-error-details { padding-left: 15px; padding-right: 15px; } }
 .trace-actions a { text-decoration: none; font-weight: 500; font-size: 0.9em; }
 .generic-attachment { text-align: center; padding: 1rem; justify-content: center; }
@@ -2651,6 +2724,81 @@ aspect-ratio: 16 / 9;
         }
     }
 
+    function copyAIPrompt(button) {
+        try {
+            const testJson = button.dataset.testJson;
+            const test = JSON.parse(atob(testJson));
+
+            const testName = test.name || 'Unknown Test';
+            const failureLogsAndErrors = [
+                'Error Message:',
+                test.errorMessage || 'Not available.',
+                '\\n\\n--- stdout ---',
+                (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
+                '\\n\\n--- stderr ---',
+                (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
+            ].join('\\n');
+            const codeSnippet = test.snippet || '';
+
+            const aiPrompt = \`You are an expert Playwright test automation engineer specializing in debugging test failures.
+
+INSTRUCTIONS:
+1. Analyze the test failure carefully
+2. Provide a brief root cause analysis
+3. Provide EXACTLY 5 specific, actionable fixes
+4. Each fix MUST include a code snippet (codeSnippet field)
+5. Return ONLY valid JSON, no markdown or extra text
+
+REQUIRED JSON FORMAT:
+{
+  "rootCause": "Brief explanation of why the test failed",
+  "suggestedFixes": [
+    {
+      "description": "Clear explanation of the fix",
+      "codeSnippet": "await page.waitForSelector('.button', { timeout: 5000 });"
+    }
+  ],
+  "affectedTests": ["test1", "test2"]
+}
+
+IMPORTANT:
+- Always return valid JSON only
+- Always provide exactly 5 fixes in suggestedFixes array
+- Each fix must have both description and codeSnippet fields
+- Make code snippets practical and Playwright-specific
+
+---
+
+Test Name: \${testName}
+
+Failure Logs and Errors:
+\${failureLogsAndErrors}
+
+Code Snippet:
+\${codeSnippet}\`;
+
+            navigator.clipboard.writeText(aiPrompt).then(() => {
+                const originalText = button.querySelector('.copy-prompt-text').textContent;
+                button.querySelector('.copy-prompt-text').textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                const shortTestName = testName.split(' > ').pop() || testName;
+                alert(\`AI prompt to generate a suggested fix for "\${shortTestName}" has been copied to your clipboard.\`);
+                
+                setTimeout(() => {
+                    button.querySelector('.copy-prompt-text').textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy AI prompt:', err);
+                alert('Failed to copy AI prompt to clipboard. Please try again.');
+            });
+        } catch (e) {
+            console.error('Error processing test data for AI Prompt copy:', e);
+            alert('Could not process test data. Please try again.');
+        }
+    }
+
     function closeAiModal() {
         const modal = document.getElementById('ai-fix-modal');
         if(modal) modal.style.display = 'none';
@@ -2826,6 +2974,18 @@ aspect-ratio: 16 / 9;
                 }
                 return;
             }
+            const annotationLink = e.target.closest('a.annotation-link');
+            if (annotationLink) {
+                e.preventDefault();
+                const annotationId = annotationLink.dataset.annotation;
+                if (annotationId) {
+                    const jiraUrl = prompt('Enter your JIRA/Ticket system base URL (e.g., https://your-company.atlassian.net/browse/):', 'https://your-company.atlassian.net/browse/');
+                    if (jiraUrl) {
+                        window.open(jiraUrl + annotationId, '_blank');
+                    }
+                }
+                return;
+            }
             const img = e.target.closest('img.lazy-load-image');
             if (img && img.dataset && img.dataset.src) {
                 if (e.preventDefault) e.preventDefault();
@@ -2994,10 +3154,10 @@ aspect-ratio: 16 / 9;
 </html>
   `;
 }
-async function runScript(scriptPath) {
+async function runScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
     console.log(chalk.blue(`Executing script: ${scriptPath}...`));
-    const process = fork(scriptPath, [], {
+    const process = fork(scriptPath, args, {
       stdio: "inherit",
     });
 
@@ -3027,13 +3187,22 @@ async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
+  const args = process.argv.slice(2);
+  let customOutputDir = null;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--outputDir" || args[i] === "-o") {
+      customOutputDir = args[i + 1];
+      break;
+    }
+  }
+
   // Script to archive current run to JSON history (this is your modified "generate-trend.mjs")
   const archiveRunScriptPath = path.resolve(
     __dirname,
     "generate-trend.mjs" // Keeping the filename as per your request
   );
 
-  const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
 
@@ -3043,10 +3212,21 @@ async function main() {
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
+  if (customOutputDir) {
+    console.log(chalk.gray(`  (from CLI argument)`));
+  } else {
+    const { exists } = await import("./config-reader.mjs").then((m) => ({
+      exists: true,
+    }));
+    console.log(
+      chalk.gray(`  (auto-detected from playwright.config or using default)`)
+    );
+  }
 
   // Step 1: Ensure current run data is archived to the history folder
   try {
-    await runScript(archiveRunScriptPath); // This script now handles JSON history
+    const archiveArgs = customOutputDir ? ["--outputDir", customOutputDir] : [];
+    await runScript(archiveRunScriptPath, archiveArgs);
     console.log(
       chalk.green("Current run data archiving to history completed.")
     );

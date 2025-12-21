@@ -5,6 +5,7 @@ import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
+import { getOutputDir } from "./config-reader.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -615,8 +616,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       chart: {
           type: 'pie',
           width: ${chartWidth},
-          height: ${chartHeight - 40
-    }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
+          height: ${
+            chartHeight - 40
+          }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
           backgroundColor: 'transparent',
           plotShadow: false,
           spacingBottom: 40 // Ensure space for legend
@@ -668,8 +670,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   return `
       <div class="pie-chart-wrapper" style="align-items: center; max-height: 450px">
           <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
-          <div id="${chartId}" style="width: ${chartWidth}px; height: ${chartHeight - 40
-    }px;"></div>
+          <div id="${chartId}" style="width: ${chartWidth}px; height: ${
+    chartHeight - 40
+  }px;"></div>
           <script>
               document.addEventListener('DOMContentLoaded', function() {
                   if (typeof Highcharts !== 'undefined') {
@@ -897,14 +900,15 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
             <span class="env-detail-value">
               <div class="env-cpu-cores">
                 ${Array.from(
-    { length: Math.max(0, environment.cpu.cores || 0) },
-    (_, i) =>
-      `<div class="env-core-indicator ${i >=
-        (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
-        ? "inactive"
-        : ""
-      }" title="Core ${i + 1}"></div>`
-  ).join("")}
+                  { length: Math.max(0, environment.cpu.cores || 0) },
+                  (_, i) =>
+                    `<div class="env-core-indicator ${
+                      i >=
+                      (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
+                        ? "inactive"
+                        : ""
+                    }" title="Core ${i + 1}"></div>`
+                ).join("")}
                 <span>${environment.cpu.cores || "N/A"} cores</span>
               </div>
             </span>
@@ -924,20 +928,23 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
         <div class="env-card-content">
           <div class="env-detail-row">
             <span class="env-detail-label">OS Type</span>
-            <span class="env-detail-value">${environment.os.split(" ")[0] === "darwin"
-      ? "darwin (macOS)"
-      : environment.os.split(" ")[0] || "Unknown"
-    }</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[0] === "darwin"
+                ? "darwin (macOS)"
+                : environment.os.split(" ")[0] || "Unknown"
+            }</span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">OS Version</span>
-            <span class="env-detail-value">${environment.os.split(" ")[1] || "N/A"
-    }</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[1] || "N/A"
+            }</span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Hostname</span>
-            <span class="env-detail-value" title="${environment.host}">${environment.host
-    }</span>
+            <span class="env-detail-value" title="${environment.host}">${
+    environment.host
+  }</span>
           </div>
         </div>
       </div>
@@ -958,10 +965,11 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Working Dir</span>
-            <span class="env-detail-value" title="${environment.cwd}">${environment.cwd.length > 25
+            <span class="env-detail-value" title="${environment.cwd}">${
+    environment.cwd.length > 25
       ? "..." + environment.cwd.slice(-22)
       : environment.cwd
-    }</span>
+  }</span>
           </div>
         </div>
       </div>
@@ -975,30 +983,33 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
           <div class="env-detail-row">
             <span class="env-detail-label">Platform Arch</span>
             <span class="env-detail-value">
-              <span class="env-chip ${environment.os.includes("darwin") &&
-      environment.cpu.model.toLowerCase().includes("apple")
-      ? "env-chip-success"
-      : "env-chip-warning"
-    }">
-                ${environment.os.includes("darwin") &&
-      environment.cpu.model.toLowerCase().includes("apple")
-      ? "Apple Silicon"
-      : environment.cpu.model.toLowerCase().includes("arm") ||
-        environment.cpu.model.toLowerCase().includes("aarch64")
-        ? "ARM-based"
-        : "x86/Other"
-    }
+              <span class="env-chip ${
+                environment.os.includes("darwin") &&
+                environment.cpu.model.toLowerCase().includes("apple")
+                  ? "env-chip-success"
+                  : "env-chip-warning"
+              }">
+                ${
+                  environment.os.includes("darwin") &&
+                  environment.cpu.model.toLowerCase().includes("apple")
+                    ? "Apple Silicon"
+                    : environment.cpu.model.toLowerCase().includes("arm") ||
+                      environment.cpu.model.toLowerCase().includes("aarch64")
+                    ? "ARM-based"
+                    : "x86/Other"
+                }
               </span>
             </span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Memory per Core</span>
-            <span class="env-detail-value">${environment.cpu.cores > 0
-      ? (
-        parseFloat(environment.memory) / environment.cpu.cores
-      ).toFixed(2) + " GB"
-      : "N/A"
-    }</span>
+            <span class="env-detail-value">${
+              environment.cpu.cores > 0
+                ? (
+                    parseFloat(environment.memory) / environment.cpu.cores
+                  ).toFixed(2) + " GB"
+                : "N/A"
+            }</span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Run Context</span>
@@ -1330,19 +1341,19 @@ function generateTestHistoryContent(trendData) {
       
       <div class="test-history-grid">
         ${testHistory
-      .map((test) => {
-        const latestRun =
-          test.history.length > 0
-            ? test.history[test.history.length - 1]
-            : { status: "unknown" };
-        return `
+          .map((test) => {
+            const latestRun =
+              test.history.length > 0
+                ? test.history[test.history.length - 1]
+                : { status: "unknown" };
+            return `
             <div class="test-history-card" data-test-name="${sanitizeHTML(
-          test.testTitle.toLowerCase()
-        )}" data-latest-status="${latestRun.status}">
+              test.testTitle.toLowerCase()
+            )}" data-latest-status="${latestRun.status}">
               <div class="test-history-header">
                 <p title="${sanitizeHTML(test.testTitle)}">${capitalize(
-          sanitizeHTML(test.testTitle)
-        )}</p>
+              sanitizeHTML(test.testTitle)
+            )}</p>
                 <span class="status-badge ${getStatusClass(latestRun.status)}">
                   ${String(latestRun.status).toUpperCase()}
                 </span>
@@ -1357,27 +1368,27 @@ function generateTestHistoryContent(trendData) {
                     <thead><tr><th>Run</th><th>Status</th><th>Duration</th><th>Date</th></tr></thead>
                     <tbody>
                       ${test.history
-            .slice()
-            .reverse()
-            .map(
-              (run) => `
+                        .slice()
+                        .reverse()
+                        .map(
+                          (run) => `
                         <tr>
                           <td>${run.runId}</td>
                           <td><span class="status-badge-small ${getStatusClass(
-                run.status
-              )}">${String(run.status).toUpperCase()}</span></td>
+                            run.status
+                          )}">${String(run.status).toUpperCase()}</span></td>
                           <td>${formatDuration(run.duration)}</td>
                           <td>${formatDate(run.timestamp)}</td>
                         </tr>`
-            )
-            .join("")}
+                        )
+                        .join("")}
                     </tbody>
                   </table>
                 </div>
               </details>
             </div>`;
-      })
-      .join("")}
+          })
+          .join("")}
       </div>
     </div>
   `;
@@ -1462,11 +1473,12 @@ function generateSuitesWidget(suitesData) {
 <div class="suites-widget">
   <div class="suites-header">
     <h2>Test Suites</h2>
-    <span class="summary-badge">${suitesData.length
+    <span class="summary-badge">${
+      suitesData.length
     } suites • ${suitesData.reduce(
-      (sum, suite) => sum + suite.count,
-      0
-    )} tests</span>
+    (sum, suite) => sum + suite.count,
+    0
+  )} tests</span>
   </div>
   <div class="suites-grid">
     ${suitesData
@@ -1479,24 +1491,28 @@ function generateSuitesWidget(suitesData) {
         )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
       </div>
       <div>🖥️ <span class="browser-tag">${sanitizeHTML(
-          suite.browser
-        )}</span></div>
+        suite.browser
+      )}</span></div>
       <div class="suite-card-body">
-        <span class="test-count">${suite.count} test${suite.count !== 1 ? "s" : ""
-          }</span>
+        <span class="test-count">${suite.count} test${
+          suite.count !== 1 ? "s" : ""
+        }</span>
         <div class="suite-stats">
-            ${suite.passed > 0
-            ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-            : ""
-          }
-            ${suite.failed > 0
-            ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-            : ""
-          }
-            ${suite.skipped > 0
-            ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-            : ""
-          }
+            ${
+              suite.passed > 0
+                ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
+                : ""
+            }
+            ${
+              suite.failed > 0
+                ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
+                : ""
+            }
+            ${
+              suite.skipped > 0
+                ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
+                : ""
+            }
         </div>
       </div>
     </div>`
@@ -1519,7 +1535,9 @@ function getAttachmentIcon(contentType) {
   return "📎";
 }
 function generateAIFailureAnalyzerTab(results) {
-  const failedTests = (results || []).filter(test => test.status === 'failed');
+  const failedTests = (results || []).filter(
+    (test) => test.status === "failed"
+  );
 
   if (failedTests.length === 0) {
     return `
@@ -1529,7 +1547,7 @@ function generateAIFailureAnalyzerTab(results) {
   }
 
   // btoa is not available in Node.js environment, so we define a simple polyfill for it.
-  const btoa = (str) => Buffer.from(str).toString('base64');
+  const btoa = (str) => Buffer.from(str).toString("base64");
 
   return `
     <h2 class="tab-main-title">AI Failure Analysis</h2>
@@ -1539,41 +1557,61 @@ function generateAIFailureAnalyzerTab(results) {
             <span class="stat-label">Failed Tests</span>
         </div>
         <div class="stat-item">
-            <span class="stat-number">${new Set(failedTests.map(t => t.browser)).size}</span>
+            <span class="stat-number">${
+              new Set(failedTests.map((t) => t.browser)).size
+            }</span>
             <span class="stat-label">Browsers</span>
         </div>
         <div class="stat-item">
-            <span class="stat-number">${(Math.round(failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) / 1000))}s</span>
+            <span class="stat-number">${Math.round(
+              failedTests.reduce((sum, test) => sum + (test.duration || 0), 0) /
+                1000
+            )}s</span>
             <span class="stat-label">Total Duration</span>
         </div>
     </div>
     <p class="ai-analyzer-description">
-        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for specific failed test.
+        Analyze failed tests using AI to get suggestions and potential fixes. Click the AI Fix button for instant analysis or use Copy AI Prompt to analyze with your preferred AI tool.
     </p>
     
     <div class="compact-failure-list">
-      ${failedTests.map(test => {
-    const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
-    const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
-    const truncatedError = (test.errorMessage || "No error message").slice(0, 150) +
-      (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
+      ${failedTests
+        .map((test) => {
+          const testTitle = test.name.split(" > ").pop() || "Unnamed Test";
+          const testJson = btoa(JSON.stringify(test)); // Base64 encode the test object
+          const truncatedError =
+            (test.errorMessage || "No error message").slice(0, 150) +
+            (test.errorMessage && test.errorMessage.length > 150 ? "..." : "");
 
-    return `
+          return `
         <div class="compact-failure-item">
             <div class="failure-header">
                 <div class="failure-main-info">
-                    <h3 class="failure-title" title="${sanitizeHTML(test.name)}">${sanitizeHTML(testTitle)}</h3>
+                    <h3 class="failure-title" title="${sanitizeHTML(
+                      test.name
+                    )}">${sanitizeHTML(testTitle)}</h3>
                     <div class="failure-meta">
-                        <span class="browser-indicator">${sanitizeHTML(test.browser || 'unknown')}</span>
-                        <span class="duration-indicator">${formatDuration(test.duration)}</span>
+                        <span class="browser-indicator">${sanitizeHTML(
+                          test.browser || "unknown"
+                        )}</span>
+                        <span class="duration-indicator">${formatDuration(
+                          test.duration
+                        )}</span>
                     </div>
                 </div>
-                <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
-                    <span class="ai-text">AI Fix</span>
-                </button>
+                <div class="ai-buttons-group">
+                    <button class="compact-ai-btn" onclick="getAIFix(this)" data-test-json="${testJson}">
+                        <span class="ai-text">AI Fix</span>
+                    </button>
+                    <button class="copy-prompt-btn" onclick="copyAIPrompt(this)" data-test-json="${testJson}" title="Copy AI Prompt">
+                        <span class="copy-prompt-text">Copy AI Prompt</span>
+                    </button>
+                </div>
             </div>
             <div class="failure-error-preview">
-                <div class="error-snippet">${formatPlaywrightError(truncatedError)}</div>
+                <div class="error-snippet">${formatPlaywrightError(
+                  truncatedError
+                )}</div>
                 <button class="expand-error-btn" onclick="toggleErrorDetails(this)">
                     <span class="expand-text">Show Full Error</span>
                     <span class="expand-icon">▼</span>
@@ -1581,12 +1619,15 @@ function generateAIFailureAnalyzerTab(results) {
             </div>
             <div class="full-error-details" style="display: none;">
                 <div class="full-error-content">
-                    ${formatPlaywrightError(test.errorMessage || "No detailed error message available")}
+                    ${formatPlaywrightError(
+                      test.errorMessage || "No detailed error message available"
+                    )}
                 </div>
             </div>
         </div>
-        `
-  }).join('')}
+        `;
+        })
+        .join("")}
     </div>
 
     <!-- AI Fix Modal -->
@@ -1618,7 +1659,7 @@ function generateHTML(reportData, trendData = null) {
   const fixPath = (p) => {
     if (!p) return "";
     // This regex handles both forward slashes and backslashes
-    return p.replace(new RegExp(`^${DEFAULT_OUTPUT_DIR}[\\\\/]`), '');
+    return p.replace(new RegExp(`^${DEFAULT_OUTPUT_DIR}[\\\\/]`), "");
   };
 
   const totalTestsOr1 = runSummary.totalTests || 1;
@@ -1663,20 +1704,23 @@ function generateHTML(reportData, trendData = null) {
               )}</span>
             </div>
             <div class="step-details" style="display: none;">
-              ${step.codeLocation
+              ${
+                step.codeLocation
                   ? `<div class="step-info code-section"><strong>Location:</strong> ${sanitizeHTML(
-                    step.codeLocation
-                  )}</div>`
-                  : ""
-                }
-              ${step.errorMessage
-                  ? `<div class="test-error-summary">
-                      ${step.stackTrace
-                    ? `<div class="stack-trace">${formatPlaywrightError(
-                      step.stackTrace
+                      step.codeLocation
                     )}</div>`
-                    : ""
-                  }
+                  : ""
+              }
+              ${
+                step.errorMessage
+                  ? `<div class="test-error-summary">
+                      ${
+                        step.stackTrace
+                          ? `<div class="stack-trace">${formatPlaywrightError(
+                              step.stackTrace
+                            )}</div>`
+                          : ""
+                      }
                       <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
@@ -1698,14 +1742,15 @@ function generateHTML(reportData, trendData = null) {
                       </button>
                     </div>`
                   : ""
-                }
-              ${hasNestedSteps
+              }
+              ${
+                hasNestedSteps
                   ? `<div class="nested-steps">${generateStepsHTML(
-                    step.steps,
-                    depth + 1
-                  )}</div>`
+                      step.steps,
+                      depth + 1
+                    )}</div>`
                   : ""
-                }
+              }
             </div>
           </div>`;
             })
@@ -1713,41 +1758,86 @@ function generateHTML(reportData, trendData = null) {
         };
 
         return `
-      <div class="test-case" data-status="${test.status
-          }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
-            .join(",")
-            .toLowerCase()}">
+      <div class="test-case" data-status="${
+        test.status
+      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
+          .join(",")
+          .toLowerCase()}">
         <div class="test-case-header" role="button" aria-expanded="false">
           <div class="test-case-summary">
             <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status
-            ).toUpperCase()}</span>
+          test.status
+        ).toUpperCase()}</span>
             <span class="test-case-title" title="${sanitizeHTML(
               test.name
             )}">${sanitizeHTML(testTitle)}</span>
             <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
           </div>
           <div class="test-case-meta">
-            ${test.tags && test.tags.length > 0
-            ? test.tags
-              .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-              .join(" ")
-            : ""
-          }
+            ${
+              test.tags && test.tags.length > 0
+                ? test.tags
+                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                    .join(" ")
+                : ""
+            }
             <span class="test-duration">${formatDuration(test.duration)}</span>
           </div>
         </div>
         <div class="test-case-content" style="display: none;">
           <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+          ${
+            test.annotations && test.annotations.length > 0
+              ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                  <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                  ${test.annotations
+                    .map((annotation, idx) => {
+                      const isIssueOrBug =
+                        annotation.type === "issue" ||
+                        annotation.type === "bug";
+                      const descriptionText = annotation.description || "";
+                      const typeLabel = sanitizeHTML(annotation.type);
+                      const descriptionHtml =
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
+                          ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                              descriptionText
+                            )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                              descriptionText
+                            )}</a>`
+                          : sanitizeHTML(descriptionText);
+                      const locationText = annotation.location
+                        ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                            annotation.location.file
+                          )}:${annotation.location.line}:${
+                            annotation.location.column
+                          }</div>`
+                        : "";
+                      return `<div style="margin-bottom: ${
+                        idx < test.annotations.length - 1 ? "10px" : "0"
+                      };">
+                      <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                      ${
+                        descriptionText
+                          ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                          : ""
+                      }
+                      ${locationText}
+                    </div>`;
+                    })
+                    .join("")}
+                </div>`
+              : ""
+          }
           <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
             test.workerId
           )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers
-          )}]</p>
-          ${test.errorMessage
-            ? `<div class="test-error-summary">${formatPlaywrightError(
-              test.errorMessage
-            )}
+          test.totalWorkers
+        )}]</p>
+          ${
+            test.errorMessage
+              ? `<div class="test-error-summary">${formatPlaywrightError(
+                  test.errorMessage
+                )}
                 <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
@@ -1768,13 +1858,14 @@ function generateHTML(reportData, trendData = null) {
                         Copy Error Prompt
                       </button>
                 </div>`
-            : ""
+              : ""
           }
-          ${test.snippet
-            ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-              test.snippet
-            )}</code></pre></div>`
-            : ""
+          ${
+            test.snippet
+              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                  test.snippet
+                )}</code></pre></div>`
+              : ""
           }
           <h4>Steps</h4>
           <div class="steps-list">${generateStepsHTML(test.steps)}</div>
@@ -1793,75 +1884,86 @@ function generateHTML(reportData, trendData = null) {
                           </div>
                       </div>`;
           })()}
-          ${test.stderr && test.stderr.length > 0
-            ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-              test.stderr.map((line) => sanitizeHTML(line)).join("\n")
-            )}</pre></div>`
-            : ""
+          ${
+            test.stderr && test.stderr.length > 0
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  test.stderr.map((line) => sanitizeHTML(line)).join("\n")
+                )}</pre></div>`
+              : ""
           }
-          ${test.screenshots && test.screenshots.length > 0
-            ? `
+          ${
+            test.screenshots && test.screenshots.length > 0
+              ? `
             <div class="attachments-section">
                 <h4>Screenshots</h4>
                 <div class="attachments-grid">
                 ${test.screenshots
-              .map(
-                (screenshot, index) => `
+                  .map(
+                    (screenshot, index) => `
                     <div class="attachment-item">
-                    <img src="${fixPath(screenshot)}" alt="Screenshot ${index + 1}">
+                    <img src="${fixPath(screenshot)}" alt="Screenshot ${
+                      index + 1
+                    }">
                     <div class="attachment-info">
                         <div class="trace-actions">
-                        <a href="${fixPath(screenshot)}" target="_blank" class="view-full">View Full Image</a>
-                        <a href="${fixPath(screenshot)}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
+                        <a href="${fixPath(
+                          screenshot
+                        )}" target="_blank" class="view-full">View Full Image</a>
+                        <a href="${fixPath(
+                          screenshot
+                        )}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
                         </div>
                     </div>
                     </div>
                 `
-              )
-              .join("")}
+                  )
+                  .join("")}
                 </div>
             </div>
             `
-            : ""
+              : ""
           }
-          ${test.videoPath && test.videoPath.length > 0
-            ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
-              .map((videoUrl, index) => {
-                const fixedVideoUrl = fixPath(videoUrl);
-                const fileExtension = String(fixedVideoUrl)
-                  .split(".")
-                  .pop()
-                  .toLowerCase();
-                const mimeType =
-                  {
-                    mp4: "video/mp4",
-                    webm: "video/webm",
-                    ogg: "video/ogg",
-                    mov: "video/quicktime",
-                    avi: "video/x-msvideo",
-                  }[fileExtension] || "video/mp4";
-                return `<div class="attachment-item video-item">
-                            <video controls width="100%" height="auto" title="Video ${index + 1
-                  }">
+          ${
+            test.videoPath && test.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
+                  .map((videoUrl, index) => {
+                    const fixedVideoUrl = fixPath(videoUrl);
+                    const fileExtension = String(fixedVideoUrl)
+                      .split(".")
+                      .pop()
+                      .toLowerCase();
+                    const mimeType =
+                      {
+                        mp4: "video/mp4",
+                        webm: "video/webm",
+                        ogg: "video/ogg",
+                        mov: "video/quicktime",
+                        avi: "video/x-msvideo",
+                      }[fileExtension] || "video/mp4";
+                    return `<div class="attachment-item video-item">
+                            <video controls width="100%" height="auto" title="Video ${
+                              index + 1
+                            }">
                                 <source src="${sanitizeHTML(
-                    fixedVideoUrl
-                  )}" type="${mimeType}">
+                                  fixedVideoUrl
+                                )}" type="${mimeType}">
                                 Your browser does not support the video tag.
                             </video>
                             <div class="attachment-info">
                                 <div class="trace-actions">
                                 <a href="${sanitizeHTML(
-                    fixedVideoUrl
-                  )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
+                                  fixedVideoUrl
+                                )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
                                 </div>
                             </div>
                         </div>`;
-              })
-              .join("")}</div></div>`
-            : ""
+                  })
+                  .join("")}</div></div>`
+              : ""
           }
-          ${test.tracePath
-            ? `
+          ${
+            test.tracePath
+              ? `
             <div class="attachments-section">
                 <h4>Trace Files</h4>
                 <div class="attachments-grid">
@@ -1869,70 +1971,72 @@ function generateHTML(reportData, trendData = null) {
                         <div class="trace-preview">
                         <span class="trace-icon">📄</span>
                         <span class="trace-name">${sanitizeHTML(
-              path.basename(test.tracePath)
-            )}</span>
+                          path.basename(test.tracePath)
+                        )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                             <a href="${sanitizeHTML(
-              fixPath(test.tracePath)
-            )}" target="_blank" download="${sanitizeHTML(
-              path.basename(test.tracePath)
-            )}" class="download-trace">Download Trace</a>
+                              fixPath(test.tracePath)
+                            )}" target="_blank" download="${sanitizeHTML(
+                  path.basename(test.tracePath)
+                )}" class="download-trace">Download Trace</a>
                         </div>
                         </div>
                     </div>
                 </div>
             </div>
             `
-            : ""
+              : ""
           }
-          ${test.attachments && test.attachments.length > 0
-            ? `
+          ${
+            test.attachments && test.attachments.length > 0
+              ? `
             <div class="attachments-section">
                 <h4>Other Attachments</h4>
                 <div class="attachments-grid">
                 ${test.attachments
-              .map(
-                (attachment) => `
+                  .map(
+                    (attachment) => `
                     <div class="attachment-item generic-attachment">
                         <div class="attachment-icon">${getAttachmentIcon(
-                  attachment.contentType
-                )}</div>
+                          attachment.contentType
+                        )}</div>
                         <div class="attachment-caption">
                         <span class="attachment-name" title="${sanitizeHTML(
-                  attachment.name
-                )}">${sanitizeHTML(attachment.name)}</span>
+                          attachment.name
+                        )}">${sanitizeHTML(attachment.name)}</span>
                         <span class="attachment-type">${sanitizeHTML(
-                  attachment.contentType
-                )}</span>
+                          attachment.contentType
+                        )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                         <a href="${sanitizeHTML(
-                  fixPath(attachment.path)
-                )}" target="_blank" class="view-full">View</a>
+                          fixPath(attachment.path)
+                        )}" target="_blank" class="view-full">View</a>
                             <a href="${sanitizeHTML(
-                  fixPath(attachment.path)
-                )}" target="_blank" download="${sanitizeHTML(
-                  attachment.name
-                )}" class="download-trace">Download</a>
+                              fixPath(attachment.path)
+                            )}" target="_blank" download="${sanitizeHTML(
+                      attachment.name
+                    )}" class="download-trace">Download</a>
                         </div>
                         </div>
                     </div>
                 `
-              )
-              .join("")}
+                  )
+                  .join("")}
                 </div>
             </div>
             `
-            : ""
+              : ""
           }
-          ${test.codeSnippet
-            ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-              sanitizeHTML(test.codeSnippet)
-            )}</code></pre></div>`
-            : ""
+          ${
+            test.codeSnippet
+              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
+                  sanitizeHTML(test.codeSnippet)
+                )}</code></pre></div>`
+              : ""
           }
         </div>
       </div>`;
@@ -2238,6 +2342,35 @@ function generateHTML(reportData, trendData = null) {
         .ai-text { 
             font-size: 0.95em; 
         }
+        .ai-buttons-group { 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+        }
+        .copy-prompt-btn { 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.3s ease; 
+            white-space: nowrap;
+        }
+        .copy-prompt-btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); 
+        }
+        .copy-prompt-btn.copied { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+        }
+        .copy-prompt-text { 
+            font-size: 0.95em; 
+        }
         .failure-error-preview { 
             padding: 0 20px 18px 20px; 
             border-top: 1px solid var(--light-gray-color);
@@ -2313,9 +2446,14 @@ function generateHTML(reportData, trendData = null) {
             .failure-meta { 
                 justify-content: center; 
             }
-            .compact-ai-btn { 
+            .ai-buttons-group { 
+                flex-direction: column; 
+                width: 100%; 
+            }
+            .compact-ai-btn, .copy-prompt-btn { 
                 justify-content: center; 
                 padding: 12px 20px; 
+                width: 100%; 
             }
         }
         @media (max-width: 480px) {
@@ -2345,8 +2483,8 @@ function generateHTML(reportData, trendData = null) {
                 <h1>Playwright Pulse Report</h1>
             </div>
             <div class="run-info"><strong>Run Date:</strong> ${formatDate(
-    runSummary.timestamp
-  )}<br><strong>Total Duration:</strong> ${formatDuration(
+              runSummary.timestamp
+            )}<br><strong>Total Duration:</strong> ${formatDuration(
     runSummary.duration
   )}</div>
         </header>
@@ -2358,35 +2496,40 @@ function generateHTML(reportData, trendData = null) {
         </div>
         <div id="dashboard" class="tab-content active">
             <div class="dashboard-grid">
-                <div class="summary-card"><h3>Total Tests</h3><div class="value">${runSummary.totalTests
-    }</div></div>
-                <div class="summary-card status-passed"><h3>Passed</h3><div class="value">${runSummary.passed
-    }</div><div class="trend-percentage">${passPercentage}%</div></div>
-                <div class="summary-card status-failed"><h3>Failed</h3><div class="value">${runSummary.failed
-    }</div><div class="trend-percentage">${failPercentage}%</div></div>
-                <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${runSummary.skipped || 0
-    }</div><div class="trend-percentage">${skipPercentage}%</div></div>
+                <div class="summary-card"><h3>Total Tests</h3><div class="value">${
+                  runSummary.totalTests
+                }</div></div>
+                <div class="summary-card status-passed"><h3>Passed</h3><div class="value">${
+                  runSummary.passed
+                }</div><div class="trend-percentage">${passPercentage}%</div></div>
+                <div class="summary-card status-failed"><h3>Failed</h3><div class="value">${
+                  runSummary.failed
+                }</div><div class="trend-percentage">${failPercentage}%</div></div>
+                <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
+                  runSummary.skipped || 0
+                }</div><div class="trend-percentage">${skipPercentage}%</div></div>
                 <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
-      runSummary.duration
-    )}</div></div>
+                  runSummary.duration
+                )}</div></div>
             </div>
             <div class="dashboard-bottom-row">
               <div style="display: grid; gap: 20px">
                 ${generatePieChart(
-      [
-        { label: "Passed", value: runSummary.passed },
-        { label: "Failed", value: runSummary.failed },
-        { label: "Skipped", value: runSummary.skipped || 0 },
-      ],
-      400,
-      390
-    )} 
-                ${runSummary.environment &&
-      Object.keys(runSummary.environment).length > 0
-      ? generateEnvironmentDashboard(runSummary.environment)
-      : '<div class="no-data">Environment data not available.</div>'
-    }
+                  [
+                    { label: "Passed", value: runSummary.passed },
+                    { label: "Failed", value: runSummary.failed },
+                    { label: "Skipped", value: runSummary.skipped || 0 },
+                  ],
+                  400,
+                  390
+                )} 
+                ${
+                  runSummary.environment &&
+                  Object.keys(runSummary.environment).length > 0
+                    ? generateEnvironmentDashboard(runSummary.environment)
+                    : '<div class="no-data">Environment data not available.</div>'
+                }
               </div> 
                 ${generateSuitesWidget(suitesData)}
             </div>
@@ -2396,17 +2539,17 @@ function generateHTML(reportData, trendData = null) {
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
                 <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
                 <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
-      new Set(
-        (results || []).map((test) => test.browser || "unknown")
-      )
-    )
-      .map(
-        (browser) =>
-          `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
-            browser
-          )}</option>`
-      )
-      .join("")}</select>
+                  new Set(
+                    (results || []).map((test) => test.browser || "unknown")
+                  )
+                )
+                  .map(
+                    (browser) =>
+                      `<option value="${sanitizeHTML(browser)}">${sanitizeHTML(
+                        browser
+                      )}</option>`
+                  )
+                  .join("")}</select>
                 <button id="expand-all-tests">Expand All</button> <button id="collapse-all-tests">Collapse All</button> <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
             <div class="test-cases-list">${generateTestCasesHTML()}</div>
@@ -2415,16 +2558,18 @@ function generateHTML(reportData, trendData = null) {
           <h2 class="tab-main-title">Execution Trends</h2>
           <div class="trend-charts-row">
             <div class="trend-chart"><h3 class="chart-title-header">Test Volume & Outcome Trends</h3>
-              ${trendData && trendData.overall && trendData.overall.length > 0
-      ? generateTestTrendsChart(trendData)
-      : '<div class="no-data">Overall trend data not available for test counts.</div>'
-    }
+              ${
+                trendData && trendData.overall && trendData.overall.length > 0
+                  ? generateTestTrendsChart(trendData)
+                  : '<div class="no-data">Overall trend data not available for test counts.</div>'
+              }
             </div>
             <div class="trend-chart"><h3 class="chart-title-header">Execution Duration Trends</h3>
-              ${trendData && trendData.overall && trendData.overall.length > 0
-      ? generateDurationTrendChart(trendData)
-      : '<div class="no-data">Overall trend data not available for durations.</div>'
-    }
+              ${
+                trendData && trendData.overall && trendData.overall.length > 0
+                  ? generateDurationTrendChart(trendData)
+                  : '<div class="no-data">Overall trend data not available for durations.</div>'
+              }
             </div>
           </div>
           <h2 class="tab-main-title">Test Distribution by Worker ${infoTooltip}</h2>
@@ -2434,12 +2579,13 @@ function generateHTML(reportData, trendData = null) {
              </div>
           </div>
           <h2 class="tab-main-title">Individual Test History</h2>
-          ${trendData &&
-      trendData.testRuns &&
-      Object.keys(trendData.testRuns).length > 0
-      ? generateTestHistoryContent(trendData)
-      : '<div class="no-data">Individual test history data not available.</div>'
-    }
+          ${
+            trendData &&
+            trendData.testRuns &&
+            Object.keys(trendData.testRuns).length > 0
+              ? generateTestHistoryContent(trendData)
+              : '<div class="no-data">Individual test history data not available.</div>'
+          }
         </div>
         <div id="ai-failure-analyzer" class="tab-content">
             ${generateAIFailureAnalyzerTab(results)}
@@ -2582,6 +2728,81 @@ function getAIFix(button) {
 }
 
 
+    function copyAIPrompt(button) {
+        try {
+            const testJson = button.dataset.testJson;
+            const test = JSON.parse(atob(testJson));
+
+            const testName = test.name || 'Unknown Test';
+            const failureLogsAndErrors = [
+                'Error Message:',
+                test.errorMessage || 'Not available.',
+                '\\n\\n--- stdout ---',
+                (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
+                '\\n\\n--- stderr ---',
+                (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
+            ].join('\\n');
+            const codeSnippet = test.snippet || '';
+
+            const aiPrompt = \`You are an expert Playwright test automation engineer specializing in debugging test failures.
+
+INSTRUCTIONS:
+1. Analyze the test failure carefully
+2. Provide a brief root cause analysis
+3. Provide EXACTLY 5 specific, actionable fixes
+4. Each fix MUST include a code snippet (codeSnippet field)
+5. Return ONLY valid JSON, no markdown or extra text
+
+REQUIRED JSON FORMAT:
+{
+  "rootCause": "Brief explanation of why the test failed",
+  "suggestedFixes": [
+    {
+      "description": "Clear explanation of the fix",
+      "codeSnippet": "await page.waitForSelector('.button', { timeout: 5000 });"
+    }
+  ],
+  "affectedTests": ["test1", "test2"]
+}
+
+IMPORTANT:
+- Always return valid JSON only
+- Always provide exactly 5 fixes in suggestedFixes array
+- Each fix must have both description and codeSnippet fields
+- Make code snippets practical and Playwright-specific
+
+---
+
+Test Name: \${testName}
+
+Failure Logs and Errors:
+\${failureLogsAndErrors}
+
+Code Snippet:
+\${codeSnippet}\`;
+
+            navigator.clipboard.writeText(aiPrompt).then(() => {
+                const originalText = button.querySelector('.copy-prompt-text').textContent;
+                button.querySelector('.copy-prompt-text').textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                const shortTestName = testName.split(' > ').pop() || testName;
+                alert(\`AI prompt to generate a suggested fix for "\${shortTestName}" has been copied to your clipboard.\`);
+                
+                setTimeout(() => {
+                    button.querySelector('.copy-prompt-text').textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy AI prompt:', err);
+                alert('Failed to copy AI prompt to clipboard. Please try again.');
+            });
+        } catch (e) {
+            console.error('Error processing test data for AI Prompt copy:', e);
+            alert('Could not process test data. Please try again.');
+        }
+    }
+
     function closeAiModal() {
         const modal = document.getElementById('ai-fix-modal');
         if(modal) modal.style.display = 'none';
@@ -2702,6 +2923,19 @@ function getAIFix(button) {
         }
         if (expandAllBtn) expandAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('block', 'true'));
         if (collapseAllBtn) collapseAllBtn.addEventListener('click', () => setAllTestRunDetailsVisibility('none', 'false'));
+        // --- Annotation Link Handler ---
+        document.querySelectorAll('a.annotation-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const annotationId = link.dataset.annotation;
+                if (annotationId) {
+                    const jiraUrl = prompt('Enter your JIRA/Ticket system base URL (e.g., https://your-company.atlassian.net/browse/):', 'https://your-company.atlassian.net/browse/');
+                    if (jiraUrl) {
+                        window.open(jiraUrl + annotationId, '_blank');
+                    }
+                }
+            });
+        });
         // --- Intersection Observer for Lazy Loading ---
         const lazyLoadElements = document.querySelectorAll('.lazy-load-chart');
         if ('IntersectionObserver' in window) {
@@ -2817,10 +3051,10 @@ function copyErrorToClipboard(button) {
 </html>
   `;
 }
-async function runScript(scriptPath) {
+async function runScript(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
     console.log(chalk.blue(`Executing script: ${scriptPath}...`));
-    const process = fork(scriptPath, [], {
+    const process = fork(scriptPath, args, {
       stdio: "inherit",
     });
 
@@ -2845,13 +3079,22 @@ async function main() {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
+  const args = process.argv.slice(2);
+  let customOutputDir = null;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--outputDir" || args[i] === "-o") {
+      customOutputDir = args[i + 1];
+      break;
+    }
+  }
+
   // Script to archive current run to JSON history (this is your modified "generate-trend.mjs")
   const archiveRunScriptPath = path.resolve(
     __dirname,
     "generate-trend.mjs" // Keeping the filename as per your request
   );
 
-  const outputDir = path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
 
@@ -2861,10 +3104,18 @@ async function main() {
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
+  if (customOutputDir) {
+    console.log(chalk.gray(`  (from CLI argument)`));
+  } else {
+    console.log(
+      chalk.gray(`  (auto-detected from playwright.config or using default)`)
+    );
+  }
 
   // Step 1: Ensure current run data is archived to the history folder
   try {
-    await runScript(archiveRunScriptPath); // This script now handles JSON history
+    const archiveArgs = customOutputDir ? ["--outputDir", customOutputDir] : [];
+    await runScript(archiveRunScriptPath, archiveArgs);
     console.log(
       chalk.green("Current run data archiving to history completed.")
     );

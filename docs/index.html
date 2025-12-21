@@ -142,7 +142,7 @@
         <section id="installation">
           <h2>Installation</h2>
           <pre><code class="language-bash"># Using npm
-npm install @arghajit/playwright-pulse-report@latest --save-dev</code></pre>
+npm install @arghajit/playwright-pulse-report@latest --save-dev</code><button class="copy-button">Copy</button></pre>
         </section>
 
         <section id="configuration">
@@ -151,6 +151,12 @@ npm install @arghajit/playwright-pulse-report@latest --save-dev</code></pre>
             Add the reporter to your <code>playwright.config.ts</code> file.
             This is the minimum configuration needed to get started.
           </p>
+          
+          <div class="note" style="background-color: #e8f4fd; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <strong>✨ New in v0.3.0:</strong> The <code>outputDir</code> you configure here will be automatically detected by all CLI scripts!<br>
+            No need to pass <code>-o</code> or <code>--outputDir</code> arguments anymore - just run <code>npx generate-pulse-report</code> and it works! 🎉
+          </div>
+          
           <pre><code class="language-typescript">// playwright.config.ts
 import { defineConfig } from "@playwright/test";
 import * as path from "path";
@@ -161,7 +167,7 @@ export default defineConfig({
     [
       "@arghajit/playwright-pulse-report",
       {
-        outputDir: path.resolve(__dirname, "pulse-report"),
+        outputDir: path.resolve(__dirname, "pulse-report"), // ✨ Auto-detected!
       },
     ],
   ],
@@ -172,7 +178,7 @@ export default defineConfig({
     video: 'retain-on-failure',
     trace: 'retain-on-failure',
   },
-});</code></pre>
+});</code><button class="copy-button">Copy</button></pre>
         </section>
 
         <section id="first-report">
@@ -181,7 +187,7 @@ export default defineConfig({
             <li>
               <strong>Run your tests:</strong> Execute your Playwright tests as
               you normally would.
-              <pre><code class="language-bash">npx playwright test</code></pre>
+              <pre><code class="language-bash">npx playwright test</code><button class="copy-button">Copy</button></pre>
               <p>
                 This command will run your tests and the Playwright Pulse
                 Reporter will automatically collect data in the background,
@@ -192,7 +198,7 @@ export default defineConfig({
               <strong>Generate the HTML report:</strong> After the test run is
               complete, use the provided script to generate the interactive HTML
               file.
-              <pre><code class="language-bash">npx generate-pulse-report</code></pre>
+              <pre><code class="language-bash">npx generate-pulse-report</code><button class="copy-button">Copy</button></pre>
               <p>
                 This creates a self-contained static file named
                 <code>playwright-pulse-static-report.html</code> inside the
