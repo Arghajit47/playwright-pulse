@@ -5,6 +5,7 @@ import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
+import { getOutputDir } from "./config-reader.mjs";
 
 /**
  * Dynamically imports the 'chalk' library for terminal string styling.
@@ -3201,9 +3202,7 @@ async function main() {
     "generate-trend.mjs" // Keeping the filename as per your request
   );
 
-  const outputDir = customOutputDir
-    ? path.resolve(process.cwd(), customOutputDir)
-    : path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
 
@@ -3213,6 +3212,16 @@ async function main() {
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
+  if (customOutputDir) {
+    console.log(chalk.gray(`  (from CLI argument)`));
+  } else {
+    const { exists } = await import("./config-reader.mjs").then((m) => ({
+      exists: true,
+    }));
+    console.log(
+      chalk.gray(`  (auto-detected from playwright.config or using default)`)
+    );
+  }
 
   // Step 1: Ensure current run data is archived to the history folder
   try {

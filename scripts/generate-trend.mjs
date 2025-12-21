@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import * as fs from "fs/promises";
 import path from "path";
+import { getOutputDir } from "./config-reader.mjs";
 
 // Use dynamic import for chalk as it's ESM only for prettier console logs
 let chalk;
@@ -25,16 +26,14 @@ const MAX_HISTORY_FILES = 15; // Store last 15 runs
 const args = process.argv.slice(2);
 let customOutputDir = null;
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--outputDir' || args[i] === '-o') {
+  if (args[i] === "--outputDir" || args[i] === "-o") {
     customOutputDir = args[i + 1];
     break;
   }
 }
 
 async function archiveCurrentRunData() {
-  const outputDir = customOutputDir 
-    ? path.resolve(process.cwd(), customOutputDir)
-    : path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = await getOutputDir(customOutputDir);
   const currentRunJsonPath = path.join(outputDir, CURRENT_RUN_JSON_FILE);
   const historyDir = path.join(outputDir, HISTORY_SUBDIR);
 

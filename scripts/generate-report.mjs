@@ -5,6 +5,7 @@ import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
+import { getOutputDir } from "./config-reader.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -615,8 +616,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       chart: {
           type: 'pie',
           width: ${chartWidth},
-          height: ${chartHeight - 40
-    }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
+          height: ${
+            chartHeight - 40
+          }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
           backgroundColor: 'transparent',
           plotShadow: false,
           spacingBottom: 40 // Ensure space for legend
@@ -668,8 +670,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   return `
       <div class="pie-chart-wrapper" style="align-items: center; max-height: 450px">
           <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
-          <div id="${chartId}" style="width: ${chartWidth}px; height: ${chartHeight - 40
-    }px;"></div>
+          <div id="${chartId}" style="width: ${chartWidth}px; height: ${
+    chartHeight - 40
+  }px;"></div>
           <script>
               document.addEventListener('DOMContentLoaded', function() {
                   if (typeof Highcharts !== 'undefined') {
@@ -897,14 +900,15 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
             <span class="env-detail-value">
               <div class="env-cpu-cores">
                 ${Array.from(
-    { length: Math.max(0, environment.cpu.cores || 0) },
-    (_, i) =>
-      `<div class="env-core-indicator ${i >=
-        (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
-        ? "inactive"
-        : ""
-      }" title="Core ${i + 1}"></div>`
-  ).join("")}
+                  { length: Math.max(0, environment.cpu.cores || 0) },
+                  (_, i) =>
+                    `<div class="env-core-indicator ${
+                      i >=
+                      (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
+                        ? "inactive"
+                        : ""
+                    }" title="Core ${i + 1}"></div>`
+                ).join("")}
                 <span>${environment.cpu.cores || "N/A"} cores</span>
               </div>
             </span>
@@ -924,20 +928,23 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
         <div class="env-card-content">
           <div class="env-detail-row">
             <span class="env-detail-label">OS Type</span>
-            <span class="env-detail-value">${environment.os.split(" ")[0] === "darwin"
-      ? "darwin (macOS)"
-      : environment.os.split(" ")[0] || "Unknown"
-    }</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[0] === "darwin"
+                ? "darwin (macOS)"
+                : environment.os.split(" ")[0] || "Unknown"
+            }</span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">OS Version</span>
-            <span class="env-detail-value">${environment.os.split(" ")[1] || "N/A"
-    }</span>
+            <span class="env-detail-value">${
+              environment.os.split(" ")[1] || "N/A"
+            }</span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Hostname</span>
-            <span class="env-detail-value" title="${environment.host}">${environment.host
-    }</span>
+            <span class="env-detail-value" title="${environment.host}">${
+    environment.host
+  }</span>
           </div>
         </div>
       </div>
@@ -958,10 +965,11 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Working Dir</span>
-            <span class="env-detail-value" title="${environment.cwd}">${environment.cwd.length > 25
+            <span class="env-detail-value" title="${environment.cwd}">${
+    environment.cwd.length > 25
       ? "..." + environment.cwd.slice(-22)
       : environment.cwd
-    }</span>
+  }</span>
           </div>
         </div>
       </div>
@@ -975,30 +983,33 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
           <div class="env-detail-row">
             <span class="env-detail-label">Platform Arch</span>
             <span class="env-detail-value">
-              <span class="env-chip ${environment.os.includes("darwin") &&
-      environment.cpu.model.toLowerCase().includes("apple")
-      ? "env-chip-success"
-      : "env-chip-warning"
-    }">
-                ${environment.os.includes("darwin") &&
-      environment.cpu.model.toLowerCase().includes("apple")
-      ? "Apple Silicon"
-      : environment.cpu.model.toLowerCase().includes("arm") ||
-        environment.cpu.model.toLowerCase().includes("aarch64")
-        ? "ARM-based"
-        : "x86/Other"
-    }
+              <span class="env-chip ${
+                environment.os.includes("darwin") &&
+                environment.cpu.model.toLowerCase().includes("apple")
+                  ? "env-chip-success"
+                  : "env-chip-warning"
+              }">
+                ${
+                  environment.os.includes("darwin") &&
+                  environment.cpu.model.toLowerCase().includes("apple")
+                    ? "Apple Silicon"
+                    : environment.cpu.model.toLowerCase().includes("arm") ||
+                      environment.cpu.model.toLowerCase().includes("aarch64")
+                    ? "ARM-based"
+                    : "x86/Other"
+                }
               </span>
             </span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Memory per Core</span>
-            <span class="env-detail-value">${environment.cpu.cores > 0
-      ? (
-        parseFloat(environment.memory) / environment.cpu.cores
-      ).toFixed(2) + " GB"
-      : "N/A"
-    }</span>
+            <span class="env-detail-value">${
+              environment.cpu.cores > 0
+                ? (
+                    parseFloat(environment.memory) / environment.cpu.cores
+                  ).toFixed(2) + " GB"
+                : "N/A"
+            }</span>
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Run Context</span>
@@ -1330,19 +1341,19 @@ function generateTestHistoryContent(trendData) {
       
       <div class="test-history-grid">
         ${testHistory
-      .map((test) => {
-        const latestRun =
-          test.history.length > 0
-            ? test.history[test.history.length - 1]
-            : { status: "unknown" };
-        return `
+          .map((test) => {
+            const latestRun =
+              test.history.length > 0
+                ? test.history[test.history.length - 1]
+                : { status: "unknown" };
+            return `
             <div class="test-history-card" data-test-name="${sanitizeHTML(
-          test.testTitle.toLowerCase()
-        )}" data-latest-status="${latestRun.status}">
+              test.testTitle.toLowerCase()
+            )}" data-latest-status="${latestRun.status}">
               <div class="test-history-header">
                 <p title="${sanitizeHTML(test.testTitle)}">${capitalize(
-          sanitizeHTML(test.testTitle)
-        )}</p>
+              sanitizeHTML(test.testTitle)
+            )}</p>
                 <span class="status-badge ${getStatusClass(latestRun.status)}">
                   ${String(latestRun.status).toUpperCase()}
                 </span>
@@ -1357,27 +1368,27 @@ function generateTestHistoryContent(trendData) {
                     <thead><tr><th>Run</th><th>Status</th><th>Duration</th><th>Date</th></tr></thead>
                     <tbody>
                       ${test.history
-            .slice()
-            .reverse()
-            .map(
-              (run) => `
+                        .slice()
+                        .reverse()
+                        .map(
+                          (run) => `
                         <tr>
                           <td>${run.runId}</td>
                           <td><span class="status-badge-small ${getStatusClass(
-                run.status
-              )}">${String(run.status).toUpperCase()}</span></td>
+                            run.status
+                          )}">${String(run.status).toUpperCase()}</span></td>
                           <td>${formatDuration(run.duration)}</td>
                           <td>${formatDate(run.timestamp)}</td>
                         </tr>`
-            )
-            .join("")}
+                        )
+                        .join("")}
                     </tbody>
                   </table>
                 </div>
               </details>
             </div>`;
-      })
-      .join("")}
+          })
+          .join("")}
       </div>
     </div>
   `;
@@ -1462,11 +1473,12 @@ function generateSuitesWidget(suitesData) {
 <div class="suites-widget">
   <div class="suites-header">
     <h2>Test Suites</h2>
-    <span class="summary-badge">${suitesData.length
+    <span class="summary-badge">${
+      suitesData.length
     } suites • ${suitesData.reduce(
-      (sum, suite) => sum + suite.count,
-      0
-    )} tests</span>
+    (sum, suite) => sum + suite.count,
+    0
+  )} tests</span>
   </div>
   <div class="suites-grid">
     ${suitesData
@@ -1479,24 +1491,28 @@ function generateSuitesWidget(suitesData) {
         )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
       </div>
       <div>🖥️ <span class="browser-tag">${sanitizeHTML(
-          suite.browser
-        )}</span></div>
+        suite.browser
+      )}</span></div>
       <div class="suite-card-body">
-        <span class="test-count">${suite.count} test${suite.count !== 1 ? "s" : ""
-          }</span>
+        <span class="test-count">${suite.count} test${
+          suite.count !== 1 ? "s" : ""
+        }</span>
         <div class="suite-stats">
-            ${suite.passed > 0
-            ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-            : ""
-          }
-            ${suite.failed > 0
-            ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-            : ""
-          }
-            ${suite.skipped > 0
-            ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-            : ""
-          }
+            ${
+              suite.passed > 0
+                ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
+                : ""
+            }
+            ${
+              suite.failed > 0
+                ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
+                : ""
+            }
+            ${
+              suite.skipped > 0
+                ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
+                : ""
+            }
         </div>
       </div>
     </div>`
@@ -3078,9 +3094,7 @@ async function main() {
     "generate-trend.mjs" // Keeping the filename as per your request
   );
 
-  const outputDir = customOutputDir
-    ? path.resolve(process.cwd(), customOutputDir)
-    : path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
 
@@ -3090,6 +3104,13 @@ async function main() {
 
   console.log(chalk.blue(`Starting static HTML report generation...`));
   console.log(chalk.blue(`Output directory set to: ${outputDir}`));
+  if (customOutputDir) {
+    console.log(chalk.gray(`  (from CLI argument)`));
+  } else {
+    console.log(
+      chalk.gray(`  (auto-detected from playwright.config or using default)`)
+    );
+  }
 
   // Step 1: Ensure current run data is archived to the history folder
   try {

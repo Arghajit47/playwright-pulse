@@ -14,6 +14,7 @@
   - Migrated from Google Gemini API to Groq API with `llama-3.3-70b-versatile` model for faster and more accurate AI failure analysis.
   - Enhanced `TestResult` interface with `annotations` field for comprehensive test metadata capture.
   - Improved CLI scripts architecture to support dynamic directory paths across all commands.
+  - **Automatic Config Detection**: CLI scripts now automatically read `outputDir` from `playwright.config` file, eliminating the need to manually pass `-o` argument, unless overriding is needed.
   - Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
   - Beautiful purple/violet themed annotations section for better visual distinction in reports.
 
