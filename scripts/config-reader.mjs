@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as fs from "fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
@@ -24,15 +23,69 @@ async function findPlaywrightConfig() {
 }
 
 async function extractOutputDirFromConfig(configPath) {
+  let fileContent = "";
+  try {
+    fileContent = fs.readFileSync(configPath, "utf-8");
+  } catch (e) {
+    // If we can't read the file, we can't parse or import it.
+    return null;
+  }
+
+  // 1. Strategy: Text Parsing (Safe & Fast)
+  // We try to read the file as text first. This finds the outputDir without
+  // triggering any Node.js warnings or errors.
+  try {
+    // Regex matches: outputDir: "value" or outputDir: 'value'
+    const match = fileContent.match(/outputDir:\s*["']([^"']+)["']/);
+
+    if (match && match[1]) {
+      return path.resolve(process.cwd(), match[1]);
+    }
+  } catch (e) {
+    // Ignore text reading errors
+  }
+
+  // 2. Safety Check: Detect ESM in CJS to Prevent Node Warnings
+  // The warning "To load an ES module..." happens when we try to import()
+  // a .js file containing ESM syntax (import/export) in a CJS package.
+  // We explicitly check for this and ABORT the import if found.
+  if (configPath.endsWith(".js")) {
+    let isModulePackage = false;
+    try {
+      const pkgPath = path.resolve(process.cwd(), "package.json");
+      if (fs.existsSync(pkgPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+        isModulePackage = pkg.type === "module";
+      }
+    } catch (e) {}
+
+    if (!isModulePackage) {
+      // Heuristic: Check for ESM syntax (import/export at start of lines)
+      const hasEsmSyntax =
+        /^\s*import\s+/m.test(fileContent) ||
+        /^\s*export\s+/m.test(fileContent);
+
+      if (hasEsmSyntax) {
+        // We found ESM syntax in a .js file within a CJS project.
+        // Attempting to import this WILL trigger the Node.js warning.
+        // Since regex failed to find outputDir, and we can't import safely, we abort now.
+        return null;
+      }
+    }
+  }
+
+  // 3. Strategy: Dynamic Import
+  // If we passed the safety check, we try to import the config.
   try {
     let config;
-
     const configDir = dirname(configPath);
-    // const originalDirname = global.__dirname; // Not strictly needed in ESM context usually, but keeping if you rely on it elsewhere
-    // const originalFilename = global.__filename;
+    const originalDirname = global.__dirname;
+    const originalFilename = global.__filename;
 
-    // 1. Try Loading via Import (Existing Logic)
     try {
+      global.__dirname = configDir;
+      global.__filename = configPath;
+
       if (configPath.endsWith(".ts")) {
         try {
           const { register } = await import("node:module");
@@ -52,20 +105,19 @@ async function extractOutputDirFromConfig(configPath) {
         config = await import(pathToFileURL(configPath).href);
       }
 
-      // Extract from default export or direct export
+      // Handle Default Export
       if (config && config.default) {
         config = config.default;
       }
 
       if (config) {
-        // Check specific reporter config
+        // Check for Reporter Config
         if (config.reporter) {
           const reporters = Array.isArray(config.reporter)
             ? config.reporter
             : [config.reporter];
 
           for (const reporter of reporters) {
-            // reporter can be ["list"] or ["html", { outputFolder: '...' }]
             const reporterName = Array.isArray(reporter)
               ? reporter[0]
               : reporter;
@@ -80,45 +132,28 @@ async function extractOutputDirFromConfig(configPath) {
                 reporterName.includes("@arghajit/dummy"))
             ) {
               if (reporterOptions && reporterOptions.outputDir) {
-                // Found it via Import!
                 return path.resolve(process.cwd(), reporterOptions.outputDir);
               }
             }
           }
         }
 
-        // Check global outputDir
+        // Check for Global outputDir
         if (config.outputDir) {
           return path.resolve(process.cwd(), config.outputDir);
         }
       }
-    } catch (importError) {
-      // Import failed (likely the SyntaxError you saw).
-      // We suppress this error and fall through to the text-parsing fallback below.
+    } finally {
+      // Clean up globals
+      global.__dirname = originalDirname;
+      global.__filename = originalFilename;
     }
-
-    // 2. Fallback: Parse file as text (New Logic)
-    // This runs if import failed or if import worked but didn't have the specific config
-    try {
-      const fileContent = fs.readFileSync(configPath, "utf-8");
-
-      // Regex to find: outputDir: "some/path" or 'some/path' inside the reporter config or global
-      // This is a simple heuristic to avoid the "Cannot use import statement" error
-      const match = fileContent.match(/outputDir:\s*["']([^"']+)["']/);
-
-      if (match && match[1]) {
-        console.log(`Found outputDir via text parsing: ${match[1]}`);
-        return path.resolve(process.cwd(), match[1]);
-      }
-    } catch (readError) {
-      // If reading fails, just return null silently
-    }
-
-    return null;
   } catch (error) {
-    // Final safety net: Do not log the stack trace to avoid cluttering the console
+    // SILENT CATCH: Do NOT log anything here.
     return null;
   }
+
+  return null;
 }
 
 export async function getOutputDir(customOutputDirFromArgs = null) {
