@@ -122,6 +122,15 @@ export class PlaywrightPulseReporter implements Reporter {
     console.log(`Starting test: ${test.title}`);
   }
 
+  private _getSeverity(
+    annotations: { type: string; description?: string }[]
+  ): string {
+    const severityAnnotation = annotations.find(
+      (a) => a.type === "pulse_severity"
+    );
+    return severityAnnotation?.description || "Medium";
+  }
+
   private getBrowserDetails(test: TestCase): string {
     const project = test.parent?.project();
     const projectConfig = project?.use;
@@ -319,6 +328,7 @@ export class PlaywrightPulseReporter implements Reporter {
       tags: test.tags.map((tag) =>
         tag.startsWith("@") ? tag.substring(1) : tag
       ),
+      severity: this._getSeverity(test.annotations) as any,
       screenshots: [],
       videoPath: [],
       tracePath: undefined,

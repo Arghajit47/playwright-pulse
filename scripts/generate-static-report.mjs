@@ -2054,6 +2054,26 @@ function generateHTML(reportData, trendData = null) {
         const testFileParts = test.name.split(" > ");
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
+        // --- NEW: Severity Logic ---
+        const severity = test.severity || "Medium";
+        const getSeverityColor = (level) => {
+          switch (level) {
+            case "Minor":
+              return "#006064"; // contrast ~7.35:1 vs white
+            case "Low":
+              return "#E65100"; // contrast ~4.9:1 vs white
+            case "High":
+              return "#B71C1C"; // contrast ~6.57:1 vs white
+            case "Critical":
+              return "#3E0000"; // contrast ~17.4:1 vs white
+            default:
+              return "#BF360C"; // Medium, contrast ~5.6:1 vs white
+          }
+        };
+        const severityColor = getSeverityColor(severity);
+        // We reuse 'status-badge' class for size/font consistency, but override background color
+        const severityBadge = `<span class="status-badge" style="background-color: ${severityColor}; margin-right: 8px;">${severity}</span>`;
+        // ---------------------------
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
             return "<div class='no-steps'>No steps recorded for this test.</div>";
@@ -2163,13 +2183,16 @@ function generateHTML(reportData, trendData = null) {
           testTitle
         )}</span><span class="test-case-browser">(${sanitizeHTML(
           browser
-        )})</span></div><div class="test-case-meta">${
+        )})</span></div><div class="test-case-meta">
+        ${severityBadge}
+        ${
           test.tags && test.tags.length > 0
             ? test.tags
                 .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
                 .join(" ")
             : ""
-        }<span class="test-duration">${formatDuration(
+        }
+        <span class="test-duration">${formatDuration(
           test.duration
         )}</span></div></div>
                     <div class="test-case-content" style="display: none;">
@@ -2620,6 +2643,7 @@ aspect-ratio: 16 / 9;
 .status-badge-small.status-failed { background-color: var(--danger-color); }
 .status-badge-small.status-skipped { background-color: var(--warning-color); }
 .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
+.badge-severity { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; text-transform: uppercase; margin-right: 8px; vertical-align: middle; }
 .no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
 .no-data-chart {font-size: 0.95em; padding: 18px;}
 .ai-failure-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }

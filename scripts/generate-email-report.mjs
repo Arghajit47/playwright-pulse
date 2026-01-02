@@ -217,6 +217,40 @@ function generateMinifiedHTML(reportData) {
         const testFileParts = test.name.split(" > ");
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
+
+        // --- NEW: Severity Logic ---
+        const severity = test.severity || "Medium";
+        const getSeverityColor = (level) => {
+          switch (level) {
+            case "Minor":
+              return "#006064";
+            case "Low":
+              return "#E65100";
+            case "Medium":
+              return "#FFA07A";
+            case "High":
+              return "#B71C1C";
+            case "Critical":
+              return "#3E0000";
+            default:
+              return "#FFA07A";
+          }
+        };
+        // We use inline styles here to ensure they render correctly in emails
+        const severityBadge = `<span style="background-color: ${getSeverityColor(
+          severity
+        )}; font-size: 0.8em; font-weight: 600; padding: 3px 8px; border-radius: 4px; color: #fff; margin-left: 10px; white-space: nowrap;">${severity}</span>`;
+
+        // --- NEW: Tags Logic ---
+        const tagsBadges = (test.tags || [])
+          .map(
+            (tag) =>
+              `<span style="background-color: #7f8c8d; font-size: 0.8em; font-weight: 600; padding: 3px 8px; border-radius: 4px; color: #fff; margin-left: 5px; white-space: nowrap;">${sanitizeHTML(
+                tag
+              )}</span>`
+          )
+          .join("");
+
         html += `
             <li class="test-item ${getStatusClass(test.status)}" 
                 data-test-name-min="${sanitizeHTML(testTitle.toLowerCase())}" 
@@ -230,9 +264,9 @@ function generateMinifiedHTML(reportData) {
               <span class="test-title-text" title="${sanitizeHTML(
                 test.name
               )}">${sanitizeHTML(testTitle)}</span>
-              <span class="test-status-label">${String(
-                test.status
-              ).toUpperCase()}</span>
+              
+              ${severityBadge}
+              ${tagsBadges}
             </li>
         `;
       });
@@ -250,8 +284,8 @@ function generateMinifiedHTML(reportData) {
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/v817w4sg/logo.png">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
+    <link rel="icon" type="image/png" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
+    <link rel="apple-touch-icon" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
     <title>Playwright Pulse Summary Report</title>
     <style>
         :root {
@@ -492,7 +526,7 @@ function generateMinifiedHTML(reportData) {
     <div class="container">
         <header class="report-header">
             <div class="report-header-title">
-                <img id="report-logo" src="https://i.postimg.cc/v817w4sg/logo.png" alt="Report Logo">
+                <img id="report-logo" src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png" alt="Report Logo">
                 <h1>Playwright Pulse Summary</h1>
             </div>
             <div class="run-info">
@@ -527,8 +561,24 @@ function generateMinifiedHTML(reportData) {
         </section>
 
         <section class="test-results-section">
-            <h1 class="section-title">Test Case Summary</h1>
-            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-top: 30px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--secondary-color);">
+                <h1 style="margin: 0; font-size: 1.5em; color: var(--primary-color);">Test Case Summary</h1>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.75em;">
+                    <span style="font-weight: 600; color: var(--dark-gray-color);">Legend:</span>
+                    
+                    <span style="margin-left: 4px; font-weight: 600; color: var(--text-color);">Severity:</span>
+                    
+                    <span style="background-color: #006064; color: #fff; padding: 2px 6px; border-radius: 3px;">Minor</span>
+                    <span style="background-color: #E65100; color: #fff; padding: 2px 6px; border-radius: 3px;">Low</span>
+                    <span style="background-color: #FFA07A; color: #fff; padding: 2px 6px; border-radius: 3px;">Medium</span>
+                    <span style="background-color: #B71C1C; color: #fff; padding: 2px 6px; border-radius: 3px;">High</span>
+                    <span style="background-color: #3E0000; color: #fff; padding: 2px 6px; border-radius: 3px;">Critical</span>
+                    
+                    <span style="border-left: 1px solid #ccc; height: 14px; margin: 0 4px;"></span>
+                    
+                    <span style="background-color: #7f8c8d; color: #fff; padding: 2px 6px; border-radius: 3px;">Tags</span>
+                </div>
+            </div>
             <div class="filters-section">
                 <input type="text" id="filter-min-name" placeholder="Search by test name...">
                 <select id="filter-min-status">

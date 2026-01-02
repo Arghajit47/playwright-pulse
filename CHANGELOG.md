@@ -7,11 +7,16 @@
 * **✨ New Features**:
 * **Granular Duration Insights**: Added two new interactive charts in the "Execution Trends" tab: "Duration by Spec files" and "Duration by Test Describe" to help identify slow-performing files or specific test groups.
 * **Enhanced Chart Tooltips**: Implemented rich, HTML-styled tooltips for the new duration charts that clearly distinguish between Describe blocks and File names using custom data points for better context.
+* **Severity-Driven Reporting**: Introduced test severity metadata (`Minor` → `Critical`) captured via a new `pulse.severity` helper and persisted by the core reporter for each test run.
+* **Severity Badges Everywhere**: Surfaced severity as color-coded badges in interactive HTML, static, and email reports so critical failures stand out instantly in all report channels.
+* **Tag Badges in Email Summaries**: Email report now renders test tags as compact, styled badges beside each test title for better context at a glance.
 
 
 * **🔧 Improvements**:
 * **Performance Optimization**: Applied lazy loading (`IntersectionObserver`) to the new duration charts, ensuring they only render when scrolled into view to keep the report lightweight.
 * **Visual Consistency**: Aligned the new charts with the existing report aesthetics, utilizing the orange accent theme (`var(--accent-color-alt)`) and consistent marker styling.
+* **DX-Friendly Exports**: Re-exported the `pulse` helper and `PulseSeverityLevel` type from the main reporter entrypoint so tests can import them directly from `@arghajit/playwright-pulse-report`.
+* **Typed Severity Field**: Extended the `TestResult` type with a strongly-typed `severity` property so dashboards and custom tooling can safely consume severity data.
 
 ## **Version 0.3.0**
 

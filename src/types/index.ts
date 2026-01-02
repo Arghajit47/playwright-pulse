@@ -40,6 +40,7 @@ export interface TestResult {
   snippet?: string; // For AI analysis
   codeSnippet?: string; // For AI analysis
   tags?: string[];
+  severity?: "Minor" | "Low" | "Medium" | "High" | "Critical";
   suiteName?: string;
   runId: string; // Identifier for the test run this belongs to
   browser: string; // Browser name (e.g., "chromium", "firefox", "webkit")
