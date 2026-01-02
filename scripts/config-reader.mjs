@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as fs from "fs";
 import * as path from "path";
 import { pathToFileURL } from "url";
@@ -24,9 +23,61 @@ async function findPlaywrightConfig() {
 }
 
 async function extractOutputDirFromConfig(configPath) {
+  let fileContent = "";
+  try {
+    fileContent = fs.readFileSync(configPath, "utf-8");
+  } catch (e) {
+    // If we can't read the file, we can't parse or import it.
+    return null;
+  }
+
+  // 1. Strategy: Text Parsing (Safe & Fast)
+  // We try to read the file as text first. This finds the outputDir without
+  // triggering any Node.js warnings or errors.
+  try {
+    // Regex matches: outputDir: "value" or outputDir: 'value'
+    const match = fileContent.match(/outputDir:\s*["']([^"']+)["']/);
+
+    if (match && match[1]) {
+      return path.resolve(process.cwd(), match[1]);
+    }
+  } catch (e) {
+    // Ignore text reading errors
+  }
+
+  // 2. Safety Check: Detect ESM in CJS to Prevent Node Warnings
+  // The warning "To load an ES module..." happens when we try to import()
+  // a .js file containing ESM syntax (import/export) in a CJS package.
+  // We explicitly check for this and ABORT the import if found.
+  if (configPath.endsWith(".js")) {
+    let isModulePackage = false;
+    try {
+      const pkgPath = path.resolve(process.cwd(), "package.json");
+      if (fs.existsSync(pkgPath)) {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+        isModulePackage = pkg.type === "module";
+      }
+    } catch (e) {}
+
+    if (!isModulePackage) {
+      // Heuristic: Check for ESM syntax (import/export at start of lines)
+      const hasEsmSyntax =
+        /^\s*import\s+/m.test(fileContent) ||
+        /^\s*export\s+/m.test(fileContent);
+
+      if (hasEsmSyntax) {
+        // We found ESM syntax in a .js file within a CJS project.
+        // Attempting to import this WILL trigger the Node.js warning.
+        // Since regex failed to find outputDir, and we can't import safely, we abort now.
+        return null;
+      }
+    }
+  }
+
+  // 3. Strategy: Dynamic Import
+  // If we passed the safety check, we try to import the config.
   try {
     let config;
-
     const configDir = dirname(configPath);
     const originalDirname = global.__dirname;
     const originalFilename = global.__filename;
@@ -39,73 +90,70 @@ async function extractOutputDirFromConfig(configPath) {
         try {
           const { register } = await import("node:module");
           const { pathToFileURL } = await import("node:url");
-
           register("ts-node/esm", pathToFileURL("./"));
-
           config = await import(pathToFileURL(configPath).href);
         } catch (tsError) {
-          try {
-            const tsNode = await import("ts-node");
-            tsNode.register({
-              transpileOnly: true,
-              compilerOptions: {
-                module: "ESNext",
-              },
-            });
-            config = await import(pathToFileURL(configPath).href);
-          } catch (fallbackError) {
-            console.error("Failed to load TypeScript config:", fallbackError);
-            return null;
-          }
+          const tsNode = await import("ts-node");
+          tsNode.register({
+            transpileOnly: true,
+            compilerOptions: { module: "commonjs" },
+          });
+          config = require(configPath);
         }
       } else {
+        // Try dynamic import for JS/MJS
         config = await import(pathToFileURL(configPath).href);
       }
-    } finally {
-      if (originalDirname !== undefined) {
-        global.__dirname = originalDirname;
-      } else {
-        delete global.__dirname;
+
+      // Handle Default Export
+      if (config && config.default) {
+        config = config.default;
       }
-      if (originalFilename !== undefined) {
-        global.__filename = originalFilename;
-      } else {
-        delete global.__filename;
-      }
-    }
 
-    const playwrightConfig = config.default || config;
+      if (config) {
+        // Check for Reporter Config
+        if (config.reporter) {
+          const reporters = Array.isArray(config.reporter)
+            ? config.reporter
+            : [config.reporter];
 
-    if (playwrightConfig && Array.isArray(playwrightConfig.reporter)) {
-      for (const reporterConfig of playwrightConfig.reporter) {
-        if (Array.isArray(reporterConfig)) {
-          const [reporterPath, options] = reporterConfig;
+          for (const reporter of reporters) {
+            const reporterName = Array.isArray(reporter)
+              ? reporter[0]
+              : reporter;
+            const reporterOptions = Array.isArray(reporter)
+              ? reporter[1]
+              : null;
 
-          if (
-            typeof reporterPath === "string" &&
-            (reporterPath.includes("playwright-pulse-report") ||
-              reporterPath.includes("@arghajit/playwright-pulse-report") ||
-              reporterPath.includes("@arghajit/dummy"))
-          ) {
-            if (options && options.outputDir) {
-              const resolvedPath =
-                typeof options.outputDir === "string"
-                  ? options.outputDir
-                  : options.outputDir;
-              console.log(`Found outputDir in config: ${resolvedPath}`);
-              return path.resolve(process.cwd(), resolvedPath);
+            if (
+              typeof reporterName === "string" &&
+              (reporterName.includes("playwright-pulse-report") ||
+                reporterName.includes("@arghajit/playwright-pulse-report") ||
+                reporterName.includes("@arghajit/dummy"))
+            ) {
+              if (reporterOptions && reporterOptions.outputDir) {
+                return path.resolve(process.cwd(), reporterOptions.outputDir);
+              }
             }
           }
         }
-      }
-    }
 
-    console.log("No matching reporter config found with outputDir");
-    return null;
+        // Check for Global outputDir
+        if (config.outputDir) {
+          return path.resolve(process.cwd(), config.outputDir);
+        }
+      }
+    } finally {
+      // Clean up globals
+      global.__dirname = originalDirname;
+      global.__filename = originalFilename;
+    }
   } catch (error) {
-    console.error("Error extracting outputDir from config:", error);
+    // SILENT CATCH: Do NOT log anything here.
     return null;
   }
+
+  return null;
 }
 
 export async function getOutputDir(customOutputDirFromArgs = null) {

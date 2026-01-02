@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.6",
+  "version": "0.3.9",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://playwright-pulse-report.netlify.app/",
   "keywords": [
@@ -30,12 +30,12 @@
   ],
   "license": "MIT",
   "bin": {
-    "generate-pulse-report": "./scripts/generate-static-report.mjs",
-    "generate-report": "./scripts/generate-report.mjs",
-    "merge-pulse-report": "./scripts/merge-pulse-report.js",
-    "send-email": "./scripts/sendReport.mjs",
-    "generate-trend": "./scripts/generate-trend.mjs",
-    "generate-email-report": "./scripts/generate-email-report.mjs"
+    "generate-pulse-report": "scripts/generate-static-report.mjs",
+    "generate-report": "scripts/generate-report.mjs",
+    "merge-pulse-report": "scripts/merge-pulse-report.js",
+    "send-email": "scripts/sendReport.mjs",
+    "generate-trend": "scripts/generate-trend.mjs",
+    "generate-email-report": "scripts/generate-email-report.mjs"
   },
   "exports": {
     ".": {

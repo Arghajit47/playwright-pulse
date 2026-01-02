@@ -197,7 +197,7 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const browserDetails = this.getBrowserDetails(test);
         const testStatus = convertStatus(result.status, test);
@@ -224,6 +224,16 @@ class PlaywrightPulseReporter {
         catch (e) {
             console.warn(`Pulse Reporter: Could not extract code snippet for ${test.title}`, e);
         }
+        // 1. Get Spec File Name
+        const specFileName = ((_e = test.location) === null || _e === void 0 ? void 0 : _e.file)
+            ? path.basename(test.location.file)
+            : "n/a";
+        // 2. Get Describe Block Name
+        // Check if the immediate parent is a 'describe' block
+        let describeBlockName = "n/a";
+        if (((_f = test.parent) === null || _f === void 0 ? void 0 : _f.type) === "describe") {
+            describeBlockName = test.parent.title;
+        }
         const stdoutMessages = result.stdout.map((item) => typeof item === "string" ? item : item.toString());
         const stderrMessages = result.stderr.map((item) => typeof item === "string" ? item : item.toString());
         const maxWorkers = this.config.workers;
@@ -241,18 +251,20 @@ class PlaywrightPulseReporter {
         const pulseResult = {
             id: test.id,
             runId: "TBD",
+            describe: describeBlockName,
+            spec_file: specFileName,
             name: test.titlePath().join(" > "),
-            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_e = this.config.projects[0]) === null || _e === void 0 ? void 0 : _e.name) || "Default Suite",
+            suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
             status: testStatus,
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
             browser: browserDetails,
             retries: result.retry,
-            steps: ((_f = result.steps) === null || _f === void 0 ? void 0 : _f.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_g = result.error) === null || _g === void 0 ? void 0 : _g.message,
-            stackTrace: (_h = result.error) === null || _h === void 0 ? void 0 : _h.stack,
-            snippet: (_j = result.error) === null || _j === void 0 ? void 0 : _j.snippet,
+            steps: ((_h = result.steps) === null || _h === void 0 ? void 0 : _h.length) ? await processAllSteps(result.steps) : [],
+            errorMessage: (_j = result.error) === null || _j === void 0 ? void 0 : _j.message,
+            stackTrace: (_k = result.error) === null || _k === void 0 ? void 0 : _k.stack,
+            snippet: (_l = result.error) === null || _l === void 0 ? void 0 : _l.snippet,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             screenshots: [],
@@ -261,7 +273,7 @@ class PlaywrightPulseReporter {
             attachments: [],
             stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
             stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
-            annotations: ((_k = test.annotations) === null || _k === void 0 ? void 0 : _k.length) > 0 ? test.annotations : undefined,
+            annotations: ((_m = test.annotations) === null || _m === void 0 ? void 0 : _m.length) > 0 ? test.annotations : undefined,
             ...testSpecificData,
         };
         for (const [index, attachment] of result.attachments.entries()) {
@@ -278,16 +290,16 @@ class PlaywrightPulseReporter {
                 await this._ensureDirExists(path.dirname(absoluteDestPath));
                 await fs.copyFile(attachment.path, absoluteDestPath);
                 if (attachment.contentType.startsWith("image/")) {
-                    (_l = pulseResult.screenshots) === null || _l === void 0 ? void 0 : _l.push(relativeDestPath);
+                    (_o = pulseResult.screenshots) === null || _o === void 0 ? void 0 : _o.push(relativeDestPath);
                 }
                 else if (attachment.contentType.startsWith("video/")) {
-                    (_m = pulseResult.videoPath) === null || _m === void 0 ? void 0 : _m.push(relativeDestPath);
+                    (_p = pulseResult.videoPath) === null || _p === void 0 ? void 0 : _p.push(relativeDestPath);
                 }
                 else if (attachment.name === "trace") {
                     pulseResult.tracePath = relativeDestPath;
                 }
                 else {
-                    (_o = pulseResult.attachments) === null || _o === void 0 ? void 0 : _o.push({
+                    (_q = pulseResult.attachments) === null || _q === void 0 ? void 0 : _q.push({
                         name: attachment.name,
                         path: relativeDestPath,
                         contentType: attachment.contentType,

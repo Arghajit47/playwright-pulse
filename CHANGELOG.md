@@ -1,5 +1,18 @@
 # 📜 Changelog
 
+## **Version 0.3.1**
+
+**🚀 Update Highlights**
+
+* **✨ New Features**:
+* **Granular Duration Insights**: Added two new interactive charts in the "Execution Trends" tab: "Duration by Spec files" and "Duration by Test Describe" to help identify slow-performing files or specific test groups.
+* **Enhanced Chart Tooltips**: Implemented rich, HTML-styled tooltips for the new duration charts that clearly distinguish between Describe blocks and File names using custom data points for better context.
+
+
+* **🔧 Improvements**:
+* **Performance Optimization**: Applied lazy loading (`IntersectionObserver`) to the new duration charts, ensuring they only render when scrolled into view to keep the report lightweight.
+* **Visual Consistency**: Aligned the new charts with the existing report aesthetics, utilizing the orange accent theme (`var(--accent-color-alt)`) and consistent marker styling.
+
 ## **Version 0.3.0**
 
 **🚀 Update Highlights**
