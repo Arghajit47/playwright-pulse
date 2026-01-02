@@ -350,6 +350,7 @@ function generateTestTrendsChart(trendData) {
       </script>
   `;
 }
+const accentColorAltRGB = "255, 152, 0"; // Assuming var(--accent-color-alt) is Orange #FF9800
 function generateDurationTrendChart(trendData) {
   if (!trendData || !trendData.overall || trendData.overall.length === 0) {
     return '<div class="no-data">No overall trend data available for durations.</div>';
@@ -362,8 +363,6 @@ function generateDurationTrendChart(trendData) {
     "_"
   )}`;
   const runs = trendData.overall;
-
-  const accentColorAltRGB = "255, 152, 0"; // Assuming var(--accent-color-alt) is Orange #FF9800
 
   const chartDataString = JSON.stringify(runs.map((run) => run.duration));
   const categoriesString = JSON.stringify(runs.map((run, i) => `Run ${i + 1}`));
@@ -1644,28 +1643,28 @@ function generateAIFailureAnalyzerTab(results) {
     </div>
   `;
 }
-// --- NEW CHARTS HELPER FUNCTIONS (Style: Line Chart + Enhanced Tooltips) ---
-
+/**
+ * Generates a area chart showing the total duration per spec file.
+ * The chart is lazy-loaded and rendered with Highcharts when scrolled into view.
+ *
+ * @param {Array<object>} results - Array of test result objects.
+ * @returns {string} HTML string containing the chart container and lazy-loading script.
+ */
 function generateSpecDurationChart(results) {
   if (!results || results.length === 0)
     return '<div class="no-data">No results available.</div>';
 
   const specDurations = {};
   results.forEach((test) => {
-    let fileName = "Unknown";
-    if (test.location && test.location.file) {
-      fileName = test.location.file.split(path.sep).pop();
-    } else {
-      const parts = test.name.split(" > ");
-      fileName = parts[0];
-    }
+    // Use the dedicated 'spec_file' key
+    const fileName = test.spec_file || "Unknown File";
 
     if (!specDurations[fileName]) specDurations[fileName] = 0;
     specDurations[fileName] += test.duration;
   });
 
   const categories = Object.keys(specDurations);
-  // Map data to objects to pass metadata if needed, though categories usually handle this.
+  // We map 'name' here, which we will use in the tooltip later
   const data = categories.map((cat) => ({
     y: specDurations[cat],
     name: cat,
@@ -1694,24 +1693,21 @@ function generateSpecDurationChart(results) {
                 try {
                     chartContainer.innerHTML = '';
                     Highcharts.chart('${chartId}', {
-                        chart: { type: 'line', height: 350, backgroundColor: 'transparent' },
+                        chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
                         title: { text: null },
                         xAxis: { 
                             categories: ${categoriesStr}, 
+                            visible: false, // 1. HIDE THE X-AXIS
                             title: { text: null },
-                            crosshair: true,
-                            labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' } } 
+                            crosshair: true
                         },
                         yAxis: { 
                             min: 0, 
                             title: { text: 'Total Duration', style: { color: 'var(--text-color)' } },
                             labels: { formatter: function() { return formatDuration(this.value); }, style: { color: 'var(--text-color-secondary)' } }
                         },
-                        legend: { enabled: false },
-                        plotOptions: { 
-                            series: { marker: { radius: 4, states: { hover: { radius: 6 }}}, states: { hover: { halo: { size: 5, opacity: 0.1 }}}}, 
-                            line: { lineWidth: 2.5 }
-                        },
+                        legend: { layout: 'horizontal', align: 'center', verticalAlign: 'bottom', itemStyle: { fontSize: '12px', color: 'var(--text-color)' }},
+                          plotOptions: { area: { lineWidth: 2.5, states: { hover: { lineWidthPlus: 0 } }, threshold: null }},
                         tooltip: {
                             shared: true,
                             useHTML: true,
@@ -1719,19 +1715,22 @@ function generateSpecDurationChart(results) {
                             borderColor: 'rgba(10,10,10,0.92)',
                             style: { color: '#f5f5f5' },
                             formatter: function() {
-                                // 'this.x' is the File Name (category)
                                 const point = this.points ? this.points[0].point : this.point;
                                 const color = point.color || point.series.color;
                                 
-                            return '<span style="color:' + color + '">●</span> <b>File: ' + this.x + '</b><br/>' + 
-                              'Duration: <b>' + formatDuration(this.y) + '</b>';
-                          }
+                                // 2. FIX: Use 'point.name' instead of 'this.x' to get the actual filename
+                                return '<span style="color:' + color + '">●</span> <b>File: ' + point.name + '</b><br/>' + 
+                                       'Duration: <b>' + formatDuration(this.y) + '</b>';
+                            }
                         },
                         series: [{
                             name: 'Duration',
                             data: ${dataStr},
-                            color: 'var(--accent-color-alt)', // Orange theme
-                            marker: { symbol: 'circle' }
+                            color: 'var(--accent-color-alt)',
+                            type: 'area',
+                            marker: { symbol: 'circle', enabled: true, radius: 4, states: { hover: { radius: 6, lineWidthPlus: 0 } } },
+                            fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(${accentColorAltRGB}, 0.4)'], [1, 'rgba(${accentColorAltRGB}, 0.05)']] },
+                            lineWidth: 2.5
                         }],
                         credits: { enabled: false }
                     });
@@ -1741,31 +1740,33 @@ function generateSpecDurationChart(results) {
     </script>
   `;
 }
-
+/**
+ * Generates a vertical bar chart showing the total duration of each test describe block.
+ * Tests without a describe block or with "n/a" / empty describe names are ignored.
+ * @param {Array<object>} results - Array of test result objects.
+ * @returns {string} HTML string containing the chart container and lazy-loading script.
+ */
 function generateDescribeDurationChart(results) {
   if (!results || results.length === 0)
     return '<div class="no-data">No results available.</div>';
 
-  // We need to group by (File + Describe) to handle same-named describes in different files
   const describeMap = new Map();
   let foundAnyDescribe = false;
 
   results.forEach((test) => {
-    const parts = test.name.split(" > ");
-    if (parts.length > 2) {
-      foundAnyDescribe = true;
-
-      // Extract Filename
-      let fileName = "Unknown";
-      if (test.location && test.location.file) {
-        fileName = test.location.file.split(path.sep).pop();
-      } else {
-        fileName = parts[0];
+    if (test.describe) {
+      const describeName = test.describe;
+      // Filter out invalid describe blocks
+      if (
+        !describeName ||
+        describeName.trim().toLowerCase() === "n/a" ||
+        describeName.trim() === ""
+      ) {
+        return;
       }
 
-      const describeName = parts.slice(1, parts.length - 1).join(" > ");
-
-      // Create a unique key for the map
+      foundAnyDescribe = true;
+      const fileName = test.spec_file || "Unknown File";
       const key = fileName + "::" + describeName;
 
       if (!describeMap.has(key)) {
@@ -1780,16 +1781,17 @@ function generateDescribeDurationChart(results) {
   });
 
   if (!foundAnyDescribe) {
-    return '<div class="no-data">No test describe block found through out the executed test suite</div>';
+    return '<div class="no-data">No valid test describe blocks found.</div>';
   }
 
   const categories = [];
   const data = [];
 
   for (const [key, val] of describeMap.entries()) {
-    categories.push(val.describe); // X-Axis label
+    categories.push(val.describe);
     data.push({
       y: val.duration,
+      name: val.describe,
       custom: {
         fileName: val.file,
         describeName: val.describe,
@@ -1817,13 +1819,17 @@ function generateDescribeDurationChart(results) {
                 try {
                     chartContainer.innerHTML = '';
                     Highcharts.chart('${chartId}', {
-                        chart: { type: 'line', height: 350, backgroundColor: 'transparent' },
+                        chart: { 
+                            type: 'column', // 1. CHANGED: 'bar' -> 'column' for vertical bars
+                            height: 400,    // 2. CHANGED: Fixed height works better for vertical charts
+                            backgroundColor: 'transparent' 
+                        },
                         title: { text: null },
                         xAxis: { 
                             categories: ${categoriesStr}, 
+                            visible: false, // Hidden as requested
                             title: { text: null },
-                            crosshair: true,
-                            labels: { style: { color: 'var(--text-color-secondary)', fontSize: '12px' } } 
+                            crosshair: true
                         },
                         yAxis: { 
                             min: 0, 
@@ -1832,8 +1838,12 @@ function generateDescribeDurationChart(results) {
                         },
                         legend: { enabled: false },
                         plotOptions: { 
-                            series: { marker: { radius: 4, states: { hover: { radius: 6 }}}, states: { hover: { halo: { size: 5, opacity: 0.1 }}}}, 
-                            line: { lineWidth: 2.5 }
+                            series: { 
+                                borderRadius: 4, 
+                                borderWidth: 0,
+                                states: { hover: { brightness: 0.1 }} 
+                            },
+                            column: { pointPadding: 0.2, groupPadding: 0.1 } // Adjust spacing for columns
                         },
                         tooltip: {
                             shared: true, 
@@ -1842,24 +1852,20 @@ function generateDescribeDurationChart(results) {
                             borderColor: 'rgba(10,10,10,0.92)', 
                             style: { color: '#f5f5f5' },
                             formatter: function() {
-                                // Retrieve custom data stored in the point
                                 const point = this.points ? this.points[0].point : this.point;
-                                
-                                // Safety check for your custom data
                                 const file = (point.custom && point.custom.fileName) ? point.custom.fileName : 'Unknown';
-                                const desc = (point.custom && point.custom.describeName) ? point.custom.describeName : this.x;
+                                const desc = point.name || 'Unknown'; 
                                 const color = point.color || point.series.color;
                                 
                                 return '<span style="color:' + color + '">●</span> <b>Describe: ' + desc + '</b><br/>' +
                                   '<span style="opacity: 0.8; font-size: 0.9em; color: #ddd;">File: ' + file + '</span><br/>' +
                                   'Duration: <b>' + formatDuration(point.y) + '</b>';
-                                }
+                            }
                         },
                         series: [{
                             name: 'Duration',
                             data: ${dataStr},
-                            color: 'var(--accent-color-alt)', // Orange theme
-                            marker: { symbol: 'circle' }
+                            color: 'var(--accent-color-alt)', 
                         }],
                         credits: { enabled: false }
                     });
@@ -1869,7 +1875,12 @@ function generateDescribeDurationChart(results) {
     </script>
   `;
 }
-// --- END NEW CHARTS HELPER FUNCTIONS ---
+/**
+ * Generates the HTML content for the report.
+ * @param {object} reportData - The report data object containing run and results.
+ * @param {object} trendData - Optional trend data object for additional trends.
+ * @returns {string} HTML string for the report.
+ */
 function generateHTML(reportData, trendData = null) {
   const { run, results } = reportData;
   const suitesData = getSuitesData(reportData.results || []);
