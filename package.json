@@ -30,12 +30,12 @@
   ],
   "license": "MIT",
   "bin": {
-    "generate-pulse-report": "./scripts/generate-static-report.mjs",
-    "generate-report": "./scripts/generate-report.mjs",
-    "merge-pulse-report": "./scripts/merge-pulse-report.js",
-    "send-email": "./scripts/sendReport.mjs",
-    "generate-trend": "./scripts/generate-trend.mjs",
-    "generate-email-report": "./scripts/generate-email-report.mjs"
+    "generate-pulse-report": "scripts/generate-static-report.mjs",
+    "generate-report": "scripts/generate-report.mjs",
+    "merge-pulse-report": "scripts/merge-pulse-report.js",
+    "send-email": "scripts/sendReport.mjs",
+    "generate-trend": "scripts/generate-trend.mjs",
+    "generate-email-report": "scripts/generate-email-report.mjs"
   },
   "exports": {
     ".": {
