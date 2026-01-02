@@ -1885,7 +1885,7 @@ function generateSpecDurationChart(results) {
  */
 function generateDescribeDurationChart(results) {
   if (!results || results.length === 0)
-    return '<div class="no-data">No results available.</div>';
+    return '<div class="no-data">Seems like there is test describe block available in the executed test suite.</div>';
 
   const describeMap = new Map();
   let foundAnyDescribe = false;
