@@ -26,6 +26,8 @@ export interface TestStep {
 
 export interface TestResult {
   id: string;
+  describe?: string; // Add this
+  spec_file?: string; // Add this
   name: string;
   status: TestStatus;
   duration: number; // in milliseconds
