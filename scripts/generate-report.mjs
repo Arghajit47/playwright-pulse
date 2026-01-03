@@ -1994,7 +1994,7 @@ function generateSeverityDistributionChart(results) {
                                 style: { color: '#f5f5f5' },
                                 formatter: function() {
                                     // Custom formatter to HIDE 0 values
-                                    let tooltip = '<b>' + this.x + '</b><br/>';
+                                    let tooltip = '';
                                     let hasItems = false;
                                     
                                     this.points.forEach(point => {
