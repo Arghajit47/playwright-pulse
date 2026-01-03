@@ -31,6 +31,7 @@ export interface TestResult {
     snippet?: string;
     codeSnippet?: string;
     tags?: string[];
+    severity?: "Minor" | "Low" | "Medium" | "High" | "Critical";
     suiteName?: string;
     runId: string;
     browser: string;
