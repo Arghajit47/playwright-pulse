@@ -109,6 +109,10 @@ class PlaywrightPulseReporter {
     onTestBegin(test) {
         console.log(`Starting test: ${test.title}`);
     }
+    _getSeverity(annotations) {
+        const severityAnnotation = annotations.find((a) => a.type === "pulse_severity");
+        return (severityAnnotation === null || severityAnnotation === void 0 ? void 0 : severityAnnotation.description) || "Medium";
+    }
     getBrowserDetails(test) {
         var _a, _b, _c, _d;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
@@ -267,6 +271,7 @@ class PlaywrightPulseReporter {
             snippet: (_l = result.error) === null || _l === void 0 ? void 0 : _l.snippet,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
+            severity: this._getSeverity(test.annotations),
             screenshots: [],
             videoPath: [],
             tracePath: undefined,
