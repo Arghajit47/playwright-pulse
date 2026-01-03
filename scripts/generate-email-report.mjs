@@ -225,15 +225,15 @@ function generateMinifiedHTML(reportData) {
             case "Minor":
               return "#006064";
             case "Low":
-              return "#E65100";
-            case "Medium":
               return "#FFA07A";
+            case "Medium":
+              return "#577A11";
             case "High":
               return "#B71C1C";
             case "Critical":
-              return "#3E0000";
+              return "#64158A";
             default:
-              return "#FFA07A";
+              return "#577A11";
           }
         };
         // We use inline styles here to ensure they render correctly in emails
@@ -569,10 +569,10 @@ function generateMinifiedHTML(reportData) {
                     <span style="margin-left: 4px; font-weight: 600; color: var(--text-color);">Severity:</span>
                     
                     <span style="background-color: #006064; color: #fff; padding: 2px 6px; border-radius: 3px;">Minor</span>
-                    <span style="background-color: #E65100; color: #fff; padding: 2px 6px; border-radius: 3px;">Low</span>
-                    <span style="background-color: #FFA07A; color: #fff; padding: 2px 6px; border-radius: 3px;">Medium</span>
+                    <span style="background-color: #FFA07A; color: #fff; padding: 2px 6px; border-radius: 3px;">Low</span>
+                    <span style="background-color: #577A11; color: #fff; padding: 2px 6px; border-radius: 3px;">Medium</span>
                     <span style="background-color: #B71C1C; color: #fff; padding: 2px 6px; border-radius: 3px;">High</span>
-                    <span style="background-color: #3E0000; color: #fff; padding: 2px 6px; border-radius: 3px;">Critical</span>
+                    <span style="background-color: #64158A; color: #fff; padding: 2px 6px; border-radius: 3px;">Critical</span>
                     
                     <span style="border-left: 1px solid #ccc; height: 14px; margin: 0 4px;"></span>
                     

@@ -2059,15 +2059,17 @@ function generateHTML(reportData, trendData = null) {
         const getSeverityColor = (level) => {
           switch (level) {
             case "Minor":
-              return "#006064"; // contrast ~7.35:1 vs white
+              return "#006064";
             case "Low":
-              return "#E65100"; // contrast ~4.9:1 vs white
+              return "#FFA07A";
+            case "Medium":
+              return "#577A11";
             case "High":
-              return "#B71C1C"; // contrast ~6.57:1 vs white
+              return "#B71C1C";
             case "Critical":
-              return "#3E0000"; // contrast ~17.4:1 vs white
+              return "#64158A";
             default:
-              return "#BF360C"; // Medium, contrast ~5.6:1 vs white
+              return "#577A11";
           }
         };
         const severityColor = getSeverityColor(severity);
