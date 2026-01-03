@@ -776,6 +776,9 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
   const cardHeight = Math.floor(dashboardHeight * 0.44);
   const cardContentPadding = 16; // px
 
+  // Logic for Run Context
+  const runContext = process.env.CI ? "CI" : "Local Test";
+
   return `
     <div class="environment-dashboard-wrapper" id="${dashboardId}">
       <style>
@@ -819,6 +822,20 @@ gap: 20px;
 font-size: 14px;
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .environment-dashboard-wrapper {
+    grid-template-columns: 1fr; /* Stack columns on mobile */
+    grid-template-rows: auto;
+    padding: 16px;
+    height: auto !important; /* Allow height to grow */
+  }
+  .env-card {
+    height: auto !important; /* Allow cards to grow based on content */
+    min-height: 200px;
+  }
+}
+
 .env-dashboard-header {
 grid-column: 1 / -1;
 display: flex;
@@ -827,6 +844,8 @@ align-items: center;
 border-bottom: 1px solid var(--border-color);
 padding-bottom: 16px;
 margin-bottom: 8px;
+flex-wrap: wrap; /* Allow wrapping header items */
+gap: 10px;
 }
 
 .env-dashboard-title {
@@ -1086,7 +1105,7 @@ border-color: var(--border-color);
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Run Context</span>
-            <span class="env-detail-value">CI/Local Test</span>
+            <span class="env-detail-value">${runContext}</span>
           </div>
         </div>
       </div>
@@ -2013,6 +2032,140 @@ function generateDescribeDurationChart(results) {
   `;
 }
 /**
+ * Generates a stacked column chart showing test results distributed by severity.
+ * Matches dimensions of the System Environment section (~600px).
+ * Lazy-loaded for performance.
+ */
+function generateSeverityDistributionChart(results) {
+  if (!results || results.length === 0) {
+    return '<div class="trend-chart" style="height: 600px;"><div class="no-data">No results available for severity distribution.</div></div>';
+  }
+
+  const severityLevels = ["Critical", "High", "Medium", "Low", "Minor"];
+  const data = {
+    passed: [0, 0, 0, 0, 0],
+    failed: [0, 0, 0, 0, 0],
+    skipped: [0, 0, 0, 0, 0],
+  };
+
+  results.forEach((test) => {
+    const sev = test.severity || "Medium";
+    const status = String(test.status).toLowerCase();
+
+    let index = severityLevels.indexOf(sev);
+    if (index === -1) index = 2; // Default to Medium
+
+    if (status === "passed") {
+      data.passed[index]++;
+    } else if (
+      status === "failed" ||
+      status === "timedout" ||
+      status === "interrupted"
+    ) {
+      data.failed[index]++;
+    } else {
+      data.skipped[index]++;
+    }
+  });
+
+  const chartId = `sevDistChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderSevDistChart_${chartId.replace(/-/g, "_")}`;
+
+  const seriesData = [
+    { name: "Passed", data: data.passed, color: "var(--success-color)" },
+    { name: "Failed", data: data.failed, color: "var(--danger-color)" },
+    { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
+  ];
+
+  const seriesDataStr = JSON.stringify(seriesData);
+  const categoriesStr = JSON.stringify(severityLevels);
+
+  return `
+    <div class="trend-chart" style="height: 600px; padding: 28px; box-sizing: border-box;">
+        <h3 class="chart-title-header">Severity Distribution</h3>
+        <div id="${chartId}" class="lazy-load-chart" data-render-function-name="${renderFunctionName}" style="width: 100%; height: 100%;">
+             <div class="no-data">Loading Severity Chart...</div>
+        </div>
+        <script>
+            window.${renderFunctionName} = function() {
+                const chartContainer = document.getElementById('${chartId}');
+                if (!chartContainer) return;
+
+                if (typeof Highcharts !== 'undefined') {
+                    try {
+                        chartContainer.innerHTML = '';
+                        Highcharts.chart('${chartId}', {
+                            chart: { type: 'column', backgroundColor: 'transparent' },
+                            title: { text: null },
+                            xAxis: {
+                                categories: ${categoriesStr},
+                                crosshair: true,
+                                labels: { style: { color: 'var(--text-color-secondary)' } }
+                            },
+                            yAxis: {
+                                min: 0,
+                                title: { text: 'Test Count', style: { color: 'var(--text-color)' } },
+                                stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } },
+                                labels: { style: { color: 'var(--text-color-secondary)' } }
+                            },
+                            legend: {
+                                 itemStyle: { color: 'var(--text-color)' }
+                            },
+                            tooltip: {
+                                shared: true,
+                                useHTML: true,
+                                backgroundColor: 'rgba(10,10,10,0.92)',
+                                style: { color: '#f5f5f5' },
+                                formatter: function() {
+                                    // Custom formatter to HIDE 0 values
+                                    let tooltip = '<b>' + this.x + '</b><br/>';
+                                    let hasItems = false;
+                                    
+                                    this.points.forEach(point => {
+                                        if (point.y > 0) { // ONLY show if count > 0
+                                            tooltip += '<span style="color:' + point.series.color + '">●</span> ' + 
+                                                      point.series.name + ': <b>' + point.y + '</b><br/>';
+                                            hasItems = true;
+                                        }
+                                    });
+                                    
+                                    if (!hasItems) return false; // Hide tooltip entirely if no data
+                                    
+                                    // Calculate total from visible points to ensure accuracy or use stackTotal
+                                    tooltip += 'Total: ' + this.points[0].total;
+                                    return tooltip;
+                                }
+                            },
+                            plotOptions: {
+                                column: {
+                                    stacking: 'normal',
+                                    dataLabels: { 
+                                        enabled: true, 
+                                        color: '#fff', 
+                                        style: { textOutline: 'none' },
+                                        formatter: function() {
+                                            return (this.y > 0) ? this.y : null; // Hide 0 labels on chart bars
+                                        }
+                                    },
+                                    borderRadius: 3
+                                }
+                            },
+                            series: ${seriesDataStr},
+                            credits: { enabled: false }
+                        });
+                    } catch(e) {
+                         console.error("Error rendering severity chart:", e);
+                         chartContainer.innerHTML = '<div class="no-data">Error rendering chart.</div>';
+                    }
+                }
+            };
+        </script>
+    </div>
+  `;
+}
+/**
  * Generates the HTML report.
  * @param {object} reportData - The data for the report.
  * @param {object} trendData - The data for the trend chart.
@@ -2478,10 +2631,10 @@ function generateHTML(reportData, trendData = null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/v817w4sg/logo.png">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
+    <link rel="icon" type="image/png" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
+    <link rel="apple-touch-icon" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
     <script src="https://code.highcharts.com/highcharts.js" defer></script>
-    <title>Playwright Pulse Report (Static Report)</title>
+    <title>Pulse Static Report</title>
     
 <style>
 :root {
@@ -2523,7 +2676,7 @@ body { font-family: var(--font-family); margin: 0; background-color: var(--backg
 .status-passed .value, .stat-passed svg { color: var(--success-color); }
 .status-failed .value, .stat-failed svg { color: var(--danger-color); }
 .status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
-.dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: stretch; }
+.dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: start; }
 .pie-chart-wrapper, .suites-widget, .trend-chart { background-color: var(--card-background-color); padding: 28px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
 .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color); }
 .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { flex-grow: 1; min-height: 250px; }
@@ -2727,8 +2880,8 @@ aspect-ratio: 16 / 9;
     <div class="container">
         <header class="header">
             <div class="header-title">
-                <img id="report-logo" src="https://i.postimg.cc/v817w4sg/logo.png" alt="Report Logo">
-                <h1>Playwright Pulse Report</h1>
+                <img id="report-logo" src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png" alt="Report Logo">
+                <h1>Pulse Static Report</h1>
             </div>
             <div class="run-info"><strong>Run Date:</strong> ${formatDate(
               runSummary.timestamp
@@ -2779,7 +2932,10 @@ aspect-ratio: 16 / 9;
                     : '<div class="no-data">Environment data not available.</div>'
                 }
               </div> 
-                ${generateSuitesWidget(suitesData)}
+                <div style="display: flex; flex-direction: column; gap: 28px;">
+                  ${generateSuitesWidget(suitesData)}
+                  ${generateSeverityDistributionChart(results)}
+              </div>
             </div>
         </div>
         <div id="test-runs" class="tab-content">

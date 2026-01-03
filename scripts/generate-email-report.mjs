@@ -286,7 +286,7 @@ function generateMinifiedHTML(reportData) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
     <link rel="apple-touch-icon" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
-    <title>Playwright Pulse Summary Report</title>
+    <title>Pulse Summary Report</title>
     <style>
         :root {
             --primary-color: #2c3e50; /* Dark Blue/Grey */
@@ -527,7 +527,7 @@ function generateMinifiedHTML(reportData) {
         <header class="report-header">
             <div class="report-header-title">
                 <img id="report-logo" src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png" alt="Report Logo">
-                <h1>Playwright Pulse Summary</h1>
+                <h1>Pulse Summary Report</h1>
             </div>
             <div class="run-info">
                 <strong>Run Date:</strong> ${formatDate(
