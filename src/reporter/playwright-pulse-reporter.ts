@@ -122,6 +122,15 @@ export class PlaywrightPulseReporter implements Reporter {
     console.log(`Starting test: ${test.title}`);
   }
 
+  private _getSeverity(
+    annotations: { type: string; description?: string }[]
+  ): string {
+    const severityAnnotation = annotations.find(
+      (a) => a.type === "pulse_severity"
+    );
+    return severityAnnotation?.description || "Medium";
+  }
+
   private getBrowserDetails(test: TestCase): string {
     const project = test.parent?.project();
     const projectConfig = project?.use;
@@ -263,6 +272,17 @@ export class PlaywrightPulseReporter implements Reporter {
         e
       );
     }
+    // 1. Get Spec File Name
+    const specFileName = test.location?.file
+      ? path.basename(test.location.file)
+      : "n/a";
+
+    // 2. Get Describe Block Name
+    // Check if the immediate parent is a 'describe' block
+    let describeBlockName = "n/a";
+    if (test.parent?.type === "describe") {
+      describeBlockName = test.parent.title;
+    }
 
     const stdoutMessages: string[] = result.stdout.map((item) =>
       typeof item === "string" ? item : item.toString()
@@ -289,6 +309,8 @@ export class PlaywrightPulseReporter implements Reporter {
     const pulseResult: TestResult = {
       id: test.id,
       runId: "TBD",
+      describe: describeBlockName,
+      spec_file: specFileName,
       name: test.titlePath().join(" > "),
       suiteName:
         project?.name || this.config.projects[0]?.name || "Default Suite",
@@ -306,6 +328,7 @@ export class PlaywrightPulseReporter implements Reporter {
       tags: test.tags.map((tag) =>
         tag.startsWith("@") ? tag.substring(1) : tag
       ),
+      severity: this._getSeverity(test.annotations) as any,
       screenshots: [],
       videoPath: [],
       tracePath: undefined,

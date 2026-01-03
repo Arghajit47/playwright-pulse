@@ -17,6 +17,8 @@ export interface TestStep {
 }
 export interface TestResult {
     id: string;
+    describe?: string;
+    spec_file?: string;
     name: string;
     status: TestStatus;
     duration: number;
@@ -29,6 +31,7 @@ export interface TestResult {
     snippet?: string;
     codeSnippet?: string;
     tags?: string[];
+    severity?: "Minor" | "Low" | "Medium" | "High" | "Critical";
     suiteName?: string;
     runId: string;
     browser: string;

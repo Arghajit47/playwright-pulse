@@ -16,6 +16,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     printsToStdio(): boolean;
     onBegin(config: FullConfig, suite: Suite): void;
     onTestBegin(test: TestCase): void;
+    private _getSeverity;
     private getBrowserDetails;
     private processStep;
     onTestEnd(test: TestCase, result: PwTestResult): Promise<void>;

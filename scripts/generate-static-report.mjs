@@ -394,6 +394,7 @@ function generateTestTrendsChart(trendData) {
       </script>
   `;
 }
+const accentColorAltRGB = "255, 152, 0"; // Assuming var(--accent-color-alt) is Orange #FF9800
 /**
  * Generates HTML and JavaScript for a Highcharts area chart to display test duration trends.
  * @param {object} trendData Data for duration trends.
@@ -412,8 +413,6 @@ function generateDurationTrendChart(trendData) {
     "_"
   )}`;
   const runs = trendData.overall;
-
-  const accentColorAltRGB = "255, 152, 0"; // Assuming var(--accent-color-alt) is Orange #FF9800
 
   const chartDataString = JSON.stringify(runs.map((run) => run.duration));
   const categoriesString = JSON.stringify(runs.map((run, i) => `Run ${i + 1}`));
@@ -777,6 +776,9 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
   const cardHeight = Math.floor(dashboardHeight * 0.44);
   const cardContentPadding = 16; // px
 
+  // Logic for Run Context
+  const runContext = process.env.CI ? "CI" : "Local Test";
+
   return `
     <div class="environment-dashboard-wrapper" id="${dashboardId}">
       <style>
@@ -820,6 +822,20 @@ gap: 20px;
 font-size: 14px;
 }
 
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .environment-dashboard-wrapper {
+    grid-template-columns: 1fr; /* Stack columns on mobile */
+    grid-template-rows: auto;
+    padding: 16px;
+    height: auto !important; /* Allow height to grow */
+  }
+  .env-card {
+    height: auto !important; /* Allow cards to grow based on content */
+    min-height: 200px;
+  }
+}
+
 .env-dashboard-header {
 grid-column: 1 / -1;
 display: flex;
@@ -828,6 +844,8 @@ align-items: center;
 border-bottom: 1px solid var(--border-color);
 padding-bottom: 16px;
 margin-bottom: 8px;
+flex-wrap: wrap; /* Allow wrapping header items */
+gap: 10px;
 }
 
 .env-dashboard-title {
@@ -1087,7 +1105,7 @@ border-color: var(--border-color);
           </div>
           <div class="env-detail-row">
             <span class="env-detail-label">Run Context</span>
-            <span class="env-detail-value">CI/Local Test</span>
+            <span class="env-detail-value">${runContext}</span>
           </div>
         </div>
       </div>
@@ -1782,6 +1800,372 @@ function generateAIFailureAnalyzerTab(results) {
   `;
 }
 /**
+ * Generates a area chart showing the total duration per spec file.
+ * The chart is lazy-loaded and rendered with Highcharts when scrolled into view.
+ *
+ * @param {Array<object>} results - Array of test result objects.
+ * @returns {string} HTML string containing the chart container and lazy-loading script.
+ */
+function generateSpecDurationChart(results) {
+  if (!results || results.length === 0)
+    return '<div class="no-data">No results available.</div>';
+
+  const specDurations = {};
+  results.forEach((test) => {
+    // Use the dedicated 'spec_file' key
+    const fileName = test.spec_file || "Unknown File";
+
+    if (!specDurations[fileName]) specDurations[fileName] = 0;
+    specDurations[fileName] += test.duration;
+  });
+
+  const categories = Object.keys(specDurations);
+  // We map 'name' here, which we will use in the tooltip later
+  const data = categories.map((cat) => ({
+    y: specDurations[cat],
+    name: cat,
+  }));
+
+  if (categories.length === 0)
+    return '<div class="no-data">No spec data found.</div>';
+
+  const chartId = `specDurChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderSpecDurChart_${chartId.replace(/-/g, "_")}`;
+
+  const categoriesStr = JSON.stringify(categories);
+  const dataStr = JSON.stringify(data);
+
+  return `
+    <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}">
+        <div class="no-data">Loading Spec Duration Chart...</div>
+    </div>
+    <script>
+        window.${renderFunctionName} = function() {
+            const chartContainer = document.getElementById('${chartId}');
+            if (!chartContainer) return;
+            if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                try {
+                    chartContainer.innerHTML = '';
+                    Highcharts.chart('${chartId}', {
+                        chart: { type: 'area', height: 350, backgroundColor: 'transparent' },
+                        title: { text: null },
+                        xAxis: { 
+                            categories: ${categoriesStr}, 
+                            visible: false, // 1. HIDE THE X-AXIS
+                            title: { text: null },
+                            crosshair: true
+                        },
+                        yAxis: { 
+                            min: 0, 
+                            title: { text: 'Total Duration', style: { color: 'var(--text-color)' } },
+                            labels: { formatter: function() { return formatDuration(this.value); }, style: { color: 'var(--text-color-secondary)' } }
+                        },
+                        legend: { layout: 'horizontal', align: 'center', verticalAlign: 'bottom', itemStyle: { fontSize: '12px', color: 'var(--text-color)' }},
+                          plotOptions: { area: { lineWidth: 2.5, states: { hover: { lineWidthPlus: 0 } }, threshold: null }},
+                        tooltip: {
+                            shared: true,
+                            useHTML: true,
+                            backgroundColor: 'rgba(10,10,10,0.92)',
+                            borderColor: 'rgba(10,10,10,0.92)',
+                            style: { color: '#f5f5f5' },
+                            formatter: function() {
+                                const point = this.points ? this.points[0].point : this.point;
+                                const color = point.color || point.series.color;
+                                
+                                // 2. FIX: Use 'point.name' instead of 'this.x' to get the actual filename
+                                return '<span style="color:' + color + '">●</span> <b>File: ' + point.name + '</b><br/>' + 
+                                       'Duration: <b>' + formatDuration(this.y) + '</b>';
+                            }
+                        },
+                        series: [{
+                            name: 'Duration',
+                            data: ${dataStr},
+                            color: 'var(--accent-color-alt)',
+                            type: 'area',
+                            marker: { symbol: 'circle', enabled: true, radius: 4, states: { hover: { radius: 6, lineWidthPlus: 0 } } },
+                            fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [[0, 'rgba(${accentColorAltRGB}, 0.4)'], [1, 'rgba(${accentColorAltRGB}, 0.05)']] },
+                            lineWidth: 2.5
+                        }],
+                        credits: { enabled: false }
+                    });
+                } catch (e) { console.error("Error rendering spec chart:", e); }
+            }
+        };
+    </script>
+  `;
+}
+/**
+ * Generates a vertical bar chart showing the total duration of each test describe block.
+ * Tests without a describe block or with "n/a" / empty describe names are ignored.
+ * @param {Array<object>} results - Array of test result objects.
+ * @returns {string} HTML string containing the chart container and lazy-loading script.
+ */
+function generateDescribeDurationChart(results) {
+  if (!results || results.length === 0)
+    return '<div class="no-data">Seems like there is test describe block available in the executed test suite.</div>';
+
+  const describeMap = new Map();
+  let foundAnyDescribe = false;
+
+  results.forEach((test) => {
+    if (test.describe) {
+      const describeName = test.describe;
+      // Filter out invalid describe blocks
+      if (
+        !describeName ||
+        describeName.trim().toLowerCase() === "n/a" ||
+        describeName.trim() === ""
+      ) {
+        return;
+      }
+
+      foundAnyDescribe = true;
+      const fileName = test.spec_file || "Unknown File";
+      const key = fileName + "::" + describeName;
+
+      if (!describeMap.has(key)) {
+        describeMap.set(key, {
+          duration: 0,
+          file: fileName,
+          describe: describeName,
+        });
+      }
+      describeMap.get(key).duration += test.duration;
+    }
+  });
+
+  if (!foundAnyDescribe) {
+    return '<div class="no-data">No valid test describe blocks found.</div>';
+  }
+
+  const categories = [];
+  const data = [];
+
+  for (const [key, val] of describeMap.entries()) {
+    categories.push(val.describe);
+    data.push({
+      y: val.duration,
+      name: val.describe,
+      custom: {
+        fileName: val.file,
+        describeName: val.describe,
+      },
+    });
+  }
+
+  const chartId = `descDurChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderDescDurChart_${chartId.replace(/-/g, "_")}`;
+
+  const categoriesStr = JSON.stringify(categories);
+  const dataStr = JSON.stringify(data);
+
+  return `
+    <div id="${chartId}" class="trend-chart-container lazy-load-chart" data-render-function-name="${renderFunctionName}">
+        <div class="no-data">Loading Describe Duration Chart...</div>
+    </div>
+    <script>
+        window.${renderFunctionName} = function() {
+            const chartContainer = document.getElementById('${chartId}');
+            if (!chartContainer) return;
+            if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {
+                try {
+                    chartContainer.innerHTML = '';
+                    Highcharts.chart('${chartId}', {
+                        chart: { 
+                            type: 'column', // 1. CHANGED: 'bar' -> 'column' for vertical bars
+                            height: 400,    // 2. CHANGED: Fixed height works better for vertical charts
+                            backgroundColor: 'transparent' 
+                        },
+                        title: { text: null },
+                        xAxis: { 
+                            categories: ${categoriesStr}, 
+                            visible: false, // Hidden as requested
+                            title: { text: null },
+                            crosshair: true
+                        },
+                        yAxis: { 
+                            min: 0, 
+                            title: { text: 'Total Duration', style: { color: 'var(--text-color)' } },
+                            labels: { formatter: function() { return formatDuration(this.value); }, style: { color: 'var(--text-color-secondary)' } }
+                        },
+                        legend: { enabled: false },
+                        plotOptions: { 
+                            series: { 
+                                borderRadius: 4, 
+                                borderWidth: 0,
+                                states: { hover: { brightness: 0.1 }} 
+                            },
+                            column: { pointPadding: 0.2, groupPadding: 0.1 } // Adjust spacing for columns
+                        },
+                        tooltip: {
+                            shared: true, 
+                            useHTML: true, 
+                            backgroundColor: 'rgba(10,10,10,0.92)', 
+                            borderColor: 'rgba(10,10,10,0.92)', 
+                            style: { color: '#f5f5f5' },
+                            formatter: function() {
+                                const point = this.points ? this.points[0].point : this.point;
+                                const file = (point.custom && point.custom.fileName) ? point.custom.fileName : 'Unknown';
+                                const desc = point.name || 'Unknown'; 
+                                const color = point.color || point.series.color;
+                                
+                                return '<span style="color:' + color + '">●</span> <b>Describe: ' + desc + '</b><br/>' +
+                                  '<span style="opacity: 0.8; font-size: 0.9em; color: #ddd;">File: ' + file + '</span><br/>' +
+                                  'Duration: <b>' + formatDuration(point.y) + '</b>';
+                            }
+                        },
+                        series: [{
+                            name: 'Duration',
+                            data: ${dataStr},
+                            color: 'var(--accent-color-alt)', 
+                        }],
+                        credits: { enabled: false }
+                    });
+                } catch (e) { console.error("Error rendering describe chart:", e); }
+            }
+        };
+    </script>
+  `;
+}
+/**
+ * Generates a stacked column chart showing test results distributed by severity.
+ * Matches dimensions of the System Environment section (~600px).
+ * Lazy-loaded for performance.
+ */
+function generateSeverityDistributionChart(results) {
+  if (!results || results.length === 0) {
+    return '<div class="trend-chart" style="height: 600px;"><div class="no-data">No results available for severity distribution.</div></div>';
+  }
+
+  const severityLevels = ["Critical", "High", "Medium", "Low", "Minor"];
+  const data = {
+    passed: [0, 0, 0, 0, 0],
+    failed: [0, 0, 0, 0, 0],
+    skipped: [0, 0, 0, 0, 0],
+  };
+
+  results.forEach((test) => {
+    const sev = test.severity || "Medium";
+    const status = String(test.status).toLowerCase();
+
+    let index = severityLevels.indexOf(sev);
+    if (index === -1) index = 2; // Default to Medium
+
+    if (status === "passed") {
+      data.passed[index]++;
+    } else if (
+      status === "failed" ||
+      status === "timedout" ||
+      status === "interrupted"
+    ) {
+      data.failed[index]++;
+    } else {
+      data.skipped[index]++;
+    }
+  });
+
+  const chartId = `sevDistChart-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 7)}`;
+  const renderFunctionName = `renderSevDistChart_${chartId.replace(/-/g, "_")}`;
+
+  const seriesData = [
+    { name: "Passed", data: data.passed, color: "var(--success-color)" },
+    { name: "Failed", data: data.failed, color: "var(--danger-color)" },
+    { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
+  ];
+
+  const seriesDataStr = JSON.stringify(seriesData);
+  const categoriesStr = JSON.stringify(severityLevels);
+
+  return `
+    <div class="trend-chart" style="height: 600px; padding: 28px; box-sizing: border-box;">
+        <h3 class="chart-title-header">Severity Distribution</h3>
+        <div id="${chartId}" class="lazy-load-chart" data-render-function-name="${renderFunctionName}" style="width: 100%; height: 100%;">
+             <div class="no-data">Loading Severity Chart...</div>
+        </div>
+        <script>
+            window.${renderFunctionName} = function() {
+                const chartContainer = document.getElementById('${chartId}');
+                if (!chartContainer) return;
+
+                if (typeof Highcharts !== 'undefined') {
+                    try {
+                        chartContainer.innerHTML = '';
+                        Highcharts.chart('${chartId}', {
+                            chart: { type: 'column', backgroundColor: 'transparent' },
+                            title: { text: null },
+                            xAxis: {
+                                categories: ${categoriesStr},
+                                crosshair: true,
+                                labels: { style: { color: 'var(--text-color-secondary)' } }
+                            },
+                            yAxis: {
+                                min: 0,
+                                title: { text: 'Test Count', style: { color: 'var(--text-color)' } },
+                                stackLabels: { enabled: true, style: { fontWeight: 'bold', color: 'var(--text-color)' } },
+                                labels: { style: { color: 'var(--text-color-secondary)' } }
+                            },
+                            legend: {
+                                 itemStyle: { color: 'var(--text-color)' }
+                            },
+                            tooltip: {
+                                shared: true,
+                                useHTML: true,
+                                backgroundColor: 'rgba(10,10,10,0.92)',
+                                style: { color: '#f5f5f5' },
+                                formatter: function() {
+                                    // Custom formatter to HIDE 0 values
+                                    let tooltip = '';
+                                    let hasItems = false;
+                                    
+                                    this.points.forEach(point => {
+                                        if (point.y > 0) { // ONLY show if count > 0
+                                            tooltip += '<span style="color:' + point.series.color + '">●</span> ' + 
+                                                      point.series.name + ': <b>' + point.y + '</b><br/>';
+                                            hasItems = true;
+                                        }
+                                    });
+                                    
+                                    if (!hasItems) return false; // Hide tooltip entirely if no data
+                                    
+                                    // Calculate total from visible points to ensure accuracy or use stackTotal
+                                    tooltip += 'Total: ' + this.points[0].total;
+                                    return tooltip;
+                                }
+                            },
+                            plotOptions: {
+                                column: {
+                                    stacking: 'normal',
+                                    dataLabels: { 
+                                        enabled: true, 
+                                        color: '#fff', 
+                                        style: { textOutline: 'none' },
+                                        formatter: function() {
+                                            return (this.y > 0) ? this.y : null; // Hide 0 labels on chart bars
+                                        }
+                                    },
+                                    borderRadius: 3
+                                }
+                            },
+                            series: ${seriesDataStr},
+                            credits: { enabled: false }
+                        });
+                    } catch(e) {
+                         console.error("Error rendering severity chart:", e);
+                         chartContainer.innerHTML = '<div class="no-data">Error rendering chart.</div>';
+                    }
+                }
+            };
+        </script>
+    </div>
+  `;
+}
+/**
  * Generates the HTML report.
  * @param {object} reportData - The data for the report.
  * @param {object} trendData - The data for the trend chart.
@@ -1823,6 +2207,28 @@ function generateHTML(reportData, trendData = null) {
         const testFileParts = test.name.split(" > ");
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
+        // --- NEW: Severity Logic ---
+        const severity = test.severity || "Medium";
+        const getSeverityColor = (level) => {
+          switch (level) {
+            case "Minor":
+              return "#006064";
+            case "Low":
+              return "#FFA07A";
+            case "Medium":
+              return "#577A11";
+            case "High":
+              return "#B71C1C";
+            case "Critical":
+              return "#64158A";
+            default:
+              return "#577A11";
+          }
+        };
+        const severityColor = getSeverityColor(severity);
+        // We reuse 'status-badge' class for size/font consistency, but override background color
+        const severityBadge = `<span class="status-badge" style="background-color: ${severityColor}; margin-right: 8px;">${severity}</span>`;
+        // ---------------------------
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
             return "<div class='no-steps'>No steps recorded for this test.</div>";
@@ -1932,13 +2338,16 @@ function generateHTML(reportData, trendData = null) {
           testTitle
         )}</span><span class="test-case-browser">(${sanitizeHTML(
           browser
-        )})</span></div><div class="test-case-meta">${
+        )})</span></div><div class="test-case-meta">
+        ${severityBadge}
+        ${
           test.tags && test.tags.length > 0
             ? test.tags
                 .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
                 .join(" ")
             : ""
-        }<span class="test-duration">${formatDuration(
+        }
+        <span class="test-duration">${formatDuration(
           test.duration
         )}</span></div></div>
                     <div class="test-case-content" style="display: none;">
@@ -2222,10 +2631,10 @@ function generateHTML(reportData, trendData = null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/v817w4sg/logo.png">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/v817w4sg/logo.png">
+    <link rel="icon" type="image/png" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
+    <link rel="apple-touch-icon" href="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png">
     <script src="https://code.highcharts.com/highcharts.js" defer></script>
-    <title>Playwright Pulse Report (Static Report)</title>
+    <title>Pulse Static Report</title>
     
 <style>
 :root {
@@ -2267,7 +2676,7 @@ body { font-family: var(--font-family); margin: 0; background-color: var(--backg
 .status-passed .value, .stat-passed svg { color: var(--success-color); }
 .status-failed .value, .stat-failed svg { color: var(--danger-color); }
 .status-skipped .value, .stat-skipped svg { color: var(--warning-color); }
-.dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: stretch; }
+.dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: start; }
 .pie-chart-wrapper, .suites-widget, .trend-chart { background-color: var(--card-background-color); padding: 28px; border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }
 .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3 { text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color); }
 .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] { flex-grow: 1; min-height: 250px; }
@@ -2389,6 +2798,7 @@ aspect-ratio: 16 / 9;
 .status-badge-small.status-failed { background-color: var(--danger-color); }
 .status-badge-small.status-skipped { background-color: var(--warning-color); }
 .status-badge-small.status-unknown { background-color: var(--dark-gray-color); }
+.badge-severity { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; text-transform: uppercase; margin-right: 8px; vertical-align: middle; }
 .no-data, .no-tests, .no-steps, .no-data-chart { padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }
 .no-data-chart {font-size: 0.95em; padding: 18px;}
 .ai-failure-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }
@@ -2470,8 +2880,8 @@ aspect-ratio: 16 / 9;
     <div class="container">
         <header class="header">
             <div class="header-title">
-                <img id="report-logo" src="https://i.postimg.cc/v817w4sg/logo.png" alt="Report Logo">
-                <h1>Playwright Pulse Report</h1>
+                <img id="report-logo" src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png" alt="Report Logo">
+                <h1>Pulse Static Report</h1>
             </div>
             <div class="run-info"><strong>Run Date:</strong> ${formatDate(
               runSummary.timestamp
@@ -2522,7 +2932,10 @@ aspect-ratio: 16 / 9;
                     : '<div class="no-data">Environment data not available.</div>'
                 }
               </div> 
-                ${generateSuitesWidget(suitesData)}
+                <div style="display: flex; flex-direction: column; gap: 28px;">
+                  ${generateSuitesWidget(suitesData)}
+                  ${generateSeverityDistributionChart(results)}
+              </div>
             </div>
         </div>
         <div id="test-runs" class="tab-content">
@@ -2573,6 +2986,16 @@ aspect-ratio: 16 / 9;
                   : '<div class="no-data">Overall trend data not available for durations.</div>'
               }
               </div>
+          </div>
+          <div class="trend-charts-row">
+            <div class="trend-chart">
+                <h3 class="chart-title-header">Duration by Spec files</h3>
+                ${generateSpecDurationChart(results)}
+            </div>
+            <div class="trend-chart">
+                <h3 class="chart-title-header">Duration by Test Describe</h3>
+                ${generateDescribeDurationChart(results)}
+            </div>
           </div>
           <h2 class="tab-main-title">Test Distribution by Worker ${infoTooltip}</h2>
           <div class="trend-charts-row">
