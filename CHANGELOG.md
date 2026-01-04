@@ -22,6 +22,7 @@
 * **Enhanced Dashboard Charts**: Refined all the Dashboard charts and Reorganized the Dashboard grid to align the "Test Suites" widget with the new "Severity Distribution" chart, creating a balanced and visually consistent layout.
 * **Smart CI Detection**: The "Run Context" field in the Environment dashboard now automatically detects `process.env.CI` to accurately label runs as "CI" or "Local Test".
 * **Refined Email Visuals**: Updated the email report with a specific, high-contrast color palette for severity badges, added explicit legends, and included Tags alongside severity badges for better context.
+* **Static report on N2O**: The static report now has better performance and stability.
 
 ---
 
