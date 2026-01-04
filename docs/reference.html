@@ -87,73 +87,158 @@
         <h1>Reference</h1>
         <section id="changelog">
           <h2>Changelog</h2>
+          <h4>Version 0.3.1</h4>
+          <ul>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Granular Duration Insights:</b> Added "Duration by Spec files"
+              and "Duration by Test Describe" charts to Execution Trends.
+            </li>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Severity-Driven Reporting:</b> Introduced
+              <code>pulse.severity</code> helper to capture Minor to Critical
+              test severity. Just add <code>import {pulse} from '@arghajit/playwright-pulse-report</code> into your test spec files.
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>Severity Badges:</b> Visualized
+              severity in HTML, static, and email reports with color-coded
+              badges.
+            </li>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Severity Distribution Chart:</b> Added a stacked column chart
+              to the Dashboard showing results by severity level.
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>Email Improvements:</b> Added tag
+              badges and severity indicators to email summaries.
+            </li>
+            <li>
+              <strong>New Feature:</strong> <b>Custom SMTP Support:</b> The send email report now supports custom credentials via environment variables (<code>PULSE_MAIL_HOST, PULSE_MAIL_USERNAME, PULSE_MAIL_PASSWORD</code>), allowing direct integration with Gmail and Outlook without manual credential fetching. If nothing mentioned in the environment variables, the reporter will fallback to the old default mechanism.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Performance:</b> Applied lazy
+              loading (IntersectionObserver) to duration charts.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Visual Consistency:</b> Aligned
+              charts with the orange accent theme and improved tooltip styling.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>DX-Friendly Exports:</b> Re-exported
+              <code>pulse</code> helper and types for easier import.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Typed Severity:</b> Extended
+              <code>TestResult</code> with a strongly-typed severity field.
+            </li>
+          </ul>
+
           <h4>Version 0.3.0</h4>
           <ul>
             <li>
-              <strong>New Feature:</strong> <b>Custom Annotations Support</b> - Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
+              <strong>New Feature:</strong> <b>Custom Annotations Support</b> -
+              Added full support for Playwright test annotations in reports with
+              dedicated styling, showing Type, Description, and Location
+              details.
             </li>
             <li>
-              <strong>New Feature:</strong> <b>JIRA/Ticket System Integration</b> - Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
+              <strong>New Feature:</strong>
+              <b>JIRA/Ticket System Integration</b> - Clickable links for
+              "issue" or "bug" type annotations that automatically detect JIRA
+              tickets and open tickets in new browser tabs.
             </li>
             <li>
-              <strong>New Feature:</strong> <b>Dynamic Output Directory Support</b> - All CLI scripts now accept <code>--outputDir</code> (or <code>-o</code>) argument for custom output directories, supporting any folder name or nested path structure.
+              <strong>New Feature:</strong>
+              <b>Dynamic Output Directory Support</b> - All CLI scripts now
+              accept <code>--outputDir</code> (or <code>-o</code>) argument for
+              custom output directories, supporting any folder name or nested
+              path structure.
             </li>
             <li>
-              <strong>New Feature:</strong> <b>Copy AI Prompt Button</b> - Added "Copy AI Prompt" button in AI Failure Analyzer that copies a complete, ready-to-use prompt with instructions and test details for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
+              <strong>New Feature:</strong> <b>Copy AI Prompt Button</b> - Added
+              "Copy AI Prompt" button in AI Failure Analyzer that copies a
+              complete, ready-to-use prompt with instructions and test details
+              for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
             </li>
             <li>
-              <strong>Improved:</strong> Migrated from Google Gemini API to Groq API with <code>llama-3.3-70b-versatile</code> model for faster and more accurate AI failure analysis.
+              <strong>Improved:</strong> Migrated from Google Gemini API to Groq
+              API with <code>llama-3.3-70b-versatile</code> model for faster and
+              more accurate AI failure analysis.
             </li>
             <li>
-              <strong>Improved:</strong> Enhanced <code>TestResult</code> interface with <code>annotations</code> field for comprehensive test metadata capture.
+              <strong>Improved:</strong> Enhanced
+              <code>TestResult</code> interface with
+              <code>annotations</code> field for comprehensive test metadata
+              capture.
             </li>
             <li>
-              <strong>Improved:</strong> Improved CLI scripts architecture to support dynamic directory paths across all commands.
+              <strong>Improved:</strong> Improved CLI scripts architecture to
+              support dynamic directory paths across all commands.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Automatic Config Detection</b> - CLI scripts now automatically read <code>outputDir</code> from <code>playwright.config</code> file, eliminating the need to manually pass <code>-o</code> argument, unless overriding is needed.
+              <strong>Improved:</strong> <b>Automatic Config Detection</b> - CLI
+              scripts now automatically read <code>outputDir</code> from
+              <code>playwright.config</code> file, eliminating the need to
+              manually pass <code>-o</code> argument, unless overriding is
+              needed.
             </li>
             <li>
-              <strong>Improved:</strong> Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
+              <strong>Improved:</strong> Optimized API configuration with
+              OpenAI-compatible endpoints and refined parameters.
             </li>
             <li>
-              <strong>Improved:</strong> Beautiful purple/violet themed <code>annotations</code> section for better visual distinction in reports.
+              <strong>Improved:</strong> Beautiful purple/violet themed
+              <code>annotations</code> section for better visual distinction in
+              reports.
             </li>
           </ul>
           <h4>Version 0.2.10</h4>
           <ul>
             <li>
-              <strong>Fixed:</strong> <b>Static report attachments</b> - Other attachments are now properly opened in new tabs in static reports.
+              <strong>Fixed:</strong> <b>Static report attachments</b> - Other
+              attachments are now properly opened in new tabs in static reports.
             </li>
             <li>
-              <strong>Fixed:</strong> <b>Security vulnerabilities</b> - Resolved low severity npm package vulnerabilities.
+              <strong>Fixed:</strong> <b>Security vulnerabilities</b> - Resolved
+              low severity npm package vulnerabilities.
             </li>
           </ul>
           <h4>Version 0.2.9</h4>
           <ul>
-            <li>
-              <strong>Improved:</strong> <b>send report</b> feature.
-            </li>
+            <li><strong>Improved:</strong> <b>send report</b> feature.</li>
           </ul>
           <h4>Version 0.2.8</h4>
           <ul>
             <li>
-              <strong>Improved:</strong> <b>Readme file</b> detailed setup instructions and comprehensive usage examples for better onboarding.
+              <strong>Improved:</strong> <b>Readme file</b> detailed setup
+              instructions and comprehensive usage examples for better
+              onboarding.
             </li>
             <li>
-              <strong>Updated:</strong> <b>development dependencies</b> to latest stable versions.
+              <strong>Updated:</strong> <b>development dependencies</b> to
+              latest stable versions.
             </li>
             <li>
-              <strong>Updated:</strong> <b>Node.js engine requirement</b> for enhanced compatibility.
+              <strong>Updated:</strong> <b>Node.js engine requirement</b> for
+              enhanced compatibility.
             </li>
             <li>
-              <strong>Updated:</strong> <b>retry attempts</b> for credential fetching in `send-report`, to handle transient network issues.
+              <strong>Updated:</strong> <b>retry attempts</b> for credential
+              fetching in `send-report`, to handle transient network issues.
             </li>
             <li>
-              <strong>Fixed:</strong> <b>"Skipping email sending due to missing or failed credential fetch"</b> issue in send report workflow.
+              <strong>Fixed:</strong>
+              <b
+                >"Skipping email sending due to missing or failed credential
+                fetch"</b
+              >
+              issue in send report workflow.
             </li>
             <li>
-              <strong>Security:</strong> <b>Updated dependencies</b> to address security vulnerabilities in the npm package.
+              <strong>Security:</strong> <b>Updated dependencies</b> to address
+              security vulnerabilities in the npm package.
             </li>
           </ul>
           <h4>Version 0.2.6</h4>
@@ -257,6 +342,53 @@
             <li>
               <strong>Major Update:</strong> Refined UI for static HTML reports
               and implemented History Trends.
+            </li>
+          </ul>
+          <h4>Version 0.1.6</h4>
+          <ul>
+            <li>
+              <strong>Update:</strong> Initial release of stable reporter
+              features.
+            </li>
+          </ul>
+
+          <h4>Version 0.1.5</h4>
+          <ul>
+            <li>
+              <strong>Fix:</strong> Resolved path resolution issues for
+              attachments.
+            </li>
+          </ul>
+
+          <h4>Version 0.1.4</h4>
+          <ul>
+            <li>
+              <strong>Feature:</strong> Added support for custom output
+              directories.
+            </li>
+          </ul>
+
+          <h4>Version 0.1.3</h4>
+          <ul>
+            <li>
+              <strong>Improvement:</strong> Enhanced error formatting in the
+              console log.
+            </li>
+          </ul>
+
+          <h4>Version 0.1.2</h4>
+          <ul>
+            <li>
+              <strong>Fix:</strong> Corrected JSON data structure for empty
+              runs.
+            </li>
+          </ul>
+
+          <h4>Version 0.1.1</h4>
+          <ul>
+            <li>
+              <strong>Initial Release:</strong> Beta launch of the Playwright
+              Pulse Reporter.
             </li>
           </ul>
         </section>

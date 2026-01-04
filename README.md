@@ -90,13 +90,13 @@ All CLI scripts now support custom output directories, giving you full flexibili
 
 ```bash
 # Using custom directory
-npx generate-pulse-report --outputDir my-reports
+npx generate-pulse-report --outputDir {YOUR_CUSTOM_REPORT_FOLDER}
 npx generate-report -o test-results/e2e
 npx send-email --outputDir custom-pulse-reports
 
 # Using nested paths
 npx generate-pulse-report --outputDir reports/integration
-npx merge-pulse-report --outputDir my-test-reports
+npx merge-pulse-report --outputDir {YOUR_CUSTOM_REPORT_FOLDER}
 ```
 
 **Important:** Make sure your `playwright.config.ts` custom directory matches the CLI script:
@@ -105,7 +105,7 @@ npx merge-pulse-report --outputDir my-test-reports
 import { defineConfig } from "@playwright/test";
 import * as path from "path";
 
-const CUSTOM_REPORT_DIR = path.resolve(__dirname, "my-reports");
+const CUSTOM_REPORT_DIR = path.resolve(__dirname, "{YOUR_CUSTOM_REPORT_FOLDER}");
 
 export default defineConfig({
   reporter: [
@@ -173,6 +173,67 @@ The dashboard includes AI-powered test analysis that provides:
 - Performance bottlenecks
 - Failure pattern recognition
 - Suggested optimizations
+
+## 📧 Send Report to Mail
+
+The `send-email` CLI wraps the full email flow:
+
+- Generates a lightweight HTML summary (`pulse-email-summary.html`) from the latest `playwright-pulse-report.json`.
+- Builds a stats table (start time, duration, total, passed, failed, skipped, percentages).
+- Sends an email with that summary as both the body and an HTML attachment.
+
+### 1. Configure Recipients
+
+Set up to 5 recipients via environment variables:
+
+```bash
+RECIPIENT_EMAIL_1=recipient1@example.com
+RECIPIENT_EMAIL_2=recipient2@example.com
+RECIPIENT_EMAIL_3=recipient3@example.com
+RECIPIENT_EMAIL_4=recipient4@example.com
+RECIPIENT_EMAIL_5=recipient5@example.com
+```
+
+### 2. Choose Credential Flow
+
+The script supports two ways to obtain SMTP credentials:
+
+**Flow A – Environment-based credentials (recommended)**
+
+Provide mail host and credentials via environment variables:
+
+```bash
+PULSE_MAIL_HOST=gmail        # or: outlook
+PULSE_MAIL_USERNAME=you@example.com
+PULSE_MAIL_PASSWORD=your_app_password
+```
+
+- `PULSE_MAIL_HOST` supports `gmail` or `outlook` only.
+- For Gmail/Outlook, use an app password or SMTP-enabled credentials.
+
+**Flow B – Default Flow (fallback)**
+
+If the above variables are not set, the script fallbacks to default the mail host for compatibility.
+
+### 3. Run the CLI
+
+Use the default output directory:
+
+```bash
+npx send-email
+```
+
+Or point to a custom report directory (must contain `playwright-pulse-report.json`):
+
+```bash
+npx send-email --outputDir <YOUR_CUSTOM_REPORT_FOLDER>
+```
+
+Under the hood, this will:
+
+- Resolve the report directory (from `--outputDir` or `playwright.config.ts`).
+- Run `generate-email-report.mjs` to create `pulse-email-summary.html`.
+- Use Nodemailer to send the email via the selected provider (Gmail or Outlook).
 
 ## ⚙️ CI/CD Integration
 

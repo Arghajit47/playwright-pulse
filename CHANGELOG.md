@@ -10,7 +10,8 @@
 * **Severity-Driven Reporting**: Introduced test severity metadata (`Minor` → `Critical`) captured via a new `pulse.severity` helper and persisted by the core reporter for each test run.
 * **Severity Badges Everywhere**: Surfaced severity as color-coded badges in interactive HTML, static, and email reports so critical failures stand out instantly in all report channels.
 * **Tag Badges in Email Summaries**: Email report now renders test tags as compact, styled badges beside each test title for better context at a glance.
-* **Severity Distribution Chart**: Added a new "Severity Distribution" chart to the "Dashboard" tab, visualizing the breakdown of test results by severity level (Minor, Major, Critical) to highlight priority areas.
+* **Severity Distribution Chart**: Added a new "Severity Distribution" chart with *lazy-loading* support to the "Dashboard" tab, visualizing the breakdown of test results by severity level (Minor, Major, Critical) to highlight priority areas.
+* **Custom SMTP Support**: The send email report now supports custom credentials via environment variables (PULSE_MAIL_HOST, PULSE_MAIL_USERNAME, PULSE_MAIL_PASSWORD), allowing direct integration with Gmail and Outlook without manual credential fetching. If nothing mentioned in the environment variables, the reporter will fallback to the older mechanism.
 
 
 * **🔧 Improvements**:
@@ -18,7 +19,11 @@
 * **Visual Consistency**: Aligned the new charts with the existing report aesthetics, utilizing the orange accent theme (`var(--accent-color-alt)`) and consistent marker styling.
 * **DX-Friendly Exports**: Re-exported the `pulse` helper and `PulseSeverityLevel` type from the main reporter entrypoint so tests can import them directly from `@arghajit/playwright-pulse-report`.
 * **Typed Severity Field**: Extended the `TestResult` type with a strongly-typed `severity` property so dashboards and custom tooling can safely consume severity data.
-* **Enhanced Dashboard Charts**: Refined all the Dashboard charts to improve UX/UI, including better marker styling, tooltips, and responsive layouts.
+* **Enhanced Dashboard Charts**: Refined all the Dashboard charts and Reorganized the Dashboard grid to align the "Test Suites" widget with the new "Severity Distribution" chart, creating a balanced and visually consistent layout.
+* **Smart CI Detection**: The "Run Context" field in the Environment dashboard now automatically detects `process.env.CI` to accurately label runs as "CI" or "Local Test".
+* **Refined Email Visuals**: Updated the email report with a specific, high-contrast color palette for severity badges, added explicit legends, and included Tags alongside severity badges for better context.
+
+---
 
 ## **Version 0.3.0**
 
@@ -38,6 +43,8 @@
   - Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
   - Beautiful purple/violet themed annotations section for better visual distinction in reports.
 
+---
+
 ## **Version 0.2.10**
 
 **🚀 Update Highlights**
@@ -47,12 +54,16 @@
     - Other attachments are visible in the static report, but was not getting opened in new tab.
     - Fixed the low vulnerability issues in the npm package.
 
+---
+
 ## **Version 0.2.9**
 
 **🚀 Update Highlights**
 
 - **🔧 Improvements**:
   - Significantly improved the send report feature.
+
+---
 
 ## **Version 0.2.8**
 
@@ -67,6 +78,8 @@
   - Fixed issues with "Skipping email sending due to missing or failed credential fetch" in send report.
   - Resolved security vulnerabilities in the npm package.
 
+---
+
 ## **Version 0.2.6**
 
 **🚀 Update Highlights**
@@ -76,6 +89,8 @@
   - Added "AI Failure Analyzer" for failed test cases, which provides a detailed analysis of the failure, like; possible causes, recommended solutions including the code snippets, for specific failure scenarios automatically.
   - Static report embeds all the attachments, so no need to have attachments/ directory when viewing the report with better user experience.
   - Made the static report responsive, less initial load time consuming and dark themed, for better user experience.
+
+---
 
 ## **Version 0.2.5**
 
