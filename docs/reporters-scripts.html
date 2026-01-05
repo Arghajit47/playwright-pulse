@@ -140,19 +140,35 @@
             They are designed to be run after
             <code>npx playwright test</code> has completed.
           </p>
-          
-          <div class="note" style="background-color: #e8f4fd; border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <strong>✨ New in v0.3.0:</strong> All CLI scripts now support custom output directories!<br>
-            <strong>🔹 Automatic Detection:</strong> Scripts automatically read <code>outputDir</code> from your <code>playwright.config</code> file<br>
-            <strong>🔹 Manual Override:</strong> Use <code>--outputDir &lt;path&gt;</code> or <code>-o &lt;path&gt;</code> to override the config<br>
-            <strong>🔹 Default Fallback:</strong> Falls back to <code>pulse-report</code> if not configured<br><br>
+
+          <div
+            class="note"
+            style="
+              background-color: #e8f4fd;
+              border-left: 4px solid #2196f3;
+              padding: 15px;
+              margin: 20px 0;
+              border-radius: 4px;
+            "
+          >
+            <strong>✨ New in v0.3.0:</strong> All CLI scripts now support
+            custom output directories!<br />
+            <strong>🔹 Automatic Detection:</strong> Scripts automatically read
+            <code>outputDir</code> from your
+            <code>playwright.config</code> file<br />
+            <strong>🔹 Manual Override:</strong> Use
+            <code>--outputDir &lt;path&gt;</code> or
+            <code>-o &lt;path&gt;</code> to override the config<br />
+            <strong>🔹 Default Fallback:</strong> Falls back to
+            <code>pulse-report</code> if not configured<br /><br />
             <strong>Example Config:</strong>
             <pre><code class="language-javascript">reporter: [
   ['@arghajit/playwright-pulse-report', { 
-    outputDir: 'my-custom-reports' 
+    outputDir: '{YOUR_CUSTOM_REPORT_FOLDER}' 
   }]
 ]</code><button class="copy-button">Copy</button></pre>
-            Now simply run <code>npx generate-pulse-report</code> - no need for <code>-o</code> argument!
+            Now simply run <code>npx generate-pulse-report</code> - no need for
+            <code>-o</code> argument!
           </div>
 
           <h4>generate-pulse-report</h4>
@@ -162,12 +178,21 @@
               self-contained static HTML report with embedded attachments.
             </li>
             <li>
-              <strong>Basic Command:</strong> <code>npx generate-pulse-report</code>
-              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+              <strong>Basic Command:</strong>
+              <code>npx generate-pulse-report</code> <br /><small
+                style="color: #666"
+                >(Auto-detects <code>outputDir</code> from config)</small
+              >
             </li>
             <li>
-              <strong>Manual Override:</strong> <code>npx generate-pulse-report --outputDir my-reports</code>
-              <br><small style="color: #666;">(Overrides config setting)</small>
+              <strong>Manual Override:</strong>
+              <code
+                >npx generate-pulse-report --outputDir
+                {YOUR_CUSTOM_REPORT_FOLDER}</code
+              >
+              <br /><small style="color: #666"
+                >(Overrides config setting)</small
+              >
             </li>
             <li>
               <strong>Output:</strong>
@@ -183,11 +208,16 @@
             </li>
             <li>
               <strong>Basic Command:</strong> <code>npx generate-report</code>
-              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+              <br /><small style="color: #666"
+                >(Auto-detects <code>outputDir</code> from config)</small
+              >
             </li>
             <li>
-              <strong>Manual Override:</strong> <code>npx generate-report -o my-reports</code>
-              <br><small style="color: #666;">(Overrides config setting)</small>
+              <strong>Manual Override:</strong>
+              <code>npx generate-report -o {YOUR_CUSTOM_REPORT_FOLDER}</code>
+              <br /><small style="color: #666"
+                >(Overrides config setting)</small
+              >
             </li>
             <li>
               <strong>Output:</strong>
@@ -201,12 +231,21 @@
               into a single master JSON file.
             </li>
             <li>
-              <strong>Basic Command:</strong> <code>npx merge-pulse-report</code>
-              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+              <strong>Basic Command:</strong>
+              <code>npx merge-pulse-report</code> <br /><small
+                style="color: #666"
+                >(Auto-detects <code>outputDir</code> from config)</small
+              >
             </li>
             <li>
-              <strong>Manual Override:</strong> <code>npx merge-pulse-report --outputDir my-reports</code>
-              <br><small style="color: #666;">(Overrides config setting)</small>
+              <strong>Manual Override:</strong>
+              <code
+                >npx merge-pulse-report --outputDir
+                {YOUR_CUSTOM_REPORT_FOLDER}</code
+              >
+              <br /><small style="color: #666"
+                >(Overrides config setting)</small
+              >
             </li>
           </ul>
           <h4>send-email</h4>
@@ -217,13 +256,25 @@
             </li>
             <li>
               <strong>Basic Command:</strong> <code>npx send-email</code>
-              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+              <br /><small style="color: #666"
+                >(Auto-detects <code>outputDir</code> from config)</small
+              >
             </li>
             <li>
-              <strong>Manual Override:</strong> <code>npx send-email --outputDir my-reports</code>
-              <br><small style="color: #666;">(Overrides config setting)</small>
+              <strong>Manual Override:</strong>
+              <code
+                >npx send-email --outputDir {YOUR_CUSTOM_REPORT_FOLDER}</code
+              >
+              <br /><small style="color: #666"
+                >(Overrides config setting)</small
+              >
             </li>
           </ul>
+          <div class="note">
+            For advanced use cases, the <code>send-email</code> script also
+            supports custom SMTP settings. Refer to the
+            <a href="report-features.html#email-report">email report</a> section for details.
+          </div>
         </section>
 
         <section id="optional-cli-scripts">
@@ -240,11 +291,19 @@
             </li>
             <li>
               <strong>Basic Command:</strong> <code>npx generate-trend</code>
-              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+              <br /><small style="color: #666"
+                >(Auto-detects <code>outputDir</code> from config)</small
+              >
             </li>
             <li>
-              <strong>Manual Override:</strong> <code>npx generate-trend --outputDir my-reports</code>
-              <br><small style="color: #666;">(Overrides config setting)</small>
+              <strong>Manual Override:</strong>
+              <code
+                >npx generate-trend --outputDir
+                {YOUR_CUSTOM_REPORT_FOLDER}</code
+              >
+              <br /><small style="color: #666"
+                >(Overrides config setting)</small
+              >
             </li>
             <li>
               <strong>Details:</strong> The main report generation scripts call
@@ -259,12 +318,20 @@
               without sending it.
             </li>
             <li>
-              <strong>Basic Command:</strong> <code>npx generate-email-report</code>
-              <br><small style="color: #666;">(Auto-detects <code>outputDir</code> from config)</small>
+              <strong>Basic Command:</strong>
+              <code>npx generate-email-report</code> <br /><small
+                style="color: #666"
+                >(Auto-detects <code>outputDir</code> from config)</small
+              >
             </li>
             <li>
-              <strong>Manual Override:</strong> <code>npx generate-email-report -o my-reports</code>
-              <br><small style="color: #666;">(Overrides config setting)</small>
+              <strong>Manual Override:</strong>
+              <code
+                >npx generate-email-report -o {YOUR_CUSTOM_REPORT_FOLDER}</code
+              >
+              <br /><small style="color: #666"
+                >(Overrides config setting)</small
+              >
             </li>
           </ul>
         </section>

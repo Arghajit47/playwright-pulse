@@ -252,15 +252,38 @@ const sendEmail = async (credentials, reportDir) => {
   try {
     console.log("Starting the sendEmail function...");
 
-    const secureTransporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: credentials.username,
-        pass: credentials.password,
-      },
-    });
+    let secureTransporter;
+    const mailHost = credentials.host
+      ? credentials.host.toLowerCase()
+      : "gmail";
+
+    if (mailHost === "gmail") {
+      secureTransporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: credentials.username,
+          pass: credentials.password,
+        },
+      });
+    } else if (mailHost === "outlook") {
+      secureTransporter = nodemailer.createTransport({
+        host: "smtp.outlook.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: credentials.username,
+          pass: credentials.password,
+        },
+      });
+    } else {
+      // Should be caught in main, but safety check here
+      console.log(
+        chalk.red(
+          "Pulse report currently do not support provided mail host, kindly use either outlook mail or, gmail"
+        )
+      );
+      process.exit(1);
+    }
 
     const reportData = getPulseReportSummary(reportDir);
     const htmlContent = generateHtmlTable(reportData);
@@ -399,13 +422,50 @@ const main = async () => {
     );
   }
 
-  const credentials = await fetchCredentials(reportDir);
-  if (!credentials) {
-    console.warn(
-      "Skipping email sending due to missing or failed credential fetch"
+  // --- MODIFIED: Credentials Selection Logic ---
+  let credentials;
+
+  // Check if custom environment variables are provided
+  if (
+    process.env.PULSE_MAIL_HOST &&
+    process.env.PULSE_MAIL_USERNAME &&
+    process.env.PULSE_MAIL_PASSWORD
+  ) {
+    const host = process.env.PULSE_MAIL_HOST.toLowerCase();
+
+    // Validate host immediately
+    if (host !== "gmail" && host !== "outlook") {
+      console.log(
+        chalk.red(
+          "Pulse report currently do not support provided mail host, kindly use either outlook mail or, gmail."
+        )
+      );
+      process.exit(1);
+    }
+
+    console.log(
+      chalk.blue(
+        `Using custom credentials from environment variables for ${host}.`
+      )
     );
-    return;
+    credentials = {
+      username: process.env.PULSE_MAIL_USERNAME,
+      password: process.env.PULSE_MAIL_PASSWORD,
+      host: host,
+    };
+  } else {
+    // Fallback to existing fetch mechanism
+    credentials = await fetchCredentials(reportDir);
+    if (!credentials) {
+      console.warn(
+        "Skipping email sending due to missing or failed credential fetch"
+      );
+      return;
+    }
+    // Mark fetched credentials as gmail by default for compatibility
+    credentials.host = "gmail";
   }
+  // --- END MODIFICATION ---
   // Removed await delay(10000); // If not strictly needed, remove it.
   try {
     await sendEmail(credentials, reportDir);
