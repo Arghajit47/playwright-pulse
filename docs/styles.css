@@ -308,6 +308,16 @@ tr:nth-of-type(even) {
   word-wrap: break-word;
 }
 
+.info-note {
+  padding: 1rem;
+  margin: 1.5rem 0;
+  border-left: 4px solid rgb(242, 100, 2);
+  background-color:  rgb(242, 230, 2);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  /* Better readability on mobile */
+  word-wrap: break-word;
+}
+
 /* 🎯 Layout System - Mobile-First Grid */
 .page-wrapper {
   display: flex;

@@ -97,8 +97,12 @@
           </p>
           <div class="screenshots-grid">
             <div class="screenshot-item">
-              <img src="./asset/Dashboard.png" alt="Dashboard Overview" />
-              <p><strong>Dashboard Overview</strong></p>
+              <img src="./asset/Pulse-Dashboard.png" alt="Pulse Dashboard Overview" />
+              <p><strong>Pulse Report Dashboard Overview</strong></p>
+            </div>
+            <div class="screenshot-item">
+              <img src="./asset/Pulse-Static-Dashboard.png" alt="Pulse Static Dashboard Overview" />
+              <p><strong>Pulse Static Report Dashboard Overview</strong></p>
             </div>
           </div>
           <h4>Key Components:</h4>
@@ -133,18 +137,19 @@
           <div class="screenshots-grid">
             <div class="screenshot-item">
               <img
-                src="./asset/Passed Test Details.png"
-                alt="Passed Test Run Details"
+                src="./asset/Pulse Report Test Run Summary.png"
+                alt="Pulse Report Test Run Summary"
               />
-              <p><strong>Passed Test Details</strong></p>
+              <p><strong>Pulse Report Test Run Summary</strong></p>
             </div>
             <div class="screenshot-item">
               <img
-                src="./asset/Failed Test Details.png"
-                alt="Failed Test Run Details"
+                src="./asset/Pulse Report Test Details attachments.png"
+                alt="Pulse Report Test Run Details with Attachments"
               />
-              <p><strong>Failed Test Details</strong></p>
+              <p><strong>Pulse Report Test Details with Attachments</strong></p>
             </div>
+            
           </div>
           <h4>Key Components:</h4>
           <ul>
@@ -174,9 +179,21 @@
               directly from the report.
             </li>
             <li>
+              <strong>Annotations & Tags:</strong> Within all the test cases, user can
+              add playwright's built-in annotations and tags to provide additional context or
+              information.
+            </li>
+            <li>
               <strong>Console Logs:</strong> Any <code>stdout</code> or
               <code>stderr</code> output captured during the test is displayed
               in its own section.
+            </li>
+            <li>
+              <strong>Test Severity:</strong> Within all the test cases, user can now
+              add test specific severity annotations to help categorize tests
+              based on their importance or risk level. Also, in Dashboard, user can visualize
+              the test <b>severity distribution</b> using a stacked-column chart. There are 5 
+              severity levels: <i><b>Critical</b>, <b>High</b>, <b>Medium</b>, <b>Low</b>, and <b>Minor</b></i>.
             </li>
           </ul>
         </section>
@@ -204,6 +221,13 @@
             </div>
             <div class="screenshot-item">
               <img
+                src="./asset/Duration by Spec files and Test Describe.png"
+                alt="Duration by Spec files and Test Describe Chart"
+              />
+              <p><strong>Duration by Spec files and Test Describe Chart</strong></p>
+            </div>
+            <div class="screenshot-item">
+              <img
                 src="./asset/Test Details for Worker.png"
                 alt="Test Details for Workers"
               />
@@ -224,6 +248,14 @@
                 <li>
                   <strong>Execution Duration Trends:</strong> An area chart
                   showing how the total run duration has changed over time.
+                </li>
+                <li>
+                  <strong>Duration by Spec files:</strong> An area chart
+                  showing the duration distribution of tests across different spec files.
+                </li>
+                <li>
+                  <strong>Duration by Test Describe:</strong> An stacked-column chart
+                  showing the duration distribution of tests across different test describe blocks.
                 </li>
               </ul>
             </li>
@@ -272,7 +304,7 @@
         </section>
 
         <section id="email-report">
-          <h2>Email Report</h2>
+          <h2>Email Report (Default Flow)</h2>
           <div class="note">
             Email will be sent with a light-weight html file, which can be
             opened in mail preview application.
@@ -304,6 +336,54 @@ RECIPIENT_EMAIL_2=recipient2@example.com
           <div class="note">
             Email will be received from
             <code>personalpostmanreporter@gmail.com</code> email ID, if needed
+            kindly check the spam/junk folder to receive the mail.
+          </div>
+        </section>
+        <section id="custom-email-report">
+          <h2>Email Report (Custom Flow)</h2>
+
+          <h3>1. Configure Recipients</h3>
+          <p>Set up to 5 recipients via environment variables:</p>
+          <div class="code-container">
+            <pre><code class="language-bash">RECIPIENT_EMAIL_1=recipient1@example.com
+RECIPIENT_EMAIL_2=recipient2@example.com
+RECIPIENT_EMAIL_3=recipient3@example.com
+RECIPIENT_EMAIL_4=recipient4@example.com
+RECIPIENT_EMAIL_5=recipient5@example.com</code><button class="copy-button">Copy</button></pre>
+          </div>
+
+          <h3>2. Choose Credential Flow</h3>
+          <p>The script supports two ways to obtain SMTP credentials:</p>
+
+          <strong>Environment-based credentials</strong>
+          <p>Provide mail host and credentials via environment variables:</p>
+          <div class="code-container">
+            <pre><code class="language-bash">PULSE_MAIL_HOST=gmail        # or: outlook
+PULSE_MAIL_USERNAME=you@example.com
+PULSE_MAIL_PASSWORD=your_app_password</code><button class="copy-button">Copy</button></pre>
+          </div>
+          <ul>
+            <li><code>PULSE_MAIL_HOST</code> supports <code>gmail</code> or <code>outlook</code> only.</li>
+            <li>For Gmail/Outlook, use an app password or SMTP-enabled credentials.</li>
+          </ul>
+          <div class="info-note">Here's the link to know how to get the <a href="https://support.happyfox.com/kb/article/1510-gmail-smtp-using-app-specific-passwords/">Gmail SMTP Using App-Specific Passwords</a> (recommended) and for <b>Outlook SMTP Server</b>, your outlook password is <code>PULSE_MAIL_PASSWORD</code></div>
+
+          <div class="note">If the above variables are not set, the script fallbacks to default <a href="#email-report">send mail functionality</a> for compatibility.</div>
+
+          <h3>3. Run the CLI (for Default & Advanced flow)</h3>
+          <p>Use the default output directory:</p>
+          <div class="code-container">
+            <pre><code class="language-bash">npx send-email</code><button class="copy-button">Copy</button></pre>
+          </div>
+          
+          <p>Or point to a custom report directory, which can be used in both default and custom flow (note: custom report directory must contain <code>playwright-pulse-report.json</code>):</p>
+          <div class="code-container">
+            <pre><code class="language-bash">npx send-email --outputDir &lt;YOUR_CUSTOM_REPORT_FOLDER&gt;</code><button class="copy-button">Copy</button></pre>
+          </div>
+
+          <div class="note">
+            Now, mail will be received from
+            <code>`{PULSE_MAIL_USERNAME}`</code> gmail/outlook mail ID, if needed
             kindly check the spam/junk folder to receive the mail.
           </div>
         </section>
