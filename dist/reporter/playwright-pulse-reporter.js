@@ -32,12 +32,15 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlaywrightPulseReporter = void 0;
 const fs = __importStar(require("fs/promises"));
 const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
-const ua_parser_js_1 = require("ua-parser-js");
+const ua_parser_js_1 = __importDefault(require("ua-parser-js"));
 const os = __importStar(require("os"));
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
@@ -119,7 +122,7 @@ class PlaywrightPulseReporter {
         const projectConfig = project === null || project === void 0 ? void 0 : project.use;
         const userAgent = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.userAgent;
         const configuredBrowserType = (_b = projectConfig === null || projectConfig === void 0 ? void 0 : projectConfig.browserName) === null || _b === void 0 ? void 0 : _b.toLowerCase();
-        const parser = new ua_parser_js_1.UAParser(userAgent);
+        const parser = new ua_parser_js_1.default(userAgent);
         const result = parser.getResult();
         let browserName = result.browser.name;
         const browserVersion = result.browser.version

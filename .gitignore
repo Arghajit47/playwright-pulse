@@ -39,6 +39,12 @@ next-env.d.ts
 
 .genkit/*
 .env*
+.trae
+snyk
+results.json
+.idx
+.vscode
+.modified
 
 # Playwright
 node_modules/

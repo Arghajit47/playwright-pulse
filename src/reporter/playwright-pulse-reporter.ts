@@ -19,7 +19,7 @@ import type {
   PlaywrightPulseReporterOptions,
 } from "../types";
 import { randomUUID } from "crypto";
-import { UAParser } from "ua-parser-js";
+import UAParser from "ua-parser-js";
 import * as os from "os";
 
 const convertStatus = (

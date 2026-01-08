@@ -1,5 +1,14 @@
 # 📜 Changelog
 
+## **Version 0.3.2**
+
+**🚀 Update Highlights**
+
+- **Repository Update**: Repository is public now, [Arghajit47/playwright-pulse](https://github.com/Arghajit47/playwright-pulse). Go ahead, take a look and contribute!
+- **🐛 Fixed** AGPL license related issues in dependency package.
+
+---
+
 ## **Version 0.3.1**
 
 **🚀 Update Highlights**
