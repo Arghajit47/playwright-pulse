@@ -1,9 +1,13 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://playwright-pulse-report.netlify.app/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arghajit/playwright-pulse.git"
+  },
   "keywords": [
     "playwright",
     "reporter",
@@ -68,7 +72,7 @@
     "nodemailer": "^7.0.3",
     "patch-package": "^8.0.0",
     "recharts": "^2.15.1",
-    "ua-parser-js": "^2.0.3",
+    "ua-parser-js": "^1.0.41",
     "zod": "^3.24.2"
   },
   "devDependencies": {

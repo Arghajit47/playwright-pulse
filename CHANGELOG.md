@@ -1,5 +1,13 @@
 # 📜 Changelog
 
+## **Version 0.3.2**
+
+**🚀 Update Highlights**
+
+- **🐛 Fixed** AGPL lisence related issues in dependency package.
+
+---
+
 ## **Version 0.3.1**
 
 **🚀 Update Highlights**
