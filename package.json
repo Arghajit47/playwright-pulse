@@ -71,7 +71,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.3",
     "patch-package": "^8.0.0",
-    "recharts": "^2.15.1",
+    "recharts": "^2.15.4",
     "ua-parser-js": "^1.0.41",
     "zod": "^3.24.2"
   },
