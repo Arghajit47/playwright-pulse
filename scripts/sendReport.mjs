@@ -144,71 +144,168 @@ const generateHtmlTable = (data) => {
   const startTime = stats.startTime;
   const durationString = stats.duration; // Already formatted string
 
-  return `
-  <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Stats Report</title>
-    <style>
-      table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-      table, th, td {
-        border: 1px solid black;
-      }
-      th, td {
-        padding: 8px;
-        text-align: left;
-      }
-      th {
-        background-color: #f2f2f2;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>${projectName} Statistics</h1>
-    <table>
-      <thead>
-        <tr>
-          <th>Metric</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Test Start Time</td>
-          <td>${startTime}</td>
-        </tr>
-        <tr>
-          <td>Test Run Duration</td> 
-          <td>${durationString}</td>
-        </tr>
-        <tr>
-          <td>Total Tests Count</td>
-          <td>${total}</td>
-        </tr>
-        <tr>
-          <td>Tests Passed</td>
-          <td>${passedTests} (${passedPercentage}%)</td>
-        </tr>
-        <tr>
-          <td>Skipped Tests</td>
-          <td>${skippedTests} (${skippedPercentage}%)</td>
-        </tr>
-        <tr>
-          <td>Test Failed</td>
-          <td>${failedTests} (${failedPercentage}%)</td>
-        </tr>
-      </tbody>
-    </table>
-    <p>With regards,</p>
-    <p>QA / SDET</p>
-  </body>
-  </html>
-  `;
+return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Stats Report</title>
+  <style>
+    /* ANIMATION KEYFRAMES 
+      (Supported by Apple Mail, iOS, Outlook Mac, etc.)
+    */
+    
+    /* 1. Slide the card up and fade in */
+    @keyframes slideUpFade {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 2. Gentle pulse for the logo */
+    @keyframes gentlePulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    /* 3. Pop in effect for status badges */
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.5); }
+      80% { transform: scale(1.1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* CLASSES TO APPLY ANIMATIONS */
+    .anim-card {
+      animation: slideUpFade 0.8s ease-out forwards;
+    }
+    
+    .anim-logo {
+      animation: gentlePulse 3s infinite ease-in-out;
+    }
+
+    /* Staggered delays for list items so they cascade in */
+    .anim-row-1 { animation: slideUpFade 0.5s ease-out 0.2s backwards; }
+    .anim-row-2 { animation: slideUpFade 0.5s ease-out 0.3s backwards; }
+    .anim-row-3 { animation: slideUpFade 0.5s ease-out 0.4s backwards; }
+    .anim-row-4 { animation: slideUpFade 0.5s ease-out 0.5s backwards; }
+
+    .anim-badge {
+      animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.6s backwards;
+    }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f3f4f6; padding: 40px 0;">
+    <tr>
+      <td align="center">
+        
+        <table class="anim-card" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); overflow: hidden;">
+          
+          <tr>
+            <td height="6" style="background-color: #4f46e5;"></td>
+          </tr>
+
+          <tr>
+            <td style="padding: 32px 32px 20px 32px;">
+              <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                <tr>
+                  <td width="55" style="vertical-align: middle; padding-right: 16px;">
+                    <img class="anim-logo" src="https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/playwright_pulse_icon.png" alt="Report Logo" height="40" style="display: block; border: 0; border-radius: 8px;">
+                  </td>
+                  <td style="vertical-align: middle;">
+                    <h1 style="margin: 0; font-size: 24px; font-weight: 700; color: #111827;">${projectName}</h1>
+                    <p style="margin: 4px 0 0 0; font-size: 14px; color: #6b7280;">Automated Execution Report</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 0 32px 20px 32px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                <tr>
+                  <td style="padding: 16px; border-right: 1px solid #e5e7eb; width: 50%;">
+                    <p style="margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; font-weight: 600;">Start Time</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151; font-weight: 500;">${startTime}</p>
+                  </td>
+                  <td style="padding: 16px; width: 50%;">
+                    <p style="margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; font-weight: 600;">Duration</p>
+                    <p style="margin: 0; font-size: 14px; color: #374151; font-weight: 500;">${durationString}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding: 0 32px 32px 32px;">
+              <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                
+                <tr class="anim-row-1">
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #4b5563;">Total Tests Executed</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; text-align: right; font-size: 14px; font-weight: 600; color: #111827;">${total}</td>
+                </tr>
+
+                <tr class="anim-row-2">
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #4b5563;">Tests Passed</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                    <span class="anim-badge" style="background-color: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-block; white-space: nowrap;">
+                      ${passedTests} (${passedPercentage}%)
+                    </span>
+                  </td>
+                </tr>
+
+                <tr class="anim-row-3" style="background-color: ${
+                  failedTests > 0 ? "#fef2f2" : "transparent"
+                };">
+                  <td style="padding: 12px 10px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: ${
+                    failedTests > 0 ? "#991b1b" : "#4b5563"
+                  }; font-weight: ${
+  failedTests > 0 ? "700" : "400"
+}; border-radius: 4px 0 0 4px;">
+                    Tests Failed
+                  </td>
+                  <td style="padding: 12px 10px; border-bottom: 1px solid #f3f4f6; text-align: right; border-radius: 0 4px 4px 0;">
+                    <span class="anim-badge" style="background-color: ${
+                      failedTests > 0 ? "#ffffff" : "#f3f4f6"
+                    }; color: ${
+  failedTests > 0 ? "#991b1b" : "#9ca3af"
+}; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-block; white-space: nowrap;">
+                      ${failedTests} (${failedPercentage}%)
+                    </span>
+                  </td>
+                </tr>
+
+                <tr class="anim-row-4">
+                  <td style="padding: 12px 0; font-size: 14px; color: #4b5563;">Tests Skipped</td>
+                  <td style="padding: 12px 0; text-align: right;">
+                    <span class="anim-badge" style="background-color: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-block; white-space: nowrap;">
+                      ${skippedTests} (${skippedPercentage}%)
+                    </span>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background-color: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; font-size: 12px; color: #9ca3af;">Generated by Pulse Report</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 };
 
 const __filename = fileURLToPath(import.meta.url);

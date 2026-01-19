@@ -1,5 +1,15 @@
 # 📜 Changelog
 
+## **Version 0.3.3**
+
+**🚀 Update Highlights**
+
+* **🔧 Improvements**:
+  * **Fixed send email issue for merged report**: Resolved the problem where the send report script failed to send emails for merged reports after multiple shards.
+  * **Email Template**: Modernized the email template for emailable reports with improved styling and layout.
+
+---
+
 ## **Version 0.3.2**
 
 **🚀 Update Highlights**
