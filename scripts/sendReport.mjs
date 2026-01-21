@@ -259,22 +259,10 @@ return `
                   </td>
                 </tr>
 
-                <tr class="anim-row-3" style="background-color: ${
-                  failedTests > 0 ? "#fef2f2" : "transparent"
-                };">
-                  <td style="padding: 12px 10px; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: ${
-                    failedTests > 0 ? "#991b1b" : "#4b5563"
-                  }; font-weight: ${
-  failedTests > 0 ? "700" : "400"
-}; border-radius: 4px 0 0 4px;">
-                    Tests Failed
-                  </td>
-                  <td style="padding: 12px 10px; border-bottom: 1px solid #f3f4f6; text-align: right; border-radius: 0 4px 4px 0;">
-                    <span class="anim-badge" style="background-color: ${
-                      failedTests > 0 ? "#ffffff" : "#f3f4f6"
-                    }; color: ${
-  failedTests > 0 ? "#991b1b" : "#9ca3af"
-}; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-block; white-space: nowrap;">
+                <tr class="anim-row-3">
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; font-size: 14px; color: #4b5563;">Tests Failed</td>
+                  <td style="padding: 12px 0; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                    <span class="anim-badge" style="background-color: #f3f4f6; color: #991b1b; padding: 4px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; display: inline-block; white-space: nowrap;">
                       ${failedTests} (${failedPercentage}%)
                     </span>
                   </td>
