@@ -973,17 +973,7 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
             <span class="env-detail-label">CPU Cores</span>
             <span class="env-detail-value">
               <div class="env-cpu-cores">
-                ${Array.from(
-                  { length: Math.max(0, environment.cpu.cores || 0) },
-                  (_, i) =>
-                    `<div class="env-core-indicator ${
-                      i >=
-                      (environment.cpu.cores >= 8 ? 8 : environment.cpu.cores)
-                        ? "inactive"
-                        : ""
-                    }" title="Core ${i + 1}"></div>`,
-                ).join("")}
-                <span>${environment.cpu.cores || "N/A"} cores</span>
+                <span>${environment.cpu.cores || "N/A"} core${environment.cpu.cores !== 1 ? "s" : ""}</span>
               </div>
             </span>
           </div>
@@ -2774,7 +2764,7 @@ function generateHTML(reportData, trendData = null) {
           line-height: 1.2;
           white-space: nowrap;
         }
-.tabs { 
+        .tabs { 
           display: flex;
           background: #000000;
           padding: 0;
@@ -4087,7 +4077,7 @@ function generateHTML(reportData, trendData = null) {
           white-space: nowrap;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
-.tabs { 
+        .tabs { 
           display: flex;
           background: #000000;
           padding: 0;
@@ -5041,6 +5031,7 @@ function generateHTML(reportData, trendData = null) {
           min-width: 180px;
           background: white;
           cursor: pointer;
+          height: 45px;
         }
         .filters select:focus { 
           outline: none;
