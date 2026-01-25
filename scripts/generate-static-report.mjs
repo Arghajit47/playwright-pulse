@@ -565,7 +565,7 @@ function generateTestHistoryChart(history) {
   const seriesDataPointsString = JSON.stringify(seriesDataPoints);
 
   return `
-      <div id="${chartId}" style="width: 320px; height: 100px;" class="lazy-load-chart" data-render-function-name="${renderFunctionName}">
+      <div id="${chartId}" style="width: 100%; max-width: 320px; height: 100px;" class="lazy-load-chart" data-render-function-name="${renderFunctionName}">
           <div class="no-data-chart">Loading History...</div>
       </div>
       <script>
@@ -576,7 +576,7 @@ function generateTestHistoryChart(history) {
                   try {
                       chartContainer.innerHTML = ''; // Clear placeholder
                       const chartOptions = {
-                          chart: { type: 'area', height: 100, width: 320, backgroundColor: 'transparent', spacing: [10,10,15,35] },
+                          chart: { type: 'area', height: 100, backgroundColor: 'transparent', spacing: [10,10,15,35] },
                           title: { text: null },
                           xAxis: { categories: ${categoriesString}, labels: { style: { fontSize: '10px', color: 'var(--text-color-secondary)' }}},
                           yAxis: {
@@ -682,7 +682,7 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   {
       chart: {
           type: 'pie',
-          width: ${chartWidth},
+          width: null,
           height: ${
             chartHeight - 40
           }, // Adjusted height to make space for legend if chartHeight is for the whole wrapper
@@ -737,7 +737,7 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
   return `
       <div class="pie-chart-wrapper" style="align-items: center; max-height: 450px">
           <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
-          <div id="${chartId}" style="width: ${chartWidth}px; height: ${
+          <div id="${chartId}" style="width: 100%; max-width: ${chartWidth}px; height: ${
             chartHeight - 40
           }px;"></div>
           <script>
@@ -1608,11 +1608,14 @@ function getAttachmentIcon(contentType) {
  */
 function generateSuitesWidget(suitesData) {
   if (!suitesData || suitesData.length === 0) {
-    return `<div class="suites-widget"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
+    // Maintain height consistency even if empty
+    return `<div class="suites-widget" style="height: 450px;"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
   }
+
+  // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
   return `
-<div class="suites-widget">
-  <div class="suites-header">
+<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
+  <div class="suites-header" style="flex-shrink: 0;">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1621,7 +1624,9 @@ function generateSuitesWidget(suitesData) {
       0,
     )} tests</span>
   </div>
-  <div class="suites-grid">
+
+  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+      <div class="suites-grid">
     ${suitesData
       .map(
         (suite) => `
@@ -1659,6 +1664,7 @@ function generateSuitesWidget(suitesData) {
     </div>`,
       )
       .join("")}
+      </div>
   </div>
 </div>`;
 }
@@ -2634,13 +2640,13 @@ function generateHTML(reportData, trendData = null) {
         .highcharts-axis-labels text, .highcharts-legend-item text { fill: var(--text-color-secondary) !important; font-size: 12px !important; }
         .highcharts-axis-title { fill: var(--text-color) !important; }
         .highcharts-tooltip > span { background-color: rgba(0,0,0,0.95) !important; border: 1px solid var(--border-light) !important; color: var(--text-primary) !important; padding: 12px !important; border-radius: 8px !important; box-shadow: var(--shadow-xl) !important; }
-        body { 
-          font-family: var(--font-family); 
-          margin: 0; 
+        body {
+          font-family: var(--font-family);
+          margin: 0;
           background: radial-gradient(ellipse at top, #0a0a0a 0%, #000000 50%, #000000 100%);
           background-attachment: fixed;
-          color: var(--text-primary); 
-          line-height: 1.6; 
+          color: var(--text-primary);
+          line-height: 1.6;
           font-size: 15px;
           min-height: 100vh;
           -webkit-font-smoothing: antialiased;
@@ -2653,10 +2659,11 @@ function generateHTML(reportData, trendData = null) {
         *:not(input):not(select):not(textarea):not(button) {
           transition-duration: 0.2s;
         }
-        .container { 
-          padding: 0; 
+        .container {
+          padding: 0;
           margin: 0;
           max-width: 100%;
+          width: 100%;
         }
 .header { 
           display: flex;
@@ -2668,10 +2675,11 @@ function generateHTML(reportData, trendData = null) {
           backdrop-filter: blur(10px);
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
         }
-        .header-title { 
+        .header-title {
           display: flex;
           align-items: center;
           gap: 20px;
+          flex-wrap: wrap;
         }
         .header h1 { 
           margin: 0; 
@@ -2701,7 +2709,7 @@ function generateHTML(reportData, trendData = null) {
           padding: 20px 32px;
           position: relative;
           flex: 1;
-          min-width: fit-content;
+          min-width: 0;
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .run-info-item:hover {
@@ -3314,18 +3322,21 @@ function generateHTML(reportData, trendData = null) {
           grid-column: 1;
           grid-row: 1;
         }
-        .test-case-title { 
-          font-weight: 600; 
-          color: #f9fafb; 
+        .test-case-title {
+          font-weight: 600;
+          color: #f9fafb;
           font-size: 1em;
           word-break: break-word;
           overflow-wrap: break-word;
-          flex: 1 1 100%;
+          flex: 1 1 auto;
           min-width: 0;
         }
-        .test-case-browser { 
-          font-size: 0.9em; 
-          color: #d1d5db; 
+        .test-case-browser {
+          font-size: 0.9em;
+          color: #d1d5db;
+          word-break: break-word;
+          overflow-wrap: break-word;
+          max-width: 100%;
         }
 .test-case-meta { 
           display: flex; 
@@ -3795,12 +3806,11 @@ function generateHTML(reportData, trendData = null) {
           padding-bottom: 14px; 
           border-bottom: 1px solid #374151; 
         }
-        .test-history-header h3 { 
-          margin: 0; 
-          font-size: 1.15em; 
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis; 
+        .test-history-header h3 {
+          margin: 0;
+          font-size: 1.15em;
+          word-break: break-word;
+          overflow-wrap: break-word;
         }
         .test-history-header p { 
           font-weight: 500; 
@@ -3969,13 +3979,10 @@ function generateHTML(reportData, trendData = null) {
             opacity: 0; 
             transform: translateY(10px); 
           }
-          to { 
-            opacity: 1; 
-            transform: translateY(0); 
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
-        }
-        .test-cases-list {
-          padding: 48px;
         }
         .header { 
           display: flex;
@@ -4607,77 +4614,39 @@ function generateHTML(reportData, trendData = null) {
         }
         
         @media (max-width: 1024px) {
-          .header { 
+          .header {
             padding: 32px 24px;
             flex-direction: column;
             gap: 24px;
             align-items: flex-start;
           }
-          .run-info { 
+          .run-info {
             width: 100%;
             justify-content: flex-start;
             gap: 24px;
           }
-          .dashboard-grid { 
+          .dashboard-grid {
             grid-template-columns: repeat(2, 1fr);
           }
-          .summary-card:nth-child(2n) { 
-            border-right: none; 
+          .summary-card:nth-child(2n) {
+            border-right: none;
           }
-          .summary-card:nth-child(n+7) { 
-            border-bottom: none; 
+          .summary-card:nth-child(n+7) {
+            border-bottom: none;
           }
-          
-          .copy-btn {
-            font-size: 0.75em;
-            padding: 8px 16px;
-            margin-left: 0;
-          }
-          .console-output-section h4 {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-          }
-          .log-wrapper {
-            max-height: 300px;
-          }
-          .tag {
-            font-size: 0.65em;
-            padding: 4px 10px;
-            margin-right: 4px;
-            margin-bottom: 4px;
-            letter-spacing: 0.3px;
-          }
-          .filters { padding: 16px; gap: 8px; }  
-          .test-case-meta {
-            width: 100%;
-            gap: 6px;
-          }
-          .test-case { 
-            margin: 0 0 12px 0; 
-            border-radius: 8px;
-          }
-          .test-case-content {
-            padding: 20px;
-          }
-          .pie-chart-wrapper, .suites-widget, .trend-chart { 
-            padding: 32px 24px; 
-          }
-          .test-history-grid { 
-            grid-template-columns: 1fr; 
-          }
-          .ai-failure-cards-grid { 
-            grid-template-columns: 1fr; 
-          }
-        }
-          .summary-card:nth-child(2n) { border-right: none; }
-          .summary-card:nth-child(n+7) { border-bottom: none; }
-          .filters { 
+          .filters {
             padding: 24px;
+            flex-direction: column;
           }
-          .filters input { min-width: 100%; }
-          .filters select { min-width: 100%; }
-          
+          .filters input {
+            min-width: 100%;
+          }
+          .filters select {
+            min-width: 100%;
+          }
+          .filters button {
+            width: 100%;
+          }
           .copy-btn {
             font-size: 0.75em;
             padding: 8px 16px;
@@ -4701,31 +4670,55 @@ function generateHTML(reportData, trendData = null) {
           .test-case-header {
             grid-template-columns: 1fr;
             grid-template-rows: auto auto auto;
-            gap: 10px;
+            gap: 12px;
+            padding: 16px 20px;
           }
           .test-case-summary {
             grid-column: 1;
             grid-row: 1;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+          }
+          .test-case-title {
+            width: 100%;
+            max-width: 100%;
+          }
+          .test-case-browser {
+            width: 100%;
+            max-width: 100%;
+            white-space: normal;
           }
           .test-case-meta {
             grid-column: 1;
             grid-row: 2;
-          }
-          .test-case-meta {
             width: 100%;
             gap: 6px;
           }
-          .test-case { 
-            margin: 0 0 12px 0; 
-            border-radius: 8px;
+          .test-case-status-duration {
+            grid-column: 1;
+            grid-row: 3;
+            align-items: flex-start;
           }
-          .test-case-header {
-            padding: 16px 20px;
+          .test-case {
+            margin: 0 0 12px 0;
+            border-radius: 8px;
           }
           .test-case-content {
             padding: 20px;
           }
-          .pie-chart-wrapper, .suites-widget, .trend-chart { padding: 32px 24px; }
+          .pie-chart-wrapper, .suites-widget, .trend-chart {
+            padding: 32px 24px;
+          }
+          .test-history-grid {
+            grid-template-columns: 1fr;
+          }
+          .ai-failure-cards-grid {
+            grid-template-columns: 1fr;
+          }
         }
         @media (max-width: 768px) {
           .header h1 { 
@@ -4780,13 +4773,19 @@ function generateHTML(reportData, trendData = null) {
           .trend-chart-container { 
             min-height: 280px;
           }
-          .suites-grid { 
+          .suites-grid {
             grid-template-columns: 1fr;
           }
-          .test-case-summary { 
+          .test-case-summary {
             flex-direction: column;
             align-items: flex-start;
             gap: 8px;
+          }
+          .test-case-title {
+            width: 100%;
+          }
+          .test-case-browser {
+            width: 100%;
           }
           .test-case-meta { 
             flex-wrap: wrap;
@@ -4908,12 +4907,12 @@ function generateHTML(reportData, trendData = null) {
             grid-template-columns: 1fr;
             gap: 16px;
           }
-          .suite-card { 
+          .suite-card {
             padding: 16px;
           }
-          .filters { 
-            padding: 16px; 
-            gap: 8px; 
+          .filters {
+            padding: 16px;
+            gap: 8px;
           }
           .test-case { 
             margin: 0 0 10px 0;
@@ -4928,12 +4927,20 @@ function generateHTML(reportData, trendData = null) {
           .stat-item .stat-number { 
             font-size: 1.5em; 
           }
-          .failure-header { 
-            padding: 15px; 
+          .failure-header {
+            padding: 15px;
           }
-          .failure-error-preview, .full-error-details { 
-            padding-left: 15px; 
-            padding-right: 15px; 
+          .failure-error-preview, .full-error-details {
+            padding-left: 15px;
+            padding-right: 15px;
+          }
+          .header h1 {
+            word-break: break-word;
+            overflow-wrap: break-word;
+          }
+          h2, h3, h4 {
+            word-break: break-word;
+            overflow-wrap: break-word;
           }
         }
 .copy-btn {
@@ -4998,16 +5005,15 @@ function generateHTML(reportData, trendData = null) {
           white-space: pre-wrap;
           word-break: break-all;
         }
-        .filters { 
-          display: flex; 
-          flex-wrap: nowrap; /* Forces content to stay on one line */
-          align-items: center; /* Vertically aligns inputs and buttons */
-          gap: 12px; 
+        .filters {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 12px;
           margin: 0;
           padding: 24px 32px;
           background: #070808ff;
           border-bottom: 1px solid #e2e8f0;
-          overflow-x: auto; /* Adds scroll if content is too wide on tiny screens */
         }
         .filters input, .filters select, .filters button { 
           padding: 14px 18px; 
@@ -5019,19 +5025,16 @@ function generateHTML(reportData, trendData = null) {
         }
         .filters input { 
           flex: 1; /* Ensure this is flex: 1 or flex: 1 1 auto to take available space */
-          min-width: 200px;
           background: white;
         }
         .filters input:focus { 
           outline: none;
           border-color: #6366f1;
         }
-        .filters select { 
+        .filters select {
           flex: 0 0 auto;
-          min-width: 180px;
           background: white;
           cursor: pointer;
-          height: 45px;
         }
         .filters select:focus { 
           outline: none;
