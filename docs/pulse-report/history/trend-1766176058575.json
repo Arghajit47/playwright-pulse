@@ -1,0 +1,492 @@
+{
+  "run": {
+    "id": "run-1766176058575-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2025-12-19T20:27:38.575Z",
+    "totalTests": 2,
+    "passed": 0,
+    "failed": 2,
+    "skipped": 0,
+    "duration": 7792,
+    "environment": {
+      "host": "L0222",
+      "os": "darwin 25.0.0",
+      "cpu": {
+        "model": "Apple M1 Pro",
+        "cores": 8
+      },
+      "memory": "16.00GB",
+      "node": "v22.8.0",
+      "v8": "12.4.254.21-node.19",
+      "cwd": "/Users/administrator/juliaHub-assignment"
+    }
+  },
+  "results": [
+    {
+      "id": "f01bc06c38d4ececee44-44d97be1845b132f9656",
+      "runId": "run-1766176058575-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > new-test.spec.js > English language switch works",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 1281,
+      "startTime": "2025-12-19T20:27:39.029Z",
+      "endTime": "2025-12-19T20:27:40.310Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:39.034Z-3963-aebb5abf-f813-4d87-9099-e836d36d6384",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 3963,
+          "startTime": "2025-12-19T20:27:39.034Z",
+          "endTime": "2025-12-19T20:27:42.997Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:39.040Z-3861-63038bde-e248-4d53-a874-cfbed234c95c",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 3861,
+              "startTime": "2025-12-19T20:27:39.040Z",
+              "endTime": "2025-12-19T20:27:42.901Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:39.043Z-3858-ccc13d21-f162-4e7a-bf97-2dab7f393ae1",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 3858,
+                  "startTime": "2025-12-19T20:27:39.043Z",
+                  "endTime": "2025-12-19T20:27:42.901Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:42.902Z-8-c65dc75f-a5da-4bc7-a46d-e0aa7fda67c2",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 8,
+              "startTime": "2025-12-19T20:27:42.902Z",
+              "endTime": "2025-12-19T20:27:42.910Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:42.903Z-5-c54e8da5-8cab-496f-a0a3-a675a2ea58f9",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 5,
+                  "startTime": "2025-12-19T20:27:42.903Z",
+                  "endTime": "2025-12-19T20:27:42.908Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:42.911Z-86-1a42ee5f-d00c-4902-bf2b-3acc7628254f",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 86,
+              "startTime": "2025-12-19T20:27:42.911Z",
+              "endTime": "2025-12-19T20:27:42.997Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:42.911Z-86-173a1fd8-18b8-4fc5-806e-061daca045ca",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 86,
+                  "startTime": "2025-12-19T20:27:42.911Z",
+                  "endTime": "2025-12-19T20:27:42.997Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:42.999Z-835-77b112f3-c8f4-4b0e-b316-f2c89fcf50ad",
+          "title": "Navigate to \"/\"",
+          "status": "passed",
+          "duration": 835,
+          "startTime": "2025-12-19T20:27:42.999Z",
+          "endTime": "2025-12-19T20:27:43.834Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:11:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:43.836Z-67-31de2ad4-f73a-4781-9827-8b7054c29923",
+          "title": "Click getByText('English')",
+          "status": "failed",
+          "duration": 67,
+          "startTime": "2025-12-19T20:27:43.836Z",
+          "endTime": "2025-12-19T20:27:43.903Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n",
+          "stackTrace": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n\n    at /Users/administrator/juliaHub-assignment/tests/new-test.spec.js:12:35",
+          "codeLocation": "new-test.spec.js:12:35",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:43.903Z-284-8c3722dc-dccc-4703-88b2-8138297bc17a",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 284,
+          "startTime": "2025-12-19T20:27:43.903Z",
+          "endTime": "2025-12-19T20:27:44.187Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:44.092Z-0-8c53e080-02d2-4f13-bf4c-724a0f1b6f3a",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2025-12-19T20:27:44.092Z",
+              "endTime": "2025-12-19T20:27:44.092Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:44.092Z-91-37c130b1-610b-47d2-a1ad-d40e2db40a04",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 91,
+              "startTime": "2025-12-19T20:27:44.092Z",
+              "endTime": "2025-12-19T20:27:44.183Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:44.133Z-49-c38a4846-9bda-4d8a-9349-e9c23d1f48d1",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 49,
+                  "startTime": "2025-12-19T20:27:44.133Z",
+                  "endTime": "2025-12-19T20:27:44.182Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:44.187Z-19-723c3797-954b-4d09-a9ea-73ce5fadb40f",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 19,
+          "startTime": "2025-12-19T20:27:44.187Z",
+          "endTime": "2025-12-19T20:27:44.206Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2025-12-19T20:27:44.187Z-18-44bbb501-b13e-4b12-a9f8-f7d1b6f1626a",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 18,
+              "startTime": "2025-12-19T20:27:44.187Z",
+              "endTime": "2025-12-19T20:27:44.205Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n",
+      "stackTrace": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n\n    at /Users/administrator/juliaHub-assignment/tests/new-test.spec.js:12:35",
+      "snippet": "\u001b[0m \u001b[90m 10 |\u001b[39m test\u001b[33m.\u001b[39monly(\u001b[32m\"English language switch works\"\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m 11 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m\"https://www.wikipedia.org\"\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 12 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByText(\u001b[32m\"English\"\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 13 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/en\\.wikipedia\\.org/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 14 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 15 |\u001b[39m\u001b[0m",
+      "codeSnippet": "Test defined at: new-test.spec.js:10:6",
+      "tags": [],
+      "screenshots": [
+        "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/0-1766176064246-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/1-1766176064248-video.webm"
+      ],
+      "tracePath": "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/3-1766176064248-trace.zip",
+      "attachments": [
+        {
+          "name": "error-context",
+          "path": "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/2-1766176064248-error-context.md",
+          "contentType": "text/markdown"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/administrator/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300",
+      "runId": "run-1766176058575-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > new-test.spec.js > Today on Wikipedia shows exactly 5 featured items",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 1396,
+      "startTime": "2025-12-19T20:27:44.697Z",
+      "endTime": "2025-12-19T20:27:46.093Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.701Z-191-3625c104-46fc-43d6-a8cc-3ed5612b7541",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 191,
+          "startTime": "2025-12-19T20:27:44.701Z",
+          "endTime": "2025-12-19T20:27:44.892Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.707Z-113-1feba23e-de42-487d-b1fb-439468816efa",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 113,
+              "startTime": "2025-12-19T20:27:44.707Z",
+              "endTime": "2025-12-19T20:27:44.820Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.709Z-111-2eef58fb-26e5-4325-b50c-70299eeea20b",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 111,
+                  "startTime": "2025-12-19T20:27:44.709Z",
+                  "endTime": "2025-12-19T20:27:44.820Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.821Z-8-cae12cdb-69af-4367-988a-a53071053dd7",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 8,
+              "startTime": "2025-12-19T20:27:44.821Z",
+              "endTime": "2025-12-19T20:27:44.829Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.822Z-5-a318eab1-ce19-4d7c-a834-10c9278324ce",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 5,
+                  "startTime": "2025-12-19T20:27:44.822Z",
+                  "endTime": "2025-12-19T20:27:44.827Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.830Z-62-5fd2a903-7dd3-4bd6-9afc-676d857fe81a",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 62,
+              "startTime": "2025-12-19T20:27:44.830Z",
+              "endTime": "2025-12-19T20:27:44.892Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.830Z-62-777d4995-799c-49e3-bcb6-4d078572de3b",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 62,
+                  "startTime": "2025-12-19T20:27:44.830Z",
+                  "endTime": "2025-12-19T20:27:44.892Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:44.894Z-1070-516ba9fc-bb22-4acc-b80e-74472e5cc3b2",
+          "title": "Navigate to \"/wiki/Main_Page\"",
+          "status": "passed",
+          "duration": 1070,
+          "startTime": "2025-12-19T20:27:44.894Z",
+          "endTime": "2025-12-19T20:27:45.964Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:28:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:45.967Z-25-b04236af-bbea-4f94-8e28-cdd5acd91a8a",
+          "title": "Query count locator('#mp-tfa').getByRole('listitem')",
+          "status": "passed",
+          "duration": 25,
+          "startTime": "2025-12-19T20:27:45.967Z",
+          "endTime": "2025-12-19T20:27:45.992Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:29:71",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:45.993Z-2-9fe0a59b-d5a6-4abe-af19-2d55d9ad084a",
+          "title": "Expect \"toBe\"",
+          "status": "failed",
+          "duration": 2,
+          "startTime": "2025-12-19T20:27:45.993Z",
+          "endTime": "2025-12-19T20:27:45.995Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m",
+          "stackTrace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m\n    at /Users/administrator/juliaHub-assignment/tests/new-test.spec.js:30:19",
+          "codeLocation": "new-test.spec.js:30:19",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:45.995Z-224-3ee1e809-a5cf-468f-9789-126e01778bf1",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 224,
+          "startTime": "2025-12-19T20:27:45.995Z",
+          "endTime": "2025-12-19T20:27:46.219Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:46.057Z-0-a04fd5b4-99e6-4afb-aae9-9d1a48171b92",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2025-12-19T20:27:46.057Z",
+              "endTime": "2025-12-19T20:27:46.057Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:46.057Z-159-777887f5-37e1-46ee-99e2-9480ae30de66",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 159,
+              "startTime": "2025-12-19T20:27:46.057Z",
+              "endTime": "2025-12-19T20:27:46.216Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:46.167Z-47-fbf15de4-9611-4e95-850e-325141c58802",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 47,
+                  "startTime": "2025-12-19T20:27:46.167Z",
+                  "endTime": "2025-12-19T20:27:46.214Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:46.219Z-18-626f2fd5-06df-4db8-9cd1-2dc77b528baa",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 18,
+          "startTime": "2025-12-19T20:27:46.219Z",
+          "endTime": "2025-12-19T20:27:46.237Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2025-12-19T20:27:46.220Z-16-3a6ad3bc-6e97-4715-99fa-2c602da92b91",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 16,
+              "startTime": "2025-12-19T20:27:46.220Z",
+              "endTime": "2025-12-19T20:27:46.236Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m",
+      "stackTrace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m\n    at /Users/administrator/juliaHub-assignment/tests/new-test.spec.js:30:19",
+      "snippet": "\u001b[0m \u001b[90m 28 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m\"https://en.wikipedia.org/wiki/Main_Page\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 29 |\u001b[39m     \u001b[36mconst\u001b[39m items \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m\"#mp-tfa\"\u001b[39m)\u001b[33m.\u001b[39mgetByRole(\u001b[32m\"listitem\"\u001b[39m)\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 30 |\u001b[39m     expect(items)\u001b[33m.\u001b[39mtoBe(\u001b[35m5\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// FLAKY: Featured content changes\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 31 |\u001b[39m   }\n \u001b[90m 32 |\u001b[39m )\u001b[33m;\u001b[39m\n \u001b[90m 33 |\u001b[39m\u001b[0m",
+      "codeSnippet": "Test defined at: new-test.spec.js:16:6",
+      "tags": [],
+      "screenshots": [
+        "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/0-1766176066323-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/1-1766176066324-video.webm"
+      ],
+      "tracePath": "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/3-1766176066325-trace.zip",
+      "attachments": [
+        {
+          "name": "error-context",
+          "path": "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/2-1766176066324-error-context.md",
+          "contentType": "text/markdown"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "issue",
+          "description": "Flaky test - Featured content changes",
+          "location": {
+            "file": "/Users/administrator/juliaHub-assignment/tests/new-test.spec.js",
+            "line": 16,
+            "column": 6
+          }
+        },
+        {
+          "type": "intentional",
+          "description": "This test lies inside the fixme category",
+          "location": {
+            "file": "/Users/administrator/juliaHub-assignment/tests/new-test.spec.js",
+            "line": 16,
+            "column": 6
+          }
+        }
+      ],
+      "workerId": 2,
+      "totalWorkers": 4,
+      "configFile": "/Users/administrator/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2025-12-19T20:27:46.367Z"
+  }
+}

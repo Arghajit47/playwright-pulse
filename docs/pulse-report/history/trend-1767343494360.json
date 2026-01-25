@@ -1,0 +1,1678 @@
+{
+  "run": {
+    "id": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2026-01-02T08:44:54.360Z",
+    "totalTests": 15,
+    "passed": 7,
+    "failed": 7,
+    "skipped": 1,
+    "duration": 7150,
+    "environment": {
+      "host": "Arghajits-MacBook-Air.local",
+      "os": "darwin 25.2.0",
+      "cpu": {
+        "model": "Apple M1",
+        "cores": 8
+      },
+      "memory": "8.00GB",
+      "node": "v20.12.2",
+      "v8": "11.3.244.8-node.19",
+      "cwd": "/Users/arghajitsingha/juliaHub-assignment"
+    }
+  },
+  "results": [
+    {
+      "id": "8747e39b871de0524be5-b64407d5c90f666db6d6",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > GET /posts - Fetch posts",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 169,
+      "startTime": "2026-01-02T08:44:54.926Z",
+      "endTime": "2026-01-02T08:44:55.095Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:54.930Z-19-c28a587b-e5c2-4e0f-af74-0328e93945c1",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 19,
+          "startTime": "2026-01-02T08:44:54.930Z",
+          "endTime": "2026-01-02T08:44:54.949Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:54.941Z-8-807c55b6-cfa1-404c-a58b-d270c1f4a944",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 8,
+              "startTime": "2026-01-02T08:44:54.941Z",
+              "endTime": "2026-01-02T08:44:54.949Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:54.943Z-3-8e0ef63e-466e-43c2-98d4-b17ca76dee78",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 3,
+                  "startTime": "2026-01-02T08:44:54.943Z",
+                  "endTime": "2026-01-02T08:44:54.946Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:54.951Z-140-5dc01bba-2bb5-45af-b49c-957bf4e46064",
+          "title": "GET \"/posts\"",
+          "status": "passed",
+          "duration": 140,
+          "startTime": "2026-01-02T08:44:54.951Z",
+          "endTime": "2026-01-02T08:44:55.091Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:7:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:55.093Z-0-39d11aad-7d53-4d56-ae72-a64eaa7091a9",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:55.093Z",
+          "endTime": "2026-01-02T08:44:55.093Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:10:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:55.102Z-0-3262772e-45a9-4230-a4ee-5bb8db5dc9d8",
+          "title": "Expect \"toBeGreaterThan\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:55.102Z",
+          "endTime": "2026-01-02T08:44:55.102Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:13:26",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:55.103Z-0-7d56435d-717b-4496-85c8-97c6456d382b",
+          "title": "Expect \"toHaveProperty\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:55.103Z",
+          "endTime": "2026-01-02T08:44:55.103Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:14:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:55.103Z-1-a08a22f1-d7c4-4e85-9633-32b3007d7319",
+          "title": "Expect \"toHaveProperty\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T08:44:55.103Z",
+          "endTime": "2026-01-02T08:44:55.104Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:15:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:55.104Z-8-ec4c2415-0ed1-4178-9c78-9533768a791b",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 8,
+          "startTime": "2026-01-02T08:44:55.104Z",
+          "endTime": "2026-01-02T08:44:55.112Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T08:44:55.104Z-3-26f607f7-8c5c-4adb-8c81-14018910ae31",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 3,
+              "startTime": "2026-01-02T08:44:55.104Z",
+              "endTime": "2026-01-02T08:44:55.107Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:6:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "[\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m1\u001b[39m,\n    title: \u001b[32m'sunt aut facere repellat provident occaecati excepturi optio reprehenderit'\u001b[39m,\n    body: \u001b[32m'quia et suscipit\\n'\u001b[39m +\n      \u001b[32m'suscipit recusandae consequuntur expedita et cum\\n'\u001b[39m +\n      \u001b[32m'reprehenderit molestiae ut ut quas totam\\n'\u001b[39m +\n      \u001b[32m'nostrum rerum est autem sunt rem eveniet architecto'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m2\u001b[39m,\n    title: \u001b[32m'qui est esse'\u001b[39m,\n    body: \u001b[32m'est rerum tempore vitae\\n'\u001b[39m +\n      \u001b[32m'sequi sint nihil reprehenderit dolor beatae ea dolores neque\\n'\u001b[39m +\n      \u001b[32m'fugiat blanditiis voluptate porro vel nihil molestiae ut reiciendis\\n'\u001b[39m +\n      \u001b[32m'qui aperiam non debitis possimus qui neque nisi nulla'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m3\u001b[39m,\n    title: \u001b[32m'ea molestias quasi exercitationem repellat qui ipsa sit aut'\u001b[39m,\n    body: \u001b[32m'et iusto sed quo iure\\n'\u001b[39m +\n      \u001b[32m'voluptatem occaecati omnis eligendi aut ad\\n'\u001b[39m +\n      \u001b[32m'voluptatem doloribus vel accusantium quis pariatur\\n'\u001b[39m +\n      \u001b[32m'molestiae porro eius odio et labore et velit aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m4\u001b[39m,\n    title: \u001b[32m'eum et est occaecati'\u001b[39m,\n    body: \u001b[32m'ullam et saepe reiciendis voluptatem adipisci\\n'\u001b[39m +\n      \u001b[32m'sit amet autem assumenda provident rerum culpa\\n'\u001b[39m +\n      \u001b[32m'quis hic commodi nesciunt rem tenetur doloremque ipsam iure\\n'\u001b[39m +\n      \u001b[32m'quis sunt voluptatem rerum illo velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m5\u001b[39m,\n    title: \u001b[32m'nesciunt quas odio'\u001b[39m,\n    body: \u001b[32m'repudiandae veniam quaerat sunt sed\\n'\u001b[39m +\n      \u001b[32m'alias aut fugiat sit autem sed est\\n'\u001b[39m +\n      \u001b[32m'voluptatem omnis possimus esse voluptatibus quis\\n'\u001b[39m +\n      \u001b[32m'est aut tenetur dolor neque'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m6\u001b[39m,\n    title: \u001b[32m'dolorem eum magni eos aperiam quia'\u001b[39m,\n    body: \u001b[32m'ut aspernatur corporis harum nihil quis provident sequi\\n'\u001b[39m +\n      \u001b[32m'mollitia nobis aliquid molestiae\\n'\u001b[39m +\n      \u001b[32m'perspiciatis et ea nemo ab reprehenderit accusantium quas\\n'\u001b[39m +\n      \u001b[32m'voluptate dolores velit et doloremque molestiae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m7\u001b[39m,\n    title: \u001b[32m'magnam facilis autem'\u001b[39m,\n    body: \u001b[32m'dolore placeat quibusdam ea quo vitae\\n'\u001b[39m +\n      \u001b[32m'magni quis enim qui quis quo nemo aut saepe\\n'\u001b[39m +\n      \u001b[32m'quidem repellat excepturi ut quia\\n'\u001b[39m +\n      \u001b[32m'sunt ut sequi eos ea sed quas'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m8\u001b[39m,\n    title: \u001b[32m'dolorem dolore est ipsam'\u001b[39m,\n    body: \u001b[32m'dignissimos aperiam dolorem qui eum\\n'\u001b[39m +\n      \u001b[32m'facilis quibusdam animi sint suscipit qui sint possimus cum\\n'\u001b[39m +\n      \u001b[32m'quaerat magni maiores excepturi\\n'\u001b[39m +\n      \u001b[32m'ipsam ut commodi dolor voluptatum modi aut vitae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m9\u001b[39m,\n    title: \u001b[32m'nesciunt iure omnis dolorem tempora et accusantium'\u001b[39m,\n    body: \u001b[32m'consectetur animi nesciunt iure dolore\\n'\u001b[39m +\n      \u001b[32m'enim quia ad\\n'\u001b[39m +\n      \u001b[32m'veniam autem ut quam aut nobis\\n'\u001b[39m +\n      \u001b[32m'et est aut quod aut provident voluptas autem voluptas'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m10\u001b[39m,\n    title: \u001b[32m'optio molestias id quia eum'\u001b[39m,\n    body: \u001b[32m'quo et expedita modi cum officia vel magni\\n'\u001b[39m +\n      \u001b[32m'doloribus qui repudiandae\\n'\u001b[39m +\n      \u001b[32m'vero nisi sit\\n'\u001b[39m +\n      \u001b[32m'quos veniam quod sed accusamus veritatis error'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m11\u001b[39m,\n    title: \u001b[32m'et ea vero quia laudantium autem'\u001b[39m,\n    body: \u001b[32m'delectus reiciendis molestiae occaecati non minima eveniet qui voluptatibus\\n'\u001b[39m +\n      \u001b[32m'accusamus in eum beatae sit\\n'\u001b[39m +\n      \u001b[32m'vel qui neque voluptates ut commodi qui incidunt\\n'\u001b[39m +\n      \u001b[32m'ut animi commodi'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m12\u001b[39m,\n    title: \u001b[32m'in quibusdam tempore odit est dolorem'\u001b[39m,\n    body: \u001b[32m'itaque id aut magnam\\n'\u001b[39m +\n      \u001b[32m'praesentium quia et ea odit et ea voluptas et\\n'\u001b[39m +\n      \u001b[32m'sapiente quia nihil amet occaecati quia id voluptatem\\n'\u001b[39m +\n      \u001b[32m'incidunt ea est distinctio odio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m13\u001b[39m,\n    title: \u001b[32m'dolorum ut in voluptas mollitia et saepe quo animi'\u001b[39m,\n    body: \u001b[32m'aut dicta possimus sint mollitia voluptas commodi quo doloremque\\n'\u001b[39m +\n      \u001b[32m'iste corrupti reiciendis voluptatem eius rerum\\n'\u001b[39m +\n      \u001b[32m'sit cumque quod eligendi laborum minima\\n'\u001b[39m +\n      \u001b[32m'perferendis recusandae assumenda consectetur porro architecto ipsum ipsam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m14\u001b[39m,\n    title: \u001b[32m'voluptatem eligendi optio'\u001b[39m,\n    body: \u001b[32m'fuga et accusamus dolorum perferendis illo voluptas\\n'\u001b[39m +\n      \u001b[32m'non doloremque neque facere\\n'\u001b[39m +\n      \u001b[32m'ad qui dolorum molestiae beatae\\n'\u001b[39m +\n      \u001b[32m'sed aut voluptas totam sit illum'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m15\u001b[39m,\n    title: \u001b[32m'eveniet quod temporibus'\u001b[39m,\n    body: \u001b[32m'reprehenderit quos placeat\\n'\u001b[39m +\n      \u001b[32m'velit minima officia dolores impedit repudiandae molestiae nam\\n'\u001b[39m +\n      \u001b[32m'voluptas recusandae quis delectus\\n'\u001b[39m +\n      \u001b[32m'officiis harum fugiat vitae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m16\u001b[39m,\n    title: \u001b[32m'sint suscipit perspiciatis velit dolorum rerum ipsa laboriosam odio'\u001b[39m,\n    body: \u001b[32m'suscipit nam nisi quo aperiam aut\\n'\u001b[39m +\n      \u001b[32m'asperiores eos fugit maiores voluptatibus quia\\n'\u001b[39m +\n      \u001b[32m'voluptatem quis ullam qui in alias quia est\\n'\u001b[39m +\n      \u001b[32m'consequatur magni mollitia accusamus ea nisi voluptate dicta'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m17\u001b[39m,\n    title: \u001b[32m'fugit voluptas sed molestias voluptatem provident'\u001b[39m,\n    body: \u001b[32m'eos voluptas et aut odit natus earum\\n'\u001b[39m +\n      \u001b[32m'aspernatur fuga molestiae ullam\\n'\u001b[39m +\n      \u001b[32m'deserunt ratione qui eos\\n'\u001b[39m +\n      \u001b[32m'qui nihil ratione nemo velit ut aut id quo'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m18\u001b[39m,\n    title: \u001b[32m'voluptate et itaque vero tempora molestiae'\u001b[39m,\n    body: \u001b[32m'eveniet quo quis\\n'\u001b[39m +\n      \u001b[32m'laborum totam consequatur non dolor\\n'\u001b[39m +\n      \u001b[32m'ut et est repudiandae\\n'\u001b[39m +\n      \u001b[32m'est voluptatem vel debitis et magnam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m19\u001b[39m,\n    title: \u001b[32m'adipisci placeat illum aut reiciendis qui'\u001b[39m,\n    body: \u001b[32m'illum quis cupiditate provident sit magnam\\n'\u001b[39m +\n      \u001b[32m'ea sed aut omnis\\n'\u001b[39m +\n      \u001b[32m'veniam maiores ullam consequatur atque\\n'\u001b[39m +\n      \u001b[32m'adipisci quo iste expedita sit quos voluptas'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m20\u001b[39m,\n    title: \u001b[32m'doloribus ad provident suscipit at'\u001b[39m,\n    body: \u001b[32m'qui consequuntur ducimus possimus quisquam amet similique\\n'\u001b[39m +\n      \u001b[32m'suscipit porro ipsam amet\\n'\u001b[39m +\n      \u001b[32m'eos veritatis officiis exercitationem vel fugit aut necessitatibus totam\\n'\u001b[39m +\n      \u001b[32m'omnis rerum consequatur expedita quidem cumque explicabo'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m21\u001b[39m,\n    title: \u001b[32m'asperiores ea ipsam voluptatibus modi minima quia sint'\u001b[39m,\n    body: \u001b[32m'repellat aliquid praesentium dolorem quo\\n'\u001b[39m +\n      \u001b[32m'sed totam minus non itaque\\n'\u001b[39m +\n      \u001b[32m'nihil labore molestiae sunt dolor eveniet hic recusandae veniam\\n'\u001b[39m +\n      \u001b[32m'tempora et tenetur expedita sunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m22\u001b[39m,\n    title: \u001b[32m'dolor sint quo a velit explicabo quia nam'\u001b[39m,\n    body: \u001b[32m'eos qui et ipsum ipsam suscipit aut\\n'\u001b[39m +\n      \u001b[32m'sed omnis non odio\\n'\u001b[39m +\n      \u001b[32m'expedita earum mollitia molestiae aut atque rem suscipit\\n'\u001b[39m +\n      \u001b[32m'nam impedit esse'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m23\u001b[39m,\n    title: \u001b[32m'maxime id vitae nihil numquam'\u001b[39m,\n    body: \u001b[32m'veritatis unde neque eligendi\\n'\u001b[39m +\n      \u001b[32m'quae quod architecto quo neque vitae\\n'\u001b[39m +\n      \u001b[32m'est illo sit tempora doloremque fugit quod\\n'\u001b[39m +\n      \u001b[32m'et et vel beatae sequi ullam sed tenetur perspiciatis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m24\u001b[39m,\n    title: \u001b[32m'autem hic labore sunt dolores incidunt'\u001b[39m,\n    body: \u001b[32m'enim et ex nulla\\n'\u001b[39m +\n      \u001b[32m'omnis voluptas quia qui\\n'\u001b[39m +\n      \u001b[32m'voluptatem consequatur numquam aliquam sunt\\n'\u001b[39m +\n      \u001b[32m'totam recusandae id dignissimos aut sed asperiores deserunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m25\u001b[39m,\n    title: \u001b[32m'rem alias distinctio quo quis'\u001b[39m,\n    body: \u001b[32m'ullam consequatur ut\\n'\u001b[39m +\n      \u001b[32m'omnis quis sit vel consequuntur\\n'\u001b[39m +\n      \u001b[32m'ipsa eligendi ipsum molestiae et omnis error nostrum\\n'\u001b[39m +\n      \u001b[32m'molestiae illo tempore quia et distinctio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m26\u001b[39m,\n    title: \u001b[32m'est et quae odit qui non'\u001b[39m,\n    body: \u001b[32m'similique esse doloribus nihil accusamus\\n'\u001b[39m +\n      \u001b[32m'omnis dolorem fuga consequuntur reprehenderit fugit recusandae temporibus\\n'\u001b[39m +\n      \u001b[32m'perspiciatis cum ut laudantium\\n'\u001b[39m +\n      \u001b[32m'omnis aut molestiae vel vero'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m27\u001b[39m,\n    title: \u001b[32m'quasi id et eos tenetur aut quo autem'\u001b[39m,\n    body: \u001b[32m'eum sed dolores ipsam sint possimus debitis occaecati\\n'\u001b[39m +\n      \u001b[32m'debitis qui qui et\\n'\u001b[39m +\n      \u001b[32m'ut placeat enim earum aut odit facilis\\n'\u001b[39m +\n      \u001b[32m'consequatur suscipit necessitatibus rerum sed inventore temporibus consequatur'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m28\u001b[39m,\n    title: \u001b[32m'delectus ullam et corporis nulla voluptas sequi'\u001b[39m,\n    body: \u001b[32m'non et quaerat ex quae ad maiores\\n'\u001b[39m +\n      \u001b[32m'maiores recusandae totam aut blanditiis mollitia quas illo\\n'\u001b[39m +\n      \u001b[32m'ut voluptatibus voluptatem\\n'\u001b[39m +\n      \u001b[32m'similique nostrum eum'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m29\u001b[39m,\n    title: \u001b[32m'iusto eius quod necessitatibus culpa ea'\u001b[39m,\n    body: \u001b[32m'odit magnam ut saepe sed non qui\\n'\u001b[39m +\n      \u001b[32m'tempora atque nihil\\n'\u001b[39m +\n      \u001b[32m'accusamus illum doloribus illo dolor\\n'\u001b[39m +\n      \u001b[32m'eligendi repudiandae odit magni similique sed cum maiores'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m30\u001b[39m,\n    title: \u001b[32m'a quo magni similique perferendis'\u001b[39m,\n    body: \u001b[32m'alias dolor cumque\\n'\u001b[39m +\n      \u001b[32m'impedit blanditiis non eveniet odio maxime\\n'\u001b[39m +\n      \u001b[32m'blanditiis amet eius quis tempora quia autem rem\\n'\u001b[39m +\n      \u001b[32m'a provident perspiciatis quia'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m31\u001b[39m,\n    title: \u001b[32m'ullam ut quidem id aut vel consequuntur'\u001b[39m,\n    body: \u001b[32m'debitis eius sed quibusdam non quis consectetur vitae\\n'\u001b[39m +\n      \u001b[32m'impedit ut qui consequatur sed aut in\\n'\u001b[39m +\n      \u001b[32m'quidem sit nostrum et maiores adipisci atque\\n'\u001b[39m +\n      \u001b[32m'quaerat voluptatem adipisci repudiandae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m32\u001b[39m,\n    title: \u001b[32m'doloremque illum aliquid sunt'\u001b[39m,\n    body: \u001b[32m'deserunt eos nobis asperiores et hic\\n'\u001b[39m +\n      \u001b[32m'est debitis repellat molestiae optio\\n'\u001b[39m +\n      \u001b[32m'nihil ratione ut eos beatae quibusdam distinctio maiores\\n'\u001b[39m +\n      \u001b[32m'earum voluptates et aut adipisci ea maiores voluptas maxime'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m33\u001b[39m,\n    title: \u001b[32m'qui explicabo molestiae dolorem'\u001b[39m,\n    body: \u001b[32m'rerum ut et numquam laborum odit est sit\\n'\u001b[39m +\n      \u001b[32m'id qui sint in\\n'\u001b[39m +\n      \u001b[32m'quasi tenetur tempore aperiam et quaerat qui in\\n'\u001b[39m +\n      \u001b[32m'rerum officiis sequi cumque quod'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m34\u001b[39m,\n    title: \u001b[32m'magnam ut rerum iure'\u001b[39m,\n    body: \u001b[32m'ea velit perferendis earum ut voluptatem voluptate itaque iusto\\n'\u001b[39m +\n      \u001b[32m'totam pariatur in\\n'\u001b[39m +\n      \u001b[32m'nemo voluptatem voluptatem autem magni tempora minima in\\n'\u001b[39m +\n      \u001b[32m'est distinctio qui assumenda accusamus dignissimos officia nesciunt nobis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m35\u001b[39m,\n    title: \u001b[32m'id nihil consequatur molestias animi provident'\u001b[39m,\n    body: \u001b[32m'nisi error delectus possimus ut eligendi vitae\\n'\u001b[39m +\n      \u001b[32m'placeat eos harum cupiditate facilis reprehenderit voluptatem beatae\\n'\u001b[39m +\n      \u001b[32m'modi ducimus quo illum voluptas eligendi\\n'\u001b[39m +\n      \u001b[32m'et nobis quia fugit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m36\u001b[39m,\n    title: \u001b[32m'fuga nam accusamus voluptas reiciendis itaque'\u001b[39m,\n    body: \u001b[32m'ad mollitia et omnis minus architecto odit\\n'\u001b[39m +\n      \u001b[32m'voluptas doloremque maxime aut non ipsa qui alias veniam\\n'\u001b[39m +\n      \u001b[32m'blanditiis culpa aut quia nihil cumque facere et occaecati\\n'\u001b[39m +\n      \u001b[32m'qui aspernatur quia eaque ut aperiam inventore'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m37\u001b[39m,\n    title: \u001b[32m'provident vel ut sit ratione est'\u001b[39m,\n    body: \u001b[32m'debitis et eaque non officia sed nesciunt pariatur vel\\n'\u001b[39m +\n      \u001b[32m'voluptatem iste vero et ea\\n'\u001b[39m +\n      \u001b[32m'numquam aut expedita ipsum nulla in\\n'\u001b[39m +\n      \u001b[32m'voluptates omnis consequatur aut enim officiis in quam qui'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m38\u001b[39m,\n    title: \u001b[32m'explicabo et eos deleniti nostrum ab id repellendus'\u001b[39m,\n    body: \u001b[32m'animi esse sit aut sit nesciunt assumenda eum voluptas\\n'\u001b[39m +\n      \u001b[32m'quia voluptatibus provident quia necessitatibus ea\\n'\u001b[39m +\n      \u001b[32m'rerum repudiandae quia voluptatem delectus fugit aut id quia\\n'\u001b[39m +\n      \u001b[32m'ratione optio eos iusto veniam iure'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m39\u001b[39m,\n    title: \u001b[32m'eos dolorem iste accusantium est eaque quam'\u001b[39m,\n    body: \u001b[32m'corporis rerum ducimus vel eum accusantium\\n'\u001b[39m +\n      \u001b[32m'maxime aspernatur a porro possimus iste omnis\\n'\u001b[39m +\n      \u001b[32m'est in deleniti asperiores fuga aut\\n'\u001b[39m +\n      \u001b[32m'voluptas sapiente vel dolore minus voluptatem incidunt ex'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m40\u001b[39m,\n    title: \u001b[32m'enim quo cumque'\u001b[39m,\n    body: \u001b[32m'ut voluptatum aliquid illo tenetur nemo sequi quo facilis\\n'\u001b[39m +\n      \u001b[32m'ipsum rem optio mollitia quas\\n'\u001b[39m +\n      \u001b[32m'voluptatem eum voluptas qui\\n'\u001b[39m +\n      \u001b[32m'unde omnis voluptatem iure quasi maxime voluptas nam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m41\u001b[39m,\n    title: \u001b[32m'non est facere'\u001b[39m,\n    body: \u001b[32m'molestias id nostrum\\n'\u001b[39m +\n      \u001b[32m'excepturi molestiae dolore omnis repellendus quaerat saepe\\n'\u001b[39m +\n      \u001b[32m'consectetur iste quaerat tenetur asperiores accusamus ex ut\\n'\u001b[39m +\n      \u001b[32m'nam quidem est ducimus sunt debitis saepe'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m42\u001b[39m,\n    title: \u001b[32m'commodi ullam sint et excepturi error explicabo praesentium voluptas'\u001b[39m,\n    body: \u001b[32m'odio fugit voluptatum ducimus earum autem est incidunt voluptatem\\n'\u001b[39m +\n      \u001b[32m'odit reiciendis aliquam sunt sequi nulla dolorem\\n'\u001b[39m +\n      \u001b[32m'non facere repellendus voluptates quia\\n'\u001b[39m +\n      \u001b[32m'ratione harum vitae ut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m43\u001b[39m,\n    title: \u001b[32m'eligendi iste nostrum consequuntur adipisci praesentium sit beatae perferendis'\u001b[39m,\n    body: \u001b[32m'similique fugit est\\n'\u001b[39m +\n      \u001b[32m'illum et dolorum harum et voluptate eaque quidem\\n'\u001b[39m +\n      \u001b[32m'exercitationem quos nam commodi possimus cum odio nihil nulla\\n'\u001b[39m +\n      \u001b[32m'dolorum exercitationem magnam ex et a et distinctio debitis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m44\u001b[39m,\n    title: \u001b[32m'optio dolor molestias sit'\u001b[39m,\n    body: \u001b[32m'temporibus est consectetur dolore\\n'\u001b[39m +\n      \u001b[32m'et libero debitis vel velit laboriosam quia\\n'\u001b[39m +\n      \u001b[32m'ipsum quibusdam qui itaque fuga rem aut\\n'\u001b[39m +\n      \u001b[32m'ea et iure quam sed maxime ut distinctio quae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m45\u001b[39m,\n    title: \u001b[32m'ut numquam possimus omnis eius suscipit laudantium iure'\u001b[39m,\n    body: \u001b[32m'est natus reiciendis nihil possimus aut provident\\n'\u001b[39m +\n      \u001b[32m'ex et dolor\\n'\u001b[39m +\n      \u001b[32m'repellat pariatur est\\n'\u001b[39m +\n      \u001b[32m'nobis rerum repellendus dolorem autem'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m46\u001b[39m,\n    title: \u001b[32m'aut quo modi neque nostrum ducimus'\u001b[39m,\n    body: \u001b[32m'voluptatem quisquam iste\\n'\u001b[39m +\n      \u001b[32m'voluptatibus natus officiis facilis dolorem\\n'\u001b[39m +\n      \u001b[32m'quis quas ipsam\\n'\u001b[39m +\n      \u001b[32m'vel et voluptatum in aliquid'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m47\u001b[39m,\n    title: \u001b[32m'quibusdam cumque rem aut deserunt'\u001b[39m,\n    body: \u001b[32m'voluptatem assumenda ut qui ut cupiditate aut impedit veniam\\n'\u001b[39m +\n      \u001b[32m'occaecati nemo illum voluptatem laudantium\\n'\u001b[39m +\n      \u001b[32m'molestiae beatae rerum ea iure soluta nostrum\\n'\u001b[39m +\n      \u001b[32m'eligendi et voluptate'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m48\u001b[39m,\n    title: \u001b[32m'ut voluptatem illum ea doloribus itaque eos'\u001b[39m,\n    body: \u001b[32m'voluptates quo voluptatem facilis iure occaecati\\n'\u001b[39m +\n      \u001b[32m'vel assumenda rerum officia et\\n'\u001b[39m +\n      \u001b[32m'illum perspiciatis ab deleniti\\n'\u001b[39m +\n      \u001b[32m'laudantium repellat ad ut et autem reprehenderit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m49\u001b[39m,\n    title: \u001b[32m'laborum non sunt aut ut assumenda perspiciatis voluptas'\u001b[39m,\n    body: \u001b[32m'inventore ab sint\\n'\u001b[39m +\n      \u001b[32m'natus fugit id nulla sequi architecto nihil quaerat\\n'\u001b[39m +\n      \u001b[32m'eos tenetur in in eum veritatis non\\n'\u001b[39m +\n      \u001b[32m'quibusdam officiis aspernatur cumque aut commodi aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m50\u001b[39m,\n    title: \u001b[32m'repellendus qui recusandae incidunt voluptates tenetur qui omnis exercitationem'\u001b[39m,\n    body: \u001b[32m'error suscipit maxime adipisci consequuntur recusandae\\n'\u001b[39m +\n      \u001b[32m'voluptas eligendi et est et voluptates\\n'\u001b[39m +\n      \u001b[32m'quia distinctio ab amet quaerat molestiae et vitae\\n'\u001b[39m +\n      \u001b[32m'adipisci impedit sequi nesciunt quis consectetur'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m51\u001b[39m,\n    title: \u001b[32m'soluta aliquam aperiam consequatur illo quis voluptas'\u001b[39m,\n    body: \u001b[32m'sunt dolores aut doloribus\\n'\u001b[39m +\n      \u001b[32m'dolore doloribus voluptates tempora et\\n'\u001b[39m +\n      \u001b[32m'doloremque et quo\\n'\u001b[39m +\n      \u001b[32m'cum asperiores sit consectetur dolorem'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m52\u001b[39m,\n    title: \u001b[32m'qui enim et consequuntur quia animi quis voluptate quibusdam'\u001b[39m,\n    body: \u001b[32m'iusto est quibusdam fuga quas quaerat molestias\\n'\u001b[39m +\n      \u001b[32m'a enim ut sit accusamus enim\\n'\u001b[39m +\n      \u001b[32m'temporibus iusto accusantium provident architecto\\n'\u001b[39m +\n      \u001b[32m'soluta esse reprehenderit qui laborum'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m53\u001b[39m,\n    title: \u001b[32m'ut quo aut ducimus alias'\u001b[39m,\n    body: \u001b[32m'minima harum praesentium eum rerum illo dolore\\n'\u001b[39m +\n      \u001b[32m'quasi exercitationem rerum nam\\n'\u001b[39m +\n      \u001b[32m'porro quis neque quo\\n'\u001b[39m +\n      \u001b[32m'consequatur minus dolor quidem veritatis sunt non explicabo similique'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m54\u001b[39m,\n    title: \u001b[32m'sit asperiores ipsam eveniet odio non quia'\u001b[39m,\n    body: \u001b[32m'totam corporis dignissimos\\n'\u001b[39m +\n      \u001b[32m'vitae dolorem ut occaecati accusamus\\n'\u001b[39m +\n      \u001b[32m'ex velit deserunt\\n'\u001b[39m +\n      \u001b[32m'et exercitationem vero incidunt corrupti mollitia'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m55\u001b[39m,\n    title: \u001b[32m'sit vel voluptatem et non libero'\u001b[39m,\n    body: \u001b[32m'debitis excepturi ea perferendis harum libero optio\\n'\u001b[39m +\n      \u001b[32m'eos accusamus cum fuga ut sapiente repudiandae\\n'\u001b[39m +\n      \u001b[32m'et ut incidunt omnis molestiae\\n'\u001b[39m +\n      \u001b[32m'nihil ut eum odit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m56\u001b[39m,\n    title: \u001b[32m'qui et at rerum necessitatibus'\u001b[39m,\n    body: \u001b[32m'aut est omnis dolores\\n'\u001b[39m +\n      \u001b[32m'neque rerum quod ea rerum velit pariatur beatae excepturi\\n'\u001b[39m +\n      \u001b[32m'et provident voluptas corrupti\\n'\u001b[39m +\n      \u001b[32m'corporis harum reprehenderit dolores eligendi'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m57\u001b[39m,\n    title: \u001b[32m'sed ab est est'\u001b[39m,\n    body: \u001b[32m'at pariatur consequuntur earum quidem\\n'\u001b[39m +\n      \u001b[32m'quo est laudantium soluta voluptatem\\n'\u001b[39m +\n      \u001b[32m'qui ullam et est\\n'\u001b[39m +\n      \u001b[32m'et cum voluptas voluptatum repellat est'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m58\u001b[39m,\n    title: \u001b[32m'voluptatum itaque dolores nisi et quasi'\u001b[39m,\n    body: \u001b[32m'veniam voluptatum quae adipisci id\\n'\u001b[39m +\n      \u001b[32m'et id quia eos ad et dolorem\\n'\u001b[39m +\n      \u001b[32m'aliquam quo nisi sunt eos impedit error\\n'\u001b[39m +\n      \u001b[32m'ad similique veniam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m59\u001b[39m,\n    title: \u001b[32m'qui commodi dolor at maiores et quis id accusantium'\u001b[39m,\n    body: \u001b[32m'perspiciatis et quam ea autem temporibus non voluptatibus qui\\n'\u001b[39m +\n      \u001b[32m'beatae a earum officia nesciunt dolores suscipit voluptas et\\n'\u001b[39m +\n      \u001b[32m'animi doloribus cum rerum quas et magni\\n'\u001b[39m +\n      \u001b[32m'et hic ut ut commodi expedita sunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m60\u001b[39m,\n    title: \u001b[32m'consequatur placeat omnis quisquam quia reprehenderit fugit veritatis facere'\u001b[39m,\n    body: \u001b[32m'asperiores sunt ab assumenda cumque modi velit\\n'\u001b[39m +\n      \u001b[32m'qui esse omnis\\n'\u001b[39m +\n      \u001b[32m'voluptate et fuga perferendis voluptas\\n'\u001b[39m +\n      \u001b[32m'illo ratione amet aut et omnis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m61\u001b[39m,\n    title: \u001b[32m'voluptatem doloribus consectetur est ut ducimus'\u001b[39m,\n    body: \u001b[32m'ab nemo optio odio\\n'\u001b[39m +\n      \u001b[32m'delectus tenetur corporis similique nobis repellendus rerum omnis facilis\\n'\u001b[39m +\n      \u001b[32m'vero blanditiis debitis in nesciunt doloribus dicta dolores\\n'\u001b[39m +\n      \u001b[32m'magnam minus velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m62\u001b[39m,\n    title: \u001b[32m'beatae enim quia vel'\u001b[39m,\n    body: \u001b[32m'enim aspernatur illo distinctio quae praesentium\\n'\u001b[39m +\n      \u001b[32m'beatae alias amet delectus qui voluptate distinctio\\n'\u001b[39m +\n      \u001b[32m'odit sint accusantium autem omnis\\n'\u001b[39m +\n      \u001b[32m'quo molestiae omnis ea eveniet optio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m63\u001b[39m,\n    title: \u001b[32m'voluptas blanditiis repellendus animi ducimus error sapiente et suscipit'\u001b[39m,\n    body: \u001b[32m'enim adipisci aspernatur nemo\\n'\u001b[39m +\n      \u001b[32m'numquam omnis facere dolorem dolor ex quis temporibus incidunt\\n'\u001b[39m +\n      \u001b[32m'ab delectus culpa quo reprehenderit blanditiis asperiores\\n'\u001b[39m +\n      \u001b[32m'accusantium ut quam in voluptatibus voluptas ipsam dicta'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m64\u001b[39m,\n    title: \u001b[32m'et fugit quas eum in in aperiam quod'\u001b[39m,\n    body: \u001b[32m'id velit blanditiis\\n'\u001b[39m +\n      \u001b[32m'eum ea voluptatem\\n'\u001b[39m +\n      \u001b[32m'molestiae sint occaecati est eos perspiciatis\\n'\u001b[39m +\n      \u001b[32m'incidunt a error provident eaque aut aut qui'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m65\u001b[39m,\n    title: \u001b[32m'consequatur id enim sunt et et'\u001b[39m,\n    body: \u001b[32m'voluptatibus ex esse\\n'\u001b[39m +\n      \u001b[32m'sint explicabo est aliquid cumque adipisci fuga repellat labore\\n'\u001b[39m +\n      \u001b[32m'molestiae corrupti ex saepe at asperiores et perferendis\\n'\u001b[39m +\n      \u001b[32m'natus id esse incidunt pariatur'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m66\u001b[39m,\n    title: \u001b[32m'repudiandae ea animi iusto'\u001b[39m,\n    body: \u001b[32m'officia veritatis tenetur vero qui itaque\\n'\u001b[39m +\n      \u001b[32m'sint non ratione\\n'\u001b[39m +\n      \u001b[32m'sed et ut asperiores iusto eos molestiae nostrum\\n'\u001b[39m +\n      \u001b[32m'veritatis quibusdam et nemo iusto saepe'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m67\u001b[39m,\n    title: \u001b[32m'aliquid eos sed fuga est maxime repellendus'\u001b[39m,\n    body: \u001b[32m'reprehenderit id nostrum\\n'\u001b[39m +\n      \u001b[32m'voluptas doloremque pariatur sint et accusantium quia quod aspernatur\\n'\u001b[39m +\n      \u001b[32m'et fugiat amet\\n'\u001b[39m +\n      \u001b[32m'non sapiente et consequatur necessitatibus molestiae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m68\u001b[39m,\n    title: \u001b[32m'odio quis facere architecto reiciendis optio'\u001b[39m,\n    body: \u001b[32m'magnam molestiae perferendis quisquam\\n'\u001b[39m +\n      \u001b[32m'qui cum reiciendis\\n'\u001b[39m +\n      \u001b[32m'quaerat animi amet hic inventore\\n'\u001b[39m +\n      \u001b[32m'ea quia deleniti quidem saepe porro velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m69\u001b[39m,\n    title: \u001b[32m'fugiat quod pariatur odit minima'\u001b[39m,\n    body: \u001b[32m'officiis error culpa consequatur modi asperiores et\\n'\u001b[39m +\n      \u001b[32m'dolorum assumenda voluptas et vel qui aut vel rerum\\n'\u001b[39m +\n      \u001b[32m'voluptatum quisquam perspiciatis quia rerum consequatur totam quas\\n'\u001b[39m +\n      \u001b[32m'sequi commodi repudiandae asperiores et saepe a'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m70\u001b[39m,\n    title: \u001b[32m'voluptatem laborum magni'\u001b[39m,\n    body: \u001b[32m'sunt repellendus quae\\n'\u001b[39m +\n      \u001b[32m'est asperiores aut deleniti esse accusamus repellendus quia aut\\n'\u001b[39m +\n      \u001b[32m'quia dolorem unde\\n'\u001b[39m +\n      \u001b[32m'eum tempora esse dolore'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m71\u001b[39m,\n    title: \u001b[32m'et iusto veniam et illum aut fuga'\u001b[39m,\n    body: \u001b[32m'occaecati a doloribus\\n'\u001b[39m +\n      \u001b[32m'iste saepe consectetur placeat eum voluptate dolorem et\\n'\u001b[39m +\n      \u001b[32m'qui quo quia voluptas\\n'\u001b[39m +\n      \u001b[32m'rerum ut id enim velit est perferendis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m72\u001b[39m,\n    title: \u001b[32m'sint hic doloribus consequatur eos non id'\u001b[39m,\n    body: \u001b[32m'quam occaecati qui deleniti consectetur\\n'\u001b[39m +\n      \u001b[32m'consequatur aut facere quas exercitationem aliquam hic voluptas\\n'\u001b[39m +\n      \u001b[32m'neque id sunt ut aut accusamus\\n'\u001b[39m +\n      \u001b[32m'sunt consectetur expedita inventore velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m73\u001b[39m,\n    title: \u001b[32m'consequuntur deleniti eos quia temporibus ab aliquid at'\u001b[39m,\n    body: \u001b[32m'voluptatem cumque tenetur consequatur expedita ipsum nemo quia explicabo\\n'\u001b[39m +\n      \u001b[32m'aut eum minima consequatur\\n'\u001b[39m +\n      \u001b[32m'tempore cumque quae est et\\n'\u001b[39m +\n      \u001b[32m'et in consequuntur voluptatem voluptates aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m74\u001b[39m,\n    title: \u001b[32m'enim unde ratione doloribus quas enim ut sit sapiente'\u001b[39m,\n    body: \u001b[32m'odit qui et et necessitatibus sint veniam\\n'\u001b[39m +\n      \u001b[32m'mollitia amet doloremque molestiae commodi similique magnam et quam\\n'\u001b[39m +\n      \u001b[32m'blanditiis est itaque\\n'\u001b[39m +\n      \u001b[32m'quo et tenetur ratione occaecati molestiae tempora'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m75\u001b[39m,\n    title: \u001b[32m'dignissimos eum dolor ut enim et delectus in'\u001b[39m,\n    body: \u001b[32m'commodi non non omnis et voluptas sit\\n'\u001b[39m +\n      \u001b[32m'autem aut nobis magnam et sapiente voluptatem\\n'\u001b[39m +\n      \u001b[32m'et laborum repellat qui delectus facilis temporibus\\n'\u001b[39m +\n      \u001b[32m'rerum amet et nemo voluptate expedita adipisci error dolorem'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m76\u001b[39m,\n    title: \u001b[32m'doloremque officiis ad et non perferendis'\u001b[39m,\n    body: \u001b[32m'ut animi facere\\n'\u001b[39m +\n      \u001b[32m'totam iusto tempore\\n'\u001b[39m +\n      \u001b[32m'molestiae eum aut et dolorem aperiam\\n'\u001b[39m +\n      \u001b[32m'quaerat recusandae totam odio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m77\u001b[39m,\n    title: \u001b[32m'necessitatibus quasi exercitationem odio'\u001b[39m,\n    body: \u001b[32m'modi ut in nulla repudiandae dolorum nostrum eos\\n'\u001b[39m +\n      \u001b[32m'aut consequatur omnis\\n'\u001b[39m +\n      \u001b[32m'ut incidunt est omnis iste et quam\\n'\u001b[39m +\n      \u001b[32m'voluptates sapiente aliquam asperiores nobis amet corrupti repudiandae provident'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m78\u001b[39m,\n    title: \u001b[32m'quam voluptatibus rerum veritatis'\u001b[39m,\n    body: \u001b[32m'nobis facilis odit tempore cupiditate quia\\n'\u001b[39m +\n      \u001b[32m'assumenda doloribus rerum qui ea\\n'\u001b[39m +\n      \u001b[32m'illum et qui totam\\n'\u001b[39m +\n      \u001b[32m'aut veniam repellendus'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m79\u001b[39m,\n    title: \u001b[32m'pariatur consequatur quia magnam autem omnis non amet'\u001b[39m,\n    body: \u001b[32m'libero accusantium et et facere incidunt sit dolorem\\n'\u001b[39m +\n      \u001b[32m'non excepturi qui quia sed laudantium\\n'\u001b[39m +\n      \u001b[32m'quisquam molestiae ducimus est\\n'\u001b[39m +\n      \u001b[32m'officiis esse molestiae iste et quos'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m80\u001b[39m,\n    title: \u001b[32m'labore in ex et explicabo corporis aut quas'\u001b[39m,\n    body: \u001b[32m'ex quod dolorem ea eum iure qui provident amet\\n'\u001b[39m +\n      \u001b[32m'quia qui facere excepturi et repudiandae\\n'\u001b[39m +\n      \u001b[32m'asperiores molestias provident\\n'\u001b[39m +\n      \u001b[32m'minus incidunt vero fugit rerum sint sunt excepturi provident'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m81\u001b[39m,\n    title: \u001b[32m'tempora rem veritatis voluptas quo dolores vero'\u001b[39m,\n    body: \u001b[32m'facere qui nesciunt est voluptatum voluptatem nisi\\n'\u001b[39m +\n      \u001b[32m'sequi eligendi necessitatibus ea at rerum itaque\\n'\u001b[39m +\n      \u001b[32m'harum non ratione velit laboriosam quis consequuntur\\n'\u001b[39m +\n      \u001b[32m'ex officiis minima doloremque voluptas ut aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m82\u001b[39m,\n    title: \u001b[32m'laudantium voluptate suscipit sunt enim enim'\u001b[39m,\n    body: \u001b[32m'ut libero sit aut totam inventore sunt\\n'\u001b[39m +\n      \u001b[32m'porro sint qui sunt molestiae\\n'\u001b[39m +\n      \u001b[32m'consequatur cupiditate qui iste ducimus adipisci\\n'\u001b[39m +\n      \u001b[32m'dolor enim assumenda soluta laboriosam amet iste delectus hic'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m83\u001b[39m,\n    title: \u001b[32m'odit et voluptates doloribus alias odio et'\u001b[39m,\n    body: \u001b[32m'est molestiae facilis quis tempora numquam nihil qui\\n'\u001b[39m +\n      \u001b[32m'voluptate sapiente consequatur est qui\\n'\u001b[39m +\n      \u001b[32m'necessitatibus autem aut ipsa aperiam modi dolore numquam\\n'\u001b[39m +\n      \u001b[32m'reprehenderit eius rem quibusdam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m84\u001b[39m,\n    title: \u001b[32m'optio ipsam molestias necessitatibus occaecati facilis veritatis dolores aut'\u001b[39m,\n    body: \u001b[32m'sint molestiae magni a et quos\\n'\u001b[39m +\n      \u001b[32m'eaque et quasi\\n'\u001b[39m +\n      \u001b[32m'ut rerum debitis similique veniam\\n'\u001b[39m +\n      \u001b[32m'recusandae dignissimos dolor incidunt consequatur odio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m85\u001b[39m,\n    title: \u001b[32m'dolore veritatis porro provident adipisci blanditiis et sunt'\u001b[39m,\n    body: \u001b[32m'similique sed nisi voluptas iusto omnis\\n'\u001b[39m +\n      \u001b[32m'mollitia et quo\\n'\u001b[39m +\n      \u001b[32m'assumenda suscipit officia magnam sint sed tempora\\n'\u001b[39m +\n      \u001b[32m'enim provident pariatur praesentium atque animi amet ratione'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m86\u001b[39m,\n    title: \u001b[32m'placeat quia et porro iste'\u001b[39m,\n    body: \u001b[32m'quasi excepturi consequatur iste autem temporibus sed molestiae beatae\\n'\u001b[39m +\n      \u001b[32m'et quaerat et esse ut\\n'\u001b[39m +\n      \u001b[32m'voluptatem occaecati et vel explicabo autem\\n'\u001b[39m +\n      \u001b[32m'asperiores pariatur deserunt optio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m87\u001b[39m,\n    title: \u001b[32m'nostrum quis quasi placeat'\u001b[39m,\n    body: \u001b[32m'eos et molestiae\\n'\u001b[39m +\n      \u001b[32m'nesciunt ut a\\n'\u001b[39m +\n      \u001b[32m'dolores perspiciatis repellendus repellat aliquid\\n'\u001b[39m +\n      \u001b[32m'magnam sint rem ipsum est'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m88\u001b[39m,\n    title: \u001b[32m'sapiente omnis fugit eos'\u001b[39m,\n    body: \u001b[32m'consequatur omnis est praesentium\\n'\u001b[39m +\n      \u001b[32m'ducimus non iste\\n'\u001b[39m +\n      \u001b[32m'neque hic deserunt\\n'\u001b[39m +\n      \u001b[32m'voluptatibus veniam cum et rerum sed'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m89\u001b[39m,\n    title: \u001b[32m'sint soluta et vel magnam aut ut sed qui'\u001b[39m,\n    body: \u001b[32m'repellat aut aperiam totam temporibus autem et\\n'\u001b[39m +\n      \u001b[32m'architecto magnam ut\\n'\u001b[39m +\n      \u001b[32m'consequatur qui cupiditate rerum quia soluta dignissimos nihil iure\\n'\u001b[39m +\n      \u001b[32m'tempore quas est'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m90\u001b[39m,\n    title: \u001b[32m'ad iusto omnis odit dolor voluptatibus'\u001b[39m,\n    body: \u001b[32m'minus omnis soluta quia\\n'\u001b[39m +\n      \u001b[32m'qui sed adipisci voluptates illum ipsam voluptatem\\n'\u001b[39m +\n      \u001b[32m'eligendi officia ut in\\n'\u001b[39m +\n      \u001b[32m'eos soluta similique molestias praesentium blanditiis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m91\u001b[39m,\n    title: \u001b[32m'aut amet sed'\u001b[39m,\n    body: \u001b[32m'libero voluptate eveniet aperiam sed\\n'\u001b[39m +\n      \u001b[32m'sunt placeat suscipit molestias\\n'\u001b[39m +\n      \u001b[32m'similique fugit nam natus\\n'\u001b[39m +\n      \u001b[32m'expedita consequatur consequatur dolores quia eos et placeat'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m92\u001b[39m,\n    title: \u001b[32m'ratione ex tenetur perferendis'\u001b[39m,\n    body: \u001b[32m'aut et excepturi dicta laudantium sint rerum nihil\\n'\u001b[39m +\n      \u001b[32m'laudantium et at\\n'\u001b[39m +\n      \u001b[32m'a neque minima officia et similique libero et\\n'\u001b[39m +\n      \u001b[32m'commodi voluptate qui'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m93\u001b[39m,\n    title: \u001b[32m'beatae soluta recusandae'\u001b[39m,\n    body: \u001b[32m'dolorem quibusdam ducimus consequuntur dicta aut quo laboriosam\\n'\u001b[39m +\n      \u001b[32m'voluptatem quis enim recusandae ut sed sunt\\n'\u001b[39m +\n      \u001b[32m'nostrum est odit totam\\n'\u001b[39m +\n      \u001b[32m'sit error sed sunt eveniet provident qui nulla'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m94\u001b[39m,\n    title: \u001b[32m'qui qui voluptates illo iste minima'\u001b[39m,\n    body: \u001b[32m'aspernatur expedita soluta quo ab ut similique\\n'\u001b[39m +\n      \u001b[32m'expedita dolores amet\\n'\u001b[39m +\n      \u001b[32m'sed temporibus distinctio magnam saepe deleniti\\n'\u001b[39m +\n      \u001b[32m'omnis facilis nam ipsum natus sint similique omnis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m95\u001b[39m,\n    title: \u001b[32m'id minus libero illum nam ad officiis'\u001b[39m,\n    body: \u001b[32m'earum voluptatem facere provident blanditiis velit laboriosam\\n'\u001b[39m +\n      \u001b[32m'pariatur accusamus odio saepe\\n'\u001b[39m +\n      \u001b[32m'cumque dolor qui a dicta ab doloribus consequatur omnis\\n'\u001b[39m +\n      \u001b[32m'corporis cupiditate eaque assumenda ad nesciunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m96\u001b[39m,\n    title: \u001b[32m'quaerat velit veniam amet cupiditate aut numquam ut sequi'\u001b[39m,\n    body: \u001b[32m'in non odio excepturi sint eum\\n'\u001b[39m +\n      \u001b[32m'labore voluptates vitae quia qui et\\n'\u001b[39m +\n      \u001b[32m'inventore itaque rerum\\n'\u001b[39m +\n      \u001b[32m'veniam non exercitationem delectus aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m97\u001b[39m,\n    title: \u001b[32m'quas fugiat ut perspiciatis vero provident'\u001b[39m,\n    body: \u001b[32m'eum non blanditiis soluta porro quibusdam voluptas\\n'\u001b[39m +\n      \u001b[32m'vel voluptatem qui placeat dolores qui velit aut\\n'\u001b[39m +\n      \u001b[32m'vel inventore aut cumque culpa explicabo aliquid at\\n'\u001b[39m +\n      \u001b[32m'perspiciatis est et voluptatem dignissimos dolor itaque sit nam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m98\u001b[39m,\n    title: \u001b[32m'laboriosam dolor voluptates'\u001b[39m,\n    body: \u001b[32m'doloremque ex facilis sit sint culpa\\n'\u001b[39m +\n      \u001b[32m'soluta assumenda eligendi non ut eius\\n'\u001b[39m +\n      \u001b[32m'sequi ducimus vel quasi\\n'\u001b[39m +\n      \u001b[32m'veritatis est dolores'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m99\u001b[39m,\n    title: \u001b[32m'temporibus sit alias delectus eligendi possimus magni'\u001b[39m,\n    body: \u001b[32m'quo deleniti praesentium dicta non quod\\n'\u001b[39m +\n      \u001b[32m'aut est molestias\\n'\u001b[39m +\n      \u001b[32m'molestias et officia quis nihil\\n'\u001b[39m +\n      \u001b[32m'itaque dolorem quia'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m100\u001b[39m,\n    title: \u001b[32m'at nam consequatur ea labore ea harum'\u001b[39m,\n    body: \u001b[32m'cupiditate quo est a modi nesciunt soluta\\n'\u001b[39m +\n      \u001b[32m'ipsa voluptas error itaque dicta in\\n'\u001b[39m +\n      \u001b[32m'autem qui minus magnam et distinctio eum\\n'\u001b[39m +\n      \u001b[32m'accusamus ratione error aut'\u001b[39m\n  }\n]\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-178c972c78d01522775c",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /posts - Create new post",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 725,
+      "startTime": "2026-01-02T08:44:55.113Z",
+      "endTime": "2026-01-02T08:44:55.838Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.113Z-9-76faff13-088b-44a8-ba9d-e0b1759cfaa3",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 9,
+          "startTime": "2026-01-02T08:44:55.113Z",
+          "endTime": "2026-01-02T08:44:55.122Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.120Z-2-67deee4a-8a0f-4578-8fac-0a26988dcb3e",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:55.120Z",
+              "endTime": "2026-01-02T08:44:55.122Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.120Z-1-3ac07c0a-3c40-4a21-b316-14ffd1b7c0e2",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T08:44:55.120Z",
+                  "endTime": "2026-01-02T08:44:55.121Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.123Z-714-ba628a0e-b59a-4877-8c85-cd82b822ac9a",
+          "title": "POST \"/posts\"",
+          "status": "passed",
+          "duration": 714,
+          "startTime": "2026-01-02T08:44:55.123Z",
+          "endTime": "2026-01-02T08:44:55.837Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:20:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.838Z-0-709b15a5-10ea-4193-8f3c-d69e434c1d16",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:55.838Z",
+          "endTime": "2026-01-02T08:44:55.838Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:30:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.839Z-0-3870f173-f04b-4a1d-8cf1-88eb45b18678",
+          "title": "Expect \"toBeDefined\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:55.839Z",
+          "endTime": "2026-01-02T08:44:55.839Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:33:28",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.840Z-0-e83334c3-eab8-47f7-9caa-09057cfe8ae6",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:55.840Z",
+          "endTime": "2026-01-02T08:44:55.840Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:34:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.840Z-9-0b3bf0fc-8474-44b0-8e14-03aef0017d31",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 9,
+          "startTime": "2026-01-02T08:44:55.840Z",
+          "endTime": "2026-01-02T08:44:55.849Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T08:44:55.840Z-2-4af8d6a8-3b81-40b4-bb59-68ebd989b92d",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:55.840Z",
+              "endTime": "2026-01-02T08:44:55.842Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:19:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "{\n  title: \u001b[32m'Playwright Test'\u001b[39m,\n  body: \u001b[32m'This is an API test'\u001b[39m,\n  userId: \u001b[33m1\u001b[39m,\n  id: \u001b[33m101\u001b[39m\n}\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-ab005251a20253bdf6f6",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > PUT /posts/1 - Update post",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 798,
+      "startTime": "2026-01-02T08:44:55.849Z",
+      "endTime": "2026-01-02T08:44:56.647Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:55.849Z-7-b5b06dfe-3ecc-433b-b124-a2f854b8bf0e",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 7,
+          "startTime": "2026-01-02T08:44:55.849Z",
+          "endTime": "2026-01-02T08:44:55.856Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:55.853Z-3-0351d6b0-0523-4f22-b6a6-83105b1774db",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 3,
+              "startTime": "2026-01-02T08:44:55.853Z",
+              "endTime": "2026-01-02T08:44:55.856Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:55.853Z-1-492afbba-93be-4b57-b061-4e576b655678",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T08:44:55.853Z",
+                  "endTime": "2026-01-02T08:44:55.854Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:55.857Z-788-793bbae7-b309-42a4-bfce-c8757dde7100",
+          "title": "PUT \"/posts/1\"",
+          "status": "passed",
+          "duration": 788,
+          "startTime": "2026-01-02T08:44:55.857Z",
+          "endTime": "2026-01-02T08:44:56.645Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:39:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:56.647Z-0-fbd291e2-b621-4859-b10b-92e37b8c1eef",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:56.647Z",
+          "endTime": "2026-01-02T08:44:56.647Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:50:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:56.649Z-0-85112d35-a833-4a85-b26e-8da1f69e3683",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:56.649Z",
+          "endTime": "2026-01-02T08:44:56.649Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:53:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:56.649Z-9-8cf4a8bd-84fc-4ce5-8d94-00caa8804f6d",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 9,
+          "startTime": "2026-01-02T08:44:56.649Z",
+          "endTime": "2026-01-02T08:44:56.658Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T08:44:56.649Z-2-45e50c90-1aa6-4cdc-b4d3-706469671ada",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:56.649Z",
+              "endTime": "2026-01-02T08:44:56.651Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:38:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "{ id: \u001b[33m1\u001b[39m, title: \u001b[32m'Updated Title'\u001b[39m, body: \u001b[32m'Updated content'\u001b[39m, userId: \u001b[33m1\u001b[39m }\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > DELETE /posts/1 - Delete post",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 242,
+      "startTime": "2026-01-02T08:44:56.658Z",
+      "endTime": "2026-01-02T08:44:56.900Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.663Z-6-60c86954-3671-40ea-bfde-808580461909",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 6,
+          "startTime": "2026-01-02T08:44:56.663Z",
+          "endTime": "2026-01-02T08:44:56.669Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.667Z-2-8bc97053-98c3-4158-8262-30c28e80331c",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:56.667Z",
+              "endTime": "2026-01-02T08:44:56.669Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.667Z-1-664e9008-edaa-4dea-b003-4911526df61f",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T08:44:56.667Z",
+                  "endTime": "2026-01-02T08:44:56.668Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.670Z-236-7f1737aa-a2f6-4c53-90c1-b9225d5dd9f3",
+          "title": "DELETE \"/posts/1\"",
+          "status": "passed",
+          "duration": 236,
+          "startTime": "2026-01-02T08:44:56.670Z",
+          "endTime": "2026-01-02T08:44:56.906Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:58:42",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.907Z-0-2200e828-9e9c-4ab8-b4bb-4d2f7afdf025",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:56.907Z",
+          "endTime": "2026-01-02T08:44:56.907Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:61:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.907Z-4-614d7082-e397-44e6-a41f-2949565e9399",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 4,
+          "startTime": "2026-01-02T08:44:56.907Z",
+          "endTime": "2026-01-02T08:44:56.911Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T08:44:56.907Z-2-48da43f9-8150-4909-a53d-b183476060d8",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:56.907Z",
+              "endTime": "2026-01-02T08:44:56.909Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:57:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-9a39e32452da0236dc30",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /api/login - Successful auth",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 369,
+      "startTime": "2026-01-02T08:44:56.911Z",
+      "endTime": "2026-01-02T08:44:57.280Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:56.912Z-5-8f729f56-bb37-410f-a616-6ea9fc10b501",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 5,
+          "startTime": "2026-01-02T08:44:56.912Z",
+          "endTime": "2026-01-02T08:44:56.917Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:56.915Z-1-b3d36e08-ab0a-4a74-b022-e5bd9e8be038",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T08:44:56.915Z",
+              "endTime": "2026-01-02T08:44:56.916Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:56.915Z-1-d7c8921b-8fa9-4e31-b1a3-3ea81fdedeb7",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T08:44:56.915Z",
+                  "endTime": "2026-01-02T08:44:56.916Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:56.917Z-361-50e97eb6-74fd-488c-aaae-c0d455d1bd03",
+          "title": "POST \"/api/login\"",
+          "status": "passed",
+          "duration": 361,
+          "startTime": "2026-01-02T08:44:56.917Z",
+          "endTime": "2026-01-02T08:44:57.278Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:66:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:57.280Z-0-d5f7e8d8-10da-4b80-b9c0-cdd344b69be5",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:57.280Z",
+          "endTime": "2026-01-02T08:44:57.280Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:76:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:57.281Z-0-d33a5b0e-b256-4861-87c9-8e009f585dfd",
+          "title": "Expect \"toHaveProperty\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:57.281Z",
+          "endTime": "2026-01-02T08:44:57.281Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:77:35",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:57.281Z-9-c2bec697-9d0b-4810-829e-0117d3b973f9",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 9,
+          "startTime": "2026-01-02T08:44:57.281Z",
+          "endTime": "2026-01-02T08:44:57.290Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T08:44:57.282Z-2-694cbfc2-c3a0-4c3c-94d5-b3b95476c8f7",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:57.282Z",
+              "endTime": "2026-01-02T08:44:57.284Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:65:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "{ token: \u001b[32m'QpwL5tke4Pnpja7X4'\u001b[39m }\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-99152b3087f5646a6147",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /api/login - Invalid auth",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 177,
+      "startTime": "2026-01-02T08:44:57.290Z",
+      "endTime": "2026-01-02T08:44:57.467Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.290Z-6-9bfc9f17-b419-4e6e-9ec8-f6351ce4737e",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 6,
+          "startTime": "2026-01-02T08:44:57.290Z",
+          "endTime": "2026-01-02T08:44:57.296Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.294Z-2-5831eeb8-9695-4517-9d7f-0bf828e09d5a",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:57.294Z",
+              "endTime": "2026-01-02T08:44:57.296Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.295Z-0-04817167-ab6a-457e-bb9f-44ae8965707d",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 0,
+                  "startTime": "2026-01-02T08:44:57.295Z",
+                  "endTime": "2026-01-02T08:44:57.295Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.297Z-167-aa8b9c42-1899-4974-86e9-036d3cb0cc3e",
+          "title": "POST \"/api/login\"",
+          "status": "passed",
+          "duration": 167,
+          "startTime": "2026-01-02T08:44:57.297Z",
+          "endTime": "2026-01-02T08:44:57.464Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:82:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.466Z-0-c86e6841-b03a-4b92-9123-7cf0f73ce1cb",
+          "title": "Expect \"soft toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:57.466Z",
+          "endTime": "2026-01-02T08:44:57.466Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:90:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.468Z-0-70605a01-3ac9-4abd-93cc-d22bf18ed3ae",
+          "title": "Expect \"soft toHaveProperty\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:57.468Z",
+          "endTime": "2026-01-02T08:44:57.468Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:91:40",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.470Z-8-7368eb8d-13f3-4652-b108-cc995555c7f2",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 8,
+          "startTime": "2026-01-02T08:44:57.470Z",
+          "endTime": "2026-01-02T08:44:57.478Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T08:44:57.471Z-2-d188836a-dbc0-48fd-82f2-74565929d327",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:57.471Z",
+              "endTime": "2026-01-02T08:44:57.473Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:81:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > GET /posts - Response time < 1000ms",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 30,
+      "startTime": "2026-01-02T08:44:57.478Z",
+      "endTime": "2026-01-02T08:44:57.508Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.480Z-6-672dcb68-8241-4b6e-92ce-1a96308386f7",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 6,
+          "startTime": "2026-01-02T08:44:57.480Z",
+          "endTime": "2026-01-02T08:44:57.486Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.484Z-2-eedba162-d8b9-4c27-8848-b010b56e62bc",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:57.484Z",
+              "endTime": "2026-01-02T08:44:57.486Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.484Z-1-824591e3-3433-4269-8799-6ada42c53e49",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T08:44:57.484Z",
+                  "endTime": "2026-01-02T08:44:57.485Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.487Z-24-48e23347-e005-4169-9038-0bced7ad5fec",
+          "title": "GET \"/posts\"",
+          "status": "passed",
+          "duration": 24,
+          "startTime": "2026-01-02T08:44:57.487Z",
+          "endTime": "2026-01-02T08:44:57.511Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:97:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.511Z-0-1b06f709-5144-4154-a9a4-3aca3d760c24",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:57.511Z",
+          "endTime": "2026-01-02T08:44:57.511Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:101:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.512Z-0-dd52fa08-4132-4d6b-b282-b33e0ca52a05",
+          "title": "Expect \"toBeLessThan\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T08:44:57.512Z",
+          "endTime": "2026-01-02T08:44:57.512Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:102:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.512Z-6-b4695ee7-0278-4a7d-972d-9cace0fbcc33",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 6,
+          "startTime": "2026-01-02T08:44:57.512Z",
+          "endTime": "2026-01-02T08:44:57.518Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T08:44:57.512Z-2-344dc393-c317-455a-8140-14ccb442ffc4",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:57.512Z",
+              "endTime": "2026-01-02T08:44:57.514Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:95:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-9b74486ac94d0b1b6cb0",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /upload - Mock file upload",
+      "suiteName": "Chrome Project",
+      "status": "skipped",
+      "duration": 0,
+      "startTime": "2026-01-02T08:44:57.597Z",
+      "endTime": "2026-01-02T08:44:57.597Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [],
+      "codeSnippet": "Test defined at: api.spec.js:114:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": -1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-7e649f8c6664ef809f29",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > GET /api/users/2 - Validate nested data",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 52,
+      "startTime": "2026-01-02T08:44:57.518Z",
+      "endTime": "2026-01-02T08:44:57.570Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.518Z-6-dbd219b5-6bba-408b-82d1-5639a09b163c",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 6,
+          "startTime": "2026-01-02T08:44:57.518Z",
+          "endTime": "2026-01-02T08:44:57.524Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.522Z-2-d2e35501-7b92-41a3-b1de-3eea9930c456",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T08:44:57.522Z",
+              "endTime": "2026-01-02T08:44:57.524Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.523Z-0-7d7d779d-111a-4dd8-892a-4b8bd106b40a",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 0,
+                  "startTime": "2026-01-02T08:44:57.523Z",
+                  "endTime": "2026-01-02T08:44:57.523Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.524Z-38-9d604392-5559-4735-9355-64b66a6913d6",
+          "title": "GET \"/api/users/2\"",
+          "status": "passed",
+          "duration": 38,
+          "startTime": "2026-01-02T08:44:57.524Z",
+          "endTime": "2026-01-02T08:44:57.562Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:107:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.563Z-15-fc43033e-390c-4aef-9703-355363bb2294",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 15,
+          "startTime": "2026-01-02T08:44:57.563Z",
+          "endTime": "2026-01-02T08:44:57.578Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.564Z-11-ef53e4ca-d952-4e06-82f4-7551384aaac2",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 11,
+              "startTime": "2026-01-02T08:44:57.564Z",
+              "endTime": "2026-01-02T08:44:57.575Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T08:44:57.578Z-1-2647a5bb-1990-4351-9c8a-459854239254",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T08:44:57.578Z",
+          "endTime": "2026-01-02T08:44:57.579Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        }
+      ],
+      "errorMessage": "SyntaxError: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON",
+      "stackTrace": "SyntaxError: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON\n    at /Users/arghajitsingha/juliaHub-assignment/tests/api.spec.js:108:18",
+      "snippet": "\u001b[0m \u001b[90m 106 |\u001b[39m   test(\u001b[32m\"GET /api/users/2 - Validate nested data\"\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ request }) \u001b[33m=>\u001b[39m {\n \u001b[90m 107 |\u001b[39m     \u001b[36mconst\u001b[39m response \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m request\u001b[33m.\u001b[39m\u001b[36mget\u001b[39m(\u001b[32m\"https://reqres.in/api/users/2\"\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 108 |\u001b[39m     \u001b[36mconst\u001b[39m user \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m response\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 109 |\u001b[39m     \u001b[36mawait\u001b[39m expect(user\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39memail)\u001b[33m.\u001b[39mtoContain(\u001b[32m\"@reqres.in\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 110 |\u001b[39m     \u001b[36mawait\u001b[39m expect(user\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39mavatar)\u001b[33m.\u001b[39mtoMatch(\u001b[35m/^https:\\/\\//\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 111 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m",
+      "codeSnippet": "Test defined at: api.spec.js:106:7",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/8747e39b871de0524be5-7e649f8c6664ef809f29/0-1767343497598-trace.zip",
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > new-test.spec.js > Wikipedia homepage loads",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 3,
+      "startTime": "2026-01-02T08:44:58.178Z",
+      "endTime": "2026-01-02T08:44:58.181Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T08:44:58.181Z-19-3e2ad1bd-3314-4e02-ba06-b8fbab6fab7f",
+          "title": "Before Hooks",
+          "status": "failed",
+          "duration": 19,
+          "startTime": "2026-01-02T08:44:58.181Z",
+          "endTime": "2026-01-02T08:44:58.200Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T08:44:58.192Z-8-0e480dc7-03eb-49a3-8348-ddf6651297e7",
+              "title": "Fixture \"browser\"",
+              "status": "failed",
+              "duration": 8,
+              "startTime": "2026-01-02T08:44:58.192Z",
+              "endTime": "2026-01-02T08:44:58.200Z",
+              "browser": "Chrome v143 on Windows 10",
+              "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T08:44:58.195Z-4-c5b65c1d-8c0d-4cbf-a4c2-25d3fd0dcf95",
+                  "title": "Launch browser",
+                  "status": "failed",
+                  "duration": 4,
+                  "startTime": "2026-01-02T08:44:58.195Z",
+                  "endTime": "2026-01-02T08:44:58.199Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T08:44:58.200Z-10-8421783a-6767-4cee-b7c7-c1c110a04bf3",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 10,
+          "startTime": "2026-01-02T08:44:58.200Z",
+          "endTime": "2026-01-02T08:44:58.210Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T08:44:58.210Z-2-31469fcc-fb0b-47f8-8633-ac0053b2b049",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2026-01-02T08:44:58.210Z",
+          "endTime": "2026-01-02T08:44:58.212Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T08:44:58.211Z-0-eea17b19-b737-45f4-9e9a-0693f5e3ec02",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2026-01-02T08:44:58.211Z",
+              "endTime": "2026-01-02T08:44:58.211Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "codeSnippet": "Test defined at: new-test.spec.js:4:6",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/f01bc06c38d4ececee44-e8b692524f84eab8f10e/0-1767343498222-trace.zip",
+      "attachments": [],
+      "workerId": 2,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-44d97be1845b132f9656",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > new-test.spec.js > English language switch works",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 4,
+      "startTime": "2026-01-02T08:44:58.956Z",
+      "endTime": "2026-01-02T08:44:58.960Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T08:44:58.959Z-21-d4fed4ae-4848-4248-9c69-6b99581ae653",
+          "title": "Before Hooks",
+          "status": "failed",
+          "duration": 21,
+          "startTime": "2026-01-02T08:44:58.959Z",
+          "endTime": "2026-01-02T08:44:58.980Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T08:44:58.972Z-8-02d5b5f5-f33b-4f63-a3bc-b11de356b996",
+              "title": "Fixture \"browser\"",
+              "status": "failed",
+              "duration": 8,
+              "startTime": "2026-01-02T08:44:58.972Z",
+              "endTime": "2026-01-02T08:44:58.980Z",
+              "browser": "Chrome v143 on Windows 10",
+              "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T08:44:58.975Z-5-d62f10ad-badb-40a3-b4a6-e638b2612255",
+                  "title": "Launch browser",
+                  "status": "failed",
+                  "duration": 5,
+                  "startTime": "2026-01-02T08:44:58.975Z",
+                  "endTime": "2026-01-02T08:44:58.980Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T08:44:58.981Z-11-f6664c6d-447f-4a1d-8d99-cb4e97f1b3ca",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 11,
+          "startTime": "2026-01-02T08:44:58.981Z",
+          "endTime": "2026-01-02T08:44:58.992Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T08:44:58.993Z-1-6a44cd3e-a86b-480e-882c-d48dc75599a9",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T08:44:58.993Z",
+          "endTime": "2026-01-02T08:44:58.994Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T08:44:58.993Z-0-4e55ee78-a6d4-407c-9cde-ec930951c4e1",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2026-01-02T08:44:58.993Z",
+              "endTime": "2026-01-02T08:44:58.993Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "codeSnippet": "Test defined at: new-test.spec.js:10:6",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/0-1767343499005-trace.zip",
+      "attachments": [],
+      "workerId": 3,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > new-test.spec.js > Today on Wikipedia shows exactly 5 featured items",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 4,
+      "startTime": "2026-01-02T08:44:59.567Z",
+      "endTime": "2026-01-02T08:44:59.571Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T08:44:59.570Z-20-b0a2d394-9cac-49e0-960d-037d923e6ca2",
+          "title": "Before Hooks",
+          "status": "failed",
+          "duration": 20,
+          "startTime": "2026-01-02T08:44:59.570Z",
+          "endTime": "2026-01-02T08:44:59.590Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T08:44:59.582Z-8-36337142-3bb0-4e31-bd07-3c3e43d3593c",
+              "title": "Fixture \"browser\"",
+              "status": "failed",
+              "duration": 8,
+              "startTime": "2026-01-02T08:44:59.582Z",
+              "endTime": "2026-01-02T08:44:59.590Z",
+              "browser": "Chrome v143 on Windows 10",
+              "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T08:44:59.585Z-4-67680256-0bc4-463a-a140-32eb3e5f937e",
+                  "title": "Launch browser",
+                  "status": "failed",
+                  "duration": 4,
+                  "startTime": "2026-01-02T08:44:59.585Z",
+                  "endTime": "2026-01-02T08:44:59.589Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T08:44:59.590Z-13-b4fa1f85-b67f-488d-96d3-00647ae483bf",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 13,
+          "startTime": "2026-01-02T08:44:59.590Z",
+          "endTime": "2026-01-02T08:44:59.603Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T08:44:59.603Z-3-7339e304-5aa9-4b1f-a9d7-df136f6c5afe",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 3,
+          "startTime": "2026-01-02T08:44:59.603Z",
+          "endTime": "2026-01-02T08:44:59.606Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T08:44:59.603Z-1-d3ea564b-dc58-46f4-98ce-8b94119e32de",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T08:44:59.603Z",
+              "endTime": "2026-01-02T08:44:59.604Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "codeSnippet": "Test defined at: new-test.spec.js:16:6",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/0-1767343499616-trace.zip",
+      "attachments": [],
+      "annotations": [
+        {
+          "type": "issue",
+          "description": "Flaky test - Featured content changes",
+          "location": {
+            "file": "/Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js",
+            "line": 16,
+            "column": 6
+          }
+        },
+        {
+          "type": "intentional",
+          "description": "This test lies inside the fixme category",
+          "location": {
+            "file": "/Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js",
+            "line": 16,
+            "column": 6
+          }
+        }
+      ],
+      "workerId": 4,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "31be70adcd52654ff551-e3f24602648c746d80a8",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > test.spec.js > has title",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 4,
+      "startTime": "2026-01-02T08:45:00.167Z",
+      "endTime": "2026-01-02T08:45:00.171Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T08:45:00.171Z-22-d59c952f-c837-41ff-9688-1a873d7828d0",
+          "title": "Before Hooks",
+          "status": "failed",
+          "duration": 22,
+          "startTime": "2026-01-02T08:45:00.171Z",
+          "endTime": "2026-01-02T08:45:00.193Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T08:45:00.184Z-9-ac5f6cd3-6c56-4395-b323-65794abb87cc",
+              "title": "Fixture \"browser\"",
+              "status": "failed",
+              "duration": 9,
+              "startTime": "2026-01-02T08:45:00.184Z",
+              "endTime": "2026-01-02T08:45:00.193Z",
+              "browser": "Chrome v143 on Windows 10",
+              "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T08:45:00.188Z-5-7fa5764b-6a2b-4467-b209-a205d19423b4",
+                  "title": "Launch browser",
+                  "status": "failed",
+                  "duration": 5,
+                  "startTime": "2026-01-02T08:45:00.188Z",
+                  "endTime": "2026-01-02T08:45:00.193Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T08:45:00.193Z-18-f9d67dce-0be2-49f3-a9dd-72bbdcd4711e",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 18,
+          "startTime": "2026-01-02T08:45:00.193Z",
+          "endTime": "2026-01-02T08:45:00.211Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T08:45:00.212Z-2-c1ae14ac-0283-47e2-8e40-c44d4b9357af",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2026-01-02T08:45:00.212Z",
+          "endTime": "2026-01-02T08:45:00.214Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T08:45:00.212Z-0-c4d9f4d9-cb89-455a-8f4c-62dea410fbff",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2026-01-02T08:45:00.212Z",
+              "endTime": "2026-01-02T08:45:00.212Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "codeSnippet": "Test defined at: test.spec.js:4:6",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/31be70adcd52654ff551-e3f24602648c746d80a8/0-1767343500226-trace.zip",
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > test.spec.js > get started link",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 8,
+      "startTime": "2026-01-02T08:45:00.773Z",
+      "endTime": "2026-01-02T08:45:00.781Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T08:45:00.776Z-21-f170e637-8ee4-4fba-b5f4-32843f963818",
+          "title": "Before Hooks",
+          "status": "failed",
+          "duration": 21,
+          "startTime": "2026-01-02T08:45:00.776Z",
+          "endTime": "2026-01-02T08:45:00.797Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T08:45:00.787Z-10-d28bb1b3-52ba-4ff0-be0a-90820d9db2d7",
+              "title": "Fixture \"browser\"",
+              "status": "failed",
+              "duration": 10,
+              "startTime": "2026-01-02T08:45:00.787Z",
+              "endTime": "2026-01-02T08:45:00.797Z",
+              "browser": "Chrome v143 on Windows 10",
+              "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T08:45:00.791Z-5-bc50b674-1c47-4629-aa91-08a1dbfcccfb",
+                  "title": "Launch browser",
+                  "status": "failed",
+                  "duration": 5,
+                  "startTime": "2026-01-02T08:45:00.791Z",
+                  "endTime": "2026-01-02T08:45:00.796Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T08:45:00.797Z-12-f982f70f-d90a-4a2c-94f1-5593e6ff05fc",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 12,
+          "startTime": "2026-01-02T08:45:00.797Z",
+          "endTime": "2026-01-02T08:45:00.809Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T08:45:00.809Z-2-dceadccc-2a05-4aea-8233-c6387b78ac1d",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2026-01-02T08:45:00.809Z",
+          "endTime": "2026-01-02T08:45:00.811Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T08:45:00.809Z-1-4a15fec0-172c-4c56-ae65-7b7dcaab3c93",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T08:45:00.809Z",
+              "endTime": "2026-01-02T08:45:00.810Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "codeSnippet": "Test defined at: test.spec.js:11:6",
+      "tags": [
+        "test"
+      ],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/31be70adcd52654ff551-4bfe55f07ee7660a1cfb/0-1767343500822-trace.zip",
+      "attachments": [],
+      "workerId": 2,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "31be70adcd52654ff551-72b24780ee205af4d7b6",
+      "runId": "run-1767343494360-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Chrome Project > test.spec.js > flaky: should display and close modal",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 9,
+      "startTime": "2026-01-02T08:45:01.390Z",
+      "endTime": "2026-01-02T08:45:01.399Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T08:45:01.396Z-22-50597cf7-4209-4d6a-b8c2-444c35d52053",
+          "title": "Before Hooks",
+          "status": "failed",
+          "duration": 22,
+          "startTime": "2026-01-02T08:45:01.396Z",
+          "endTime": "2026-01-02T08:45:01.418Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T08:45:01.409Z-8-28a6dcca-0006-4c37-97bc-b521880c9093",
+              "title": "Fixture \"browser\"",
+              "status": "failed",
+              "duration": 8,
+              "startTime": "2026-01-02T08:45:01.409Z",
+              "endTime": "2026-01-02T08:45:01.417Z",
+              "browser": "Chrome v143 on Windows 10",
+              "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T08:45:01.413Z-4-11bf5347-f8de-4196-beba-1ab4b237281f",
+                  "title": "Launch browser",
+                  "status": "failed",
+                  "duration": 4,
+                  "startTime": "2026-01-02T08:45:01.413Z",
+                  "endTime": "2026-01-02T08:45:01.417Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T08:45:01.418Z-13-f19873a5-9fac-49f4-9b22-483e0af1cdd8",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 13,
+          "startTime": "2026-01-02T08:45:01.418Z",
+          "endTime": "2026-01-02T08:45:01.431Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T08:45:01.431Z-2-d59e09e5-eca0-4f0b-be83-12ad1c09182f",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2026-01-02T08:45:01.431Z",
+          "endTime": "2026-01-02T08:45:01.433Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T08:45:01.431Z-0-3a5c9507-290f-469f-8854-ff520ac32df8",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2026-01-02T08:45:01.431Z",
+              "endTime": "2026-01-02T08:45:01.431Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "stackTrace": "Error: browserType.launch: Executable doesn't exist at /Users/arghajitsingha/Library/Caches/ms-playwright/chromium_headless_shell-1200/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔═════════════════════════════════════════════════════════════════════════╗\n║ Looks like Playwright Test or Playwright was just installed or updated. ║\n║ Please run the following command to download new browsers:              ║\n║                                                                         ║\n║     npx playwright install                                              ║\n║                                                                         ║\n║ <3 Playwright Team                                                      ║\n╚═════════════════════════════════════════════════════════════════════════╝",
+      "codeSnippet": "Test defined at: test.spec.js:23:6",
+      "tags": [
+        "expected-fail"
+      ],
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/31be70adcd52654ff551-72b24780ee205af4d7b6/0-1767343501444-trace.zip",
+      "attachments": [],
+      "workerId": 3,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2026-01-02T08:45:01.510Z"
+  }
+}
