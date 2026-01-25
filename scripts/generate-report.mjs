@@ -2674,7 +2674,6 @@ function generateHTML(reportData, trendData = null) {
           color: #5b21b6;
         }
         .run-info span {
-          font-size: 1.35em;
           font-weight: 800;
           color: #0f172a;
           font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
@@ -4004,9 +4003,13 @@ function generateHTML(reportData, trendData = null) {
                       </div>`,
                       )
                       .join("")}
-                    ${browserBreakdown.length > 5 ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
+                    ${
+                      browserBreakdown.length > 5
+                        ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
                       <span>+${browserBreakdown.length - 5} more browsers</span>
-                    </div>` : ''}
+                    </div>`
+                        : ""
+                    }
                   </div>
                 </div>
             </div>
