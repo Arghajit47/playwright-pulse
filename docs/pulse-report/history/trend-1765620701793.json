@@ -1,0 +1,1288 @@
+{
+  "run": {
+    "id": "run-1765620701793-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2025-12-13T10:11:41.793Z",
+    "totalTests": 4,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 3,
+    "duration": 38734,
+    "environment": {
+      "host": "MacBookAir.lan",
+      "os": "darwin 25.1.0",
+      "cpu": {
+        "model": "Apple M1",
+        "cores": 8
+      },
+      "memory": "8.00GB",
+      "node": "v20.12.2",
+      "v8": "11.3.244.8-node.19",
+      "cwd": "/Users/arghajitsingha/Playwright-Visual-Testing"
+    }
+  },
+  "results": [
+    {
+      "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0",
+      "runId": "run-1765620701793-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Visual-Desktop-Test > tests/DesktopView/visual-computers-element-page.spec.js > Take screenshots for Visual Regression Testing - Computers page > Computers page Upper Header - Desktop - Validate Mismatch",
+      "suiteName": "Visual-Desktop-Test",
+      "status": "skipped",
+      "duration": 17245,
+      "startTime": "2025-12-13T10:11:42.906Z",
+      "endTime": "2025-12-13T10:12:00.151Z",
+      "browser": "Chrome v141 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:42.914Z-1398-c0b56d86-b407-4472-9d5b-5309cd8d8a52",
+          "title": "Before Hooks",
+          "status": "skipped",
+          "duration": 1398,
+          "startTime": "2025-12-13T10:11:42.914Z",
+          "endTime": "2025-12-13T10:11:44.312Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:42.915Z-111-d4592847-ce33-4203-a06d-8a8f7e6535f1",
+              "title": "beforeAll hook",
+              "status": "skipped",
+              "duration": 111,
+              "startTime": "2025-12-13T10:11:42.915Z",
+              "endTime": "2025-12-13T10:11:43.026Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-element-page.spec.js:34:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": []
+            },
+            {
+              "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.028Z-1283-f776dc0f-87c8-4035-9558-7df6dd31dae6",
+              "title": "beforeEach hook",
+              "status": "skipped",
+              "duration": 1283,
+              "startTime": "2025-12-13T10:11:43.028Z",
+              "endTime": "2025-12-13T10:11:44.311Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-element-page.spec.js:39:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": [
+                {
+                  "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.139Z-761-5faff88e-82c3-4f6d-bf08-b419d7864f04",
+                  "title": "Fixture \"browser\"",
+                  "status": "skipped",
+                  "duration": 761,
+                  "startTime": "2025-12-13T10:11:43.139Z",
+                  "endTime": "2025-12-13T10:11:43.900Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.154Z-745-ea46b591-d1aa-438a-b8cd-58955c906974",
+                      "title": "Launch browser",
+                      "status": "skipped",
+                      "duration": 745,
+                      "startTime": "2025-12-13T10:11:43.154Z",
+                      "endTime": "2025-12-13T10:11:43.899Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.907Z-16-607eb289-46af-4736-956d-93f370a2791c",
+                  "title": "Fixture \"context\"",
+                  "status": "skipped",
+                  "duration": 16,
+                  "startTime": "2025-12-13T10:11:43.907Z",
+                  "endTime": "2025-12-13T10:11:43.923Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.910Z-12-688cb2a4-659c-4d04-a853-10d0b4def3ff",
+                      "title": "Create context",
+                      "status": "skipped",
+                      "duration": 12,
+                      "startTime": "2025-12-13T10:11:43.910Z",
+                      "endTime": "2025-12-13T10:11:43.922Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.923Z-388-e3a6c0ad-81b6-4ae5-be9f-12fcae53ccd7",
+                  "title": "Fixture \"page\"",
+                  "status": "skipped",
+                  "duration": 388,
+                  "startTime": "2025-12-13T10:11:43.923Z",
+                  "endTime": "2025-12-13T10:11:44.311Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:43.926Z-384-90d3fcb3-59a9-4571-8097-9729097311c9",
+                      "title": "Create page",
+                      "status": "skipped",
+                      "duration": 384,
+                      "startTime": "2025-12-13T10:11:43.926Z",
+                      "endTime": "2025-12-13T10:11:44.310Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:44.342Z-1-66dcc0fa-1bf2-425d-80a4-2223e6a80ef8",
+          "title": "Attach \"Allure Metadata (metadata)\"",
+          "status": "skipped",
+          "duration": 1,
+          "startTime": "2025-12-13T10:11:44.342Z",
+          "endTime": "2025-12-13T10:11:44.343Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "node_modules/allure-playwright/src/runtime.ts:55:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:44.344Z-4340-c594b5b7-03c1-4469-8070-3f811a164c8a",
+          "title": "Navigate to \"/computers\"",
+          "status": "skipped",
+          "duration": 4340,
+          "startTime": "2025-12-13T10:11:44.344Z",
+          "endTime": "2025-12-13T10:11:48.684Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-computers-element-page.spec.js:122:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:48.694Z-1-e829557c-854f-44ff-9e28-167661d3ea70",
+          "title": "Wait for load state \"domcontentloaded\"",
+          "status": "skipped",
+          "duration": 1,
+          "startTime": "2025-12-13T10:11:48.694Z",
+          "endTime": "2025-12-13T10:11:48.695Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:204:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:48.696Z-4202-cbcbc72a-4a91-4d60-992e-043a6b990e0f",
+          "title": "Wait for load state \"networkidle\"",
+          "status": "skipped",
+          "duration": 4202,
+          "startTime": "2025-12-13T10:11:48.696Z",
+          "endTime": "2025-12-13T10:11:52.898Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:205:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:52.900Z-5003-b6dacc38-7ef8-490d-b510-bc6c30df09b4",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 5003,
+          "startTime": "2025-12-13T10:11:52.900Z",
+          "endTime": "2025-12-13T10:11:57.903Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:206:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:57.912Z-206-0c16167e-bb6b-4e3c-b770-69e5df3aff88",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 206,
+          "startTime": "2025-12-13T10:11:57.912Z",
+          "endTime": "2025-12-13T10:11:58.118Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:399:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:58.123Z-519-0707f68e-f36a-4153-816e-447b167f6e80",
+          "title": "Evaluate",
+          "status": "skipped",
+          "duration": 519,
+          "startTime": "2025-12-13T10:11:58.123Z",
+          "endTime": "2025-12-13T10:11:58.642Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:416:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:58.643Z-3-50ffdecf-888c-4d05-ab7b-31bfefdf20ec",
+          "title": "Evaluate",
+          "status": "skipped",
+          "duration": 3,
+          "startTime": "2025-12-13T10:11:58.643Z",
+          "endTime": "2025-12-13T10:11:58.646Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:468:12",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:58.650Z-32-e5d25325-bcd3-4f8a-8188-79f5e1e9f7d0",
+          "title": "Wait for selector locator('div.header-upper')",
+          "status": "skipped",
+          "duration": 32,
+          "startTime": "2025-12-13T10:11:58.650Z",
+          "endTime": "2025-12-13T10:11:58.682Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:427:37",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:11:58.683Z-89-8e0a2fb9-ee4f-4b7c-9d44-8f7f57299402",
+          "title": "Screenshot",
+          "status": "skipped",
+          "duration": 89,
+          "startTime": "2025-12-13T10:11:58.683Z",
+          "endTime": "2025-12-13T10:11:58.772Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:428:19",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:12:01.114Z-41-c46aa8fa-de24-46e7-ba98-87c314153709",
+          "title": "After Hooks",
+          "status": "skipped",
+          "duration": 41,
+          "startTime": "2025-12-13T10:12:01.114Z",
+          "endTime": "2025-12-13T10:12:01.155Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:12:01.115Z-0-aea6e1da-1cee-4a25-b2ab-44ac5a1c5860",
+              "title": "Fixture \"page\"",
+              "status": "skipped",
+              "duration": 0,
+              "startTime": "2025-12-13T10:12:01.115Z",
+              "endTime": "2025-12-13T10:12:01.115Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:12:01.115Z-27-4ccf03c9-8bb4-4cc1-9f7e-c2e32ff91b61",
+              "title": "Fixture \"context\"",
+              "status": "skipped",
+              "duration": 27,
+              "startTime": "2025-12-13T10:12:01.115Z",
+              "endTime": "2025-12-13T10:12:01.142Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "dc63e34a6327da4d871b-3fb9c92d80250b7991d0_step_2025-12-13T10:12:01.118Z-24-1487c8b8-5f3c-46e9-b485-c9cb5b71aaf3",
+                  "title": "Close context",
+                  "status": "skipped",
+                  "duration": 24,
+                  "startTime": "2025-12-13T10:12:01.118Z",
+                  "endTime": "2025-12-13T10:12:01.142Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: tests/DesktopView/visual-computers-element-page.spec.js:109:3",
+      "tags": [
+        "validation"
+      ],
+      "screenshots": [
+        "attachments/dc63e34a6327da4d871b-3fb9c92d80250b7991d0/2-1765620721238-Computers-page-Upper-Header-diff.png"
+      ],
+      "videoPath": [],
+      "attachments": [
+        {
+          "name": "Text Differences Report",
+          "path": "attachments/dc63e34a6327da4d871b-3fb9c92d80250b7991d0/1-1765620721231-Computers-page-Upper-Header-text-diff.txt",
+          "contentType": "text/plain"
+        }
+      ],
+      "stdout": [
+        "Text Differences Found!\n",
+        "📝 Text diff report saved: screenshots/diff/desktop/Computers-page-Upper-Header-text-diff.txt\n",
+        "Mismatch found: 3131 out of 45080 pixels, Mismatch percentage: 6.95%\n",
+        "Creating a new image with dimensions: 2940x46\n",
+        "Successfully created combined image at: screenshots/diff/desktop/Computers-page-Upper-Header-diff.png\n",
+        "\u001b[90mundefined\u001b[39m\n",
+        "✅ Connected to database: visual.db\n",
+        "PRAGMA journal_mode = WAL\n",
+        "PRAGMA synchronous = NORMAL\n",
+        "CREATE TABLE IF NOT EXISTS visual_matrix (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        device TEXT NOT NULL,\n        status TEXT NOT NULL,\n        imageUrl TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "CREATE TABLE IF NOT EXISTS baseline (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "✅ Database schema initialized\n",
+        "\n      INSERT INTO visual_matrix (\n        name, \n        device, \n        status, \n        imageUrl\n      ) VALUES (\n        'Computers page Upper Header - De'/*+25 bytes*/, \n        'Desktop', \n        'failed', \n        'https://ocpaxmghzmfbuhxzxzae.sup'/*+95 bytes*/\n      )\n    \n",
+        "✅ Record inserted with ID: 107\n",
+        "✅ Screenshot uploaded to Supabase: {\n  path: \u001b[32m'diff/desktop/Computers-page-Upper-Header-diff.png'\u001b[39m,\n  id: \u001b[32m'5db49886-39f1-47a9-a6ef-c703ff8a6714'\u001b[39m,\n  fullPath: \u001b[32m'visual_test/diff/desktop/Computers-page-Upper-Header-diff.png'\u001b[39m\n}\n"
+      ],
+      "stderr": [
+        "⚠️ waitForAllAPIs called without setupNetworkMonitoring. Some pending requests might be missed.\n",
+        "❌ Mismatch for Computers page Upper Header - Desktop - Validate Mismatch: 6.95%\n",
+        "   Test: Computers page Upper Header - Desktop - Validate Mismatch\n",
+        "   Device: Desktop\n",
+        "   Diff image: screenshots/diff/desktop/Computers-page-Upper-Header-diff.png\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/Playwright-Visual-Testing/playwright.config.js",
+      "metadata": "{\"actualWorkers\":3}"
+    },
+    {
+      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a",
+      "runId": "run-1765620701793-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Visual-Desktop-Test > tests/DesktopView/visual-computers-page.spec.js > Take screenshots for Visual Regression Testing - Computers page > Computers page - Desktop - Validate Mismatch",
+      "suiteName": "Visual-Desktop-Test",
+      "status": "skipped",
+      "duration": 31544,
+      "startTime": "2025-12-13T10:11:42.892Z",
+      "endTime": "2025-12-13T10:12:14.436Z",
+      "browser": "Chrome v141 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:42.899Z-1413-315df795-a6d6-4f1a-8681-95863d769c3c",
+          "title": "Before Hooks",
+          "status": "skipped",
+          "duration": 1413,
+          "startTime": "2025-12-13T10:11:42.899Z",
+          "endTime": "2025-12-13T10:11:44.312Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:42.900Z-43-bef71c2c-7da7-4b74-b0bb-4571abd4c8b6",
+              "title": "beforeAll hook",
+              "status": "skipped",
+              "duration": 43,
+              "startTime": "2025-12-13T10:11:42.900Z",
+              "endTime": "2025-12-13T10:11:42.943Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:32:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": []
+            },
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:42.944Z-1367-1a352084-9d10-4275-9c38-5b3d6fd6a05b",
+              "title": "beforeEach hook",
+              "status": "skipped",
+              "duration": 1367,
+              "startTime": "2025-12-13T10:11:42.944Z",
+              "endTime": "2025-12-13T10:11:44.311Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:37:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": [
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:43.025Z-877-4b9f860f-3fc3-4f12-959f-ad007528f7a6",
+                  "title": "Fixture \"browser\"",
+                  "status": "skipped",
+                  "duration": 877,
+                  "startTime": "2025-12-13T10:11:43.025Z",
+                  "endTime": "2025-12-13T10:11:43.902Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:43.069Z-833-84103e0a-1b12-4681-9aa5-70c8cd1361ef",
+                      "title": "Launch browser",
+                      "status": "skipped",
+                      "duration": 833,
+                      "startTime": "2025-12-13T10:11:43.069Z",
+                      "endTime": "2025-12-13T10:11:43.902Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:43.908Z-21-62067ab2-cd86-46f4-8a2c-4c94f00bcab3",
+                  "title": "Fixture \"context\"",
+                  "status": "skipped",
+                  "duration": 21,
+                  "startTime": "2025-12-13T10:11:43.908Z",
+                  "endTime": "2025-12-13T10:11:43.929Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:43.913Z-15-dc1b0059-ea88-4bbc-871c-8ede323d389c",
+                      "title": "Create context",
+                      "status": "skipped",
+                      "duration": 15,
+                      "startTime": "2025-12-13T10:11:43.913Z",
+                      "endTime": "2025-12-13T10:11:43.928Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:43.929Z-381-256b249b-63ca-47c5-a67d-ef5422270de2",
+                  "title": "Fixture \"page\"",
+                  "status": "skipped",
+                  "duration": 381,
+                  "startTime": "2025-12-13T10:11:43.929Z",
+                  "endTime": "2025-12-13T10:11:44.310Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:43.931Z-379-857e0558-54db-4496-abf7-0b2275b55fbf",
+                      "title": "Create page",
+                      "status": "skipped",
+                      "duration": 379,
+                      "startTime": "2025-12-13T10:11:43.931Z",
+                      "endTime": "2025-12-13T10:11:44.310Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:44.345Z-1-ffde0584-02ba-42ef-8117-c6a87afdd27c",
+          "title": "Attach \"Allure Metadata (metadata)\"",
+          "status": "skipped",
+          "duration": 1,
+          "startTime": "2025-12-13T10:11:44.345Z",
+          "endTime": "2025-12-13T10:11:44.346Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "node_modules/allure-playwright/src/runtime.ts:55:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:44.351Z-3997-95706902-ba45-4136-a553-70193ed81b34",
+          "title": "Navigate to \"/electronics\"",
+          "status": "skipped",
+          "duration": 3997,
+          "startTime": "2025-12-13T10:11:44.351Z",
+          "endTime": "2025-12-13T10:11:48.348Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:87:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:48.358Z-2-0463af9a-16dc-4a84-8b76-1bc017c445b0",
+          "title": "Wait for load state \"domcontentloaded\"",
+          "status": "skipped",
+          "duration": 2,
+          "startTime": "2025-12-13T10:11:48.358Z",
+          "endTime": "2025-12-13T10:11:48.360Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:204:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:48.361Z-11535-e10beda8-c8cb-45ac-a1bc-586448e4927f",
+          "title": "Wait for load state \"networkidle\"",
+          "status": "skipped",
+          "duration": 11535,
+          "startTime": "2025-12-13T10:11:48.361Z",
+          "endTime": "2025-12-13T10:11:59.896Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:205:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:11:59.901Z-5003-32863bcf-e774-4699-ad37-5148101fb9b6",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 5003,
+          "startTime": "2025-12-13T10:11:59.901Z",
+          "endTime": "2025-12-13T10:12:04.904Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:206:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:04.938Z-210-3c7381a2-ac4a-496b-b5bf-429b57c22d82",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 210,
+          "startTime": "2025-12-13T10:12:04.938Z",
+          "endTime": "2025-12-13T10:12:05.148Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:399:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:05.154Z-519-d7eb5394-5447-4e99-9600-1922cc355d6a",
+          "title": "Evaluate",
+          "status": "skipped",
+          "duration": 519,
+          "startTime": "2025-12-13T10:12:05.154Z",
+          "endTime": "2025-12-13T10:12:05.673Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:416:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:05.676Z-2-4c2de550-6726-4e82-9b4a-ebf3e6bd0a69",
+          "title": "Evaluate",
+          "status": "skipped",
+          "duration": 2,
+          "startTime": "2025-12-13T10:12:05.676Z",
+          "endTime": "2025-12-13T10:12:05.678Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:468:12",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:05.680Z-268-e42fdec8-68a7-4ecb-9242-86fa06ce839b",
+          "title": "Screenshot",
+          "status": "skipped",
+          "duration": 268,
+          "startTime": "2025-12-13T10:12:05.680Z",
+          "endTime": "2025-12-13T10:12:05.948Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:89:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:15.428Z-27-800ff4e5-20aa-42ae-8e20-d93d27ddd299",
+          "title": "After Hooks",
+          "status": "skipped",
+          "duration": 27,
+          "startTime": "2025-12-13T10:12:15.428Z",
+          "endTime": "2025-12-13T10:12:15.455Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:15.429Z-0-062904e6-395d-44bb-8088-2ad2dadf6749",
+              "title": "Fixture \"page\"",
+              "status": "skipped",
+              "duration": 0,
+              "startTime": "2025-12-13T10:12:15.429Z",
+              "endTime": "2025-12-13T10:12:15.429Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:15.429Z-17-6723da7a-d98b-48a9-ad01-e57740d46bc8",
+              "title": "Fixture \"context\"",
+              "status": "skipped",
+              "duration": 17,
+              "startTime": "2025-12-13T10:12:15.429Z",
+              "endTime": "2025-12-13T10:12:15.446Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-13T10:12:15.434Z-12-784c3bc6-dafd-4135-ac80-0dad39d1d420",
+                  "title": "Close context",
+                  "status": "skipped",
+                  "duration": 12,
+                  "startTime": "2025-12-13T10:12:15.434Z",
+                  "endTime": "2025-12-13T10:12:15.446Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: tests/DesktopView/visual-computers-page.spec.js:74:3",
+      "tags": [
+        "validation"
+      ],
+      "screenshots": [
+        "attachments/0f87a28e5fd72d10e534-385128cae5bc2f8a428a/2-1765620735479-Computers-page-diff.png"
+      ],
+      "videoPath": [],
+      "attachments": [
+        {
+          "name": "Text Differences Report",
+          "path": "attachments/0f87a28e5fd72d10e534-385128cae5bc2f8a428a/1-1765620735475-Computers-page-text-diff.txt",
+          "contentType": "text/plain"
+        }
+      ],
+      "stdout": [
+        "Text Differences Found!\n",
+        "📝 Text diff report saved: screenshots/diff/desktop/Computers-page-text-diff.txt\n",
+        "Mismatch found: 129247 out of 2296320 pixels, Mismatch percentage: 5.63%\n",
+        "Creating a new image with dimensions: 3840x1794\n",
+        "Successfully created combined image at: screenshots/diff/desktop/Computers-page-diff.png\n",
+        "\u001b[90mundefined\u001b[39m\n",
+        "✅ Connected to database: visual.db\n",
+        "PRAGMA journal_mode = WAL\n",
+        "PRAGMA synchronous = NORMAL\n",
+        "CREATE TABLE IF NOT EXISTS visual_matrix (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        device TEXT NOT NULL,\n        status TEXT NOT NULL,\n        imageUrl TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "CREATE TABLE IF NOT EXISTS baseline (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "✅ Database schema initialized\n",
+        "\n      INSERT INTO visual_matrix (\n        name, \n        device, \n        status, \n        imageUrl\n      ) VALUES (\n        'Computers page - Desktop - Valid'/*+12 bytes*/, \n        'Desktop', \n        'failed', \n        'https://ocpaxmghzmfbuhxzxzae.sup'/*+82 bytes*/\n      )\n    \n",
+        "✅ Record inserted with ID: 108\n",
+        "✅ Screenshot uploaded to Supabase: {\n  path: \u001b[32m'diff/desktop/Computers-page-diff.png'\u001b[39m,\n  id: \u001b[32m'fb9f523f-0150-4252-a367-ca85a9f4a45d'\u001b[39m,\n  fullPath: \u001b[32m'visual_test/diff/desktop/Computers-page-diff.png'\u001b[39m\n}\n"
+      ],
+      "stderr": [
+        "⚠️ waitForAllAPIs called without setupNetworkMonitoring. Some pending requests might be missed.\n",
+        "❌ Mismatch for Computers page - Desktop - Validate Mismatch: 5.63%\n",
+        "   Test: Computers page - Desktop - Validate Mismatch\n",
+        "   Device: Desktop\n",
+        "   Diff image: screenshots/diff/desktop/Computers-page-diff.png\n"
+      ],
+      "workerId": 2,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/Playwright-Visual-Testing/playwright.config.js",
+      "metadata": "{\"actualWorkers\":3}"
+    },
+    {
+      "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd",
+      "runId": "run-1765620701793-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Visual-Desktop-Test > tests/DesktopView/visual-computers-element-page.spec.js > Take screenshots for Visual Regression Testing - Computers page > Computers page Lower Header - Desktop - Validate Mismatch",
+      "suiteName": "Visual-Desktop-Test",
+      "status": "passed",
+      "duration": 17238,
+      "startTime": "2025-12-13T10:12:01.156Z",
+      "endTime": "2025-12-13T10:12:18.394Z",
+      "browser": "Chrome v141 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.158Z-662-726de81d-2558-47a5-b269-a17df0d697fa",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 662,
+          "startTime": "2025-12-13T10:12:01.158Z",
+          "endTime": "2025-12-13T10:12:01.820Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.158Z-661-06a28e8e-857d-4ce9-a6e6-a45c4660ad36",
+              "title": "beforeEach hook",
+              "status": "passed",
+              "duration": 661,
+              "startTime": "2025-12-13T10:12:01.158Z",
+              "endTime": "2025-12-13T10:12:01.819Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-element-page.spec.js:39:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": [
+                {
+                  "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.168Z-13-eb682056-f8f7-4855-8fb1-7d15926014b5",
+                  "title": "Fixture \"context\"",
+                  "status": "passed",
+                  "duration": 13,
+                  "startTime": "2025-12-13T10:12:01.168Z",
+                  "endTime": "2025-12-13T10:12:01.181Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.169Z-11-cf033c7a-cd07-4192-bf5f-ece540110509",
+                      "title": "Create context",
+                      "status": "passed",
+                      "duration": 11,
+                      "startTime": "2025-12-13T10:12:01.169Z",
+                      "endTime": "2025-12-13T10:12:01.180Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.182Z-637-de22890e-0831-45d7-a22e-6035516c9f81",
+                  "title": "Fixture \"page\"",
+                  "status": "passed",
+                  "duration": 637,
+                  "startTime": "2025-12-13T10:12:01.182Z",
+                  "endTime": "2025-12-13T10:12:01.819Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.188Z-631-9c4c8ed1-eb44-49da-b871-245f0b7e630b",
+                      "title": "Create page",
+                      "status": "passed",
+                      "duration": 631,
+                      "startTime": "2025-12-13T10:12:01.188Z",
+                      "endTime": "2025-12-13T10:12:01.819Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.822Z-3-26d0a829-35ea-4fb0-bff1-51e949729e1d",
+          "title": "Attach \"Allure Metadata (metadata)\"",
+          "status": "passed",
+          "duration": 3,
+          "startTime": "2025-12-13T10:12:01.822Z",
+          "endTime": "2025-12-13T10:12:01.825Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "node_modules/allure-playwright/src/runtime.ts:55:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:01.827Z-7987-91778617-2785-4d1b-9e24-5a9c8bb5f8d0",
+          "title": "Navigate to \"/computers\"",
+          "status": "passed",
+          "duration": 7987,
+          "startTime": "2025-12-13T10:12:01.827Z",
+          "endTime": "2025-12-13T10:12:09.814Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-computers-element-page.spec.js:160:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:09.822Z-1-4fe510d4-686c-43db-a34f-a175834261ca",
+          "title": "Wait for load state \"domcontentloaded\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2025-12-13T10:12:09.822Z",
+          "endTime": "2025-12-13T10:12:09.823Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:204:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:09.825Z-1783-c688f5bf-de01-405e-9423-88a7ff12531e",
+          "title": "Wait for load state \"networkidle\"",
+          "status": "passed",
+          "duration": 1783,
+          "startTime": "2025-12-13T10:12:09.825Z",
+          "endTime": "2025-12-13T10:12:11.608Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:205:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:11.609Z-5001-be3f5068-0625-4fc3-a81d-9390758134bc",
+          "title": "Wait for timeout",
+          "status": "passed",
+          "duration": 5001,
+          "startTime": "2025-12-13T10:12:11.609Z",
+          "endTime": "2025-12-13T10:12:16.610Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:206:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:16.614Z-202-c72b6e68-7fcf-472a-a0bc-b842eb4b3fd4",
+          "title": "Wait for timeout",
+          "status": "passed",
+          "duration": 202,
+          "startTime": "2025-12-13T10:12:16.614Z",
+          "endTime": "2025-12-13T10:12:16.816Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:399:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:16.818Z-508-f1ce19ea-7183-4725-b080-79f0c6d09aa1",
+          "title": "Evaluate",
+          "status": "passed",
+          "duration": 508,
+          "startTime": "2025-12-13T10:12:16.818Z",
+          "endTime": "2025-12-13T10:12:17.326Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:416:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:17.328Z-3-e34dc0e5-bf70-4f98-8da8-e009615abc2b",
+          "title": "Evaluate",
+          "status": "passed",
+          "duration": 3,
+          "startTime": "2025-12-13T10:12:17.328Z",
+          "endTime": "2025-12-13T10:12:17.331Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:468:12",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:17.333Z-31-0da29544-29bb-4ba9-ba9f-76dca28b4a5c",
+          "title": "Wait for selector locator('div.header-lower')",
+          "status": "passed",
+          "duration": 31,
+          "startTime": "2025-12-13T10:12:17.333Z",
+          "endTime": "2025-12-13T10:12:17.364Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:427:37",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:17.366Z-84-ec213a8d-86d5-4c81-80e8-412e5e2ea79b",
+          "title": "Screenshot",
+          "status": "passed",
+          "duration": 84,
+          "startTime": "2025-12-13T10:12:17.366Z",
+          "endTime": "2025-12-13T10:12:17.450Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:428:19",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:18.394Z-20-679964e4-c8cd-40c2-9500-c5dda80aa931",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 20,
+          "startTime": "2025-12-13T10:12:18.394Z",
+          "endTime": "2025-12-13T10:12:18.414Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:18.394Z-1-b511f6ca-d0ae-42a5-a277-e6ee47652789",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2025-12-13T10:12:18.394Z",
+              "endTime": "2025-12-13T10:12:18.395Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:18.395Z-11-bd88040a-5587-4a73-832d-25a162c1cfa7",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 11,
+              "startTime": "2025-12-13T10:12:18.395Z",
+              "endTime": "2025-12-13T10:12:18.406Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd_step_2025-12-13T10:12:18.398Z-8-265e0b71-696c-4187-8400-3882fcc2fbba",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 8,
+                  "startTime": "2025-12-13T10:12:18.398Z",
+                  "endTime": "2025-12-13T10:12:18.406Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: tests/DesktopView/visual-computers-element-page.spec.js:147:3",
+      "tags": [
+        "validation"
+      ],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [
+        {
+          "name": "Text Differences Report",
+          "path": "attachments/dc63e34a6327da4d871b-ac4d25ba8a3e3e3726dd/1-1765620738421-Computers-page-Lower-Header-text-diff.txt",
+          "contentType": "text/plain"
+        }
+      ],
+      "stdout": [
+        "Text Differences Found!\n",
+        "📝 Text diff report saved: screenshots/diff/desktop/Computers-page-Lower-Header-text-diff.txt\n",
+        "Mismatch found: 557 out of 117600 pixels, Mismatch percentage: 0.47%\n",
+        "Creating a new image with dimensions: 2940x120\n",
+        "Successfully created combined image at: screenshots/diff/desktop/Computers-page-Lower-Header-diff.png\n",
+        "\u001b[90mundefined\u001b[39m\n",
+        "✅ Test passed: Mismatch 0.47% is below tolerance 1%\n",
+        "\n      INSERT INTO visual_matrix (\n        name, \n        device, \n        status, \n        imageUrl\n      ) VALUES (\n        'Computers page Lower Header - De'/*+25 bytes*/, \n        'Desktop', \n        'passed', \n        ''\n      )\n    \n",
+        "✅ Record inserted with ID: 110\n"
+      ],
+      "stderr": [
+        "⚠️ waitForAllAPIs called without setupNetworkMonitoring. Some pending requests might be missed.\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/Playwright-Visual-Testing/playwright.config.js",
+      "metadata": "{\"actualWorkers\":3}"
+    },
+    {
+      "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d",
+      "runId": "run-1765620701793-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Visual-Desktop-Test > tests/DesktopView/visual-nopcommerce-home-page.spec.js > Take screenshots for Visual Regression Testing - Nopcommerce Home page > Nopcommerce Home page - Desktop - Validate Mismatch",
+      "suiteName": "Visual-Desktop-Test",
+      "status": "skipped",
+      "duration": 36510,
+      "startTime": "2025-12-13T10:11:42.898Z",
+      "endTime": "2025-12-13T10:12:19.408Z",
+      "browser": "Chrome v141 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:42.905Z-1406-09ef81c1-df55-44f9-bbad-1750ed4dd372",
+          "title": "Before Hooks",
+          "status": "skipped",
+          "duration": 1406,
+          "startTime": "2025-12-13T10:11:42.905Z",
+          "endTime": "2025-12-13T10:11:44.311Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:42.907Z-67-b044471e-3eac-476d-b714-375405cc025a",
+              "title": "beforeAll hook",
+              "status": "skipped",
+              "duration": 67,
+              "startTime": "2025-12-13T10:11:42.907Z",
+              "endTime": "2025-12-13T10:11:42.974Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-nopcommerce-home-page.spec.js:32:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": []
+            },
+            {
+              "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:42.979Z-1331-a6bdbffb-3d40-493f-8ba5-b36e5e1fa9be",
+              "title": "beforeEach hook",
+              "status": "skipped",
+              "duration": 1331,
+              "startTime": "2025-12-13T10:11:42.979Z",
+              "endTime": "2025-12-13T10:11:44.310Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-nopcommerce-home-page.spec.js:37:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": [
+                {
+                  "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:43.139Z-761-aec1252a-d7fb-4971-b2e8-2b62af340098",
+                  "title": "Fixture \"browser\"",
+                  "status": "skipped",
+                  "duration": 761,
+                  "startTime": "2025-12-13T10:11:43.139Z",
+                  "endTime": "2025-12-13T10:11:43.900Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:43.151Z-748-9cc912cf-4641-4004-8494-72af4befc978",
+                      "title": "Launch browser",
+                      "status": "skipped",
+                      "duration": 748,
+                      "startTime": "2025-12-13T10:11:43.151Z",
+                      "endTime": "2025-12-13T10:11:43.899Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:43.904Z-17-dbedc416-de32-4b2d-8ed0-9e816ebbfa38",
+                  "title": "Fixture \"context\"",
+                  "status": "skipped",
+                  "duration": 17,
+                  "startTime": "2025-12-13T10:11:43.904Z",
+                  "endTime": "2025-12-13T10:11:43.921Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:43.907Z-13-713644b1-47b2-4a2f-bd4c-59b2ad200457",
+                      "title": "Create context",
+                      "status": "skipped",
+                      "duration": 13,
+                      "startTime": "2025-12-13T10:11:43.907Z",
+                      "endTime": "2025-12-13T10:11:43.920Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:43.922Z-388-426035ca-851f-4c5c-bff1-2fff73b0f4b6",
+                  "title": "Fixture \"page\"",
+                  "status": "skipped",
+                  "duration": 388,
+                  "startTime": "2025-12-13T10:11:43.922Z",
+                  "endTime": "2025-12-13T10:11:44.310Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:43.925Z-385-22ae94cb-5e44-4f5b-a9ae-ff8ddcccf6fb",
+                      "title": "Create page",
+                      "status": "skipped",
+                      "duration": 385,
+                      "startTime": "2025-12-13T10:11:43.925Z",
+                      "endTime": "2025-12-13T10:11:44.310Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:44.337Z-1-e77c6c31-d07e-4bd7-8c4f-6e94b38b5bb0",
+          "title": "Attach \"Allure Metadata (metadata)\"",
+          "status": "skipped",
+          "duration": 1,
+          "startTime": "2025-12-13T10:11:44.337Z",
+          "endTime": "2025-12-13T10:11:44.338Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "node_modules/allure-playwright/src/runtime.ts:55:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:44.339Z-11188-f586fa45-56b7-4927-9270-225ae26cd4ab",
+          "title": "Navigate to \"/\"",
+          "status": "skipped",
+          "duration": 11188,
+          "startTime": "2025-12-13T10:11:44.339Z",
+          "endTime": "2025-12-13T10:11:55.527Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-nopcommerce-home-page.spec.js:86:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:55.535Z-1-ec0071d8-90b2-4c43-946f-9be2e68ef77a",
+          "title": "Wait for load state \"domcontentloaded\"",
+          "status": "skipped",
+          "duration": 1,
+          "startTime": "2025-12-13T10:11:55.535Z",
+          "endTime": "2025-12-13T10:11:55.536Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:204:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:55.537Z-2919-1294b633-0ade-42e8-80d5-940260190079",
+          "title": "Wait for load state \"networkidle\"",
+          "status": "skipped",
+          "duration": 2919,
+          "startTime": "2025-12-13T10:11:55.537Z",
+          "endTime": "2025-12-13T10:11:58.456Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:205:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:11:58.457Z-5003-4f2e7e8f-a263-446a-8d4a-769cb1091265",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 5003,
+          "startTime": "2025-12-13T10:11:58.457Z",
+          "endTime": "2025-12-13T10:12:03.460Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:206:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:03.472Z-203-a5077268-773c-4e7e-819b-248b400ba836",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 203,
+          "startTime": "2025-12-13T10:12:03.472Z",
+          "endTime": "2025-12-13T10:12:03.675Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:399:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:03.678Z-513-1aa98f38-0e96-4214-8fe2-a0795836e33a",
+          "title": "Evaluate",
+          "status": "skipped",
+          "duration": 513,
+          "startTime": "2025-12-13T10:12:03.678Z",
+          "endTime": "2025-12-13T10:12:04.191Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:416:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:04.193Z-3-316c6956-f52a-4f19-9df4-8335566f7748",
+          "title": "Evaluate",
+          "status": "skipped",
+          "duration": 3,
+          "startTime": "2025-12-13T10:12:04.193Z",
+          "endTime": "2025-12-13T10:12:04.196Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:468:12",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:04.198Z-336-6eeaf9ce-c185-4c9b-8626-71688d2eaa89",
+          "title": "Screenshot",
+          "status": "skipped",
+          "duration": 336,
+          "startTime": "2025-12-13T10:12:04.198Z",
+          "endTime": "2025-12-13T10:12:04.534Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-nopcommerce-home-page.spec.js:88:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:20.391Z-20-02b3fab7-1242-4cfd-8da2-b53a853b9c91",
+          "title": "After Hooks",
+          "status": "skipped",
+          "duration": 20,
+          "startTime": "2025-12-13T10:12:20.391Z",
+          "endTime": "2025-12-13T10:12:20.411Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:20.392Z-0-227f53ae-88c7-40f7-830b-70e5a15cd8a7",
+              "title": "Fixture \"page\"",
+              "status": "skipped",
+              "duration": 0,
+              "startTime": "2025-12-13T10:12:20.392Z",
+              "endTime": "2025-12-13T10:12:20.392Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:20.392Z-14-bb88d737-e3df-48a0-ac1d-41c3e6d2d985",
+              "title": "Fixture \"context\"",
+              "status": "skipped",
+              "duration": 14,
+              "startTime": "2025-12-13T10:12:20.392Z",
+              "endTime": "2025-12-13T10:12:20.406Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8aa0cda2f98b5b703202-466fd5e284721872bd0d_step_2025-12-13T10:12:20.397Z-9-00be7931-7f46-4e91-978f-c862110c32d2",
+                  "title": "Close context",
+                  "status": "skipped",
+                  "duration": 9,
+                  "startTime": "2025-12-13T10:12:20.397Z",
+                  "endTime": "2025-12-13T10:12:20.406Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: tests/DesktopView/visual-nopcommerce-home-page.spec.js:73:3",
+      "tags": [
+        "validation"
+      ],
+      "screenshots": [
+        "attachments/8aa0cda2f98b5b703202-466fd5e284721872bd0d/2-1765620740423-Nopcommerce-Home-page-diff.png"
+      ],
+      "videoPath": [],
+      "attachments": [
+        {
+          "name": "Text Differences Report",
+          "path": "attachments/8aa0cda2f98b5b703202-466fd5e284721872bd0d/1-1765620740420-Nopcommerce-Home-page-text-diff.txt",
+          "contentType": "text/plain"
+        }
+      ],
+      "stdout": [
+        "Text Differences Found!\n",
+        "📝 Text diff report saved: screenshots/diff/desktop/Nopcommerce-Home-page-text-diff.txt\n",
+        "Mismatch found: 58456 out of 3836160 pixels, Mismatch percentage: 1.52%\n",
+        "Creating a new image with dimensions: 3840x2997\n",
+        "Successfully created combined image at: screenshots/diff/desktop/Nopcommerce-Home-page-diff.png\n",
+        "\u001b[90mundefined\u001b[39m\n",
+        "✅ Connected to database: visual.db\n",
+        "PRAGMA journal_mode = WAL\n",
+        "PRAGMA synchronous = NORMAL\n",
+        "CREATE TABLE IF NOT EXISTS visual_matrix (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        device TEXT NOT NULL,\n        status TEXT NOT NULL,\n        imageUrl TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "CREATE TABLE IF NOT EXISTS baseline (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "✅ Database schema initialized\n",
+        "\n      INSERT INTO visual_matrix (\n        name, \n        device, \n        status, \n        imageUrl\n      ) VALUES (\n        'Nopcommerce Home page - Desktop '/*+19 bytes*/, \n        'Desktop', \n        'failed', \n        'https://ocpaxmghzmfbuhxzxzae.sup'/*+89 bytes*/\n      )\n    \n",
+        "✅ Record inserted with ID: 109\n",
+        "✅ Screenshot uploaded to Supabase: {\n  path: \u001b[32m'diff/desktop/Nopcommerce-Home-page-diff.png'\u001b[39m,\n  id: \u001b[32m'454179a8-f1a1-4974-b866-d056a74c5d58'\u001b[39m,\n  fullPath: \u001b[32m'visual_test/diff/desktop/Nopcommerce-Home-page-diff.png'\u001b[39m\n}\n"
+      ],
+      "stderr": [
+        "⚠️ waitForAllAPIs called without setupNetworkMonitoring. Some pending requests might be missed.\n",
+        "❌ Mismatch for Nopcommerce Home page - Desktop - Validate Mismatch: 1.52%\n",
+        "   Test: Nopcommerce Home page - Desktop - Validate Mismatch\n",
+        "   Device: Desktop\n",
+        "   Diff image: screenshots/diff/desktop/Nopcommerce-Home-page-diff.png\n"
+      ],
+      "workerId": 3,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/Playwright-Visual-Testing/playwright.config.js",
+      "metadata": "{\"actualWorkers\":3}"
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2025-12-13T10:12:20.527Z"
+  }
+}

@@ -1,10 +1,28 @@
 # 📜 Changelog
 
+## **Version 0.3.3**
+
+**🚀 Update Highlights**
+
+* **✨ New Features**:
+  * **New cards**: Added 2 new cards to the report dashboard, "Retry Count" and "Browser Distribution" for better visualization of the test results.
+
+* **🔧 Improvements**:
+  * **Email Template**: Modernized the email template for emailable reports with improved styling and layout.
+  * **Enhanced UI update**: Refined the user interface of both the report templates for better user experience and ease of navigation.
+  * **Eleminated `Expand All` and `Collapse All` buttons**: Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
+
+- **🐛 Bug Fixes**:  
+  * **Fixed send email issue for merged report**: Resolved the problem where the send report script failed to send emails for merged reports after multiple shards.
+
+---
+
 ## **Version 0.3.2**
 
 **🚀 Update Highlights**
 
-- **🐛 Fixed** AGPL lisence related issues in dependency package.
+- **Repository Update**: Repository is public now, [Arghajit47/playwright-pulse](https://github.com/Arghajit47/playwright-pulse). Go ahead, take a look and contribute!
+- **🐛 Fixed** AGPL license related issues in dependency package.
 
 ---
 

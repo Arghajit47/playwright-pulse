@@ -73,7 +73,7 @@ function mergeReports(files, reportDir) {
 
   const finalJson = {
     run: {
-      id: `merged-${Date.now()}`,
+      id: `merged-${Date.now()}-581d5ad8-ce75-4ca5-94a6-ed29c466c815`,
       timestamp: latestTimestamp,
       ...combinedRun,
     },

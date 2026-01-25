@@ -1,0 +1,313 @@
+{
+  "run": {
+    "id": "run-1765124482253-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2025-12-07T16:21:22.253Z",
+    "totalTests": 1,
+    "passed": 0,
+    "failed": 0,
+    "skipped": 1,
+    "duration": 41083,
+    "environment": {
+      "host": "MacBookAir.lan",
+      "os": "darwin 25.1.0",
+      "cpu": {
+        "model": "Apple M1",
+        "cores": 8
+      },
+      "memory": "8.00GB",
+      "node": "v20.12.2",
+      "v8": "11.3.244.8-node.19",
+      "cwd": "/Users/arghajitsingha/Playwright-Visual-Testing"
+    }
+  },
+  "results": [
+    {
+      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a",
+      "runId": "run-1765124482253-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Visual-Desktop-Test > tests/DesktopView/visual-computers-page.spec.js > Take screenshots for Visual Regression Testing - Computers page > Computers page - Desktop - Validate Mismatch",
+      "suiteName": "Visual-Desktop-Test",
+      "status": "skipped",
+      "duration": 37432,
+      "startTime": "2025-12-07T16:21:23.893Z",
+      "endTime": "2025-12-07T16:22:01.325Z",
+      "browser": "Chrome v141 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:23.903Z-1836-711eb159-175d-40ba-a53b-4fa4fbd790a0",
+          "title": "Before Hooks",
+          "status": "skipped",
+          "duration": 1836,
+          "startTime": "2025-12-07T16:21:23.903Z",
+          "endTime": "2025-12-07T16:21:25.739Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:23.905Z-79-1af97c73-7ce7-4c1c-90e7-3980d6e6870c",
+              "title": "beforeAll hook",
+              "status": "skipped",
+              "duration": 79,
+              "startTime": "2025-12-07T16:21:23.905Z",
+              "endTime": "2025-12-07T16:21:23.984Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:32:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": []
+            },
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:23.985Z-1752-17636e28-8d11-4ed6-a0ac-7f721127b39a",
+              "title": "beforeEach hook",
+              "status": "skipped",
+              "duration": 1752,
+              "startTime": "2025-12-07T16:21:23.985Z",
+              "endTime": "2025-12-07T16:21:25.737Z",
+              "browser": "Chrome v141 on Windows 10",
+              "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:37:8",
+              "isHook": true,
+              "hookType": "before",
+              "steps": [
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:24.001Z-1029-2ed58f32-213e-4af0-8863-4cd423206e80",
+                  "title": "Fixture \"browser\"",
+                  "status": "skipped",
+                  "duration": 1029,
+                  "startTime": "2025-12-07T16:21:24.001Z",
+                  "endTime": "2025-12-07T16:21:25.030Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:24.010Z-1010-69bd49b7-26d2-4139-80b8-df978ab576f9",
+                      "title": "Launch browser",
+                      "status": "skipped",
+                      "duration": 1010,
+                      "startTime": "2025-12-07T16:21:24.010Z",
+                      "endTime": "2025-12-07T16:21:25.020Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:25.046Z-40-61ec7e88-52fc-4804-8d93-48f8d02dc4eb",
+                  "title": "Fixture \"context\"",
+                  "status": "skipped",
+                  "duration": 40,
+                  "startTime": "2025-12-07T16:21:25.046Z",
+                  "endTime": "2025-12-07T16:21:25.086Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:25.052Z-32-68b51bc0-0fb2-4664-afd7-430bb995225d",
+                      "title": "Create context",
+                      "status": "skipped",
+                      "duration": 32,
+                      "startTime": "2025-12-07T16:21:25.052Z",
+                      "endTime": "2025-12-07T16:21:25.084Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                },
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:25.087Z-649-0d7c19a5-647b-4730-95ea-96ae4c6e053d",
+                  "title": "Fixture \"page\"",
+                  "status": "skipped",
+                  "duration": 649,
+                  "startTime": "2025-12-07T16:21:25.087Z",
+                  "endTime": "2025-12-07T16:21:25.736Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:25.098Z-638-c4ed5d9f-0b0d-40fb-95b3-8dcc0745d7a3",
+                      "title": "Create page",
+                      "status": "skipped",
+                      "duration": 638,
+                      "startTime": "2025-12-07T16:21:25.098Z",
+                      "endTime": "2025-12-07T16:21:25.736Z",
+                      "browser": "Chrome v141 on Windows 10",
+                      "isHook": false,
+                      "steps": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:25.843Z-3-cd867115-9ec6-4f4a-98a2-459678e1d388",
+          "title": "Attach \"Allure Metadata (metadata)\"",
+          "status": "skipped",
+          "duration": 3,
+          "startTime": "2025-12-07T16:21:25.843Z",
+          "endTime": "2025-12-07T16:21:25.846Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "node_modules/allure-playwright/src/runtime.ts:55:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:25.866Z-2321-651b8e1c-83b4-43b7-bef0-bbe45553e15b",
+          "title": "Navigate to \"/electronics\"",
+          "status": "skipped",
+          "duration": 2321,
+          "startTime": "2025-12-07T16:21:25.866Z",
+          "endTime": "2025-12-07T16:21:28.187Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:83:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:28.201Z-3-fb27adb8-6f4d-4a3c-adc0-cf99ae347aa1",
+          "title": "Wait for load state \"domcontentloaded\"",
+          "status": "skipped",
+          "duration": 3,
+          "startTime": "2025-12-07T16:21:28.201Z",
+          "endTime": "2025-12-07T16:21:28.204Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:206:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:28.210Z-4733-f8c54b1f-1d8a-432e-a277-57e9847c6b09",
+          "title": "Wait for load state \"networkidle\"",
+          "status": "skipped",
+          "duration": 4733,
+          "startTime": "2025-12-07T16:21:28.210Z",
+          "endTime": "2025-12-07T16:21:32.943Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:207:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:32.945Z-5010-7a435474-cee5-48fb-8b30-93a2a4b7fb5b",
+          "title": "Wait for timeout",
+          "status": "skipped",
+          "duration": 5010,
+          "startTime": "2025-12-07T16:21:32.945Z",
+          "endTime": "2025-12-07T16:21:37.955Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/helper-function.page.js:208:23",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:21:37.960Z-371-5da5190f-6395-4b33-ac58-8230a472f7ca",
+          "title": "Screenshot",
+          "status": "skipped",
+          "duration": 371,
+          "startTime": "2025-12-07T16:21:37.960Z",
+          "endTime": "2025-12-07T16:21:38.331Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/visual-computers-page.spec.js:85:18",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:22:02.322Z-189-604bc1e0-f6a9-48eb-b903-1e2dd0ef0cb9",
+          "title": "After Hooks",
+          "status": "skipped",
+          "duration": 189,
+          "startTime": "2025-12-07T16:22:02.322Z",
+          "endTime": "2025-12-07T16:22:02.511Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:22:02.326Z-0-7a21b47f-c8d7-4c5e-a47d-3009a502ed2c",
+              "title": "Fixture \"page\"",
+              "status": "skipped",
+              "duration": 0,
+              "startTime": "2025-12-07T16:22:02.326Z",
+              "endTime": "2025-12-07T16:22:02.326Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:22:02.326Z-145-1aa999a5-5071-495c-a558-02aa617e974d",
+              "title": "Fixture \"context\"",
+              "status": "skipped",
+              "duration": 145,
+              "startTime": "2025-12-07T16:22:02.326Z",
+              "endTime": "2025-12-07T16:22:02.471Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "0f87a28e5fd72d10e534-385128cae5bc2f8a428a_step_2025-12-07T16:22:02.339Z-131-ca8e1cb1-623f-4e3d-b94d-45848c2973b4",
+                  "title": "Close context",
+                  "status": "skipped",
+                  "duration": 131,
+                  "startTime": "2025-12-07T16:22:02.339Z",
+                  "endTime": "2025-12-07T16:22:02.470Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: tests/DesktopView/visual-computers-page.spec.js:69:8",
+      "tags": [
+        "validation"
+      ],
+      "screenshots": [
+        "attachments/0f87a28e5fd72d10e534-385128cae5bc2f8a428a/4-1765124522603-Computers-page-diff.png"
+      ],
+      "videoPath": [],
+      "attachments": [
+        {
+          "name": "Text Differences Report",
+          "path": "attachments/0f87a28e5fd72d10e534-385128cae5bc2f8a428a/1-1765124522593-Computers-page-text-diff.txt",
+          "contentType": "text/plain"
+        }
+      ],
+      "stdout": [
+        "Text Differences Found!\n",
+        "📝 Text diff report saved: screenshots/diff/desktop/Computers-page-text-diff.txt\n",
+        "Mismatch found: 101386 out of 2296320 pixels, Mismatch percentage: 4.42%\n",
+        "Creating a new image with dimensions: 3840x1794\n",
+        "Successfully created combined image at: screenshots/diff/desktop/Computers-page-diff.png\n",
+        "🤖 Using Claude AI for visual diff explanation...\n",
+        "```json\n{\n  \"changes\": [\n    {\n      \"location\": \"Breadcrumb navigation (below main menu)\",\n      \"baseline_state\": \"Breadcrumb shows 'Home / Computers'\",\n      \"current_state\": \"Breadcrumb shows 'Home / Electronics'\",\n      \"description\": \"The breadcrumb navigation changed from 'Computers' to 'Electronics', indicating a different page category.\"\n    },\n    {\n      \"location\": \"Main page heading (center top of content area)\",\n      \"baseline_state\": \"Page heading displays 'Computers'\",\n      \"current_state\": \"Page heading displays 'Electronics'\",\n      \"description\": \"The main page title changed from 'Computers' to 'Electronics'.\"\n    },\n    {\n      \"location\": \"Left sidebar - Categories section\",\n      \"baseline_state\": \"'Computers' category is highlighted/selected in blue with subcategories: Desktops, Notebooks, Software\",\n      \"current_state\": \"'Electronics' category is highlighted/selected in blue with subcategories: Camera & photo, Cell phones, Others\",\n      \"description\": \"The active category in the sidebar switched from 'Computers' to 'Electronics', showing different subcategories.\"\n    },\n    {\n      \"location\": \"Main content area - Product category cards\",\n      \"baseline_state\": \"Three cards displayed: 'Desktops' (desktop computer on blue background), 'Notebooks' (laptop on coral/pink background), 'Software' (software box on blue background)\",\n      \"current_state\": \"Three cards displayed: 'Camera & photo' (camera on teal background), 'Cell phones' (smartphone on light background), 'Others' (phone cases on green background)\",\n      \"description\": \"The product category cards completely changed from computer-related items (Desktops, Notebooks, Software) to electronics items (Camera & photo, Cell phones, Others).\"\n    }\n  ]\n}\n```\n",
+        "✅ Connected to database: visual.db\n",
+        "PRAGMA journal_mode = WAL\n",
+        "PRAGMA synchronous = NORMAL\n",
+        "CREATE TABLE IF NOT EXISTS visual_matrix (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        device TEXT NOT NULL,\n        status TEXT NOT NULL,\n        imageUrl TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "CREATE TABLE IF NOT EXISTS baseline (\n        id INTEGER PRIMARY KEY AUTOINCREMENT,\n        name TEXT NOT NULL,\n        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n      );\n",
+        "✅ Database schema initialized\n",
+        "\n      INSERT INTO visual_matrix (\n        name, \n        device, \n        status, \n        imageUrl\n      ) VALUES (\n        'Computers page - Desktop - Valid'/*+12 bytes*/, \n        'Desktop', \n        'failed', \n        'https://ocpaxmghzmfbuhxzxzae.sup'/*+82 bytes*/\n      )\n    \n",
+        "✅ Record inserted with ID: 64\n",
+        "✅ Screenshot uploaded to Supabase: {\n  path: \u001b[32m'diff/desktop/Computers-page-diff.png'\u001b[39m,\n  id: \u001b[32m'fb9f523f-0150-4252-a367-ca85a9f4a45d'\u001b[39m,\n  fullPath: \u001b[32m'visual_test/diff/desktop/Computers-page-diff.png'\u001b[39m\n}\n"
+      ],
+      "stderr": [
+        "❌ Mismatch for Computers page - Desktop - Validate Mismatch: 4.42%\n",
+        "   Test: Computers page - Desktop - Validate Mismatch\n",
+        "   Device: Desktop\n",
+        "   Diff image: screenshots/diff/desktop/Computers-page-diff.png\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/Playwright-Visual-Testing/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2025-12-07T16:22:03.336Z"
+  }
+}

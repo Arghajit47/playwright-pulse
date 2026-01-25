@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<catalog>
+  <book id="bk101">
+    <title>XML for Beginners</title>
+    <author>John Doe</author>
+    <price>19.99</price>
+    <publish_date>2023-01-15</publish_date>
+  </book>
+  <book id="bk102">
+    <title>Advanced XML</title>
+    <author>Jane Smith</author>
+    <price>29.99</price>
+    <publish_date>2023-03-22</publish_date>
+  </book>
+  <book id="bk103">
+    <title>XML &amp; Web Services</title>
+    <author>Robert Johnson</author>
+    <price>24.95</price>
+    <publish_date>2023-05-10</publish_date>
+  </book>
+</catalog>
