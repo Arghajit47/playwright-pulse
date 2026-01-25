@@ -3,7 +3,7 @@
   "author": "Arghajit Singha",
   "version": "0.3.2",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
-  "homepage": "https://playwright-pulse-report.netlify.app/",
+  "homepage": "https://arghajit47.github.io/playwright-pulse/",
   "repository": {
     "type": "git",
     "url": "https://github.com/Arghajit47/playwright-pulse"
