@@ -1,7 +1,7 @@
 {
-  "name": "@arghajit/playwright-pulse-report",
+  "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.2",
+  "version": "0.3.15",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://arghajit47.github.io/playwright-pulse/",
   "repository": {
