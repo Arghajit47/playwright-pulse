@@ -14,6 +14,7 @@
 
 - **🐛 Bug Fixes**:  
   * **Fixed send email issue for merged report**: Resolved the problem where the send report script failed to send emails for merged reports after multiple shards.
+  * **Fixed all kind of vulnerabilities**: Addresses security concerns by updating dependencies to their latest versions, removing deprecated packages, and following best practices for secure coding. *No Open Source Security Issue*, *No Code Security Issue*, *No Configuration Issue*.
 
 ---
 

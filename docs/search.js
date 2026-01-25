@@ -161,6 +161,36 @@ class GlobalSearchManager {
     return 'guide';
   }
 
+  isValidInternalUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+
+    // Remove any leading/trailing whitespace
+    url = url.trim();
+
+    // Block absolute URLs with protocols
+    if (/^(https?:)?\/\//i.test(url)) return false;
+
+    // Block javascript: and data: protocols
+    if (/^(javascript|data|vbscript|file|about):/i.test(url)) return false;
+
+    // Allow only relative URLs that look like internal documentation links
+    // Must be .html file or have # anchor, and no dangerous characters
+    if (!/^[a-zA-Z0-9_\-\.#]+$/.test(url.split('?')[0])) return false;
+
+    // Must end with .html or contain .html#
+    if (!(/\.html(#.*)?$/.test(url))) return false;
+
+    return true;
+  }
+
+  // Escape HTML to prevent XSS attacks
+  escapeHtml(text) {
+    if (!text || typeof text !== 'string') return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   initializeEventListeners() {
     if (!this.searchInput) return;
 
@@ -205,7 +235,7 @@ class GlobalSearchManager {
         );
         if (firstResult && this.searchDropdown.classList.contains("visible")) {
           const url = firstResult.dataset.url;
-          if (url) {
+          if (url && this.isValidInternalUrl(url)) {
             window.location.href = url;
           }
         }
@@ -279,7 +309,7 @@ class GlobalSearchManager {
 
   showDropdown(query) {
     if (!this.searchDropdown) return;
-    
+
     const allResults = this.searchInData(query);
     const displayLimit = this.isExpanded ? Math.min(allResults.length, 20) : 6;
     const results = allResults.slice(0, displayLimit);
@@ -289,53 +319,75 @@ class GlobalSearchManager {
       return;
     }
 
-    let dropdownHTML = `<div class="search-category">Documentation (${allResults.length} results)</div>`;
+    // Clear dropdown safely
+    this.searchDropdown.textContent = '';
+
+    // Create category header
+    const categoryDiv = document.createElement('div');
+    categoryDiv.className = 'search-category';
+    categoryDiv.textContent = `Documentation (${allResults.length} results)`;
+    this.searchDropdown.appendChild(categoryDiv);
+
+    // Create result items using DOM APIs
     results.forEach((item) => {
-      dropdownHTML += `
-        <div class="search-result-item" data-url="${item.url}" style="cursor: pointer;">
-          <svg class="search-result-icon" viewBox="0 0 24 24" fill="currentColor">
-            ${this.getIconForType(item.type)}
-          </svg>
-          <div class="search-result-content">
-            <div class="search-result-title">${this.highlightMatch(
-              item.title,
-              query
-            )}</div>
-            <div class="search-result-description">${this.truncateText(
-              item.description,
-              70
-            )}${item.description.length > 70 ? '...' : ''}</div>
-            <div class="search-result-breadcrumb">${item.breadcrumb}</div>
-          </div>
-        </div>
-      `;
+      // Validate URL before using it
+      if (!item.url || !this.isValidInternalUrl(item.url)) return;
+
+      const resultItem = document.createElement('div');
+      resultItem.className = 'search-result-item';
+      resultItem.setAttribute('data-url', item.url);
+      resultItem.style.cursor = 'pointer';
+
+      // Create icon
+      const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      icon.setAttribute('class', 'search-result-icon');
+      icon.setAttribute('viewBox', '0 0 24 24');
+      icon.setAttribute('fill', 'currentColor');
+      const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      iconPath.setAttribute('d', this.getIconPathForType(item.type));
+      icon.appendChild(iconPath);
+
+      // Create content container
+      const content = document.createElement('div');
+      content.className = 'search-result-content';
+
+      // Create title with safe highlighting
+      const title = document.createElement('div');
+      title.className = 'search-result-title';
+      this.setHighlightedText(title, item.title, query);
+
+      // Create description
+      const description = document.createElement('div');
+      description.className = 'search-result-description';
+      const truncatedDesc = item.description.length > 70
+        ? item.description.substring(0, 70).trim() + '...'
+        : item.description;
+      description.textContent = truncatedDesc;
+
+      // Create breadcrumb
+      const breadcrumb = document.createElement('div');
+      breadcrumb.className = 'search-result-breadcrumb';
+      breadcrumb.textContent = item.breadcrumb;
+
+      content.appendChild(title);
+      content.appendChild(description);
+      content.appendChild(breadcrumb);
+
+      resultItem.appendChild(icon);
+      resultItem.appendChild(content);
+
+      this.searchDropdown.appendChild(resultItem);
     });
 
+    // Add expand/collapse button if needed
     if (!this.isExpanded && allResults.length > 6) {
-      dropdownHTML += `
-        <div class="search-result-item search-expand-button" data-action="expand" style="cursor: pointer; border-top: 2px solid var(--border-color);">
-          <div style="width: 100%; text-align: center; font-weight: 500; color: var(--primary-color); padding: 12px 8px;">
-            <svg style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
-            </svg>
-            View all ${allResults.length} results...
-          </div>
-        </div>
-      `;
+      const expandButton = this.createExpandCollapseButton('expand', allResults.length);
+      this.searchDropdown.appendChild(expandButton);
     } else if (this.isExpanded && allResults.length > 6) {
-      dropdownHTML += `
-        <div class="search-result-item search-expand-button" data-action="collapse" style="cursor: pointer; border-top: 2px solid var(--border-color);">
-          <div style="width: 100%; text-align: center; font-weight: 500; color: var(--text-color-muted); padding: 12px 8px;">
-            <svg style="width: 16px; height: 16px; margin-right: 8px; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
-            </svg>
-            Show less results
-          </div>
-        </div>
-      `;
+      const collapseButton = this.createExpandCollapseButton('collapse', allResults.length);
+      this.searchDropdown.appendChild(collapseButton);
     }
 
-    this.searchDropdown.innerHTML = dropdownHTML;
     this.searchDropdown.classList.add("visible");
 
     // Remove existing event listeners to prevent duplicates
@@ -361,7 +413,7 @@ class GlobalSearchManager {
       } else if (action === "collapse") {
         this.isExpanded = false;
         this.showDropdown(query);
-      } else if (url) {
+      } else if (url && this.isValidInternalUrl(url)) {
         window.location.href = url;
       }
     };
@@ -401,15 +453,97 @@ class GlobalSearchManager {
     return icons[type] || icons.guide;
   }
 
-  highlightMatch(text, query) {
-    if (!query) return text;
-    const regex = new RegExp(`(${query})`, "gi");
-    return text.replace(regex, '<span class="search-result-match">$1</span>');
+  getIconPathForType(type) {
+    const paths = {
+      guide: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+      feature: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10-10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z",
+      integration: "M22 16v-2l-8.5-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9L2 14v2l8.5-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5L22 16z",
+      technical: "M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z",
+      command: "M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zM4 8v2h16V8H4z",
+      comparison: "M9 11H7v6h2v-6zm4 0h-2v6h2v-6zm4 0h-2v6h2v-6zm2.5-9L12 2 4.5 2 3 6v14.5c0 .83.67 1.5 1.5 1.5h15c.83 0 1.5-.67 1.5-1.5V6l-1.5-4z",
+      reference: "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z",
+      code: "M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0L19.2 12l-4.6-4.6L16 6l6 6-6 6-1.4-1.4z",
+      item: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"
+    };
+    return paths[type] || paths.guide;
   }
 
-  truncateText(text, maxLength) {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim();
+  setHighlightedText(element, text, query) {
+    if (!query || !text) {
+      element.textContent = text || '';
+      return;
+    }
+
+    // Escape regex special characters in query for safe matching
+    const regexSafeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${regexSafeQuery})`, 'gi');
+    const parts = text.split(regex);
+
+    parts.forEach((part, index) => {
+      if (index % 2 === 1) {
+        // This is a match from the regex split - create highlighted span
+        const span = document.createElement('span');
+        span.className = 'search-result-match';
+        span.textContent = part;
+        element.appendChild(span);
+      } else if (part) {
+        // Regular text - use text node (skip empty strings)
+        element.appendChild(document.createTextNode(part));
+      }
+    });
+  }
+
+  createExpandCollapseButton(action, totalResults) {
+    const button = document.createElement('div');
+    button.className = 'search-result-item search-expand-button';
+    button.setAttribute('data-action', action);
+    button.style.cursor = 'pointer';
+    button.style.borderTop = '2px solid var(--border-color)';
+
+    const content = document.createElement('div');
+    content.style.width = '100%';
+    content.style.textAlign = 'center';
+    content.style.fontWeight = '500';
+    content.style.padding = '12px 8px';
+
+    if (action === 'expand') {
+      content.style.color = 'var(--primary-color)';
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.style.width = '16px';
+      svg.style.height = '16px';
+      svg.style.marginRight = '8px';
+      svg.style.verticalAlign = 'middle';
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'currentColor');
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z');
+      svg.appendChild(path);
+
+      content.appendChild(svg);
+      content.appendChild(document.createTextNode(`View all ${totalResults} results...`));
+    } else {
+      content.style.color = 'var(--text-color-muted)';
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.style.width = '16px';
+      svg.style.height = '16px';
+      svg.style.marginRight = '8px';
+      svg.style.verticalAlign = 'middle';
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'currentColor');
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z');
+      svg.appendChild(path);
+
+      content.appendChild(svg);
+      content.appendChild(document.createTextNode('Show less results'));
+    }
+
+    button.appendChild(content);
+    return button;
   }
 
   clearSearchInput() {
