@@ -2838,6 +2838,29 @@ function generateHTML(reportData, trendData = null) {
           flex-direction: column;
           gap: 4px;
           margin-top: 6px;
+          max-height: 150px;
+          overflow-y: auto;
+          padding-right: 4px;
+          scrollbar-width: thin;
+          scrollbar-color: #374151 #1f2937;
+        }
+        .browser-breakdown::-webkit-scrollbar {
+          width: 6px;
+          display: block;
+        }
+        .browser-breakdown::-webkit-scrollbar-track {
+          background: #1f2937;
+          border-radius: 3px;
+          display: block;
+        }
+        .browser-breakdown::-webkit-scrollbar-thumb {
+          background: #374151;
+          border-radius: 3px;
+          display: block;
+        }
+        .browser-breakdown::-webkit-scrollbar-thumb:hover {
+          background: #4b5563;
+          display: block;
         }
         .browser-item {
           display: flex;
@@ -5064,6 +5087,29 @@ function generateHTML(reportData, trendData = null) {
           flex-direction: column;
           gap: 4px;
           margin-top: 6px;
+          max-height: 150px;
+          overflow-y: auto;
+          padding-right: 4px;
+          scrollbar-width: thin;
+          scrollbar-color: #374151 #1f2937;
+        }
+        .browser-breakdown::-webkit-scrollbar {
+          width: 6px;
+          display: block;
+        }
+        .browser-breakdown::-webkit-scrollbar-track {
+          background: #1f2937;
+          border-radius: 3px;
+          display: block;
+        }
+        .browser-breakdown::-webkit-scrollbar-thumb {
+          background: #374151;
+          border-radius: 3px;
+          display: block;
+        }
+        .browser-breakdown::-webkit-scrollbar-thumb:hover {
+          background: #4b5563;
+          display: block;
         }
         .browser-item {
           display: flex;
