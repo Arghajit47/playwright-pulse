@@ -1494,7 +1494,7 @@ function generateSuitesWidget(suitesData) {
           suite.name,
         )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
       </div>
-      <div style="margin-bottom: 12px;"><span class="browser-tag">🌐 ${sanitizeHTML(
+      <div style="margin-bottom: 12px;"><span class="browser-tag" title="🌐 ${sanitizeHTML(suite.browser)}">🌐 ${sanitizeHTML(
         suite.browser,
       )}</span></div>
       <div class="suite-card-body">
@@ -3238,20 +3238,28 @@ function generateHTML(reportData, trendData = null) {
         .suite-card.status-skipped:hover { background: rgba(245, 158, 11, 0.02); }
         .suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
         .suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
-        .browser-tag { 
-          font-size: 0.85em; 
+        .browser-tag {
+          font-size: 0.85em;
           font-weight: 600;
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%); 
-          padding: 6px 12px; 
-          border-radius: var(--radius-sm); 
+          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
+          padding: 6px 12px;
+          border-radius: var(--radius-sm);
           border: 1px solid rgba(96, 165, 250, 0.3);
-          white-space: nowrap;
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
+          display: inline-block;
           box-shadow: 0 2px 8px rgba(96, 165, 250, 0.15), inset 0 1px 0 rgba(96, 165, 250, 0.2);
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
           letter-spacing: 0.3px;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          vertical-align: middle;
+          cursor: help;
+          transition: all 0.2s ease;
+        }
+        .browser-tag:hover {
+          background: linear-gradient(135deg, rgba(96, 165, 250, 0.3) 0%, rgba(59, 130, 246, 0.25) 100%);
+          border-color: rgba(96, 165, 250, 0.5);
         }
         .suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
         .suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
