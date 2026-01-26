@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -73,7 +73,9 @@
           </li>
           <li><a href="comparison.html">Comparison</a></li>
           <li><a href="reference.html">Reference</a></li>
-          <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
+          <li>
+            <a href="demo.html" target="_blank">Live Report Demonstration</a>
+          </li>
           <li>
             <a
               href="https://arghajit47.github.io/playwright-pulse-dashboard/"
@@ -113,9 +115,12 @@
                   <td><code>'pulse-report'</code></td>
                   <td>
                     The directory where all report assets will be saved.
-                    <br><br>
-                    <span style="color: #2196F3; font-weight: 500;">✨ New in v0.3.0:</span> 
-                    All CLI scripts now automatically read this value - no need to pass <code>-o</code> manually!
+                    <br /><br />
+                    <span style="color: #2196f3; font-weight: 500"
+                      >✨ New in v0.3.0:</span
+                    >
+                    All CLI scripts now automatically read this value - no need
+                    to pass <code>-o</code> manually!
                   </td>
                 </tr>
                 <tr>
@@ -139,7 +144,7 @@
         </section>
 
         <section id="advanced-ci">
-          <h2>CI/CD Workflow</h2>
+          <h2>CI/CD Workflow (Non Sharding)</h2>
           <div class="ci-buttons">
             <button onclick="showCode('github', event)" class="active">
               GitHub Actions
@@ -149,116 +154,119 @@
           </div>
           <div id="github-code" class="code-container">
             <pre><code class="language-yaml"># .github/workflows/playwright.yml
-name: Playwright Tests with Pulse Report
-on: [push]
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
 jobs:
   test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1, 2, 3, 4]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm ci
-      - run: npx playwright install --with-deps
-      - run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: pulse-report-shard-${{ matrix.shard }}
-          path: pulse-report/
-          retention-days: 1
-
-  merge-report:
-    needs: test
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - run: npm ci
-      - uses: actions/download-artifact@v4
-        with:
-          path: pulse-report
-          pattern: pulse-report-shard-*
-          merge-multiple: true
-      - run: npx merge-pulse-report
-      - run: npx generate-pulse-report
-      - uses: actions/upload-artifact@v4
-        with:
-          name: final-playwright-pulse-report
-          path: pulse-report/playwright-pulse-static-report.html
-          retention-days: 7</code><button class="copy-button">Copy</button></pre>
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+    - name: Run Playwright tests
+      run: npm run test
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30</code><button class="copy-button">Copy</button></pre>
           </div>
           <div id="gitlab-code" class="code-container" style="display: none">
             <pre><code class="language-yaml"># .gitlab-ci.yml
 stages:
   - test
-  - merge
 
-playwright-test:
+tests:
+  # Using the official Playwright image is the equivalent of "runs-on: ubuntu" + "setup-node" + "install browsers"
+  # Replace 'v1.48.0' with the version matching your package.json
+  image: mcr.microsoft.com/playwright:v1.48.0-jammy
+  
   stage: test
-  parallel: 4
-  image: node:18
-  script:
-    - npm ci
-    - npx playwright install --with-deps
-    - npx playwright test --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
-  artifacts:
-    when: always
-    paths: [pulse-report/]
-    expire_in: 1 day
+  timeout: 1h  # Matches "timeout-minutes: 60"
+  
+  # Cache node_modules to speed up runs (optional but recommended)
+  cache:
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - node_modules/
 
-merge-and-publish:
-  stage: merge
-  needs: ["playwright-test"]
-  image: node:18
   script:
     - npm ci
-    - npx merge-pulse-report
-    - npx generate-pulse-report
+    - npx playwright install --with-deps # Ensures specific browser versions needed are present
+    - npm run test
+
   artifacts:
-    paths: [pulse-report/playwright-pulse-static-report.html]
-    expire_in: 7 days</code><button class="copy-button">Copy</button></pre>
+    when: always  # Matches "if: always()"
+    paths:
+      - playwright-report/
+    expire_in: 30 days # Matches "retention-days: 30"
+
+  # Logic to trigger on branches main/master and Merge Requests
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'main'
+    - if: $CI_COMMIT_BRANCH == 'master'</code><button class="copy-button">Copy</button></pre>
           </div>
           <div id="jenkins-code" class="code-container" style="display: none">
             <pre><code class="language-groovy">// Jenkinsfile
 pipeline {
-    agent any
+    agent {
+        // Equivalent to "runs-on: ubuntu-latest" with setup-node pre-applied
+        docker {
+            image 'mcr.microsoft.com/playwright:v1.48.0-jammy' 
+            // 'reuseNode true' ensures the workspace is preserved
+            args '-u root' 
+        }
+    }
+
+    options {
+        // Matches "timeout-minutes: 60"
+        timeout(time: 60, unit: 'MINUTES')
+    }
+
+    triggers {
+        // Jenkins usually relies on Webhooks for PRs/Pushes, 
+        // but this enables polling if you don't have hooks setup.
+        pollSCM('*/5 * * * *') 
+    }
+
     stages {
-        stage('Setup') {
+        stage('Install Dependencies') {
             steps {
                 sh 'npm ci'
+            }
+        }
+
+        stage('Install Playwright Browsers') {
+            steps {
                 sh 'npx playwright install --with-deps'
             }
         }
-        stage('Parallel Tests') {
-            parallel {
-                stage('Shard 1') { steps { sh 'npx playwright test --shard=1/4' } }
-                stage('Shard 2') { steps { sh 'npx playwright test --shard=2/4' } }
-                stage('Shard 3') { steps { sh 'npx playwright test --shard=3/4' } }
-                stage('Shard 4') { steps { sh 'npx playwright test --shard=4/4' } }
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'pulse-report/**', allowEmptyArchive: true
-                }
+
+        stage('Run Tests') {
+            steps {
+                // Matches "npm run test"
+                sh 'npm run test'
             }
         }
-        stage('Merge and Publish Report') {
-            steps {
-                // Logic to unstash artifacts from all shards would go here
-                sh 'npx merge-pulse-report'
-                sh 'npx generate-pulse-report'
-                archiveArtifacts artifacts: 'pulse-report/playwright-pulse-static-report.html'
-            }
+    }
+
+    post {
+        always {
+            // Matches "if: always()" + artifact upload
+            // The allowEmptyArchive prevents failure if the report wasn't generated
+            archiveArtifacts artifacts: 'playwright-report/**', allowEmptyArchive: true, fingerprint: true
         }
     }
 }</code><button class="copy-button">Copy</button></pre>
