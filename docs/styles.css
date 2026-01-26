@@ -647,13 +647,7 @@ section {
   height: auto;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  transition: transform var(--transition-normal),
-    box-shadow var(--transition-normal);
-}
-
-.screenshot-item img:hover {
-  transform: scale(1.02);
-  box-shadow: var(--shadow-medium);
+  cursor: pointer;
 }
 
 .screenshot-item p {
@@ -833,10 +827,6 @@ body.sidebar-open .sidebar {
 /* Apply animations */
 section {
   animation: fadeInUp var(--transition-slow) ease-out;
-}
-
-.screenshot-item:hover img {
-  animation: pulse 0.6s ease-in-out;
 }
 
 /* 📱 RESPONSIVE BREAKPOINTS */

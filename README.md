@@ -396,7 +396,7 @@ npm run pulse-dashboard
 
 *(Run from project root containing `pulse-report/` directory)*  
 
-**NPM Package**: [playwright-pulse-report](https://www.npmjs.com/package/@arghajit/playwright-pulse-report) 
+**NPM Package**: [pulse-dashboard](https://www.npmjs.com/package/pulse-dashboard)
 
 **Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
 

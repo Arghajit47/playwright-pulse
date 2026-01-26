@@ -2273,26 +2273,9 @@ function generateHTML(reportData, trendData = null) {
         const testTitle =
           testFileParts[testFileParts.length - 1] || "Unnamed Test";
 
-        // --- Severity Logic ---
+        // --- Simplified Severity Badge ---
         const severity = test.severity || "Medium";
-        const getSeverityColor = (level) => {
-          switch (level) {
-            case "Minor":
-              return "#006064";
-            case "Low":
-              return "#FFA07A";
-            case "Medium":
-              return "#577A11";
-            case "High":
-              return "#B71C1C";
-            case "Critical":
-              return "#64158A";
-            default:
-              return "#577A11";
-          }
-        };
-        const severityColor = getSeverityColor(severity);
-        const severityBadge = `<span class="status-badge" style="background-color: ${severityColor}; margin-right: 8px;">${severity}</span>`;
+        const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
 
         // --- Step Generation ---
         const generateStepsHTML = (steps, depth = 0) => {
@@ -3400,29 +3383,81 @@ function generateHTML(reportData, trendData = null) {
           font-weight: 700;
           color: #f9fafb;
         }
-        .status-badge { 
-          padding: 8px 20px; 
-          border-radius: 0; 
-          font-size: 0.7em; 
-          font-weight: 800; 
-          color: white; 
-          text-transform: uppercase; 
-          min-width: 100px; 
+        .status-badge {
+          padding: 8px 20px;
+          border-radius: 0;
+          font-size: 0.7em;
+          font-weight: 800;
+          color: white;
+          text-transform: uppercase;
+          min-width: 100px;
           text-align: center;
           letter-spacing: 1px;
         }
-        .status-badge.status-passed { 
-          background: var(--success-color); 
+        .status-badge.status-passed {
+          background: var(--success-color);
         }
-        .status-badge.status-failed { 
-          background: var(--danger-color); 
+        .status-badge.status-failed {
+          background: var(--danger-color);
         }
-        .status-badge.status-skipped { 
-          background: var(--warning-color); 
+        .status-badge.status-skipped {
+          background: var(--warning-color);
         }
-        .status-badge.status-unknown { 
-          background: var(--dark-gray-color); 
+        .status-badge.status-unknown {
+          background: var(--dark-gray-color);
         }
+
+        /* --- NEON GLASS SEVERITY BADGES --- */
+        .severity-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 12px;
+          border-radius: 99px;
+          font-size: 0.75em;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          border: 1px solid;
+          backdrop-filter: blur(4px);
+          -webkit-backdrop-filter: blur(4px);
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .severity-badge::before {
+          content: '';
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: currentColor;
+          box-shadow: 0 0 6px currentColor;
+        }
+        /* Auto-map colors based on data-severity attribute */
+        .severity-badge[data-severity="critical"] {
+          color: #ff4d4d;
+          background-color: rgba(255, 77, 77, 0.1);
+          border-color: rgba(255, 77, 77, 0.25);
+        }
+        .severity-badge[data-severity="high"] {
+          color: #fb923c;
+          background-color: rgba(251, 146, 60, 0.1);
+          border-color: rgba(251, 146, 60, 0.25);
+        }
+        .severity-badge[data-severity="medium"] {
+          color: #facc15;
+          background-color: rgba(250, 204, 21, 0.1);
+          border-color: rgba(250, 204, 21, 0.25);
+        }
+        .severity-badge[data-severity="low"] {
+          color: #4ade80;
+          background-color: rgba(74, 222, 128, 0.1);
+          border-color: rgba(74, 222, 128, 0.25);
+        }
+        .severity-badge[data-severity="minor"] {
+          color: #94a3b8;
+          background-color: rgba(148, 163, 184, 0.1);
+          border-color: rgba(148, 163, 184, 0.25);
+        }
+
 .tag { 
           display: inline-flex;
           align-items: center;
