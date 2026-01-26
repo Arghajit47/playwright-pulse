@@ -11,6 +11,7 @@
   * **Email Template**: Modernized the email template for emailable reports with improved styling and layout.
   * **Enhanced UI update**: Refined the user interface of both the report templates for better user experience and ease of navigation.
   * **Eleminated `Expand All` and `Collapse All` buttons**: Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
+  * **Easy Sharding**: Resolving the complex sharding technique to make it easier for users to understand and implement.
 
 - **🐛 Bug Fixes**:  
   * **Fixed send email issue for merged report**: Resolved the problem where the send report script failed to send emails for merged reports after multiple shards.
