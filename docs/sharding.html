@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sharding in CI/CD - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="search.css" />
+  </head>
+  <body>
+    <!-- Enhanced Header with Search and Theme Toggle -->
+    <header class="enhanced-header">
+      <div class="header-left">
+        <img
+          src="./asset/FullLogo.png"
+          alt="Playwright Pulse Report Banner"
+          class="header-logo"
+        />
+      </div>
+
+      <div class="header-controls">
+        <div class="search-container">
+          <div class="search-wrapper">
+            <input
+              type="text"
+              class="search-input"
+              id="searchInput"
+              placeholder="Search documentation..."
+              autocomplete="off"
+            />
+            <button class="clear-search" id="clearSearch">×</button>
+            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
+              />
+            </svg>
+          </div>
+          <div class="search-dropdown" id="searchDropdown"></div>
+        </div>
+
+        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
+            />
+            <path
+              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
+            />
+          </svg>
+        </button>
+      </div>
+    </header>
+    <button
+      class="menu-toggle"
+      id="menu-toggle"
+      aria-label="Open navigation menu"
+    >
+      ☰
+    </button>
+    <div class="page-wrapper">
+      <nav class="sidebar" id="sidebar">
+        <ul class="sidebar-nav">
+          <li><a href="index.html">Getting Started</a></li>
+          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+          <li><a href="report-features.html">Report Features</a></li>
+          <li>
+            <a href="advanced-usage.html">Advanced Usage</a>
+          </li>
+          <li>
+            <a href="sharding.html" class="active">Sharding</a>
+          </li>
+          <li><a href="comparison.html">Comparison</a></li>
+          <li><a href="reference.html">Reference</a></li>
+          <li>
+            <a href="demo.html" target="_blank">Live Report Demonstration</a>
+          </li>
+          <li>
+            <a
+              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
+              class="external-link"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Pulse Dashboard
+              <img class="new" src="./asset/new.png" alt="new_icon" />
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="overlay" id="overlay"></div>
+      <main class="main-content">
+        <h1>Sharding Usage in CI/CD</h1>
+        <section id="sharding">
+          <h2>Why This Script Is a Game-Changer</h2>
+          <p>The enhanced <code>merge-report.js</code> script drastically simplifies the workflow for users running sharded Playwright tests. Here is a breakdown of the "Before vs. After" complexity.</p>
+
+          <h3>Before: The Complexity Nightmare</h3>
+          <p>Previously, if users wanted to merge sharded reports, they had to manually manage file paths and structures. It was fragile and prone to errors.</p>
+          <ul>
+            <li><strong>Manual File Hunting:</strong> The user (or their CI script) had to locate every <code>playwright-pulse-report.json</code> file across different shard folders.</li>
+            <li><strong>Attachment Chaos:</strong> Merging attachments was a headache. If Shard 1 and Shard 2 both had a screenshot named <code>error.png</code>, one would overwrite the other, losing critical debugging data.</li>
+            <li><strong>Complex CLI Commands:</strong> The user often had to write custom scripts to loop through folders, or pass a long list of file arguments to a merger tool.</li>
+            <li><strong>Dirty Cleanup:</strong> After merging, the original shard folders (e.g., <code>shard-1</code>, <code>shard-2</code>) were left behind, cluttering the workspace unless the user wrote extra cleanup steps.</li>
+          </ul>
+
+          <h3>Now: Super Easy Logic</h3>
+          <p>With the new script, the complexity is hidden. The user interaction is reduced to <strong>one simple folder</strong>.</p>
+          <ul>
+            <li><strong>"Dump and Done":</strong> The user just dumps all their shard folders (e.g., <code>pulse-report-shard-1</code>, <code>pulse-report-shard-2</code>) into a single directory (e.g., <code>my-report</code>). They don't need to organize files or rename anything.</li>
+            <li><strong>One Command:</strong> They run a single command:
+              <pre><code class="language-bash">npx merge-pulse-report -o my-report</code></pre>
+            </li>
+            <li><strong>Auto-Discovery:</strong> The script automatically scans <code>my-report</code>, finds every subdirectory, and extracts the JSON data.</li>
+            <li><strong>Smart Attachment Merging:</strong> It automatically copies all attachments to a central folder. (The script even includes logic to handle duplicates if needed, though usually Playwright hashes filenames).</li>
+            <li><strong>Auto-Cleanup:</strong> Once the merge is safe and successful, the script <strong>automatically deletes</strong> the old shard folders. The user is left with a perfectly clean <code>my-report</code> folder containing just the final <code>playwright-pulse-report.json</code> and one <code>attachments</code> folder.</li>
+          </ul>
+
+          <p><strong>In short:</strong> You turned a multi-step manual process into a "black box" where the user provides a folder of raw shards, and gets back a single, polished report.</p>
+        </section>
+        <section id="advanced-ci">
+          <h2>CI/CD Workflow for Sharding</h2>
+          <div class="ci-buttons">
+            <button onclick="showCode('github', event)" class="active">
+              GitHub Actions
+            </button>
+            <button onclick="showCode('gitlab', event)">GitLab CI/CD</button>
+            <button onclick="showCode('jenkins', event)">Jenkins</button>
+          </div>
+          <div id="github-code" class="code-container">
+            <pre><code class="language-yaml"># .github/workflows/playwright.yml
+name: Playwright Tests with Pulse Report
+on: [push]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-report-shard-${{ matrix.shard }}
+          path: pulse-report/
+          retention-days: 1
+
+  merge-report:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+
+      # Download all shard artifacts to a single directory
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+          pattern: pulse-report-shard-*
+
+      # Merge all shard reports into a single report
+      - run: npx merge-pulse-report -o all-reports
+
+      # Generate the final HTML report
+      - run: npx generate-pulse-report -o all-reports
+
+      # Upload the final merged report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-playwright-pulse-report
+          path: all-reports/
+          retention-days: 7</code><button class="copy-button">Copy</button></pre>
+          </div>
+          <div id="gitlab-code" class="code-container" style="display: none">
+            <pre><code class="language-yaml"># .gitlab-ci.yml
+stages:
+  - test
+  - merge
+
+playwright-test:
+  stage: test
+  parallel: 4
+  image: node:18
+  script:
+    - npm ci
+    - npx playwright install --with-deps
+    - npx playwright test --shard=$CI_NODE_INDEX/$CI_NODE_TOTAL
+    # Create unique shard directory to avoid artifact conflicts
+    - mkdir -p all-reports/shard-$CI_NODE_INDEX
+    - mv pulse-report/* all-reports/shard-$CI_NODE_INDEX/
+  artifacts:
+    when: always
+    paths:
+      - all-reports/
+    expire_in: 1 day
+
+merge-and-publish:
+  stage: merge
+  needs: ["playwright-test"]
+  image: node:18
+  script:
+    - npm ci
+    # Merge all shard reports
+    - npx merge-pulse-report -o all-reports
+    # Generate the final HTML report
+    - npx generate-pulse-report -o all-reports
+  artifacts:
+    paths:
+      - all-reports/playwright-pulse-static-report.html
+      - all-reports/playwright-pulse-report.json
+    expire_in: 7 days</code><button class="copy-button">Copy</button></pre>
+          </div>
+          <div id="jenkins-code" class="code-container" style="display: none">
+            <pre><code class="language-groovy">// Jenkinsfile
+pipeline {
+    agent any
+    stages {
+        stage('Setup') {
+            steps {
+                sh 'npm ci'
+                sh 'npx playwright install --with-deps'
+            }
+        }
+        stage('Parallel Tests') {
+            parallel {
+                stage('Shard 1') {
+                    steps {
+                        sh 'npx playwright test --shard=1/4'
+                        sh 'mkdir -p all-reports/shard-1 && mv pulse-report/* all-reports/shard-1/ || true'
+                        stash name: 'shard-1-report', includes: 'all-reports/shard-1/**'
+                    }
+                }
+                stage('Shard 2') {
+                    steps {
+                        sh 'npx playwright test --shard=2/4'
+                        sh 'mkdir -p all-reports/shard-2 && mv pulse-report/* all-reports/shard-2/ || true'
+                        stash name: 'shard-2-report', includes: 'all-reports/shard-2/**'
+                    }
+                }
+                stage('Shard 3') {
+                    steps {
+                        sh 'npx playwright test --shard=3/4'
+                        sh 'mkdir -p all-reports/shard-3 && mv pulse-report/* all-reports/shard-3/ || true'
+                        stash name: 'shard-3-report', includes: 'all-reports/shard-3/**'
+                    }
+                }
+                stage('Shard 4') {
+                    steps {
+                        sh 'npx playwright test --shard=4/4'
+                        sh 'mkdir -p all-reports/shard-4 && mv pulse-report/* all-reports/shard-4/ || true'
+                        stash name: 'shard-4-report', includes: 'all-reports/shard-4/**'
+                    }
+                }
+            }
+        }
+        stage('Merge and Publish Report') {
+            steps {
+                // Unstash all shard reports
+                unstash 'shard-1-report'
+                unstash 'shard-2-report'
+                unstash 'shard-3-report'
+                unstash 'shard-4-report'
+
+                // Merge all shard reports
+                sh 'npx merge-pulse-report -o all-reports'
+
+                // Generate the final HTML report
+                sh 'npx generate-pulse-report -o all-reports'
+
+                // Archive the final report
+                archiveArtifacts artifacts: 'all-reports/playwright-pulse-static-report.html, all-reports/playwright-pulse-report.json'
+            }
+        }
+    }
+}</code><button class="copy-button">Copy</button></pre>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="search.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
