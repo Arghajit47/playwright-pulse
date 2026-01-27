@@ -92,6 +92,33 @@
       <div class="overlay" id="overlay"></div>
       <main class="main-content">
         <h1>Sharding Usage in CI/CD</h1>
+        <section id="sharding">
+          <h2>Why This Script Is a Game-Changer</h2>
+          <p>The enhanced <code>merge-report.js</code> script drastically simplifies the workflow for users running sharded Playwright tests. Here is a breakdown of the "Before vs. After" complexity.</p>
+
+          <h3>Before: The Complexity Nightmare</h3>
+          <p>Previously, if users wanted to merge sharded reports, they had to manually manage file paths and structures. It was fragile and prone to errors.</p>
+          <ul>
+            <li><strong>Manual File Hunting:</strong> The user (or their CI script) had to locate every <code>playwright-pulse-report.json</code> file across different shard folders.</li>
+            <li><strong>Attachment Chaos:</strong> Merging attachments was a headache. If Shard 1 and Shard 2 both had a screenshot named <code>error.png</code>, one would overwrite the other, losing critical debugging data.</li>
+            <li><strong>Complex CLI Commands:</strong> The user often had to write custom scripts to loop through folders, or pass a long list of file arguments to a merger tool.</li>
+            <li><strong>Dirty Cleanup:</strong> After merging, the original shard folders (e.g., <code>shard-1</code>, <code>shard-2</code>) were left behind, cluttering the workspace unless the user wrote extra cleanup steps.</li>
+          </ul>
+
+          <h3>Now: Super Easy Logic</h3>
+          <p>With the new script, the complexity is hidden. The user interaction is reduced to <strong>one simple folder</strong>.</p>
+          <ul>
+            <li><strong>"Dump and Done":</strong> The user just dumps all their shard folders (e.g., <code>pulse-report-shard-1</code>, <code>pulse-report-shard-2</code>) into a single directory (e.g., <code>my-report</code>). They don't need to organize files or rename anything.</li>
+            <li><strong>One Command:</strong> They run a single command:
+              <pre><code class="language-bash">npx merge-pulse-report -o my-report</code></pre>
+            </li>
+            <li><strong>Auto-Discovery:</strong> The script automatically scans <code>my-report</code>, finds every subdirectory, and extracts the JSON data.</li>
+            <li><strong>Smart Attachment Merging:</strong> It automatically copies all attachments to a central folder. (The script even includes logic to handle duplicates if needed, though usually Playwright hashes filenames).</li>
+            <li><strong>Auto-Cleanup:</strong> Once the merge is safe and successful, the script <strong>automatically deletes</strong> the old shard folders. The user is left with a perfectly clean <code>my-report</code> folder containing just the final <code>playwright-pulse-report.json</code> and one <code>attachments</code> folder.</li>
+          </ul>
+
+          <p><strong>In short:</strong> You turned a multi-step manual process into a "black box" where the user provides a folder of raw shards, and gets back a single, polished report.</p>
+        </section>
         <section id="advanced-ci">
           <h2>CI/CD Workflow for Sharding</h2>
           <div class="ci-buttons">
