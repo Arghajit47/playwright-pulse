@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://i.postimg.cc/v817w4sg/logo.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="https://i.postimg.cc/v817w4sg/logo.png"
+    />
+    <title>Pulse Report (Navigation)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <style>
+      /* Professional gradient background */
+      body {
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(135deg, #2c3e50, #3498db);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        padding: 1rem;
+      }
+
+      /* iPhone frame container with grey wallpaper inside */
+      .iphone-frame {
+        position: relative;
+        width: 430px;
+        height: 932px;
+        border: 16px solid #111;
+        border-radius: 64px;
+        background: #f1cf5f; /* light grey wallpaper */
+        box-sizing: content-box;
+        overflow: hidden;
+        transform-origin: center center;
+        animation: rotateMobile 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        opacity: 0;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      }
+
+      /* notch shape */
+      .notch {
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 230px;
+        height: 60px;
+        background: black;
+        border-bottom-left-radius: 30px;
+        border-bottom-right-radius: 30px;
+        box-shadow: 0 10px 10px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+        padding: 0 30px;
+      }
+
+      /* Front camera */
+      .notch-camera {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #333;
+        box-shadow:
+          0 0 6px 2px #111 inset,
+          0 2px 6px rgba(0, 0, 0, 0.5);
+        margin: 0 8px;
+        border: 2px solid #222;
+      }
+
+      /* Sensors */
+      .notch-sensor {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #62676b;
+        margin: 0 4px;
+        border: 2px solid #222;
+        box-shadow: 0 0 3px 0 #444 inset;
+      }
+      .notch-sensor.sensor-left {
+        background: #7a869a;
+      }
+      .notch-sensor.sensor-right {
+        background: #40444b;
+      }
+
+      /* content container inside frame */
+      .container {
+        text-align: center;
+        transform-origin: center center;
+        animation: counterRotate 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        width: 100%;
+      }
+
+      h1 {
+        margin-bottom: 2rem;
+        font-weight: 600;
+        font-size: 2.2rem;
+        color: #2c3e50;
+        animation: smoothTextRotate 2.5s cubic-bezier(0.645, 0.045, 0.355, 1)
+          forwards;
+        transform-origin: center center;
+      }
+
+      /* base style for links */
+      .report-link {
+        display: block;
+        font-size: 1.2rem;
+        margin: 1.5rem auto;
+        text-decoration: none;
+        color: #ffffff;
+        background: #3498db;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        opacity: 0;
+        transform-origin: center center;
+        animation: smoothOptionAppear 1s cubic-bezier(0.645, 0.045, 0.355, 1)
+          forwards;
+        width: 80%;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: none;
+        font-weight: 600;
+      }
+
+      .report-link:hover,
+      .report-link:focus {
+        background: #2980b9;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        color: white;
+      }
+
+      /* device rotation */
+      @keyframes rotateMobile {
+        0% {
+          transform: rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: rotate(90deg);
+          opacity: 1;
+        }
+      }
+
+      /* smoother counter rotation for text container */
+      @keyframes counterRotate {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(-90deg);
+        }
+      }
+
+      /* smoother text rotation */
+      @keyframes smoothTextRotate {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(0deg);
+        }
+      }
+
+      /* Options smoother rotate-fade-slide with cubic easing */
+      @keyframes smoothOptionAppear {
+        0% {
+          opacity: 1;
+          transform: rotate(0deg) translateY(30px);
+        }
+        100% {
+          opacity: 1;
+          transform: rotate(0deg) translateY(0);
+        }
+      }
+
+      @media (max-width: 480px), (max-height: 720px) {
+        .iphone-frame {
+          animation: none !important;
+          transform: none !important;
+          width: 90vw;
+          height: auto;
+          aspect-ratio: 480 / 960;
+          border-width: 15px;
+          border-radius: 40px;
+          opacity: 1; /* ensure fully visible */
+        }
+        .container {
+          animation: none !important;
+          transform: none !important;
+        }
+        h1 {
+          animation: none !important;
+          transform: none !important;
+        }
+        .report-link {
+          animation: none !important;
+          transform: none !important;
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 932px), (max-height: 932px) {
+        .iphone-frame {
+          animation: none !important;
+          transform: none !important;
+          width: 90vw;
+          height: auto;
+          aspect-ratio: 430 / 932;
+          border-width: 15px;
+          border-radius: 40px;
+          opacity: 1;
+        }
+        .container,
+        h1,
+        .report-link {
+          animation: none !important;
+          transform: none !important;
+          opacity: 1;
+        }
+      }
+
+      /* stagger delays */
+      .report-link:nth-of-type(1) {
+        animation-delay: 2.2s;
+      }
+      .report-link:nth-of-type(2) {
+        animation-delay: 2.5s;
+      }
+      .report-link:nth-of-type(3) {
+        animation-delay: 2.7s;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 480px), (max-height: 720px) {
+        .iphone-frame {
+          width: 90vw;
+          height: auto;
+          aspect-ratio: 430 / 932;
+          border-width: 12px;
+          border-radius: 40px;
+        }
+        .notch {
+          width: 60vw;
+          height: 25px;
+          top: -12px;
+        }
+        h1 {
+          font-size: 1.5rem;
+        }
+        .report-link {
+          font-size: 1.1rem;
+          padding: 0.8rem 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="iphone-frame"
+      aria-label="Pulse Report Navigation Frame with iPhone notch"
+    >
+      <div class="notch">
+        <span class="notch-camera"></span>
+        <span class="notch-sensor sensor-left"></span>
+        <span class="notch-sensor sensor-right"></span>
+      </div>
+      <div class="container">
+        <h1>Pulse Report</h1>
+        <a
+          class="report-link"
+          href="./pulse-report/playwright-pulse-static-report.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          tabindex="0"
+        >
+          Pulse Report (Static report)
+        </a>
+        <a
+          class="report-link"
+          href="./pulse-report/playwright-pulse-report.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          tabindex="0"
+        >
+          Pulse Report (Attachment based)
+        </a>
+        <a
+          class="report-link"
+          href="./pulse-report/pulse-email-summary.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          tabindex="0"
+        >
+          Pulse Email Report
+        </a>
+      </div>
+    </div>
+  </body>
+</html>

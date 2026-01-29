@@ -67,8 +67,12 @@
           <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
           <li><a href="report-features.html">Report Features</a></li>
           <li><a href="advanced-usage.html">Advanced Usage</a></li>
+          <li>
+            <a href="sharding.html">Sharding</a>
+          </li>
           <li><a href="comparison.html">Comparison</a></li>
           <li><a href="reference.html" class="active">Reference</a></li>
+          <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
           <li>
             <a
               href="https://arghajit47.github.io/playwright-pulse-dashboard/"
@@ -87,6 +91,40 @@
         <h1>Reference</h1>
         <section id="changelog">
           <h2>Changelog</h2>
+          <h4>Version 0.3.3</h4>
+          <ul>
+            <li>
+              <strong>New Feature:</strong>
+              <b>New cards:</b> Added 2 new cards to the report dashboard, "Retry Count" and "Browser Distribution" for better visualization of the test results.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Email Template:</b> Modernized the
+              email template for emailable reports with improved styling and
+              layout.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Enhanced UI update:</b> Refined the user interface of both the report templates for better user experience and ease of navigation.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Eliminated `Expand All` and `Collapse All` buttons:</b> Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Easy Sharding:</b> Resolving the complex sharding technique to make it easier for users to understand and implement. Now, just keep all the shard generated reports in a single directory and run the merge command to get the final merged json report.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Significantly improved Documentation:</b> Enhanced the documentation to provide clear instructions and examples for using the sharding feature, making it easier for users to implement and manage their test suites, in CI/CD or, local. Visit <a href="https://arghajit47.github.io/playwright-pulse/">Documentation Website</a> for more details.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Fixed send email issue for merged report:</b> Resolved the
+              problem where the send report script failed to send emails for
+              merged reports after multiple shards.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Fixed all kind of vulnerabilities:</b> Addresses security concerns by updating dependencies to their latest versions, removing deprecated packages, and following best practices for secure coding. <b>No Open Source Security Issue</b>, <b>No Code Security Issue</b>, <b>No Configuration Issue</b>.
+            </li>
+          </ul>
           <h4>Version 0.3.2</h4>
           <ul>
             <li>

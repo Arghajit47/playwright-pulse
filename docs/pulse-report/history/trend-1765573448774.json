@@ -1,0 +1,267 @@
+{
+  "run": {
+    "id": "run-1765573448774-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2025-12-12T21:04:08.774Z",
+    "totalTests": 1,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "duration": 9805,
+    "environment": {
+      "host": "MacBookAir.lan",
+      "os": "darwin 25.1.0",
+      "cpu": {
+        "model": "Apple M1",
+        "cores": 8
+      },
+      "memory": "8.00GB",
+      "node": "v20.12.2",
+      "v8": "11.3.244.8-node.19",
+      "cwd": "/Users/arghajitsingha/Playwright-Visual-Testing"
+    }
+  },
+  "results": [
+    {
+      "id": "3452c5809b013b560f9f-671ab524bd56581576a4",
+      "runId": "run-1765573448774-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": " > Visual-Desktop-Test > tests/DesktopView/new.spec.js > Should wait for hidden element to render after loading",
+      "suiteName": "Visual-Desktop-Test",
+      "status": "passed",
+      "duration": 9000,
+      "startTime": "2025-12-12T21:04:09.329Z",
+      "endTime": "2025-12-12T21:04:18.329Z",
+      "browser": "Chrome v141 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.332Z-273-dabc8407-dd9c-4aec-9d2d-bacdfea2d440",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 273,
+          "startTime": "2025-12-12T21:04:09.332Z",
+          "endTime": "2025-12-12T21:04:09.605Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.342Z-136-d90f3c10-d0e1-4d1b-a7d2-c2025d9fc58d",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 136,
+              "startTime": "2025-12-12T21:04:09.342Z",
+              "endTime": "2025-12-12T21:04:09.478Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.346Z-132-8cb90585-5ba4-4181-a132-e4e7df2269dd",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 132,
+                  "startTime": "2025-12-12T21:04:09.346Z",
+                  "endTime": "2025-12-12T21:04:09.478Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.481Z-12-8eb7c6e3-703f-43d5-95be-fa5b6c936b51",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 12,
+              "startTime": "2025-12-12T21:04:09.481Z",
+              "endTime": "2025-12-12T21:04:09.493Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.484Z-6-a5ae20a2-f05b-4e60-b5ec-1a3d31338075",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 6,
+                  "startTime": "2025-12-12T21:04:09.484Z",
+                  "endTime": "2025-12-12T21:04:09.490Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.493Z-112-b04c78ef-e645-47bd-abd0-f269421d3792",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 112,
+              "startTime": "2025-12-12T21:04:09.493Z",
+              "endTime": "2025-12-12T21:04:09.605Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.495Z-110-fc6f7813-e4ed-4236-b4a7-106db65f197e",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 110,
+                  "startTime": "2025-12-12T21:04:09.495Z",
+                  "endTime": "2025-12-12T21:04:09.605Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:09.607Z-3137-0c66a727-bcc5-4688-9ac9-a4c5294b148e",
+          "title": "Navigate to \"/dynamic_loading/1\"",
+          "status": "passed",
+          "duration": 3137,
+          "startTime": "2025-12-12T21:04:09.607Z",
+          "endTime": "2025-12-12T21:04:12.744Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/new.spec.js:9:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:12.748Z-86-d91891ff-52c3-4633-93a7-4b3eab8c3524",
+          "title": "Click getByRole('button', { name: 'Start' })",
+          "status": "passed",
+          "duration": 86,
+          "startTime": "2025-12-12T21:04:12.748Z",
+          "endTime": "2025-12-12T21:04:12.834Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/new.spec.js:12:53",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:12.840Z-202-3e305432-e039-4062-b569-21280ce97546",
+          "title": "Wait for timeout",
+          "status": "passed",
+          "duration": 202,
+          "startTime": "2025-12-12T21:04:12.840Z",
+          "endTime": "2025-12-12T21:04:13.042Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:399:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:13.045Z-506-94e493fd-92ad-4b4d-bc10-9df3aba6ac52",
+          "title": "Evaluate",
+          "status": "passed",
+          "duration": 506,
+          "startTime": "2025-12-12T21:04:13.045Z",
+          "endTime": "2025-12-12T21:04:13.551Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:416:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:13.552Z-2-2d486e6c-595f-43f3-aa66-f16cafd5f041",
+          "title": "Evaluate",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2025-12-12T21:04:13.552Z",
+          "endTime": "2025-12-12T21:04:13.554Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "utils/utility-page.js:468:12",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:13.556Z-4903-992d93e3-7cd3-4703-bbd0-b193d192b2ef",
+          "title": "Expect \"toBeVisible\"",
+          "status": "passed",
+          "duration": 4903,
+          "startTime": "2025-12-12T21:04:13.556Z",
+          "endTime": "2025-12-12T21:04:18.459Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/new.spec.js:20:41",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:18.460Z-5-e9d79296-4293-4b7a-ab48-5838b52c9dae",
+          "title": "Expect \"toHaveText\"",
+          "status": "passed",
+          "duration": 5,
+          "startTime": "2025-12-12T21:04:18.460Z",
+          "endTime": "2025-12-12T21:04:18.465Z",
+          "browser": "Chrome v141 on Windows 10",
+          "codeLocation": "tests/DesktopView/new.spec.js:21:41",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:18.466Z-20-82fd9464-2389-4b47-b43e-0990ecf1009b",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 20,
+          "startTime": "2025-12-12T21:04:18.466Z",
+          "endTime": "2025-12-12T21:04:18.486Z",
+          "browser": "Chrome v141 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:18.467Z-0-4243f1f7-ee62-489c-bf34-017aa0d85285",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2025-12-12T21:04:18.467Z",
+              "endTime": "2025-12-12T21:04:18.467Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:18.467Z-11-56c72380-4eee-4bc4-b19f-de536abc18e9",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 11,
+              "startTime": "2025-12-12T21:04:18.467Z",
+              "endTime": "2025-12-12T21:04:18.478Z",
+              "browser": "Chrome v141 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "3452c5809b013b560f9f-671ab524bd56581576a4_step_2025-12-12T21:04:18.470Z-7-14e1e686-eb1f-4d84-9d03-1788a2ac4d90",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 7,
+                  "startTime": "2025-12-12T21:04:18.470Z",
+                  "endTime": "2025-12-12T21:04:18.477Z",
+                  "browser": "Chrome v141 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: tests/DesktopView/new.spec.js:5:6",
+      "tags": [],
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stderr": [
+        "⚠️ waitForAllAPIs called without setupNetworkMonitoring. Some pending requests might be missed.\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/Playwright-Visual-Testing/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2025-12-12T21:04:18.579Z"
+  }
+}

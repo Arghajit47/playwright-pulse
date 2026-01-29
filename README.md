@@ -8,11 +8,11 @@
 
 _The ultimate Playwright reporter — Interactive dashboard with historical trend analytics, CI/CD-ready standalone HTML reports, and sharding support for scalable test execution._
 
-## [Live Demo](https://pulse-report.netlify.app/)
+## [Live Demo](https://arghajit47.github.io/playwright-pulse/demo.html)
 
 ## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/features.svg)
 
-## **Documentation**: [Pulse Report](https://playwright-pulse-report.netlify.app/)
+## **Documentation**: [Pulse Report](https://arghajit47.github.io/playwright-pulse/)
 
 ## Available Scripts
 
@@ -396,7 +396,7 @@ npm run pulse-dashboard
 
 *(Run from project root containing `pulse-report/` directory)*  
 
-**NPM Package**: [playwright-pulse-report](https://www.npmjs.com/package/@arghajit/playwright-pulse-report) 
+**NPM Package**: [pulse-dashboard](https://www.npmjs.com/package/pulse-dashboard)
 
 **Tech Stack**: Next.js, TypeScript, Tailwind CSS, Playwright  
 

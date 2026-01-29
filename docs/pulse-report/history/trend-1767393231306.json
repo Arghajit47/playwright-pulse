@@ -1,0 +1,2362 @@
+{
+  "run": {
+    "id": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2026-01-02T22:33:51.306Z",
+    "totalTests": 15,
+    "passed": 9,
+    "failed": 5,
+    "skipped": 1,
+    "duration": 52567,
+    "environment": {
+      "host": "Arghajits-MacBook-Air.local",
+      "os": "darwin 25.2.0",
+      "cpu": {
+        "model": "Apple M1",
+        "cores": 8
+      },
+      "memory": "8.00GB",
+      "node": "v20.12.2",
+      "v8": "11.3.244.8-node.19",
+      "cwd": "/Users/arghajitsingha/juliaHub-assignment"
+    }
+  },
+  "results": [
+    {
+      "id": "8747e39b871de0524be5-b64407d5c90f666db6d6",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > GET /posts - Fetch posts",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 1008,
+      "startTime": "2026-01-02T22:33:51.856Z",
+      "endTime": "2026-01-02T22:33:52.864Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:51.861Z-30-7e962c8a-7bd4-464d-8872-c78082621797",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 30,
+          "startTime": "2026-01-02T22:33:51.861Z",
+          "endTime": "2026-01-02T22:33:51.891Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:51.876Z-15-4f145c81-1439-4a4f-8a36-d7202d32bb52",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 15,
+              "startTime": "2026-01-02T22:33:51.876Z",
+              "endTime": "2026-01-02T22:33:51.891Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:51.879Z-4-1bcada2e-d816-48af-809b-bb77800e2017",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 4,
+                  "startTime": "2026-01-02T22:33:51.879Z",
+                  "endTime": "2026-01-02T22:33:51.883Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:51.893Z-969-a716c8f4-a864-41dd-8a4e-9bd9c8e5e457",
+          "title": "GET \"/posts\"",
+          "status": "passed",
+          "duration": 969,
+          "startTime": "2026-01-02T22:33:51.893Z",
+          "endTime": "2026-01-02T22:33:52.862Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:9:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:52.864Z-1-84baa1bd-4984-4714-978d-e67a7f7370dc",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T22:33:52.864Z",
+          "endTime": "2026-01-02T22:33:52.865Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:12:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:52.875Z-0-685cfb05-7e48-41ad-a550-cf1286a8279e",
+          "title": "Expect \"toBeGreaterThan\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:52.875Z",
+          "endTime": "2026-01-02T22:33:52.875Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:15:26",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:52.876Z-0-fff29196-cbe3-4e8d-974d-1e3759ef1eaa",
+          "title": "Expect \"toHaveProperty\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:52.876Z",
+          "endTime": "2026-01-02T22:33:52.876Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:16:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:52.876Z-0-3f65e643-f808-4bd2-9740-8deef85f66b2",
+          "title": "Expect \"toHaveProperty\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:52.876Z",
+          "endTime": "2026-01-02T22:33:52.876Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:17:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:52.877Z-9-bfcf5283-f362-4932-882f-b7b4f5ed2ccb",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 9,
+          "startTime": "2026-01-02T22:33:52.877Z",
+          "endTime": "2026-01-02T22:33:52.886Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-b64407d5c90f666db6d6_step_2026-01-02T22:33:52.877Z-4-ae1ff5c0-6b1f-4ac1-9853-9eaa9e4e6f9d",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 4,
+              "startTime": "2026-01-02T22:33:52.877Z",
+              "endTime": "2026-01-02T22:33:52.881Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:7:7",
+      "tags": [],
+      "severity": "High",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "[\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m1\u001b[39m,\n    title: \u001b[32m'sunt aut facere repellat provident occaecati excepturi optio reprehenderit'\u001b[39m,\n    body: \u001b[32m'quia et suscipit\\n'\u001b[39m +\n      \u001b[32m'suscipit recusandae consequuntur expedita et cum\\n'\u001b[39m +\n      \u001b[32m'reprehenderit molestiae ut ut quas totam\\n'\u001b[39m +\n      \u001b[32m'nostrum rerum est autem sunt rem eveniet architecto'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m2\u001b[39m,\n    title: \u001b[32m'qui est esse'\u001b[39m,\n    body: \u001b[32m'est rerum tempore vitae\\n'\u001b[39m +\n      \u001b[32m'sequi sint nihil reprehenderit dolor beatae ea dolores neque\\n'\u001b[39m +\n      \u001b[32m'fugiat blanditiis voluptate porro vel nihil molestiae ut reiciendis\\n'\u001b[39m +\n      \u001b[32m'qui aperiam non debitis possimus qui neque nisi nulla'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m3\u001b[39m,\n    title: \u001b[32m'ea molestias quasi exercitationem repellat qui ipsa sit aut'\u001b[39m,\n    body: \u001b[32m'et iusto sed quo iure\\n'\u001b[39m +\n      \u001b[32m'voluptatem occaecati omnis eligendi aut ad\\n'\u001b[39m +\n      \u001b[32m'voluptatem doloribus vel accusantium quis pariatur\\n'\u001b[39m +\n      \u001b[32m'molestiae porro eius odio et labore et velit aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m4\u001b[39m,\n    title: \u001b[32m'eum et est occaecati'\u001b[39m,\n    body: \u001b[32m'ullam et saepe reiciendis voluptatem adipisci\\n'\u001b[39m +\n      \u001b[32m'sit amet autem assumenda provident rerum culpa\\n'\u001b[39m +\n      \u001b[32m'quis hic commodi nesciunt rem tenetur doloremque ipsam iure\\n'\u001b[39m +\n      \u001b[32m'quis sunt voluptatem rerum illo velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m5\u001b[39m,\n    title: \u001b[32m'nesciunt quas odio'\u001b[39m,\n    body: \u001b[32m'repudiandae veniam quaerat sunt sed\\n'\u001b[39m +\n      \u001b[32m'alias aut fugiat sit autem sed est\\n'\u001b[39m +\n      \u001b[32m'voluptatem omnis possimus esse voluptatibus quis\\n'\u001b[39m +\n      \u001b[32m'est aut tenetur dolor neque'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m6\u001b[39m,\n    title: \u001b[32m'dolorem eum magni eos aperiam quia'\u001b[39m,\n    body: \u001b[32m'ut aspernatur corporis harum nihil quis provident sequi\\n'\u001b[39m +\n      \u001b[32m'mollitia nobis aliquid molestiae\\n'\u001b[39m +\n      \u001b[32m'perspiciatis et ea nemo ab reprehenderit accusantium quas\\n'\u001b[39m +\n      \u001b[32m'voluptate dolores velit et doloremque molestiae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m7\u001b[39m,\n    title: \u001b[32m'magnam facilis autem'\u001b[39m,\n    body: \u001b[32m'dolore placeat quibusdam ea quo vitae\\n'\u001b[39m +\n      \u001b[32m'magni quis enim qui quis quo nemo aut saepe\\n'\u001b[39m +\n      \u001b[32m'quidem repellat excepturi ut quia\\n'\u001b[39m +\n      \u001b[32m'sunt ut sequi eos ea sed quas'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m8\u001b[39m,\n    title: \u001b[32m'dolorem dolore est ipsam'\u001b[39m,\n    body: \u001b[32m'dignissimos aperiam dolorem qui eum\\n'\u001b[39m +\n      \u001b[32m'facilis quibusdam animi sint suscipit qui sint possimus cum\\n'\u001b[39m +\n      \u001b[32m'quaerat magni maiores excepturi\\n'\u001b[39m +\n      \u001b[32m'ipsam ut commodi dolor voluptatum modi aut vitae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m9\u001b[39m,\n    title: \u001b[32m'nesciunt iure omnis dolorem tempora et accusantium'\u001b[39m,\n    body: \u001b[32m'consectetur animi nesciunt iure dolore\\n'\u001b[39m +\n      \u001b[32m'enim quia ad\\n'\u001b[39m +\n      \u001b[32m'veniam autem ut quam aut nobis\\n'\u001b[39m +\n      \u001b[32m'et est aut quod aut provident voluptas autem voluptas'\u001b[39m\n  },\n  {\n    userId: \u001b[33m1\u001b[39m,\n    id: \u001b[33m10\u001b[39m,\n    title: \u001b[32m'optio molestias id quia eum'\u001b[39m,\n    body: \u001b[32m'quo et expedita modi cum officia vel magni\\n'\u001b[39m +\n      \u001b[32m'doloribus qui repudiandae\\n'\u001b[39m +\n      \u001b[32m'vero nisi sit\\n'\u001b[39m +\n      \u001b[32m'quos veniam quod sed accusamus veritatis error'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m11\u001b[39m,\n    title: \u001b[32m'et ea vero quia laudantium autem'\u001b[39m,\n    body: \u001b[32m'delectus reiciendis molestiae occaecati non minima eveniet qui voluptatibus\\n'\u001b[39m +\n      \u001b[32m'accusamus in eum beatae sit\\n'\u001b[39m +\n      \u001b[32m'vel qui neque voluptates ut commodi qui incidunt\\n'\u001b[39m +\n      \u001b[32m'ut animi commodi'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m12\u001b[39m,\n    title: \u001b[32m'in quibusdam tempore odit est dolorem'\u001b[39m,\n    body: \u001b[32m'itaque id aut magnam\\n'\u001b[39m +\n      \u001b[32m'praesentium quia et ea odit et ea voluptas et\\n'\u001b[39m +\n      \u001b[32m'sapiente quia nihil amet occaecati quia id voluptatem\\n'\u001b[39m +\n      \u001b[32m'incidunt ea est distinctio odio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m13\u001b[39m,\n    title: \u001b[32m'dolorum ut in voluptas mollitia et saepe quo animi'\u001b[39m,\n    body: \u001b[32m'aut dicta possimus sint mollitia voluptas commodi quo doloremque\\n'\u001b[39m +\n      \u001b[32m'iste corrupti reiciendis voluptatem eius rerum\\n'\u001b[39m +\n      \u001b[32m'sit cumque quod eligendi laborum minima\\n'\u001b[39m +\n      \u001b[32m'perferendis recusandae assumenda consectetur porro architecto ipsum ipsam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m14\u001b[39m,\n    title: \u001b[32m'voluptatem eligendi optio'\u001b[39m,\n    body: \u001b[32m'fuga et accusamus dolorum perferendis illo voluptas\\n'\u001b[39m +\n      \u001b[32m'non doloremque neque facere\\n'\u001b[39m +\n      \u001b[32m'ad qui dolorum molestiae beatae\\n'\u001b[39m +\n      \u001b[32m'sed aut voluptas totam sit illum'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m15\u001b[39m,\n    title: \u001b[32m'eveniet quod temporibus'\u001b[39m,\n    body: \u001b[32m'reprehenderit quos placeat\\n'\u001b[39m +\n      \u001b[32m'velit minima officia dolores impedit repudiandae molestiae nam\\n'\u001b[39m +\n      \u001b[32m'voluptas recusandae quis delectus\\n'\u001b[39m +\n      \u001b[32m'officiis harum fugiat vitae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m16\u001b[39m,\n    title: \u001b[32m'sint suscipit perspiciatis velit dolorum rerum ipsa laboriosam odio'\u001b[39m,\n    body: \u001b[32m'suscipit nam nisi quo aperiam aut\\n'\u001b[39m +\n      \u001b[32m'asperiores eos fugit maiores voluptatibus quia\\n'\u001b[39m +\n      \u001b[32m'voluptatem quis ullam qui in alias quia est\\n'\u001b[39m +\n      \u001b[32m'consequatur magni mollitia accusamus ea nisi voluptate dicta'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m17\u001b[39m,\n    title: \u001b[32m'fugit voluptas sed molestias voluptatem provident'\u001b[39m,\n    body: \u001b[32m'eos voluptas et aut odit natus earum\\n'\u001b[39m +\n      \u001b[32m'aspernatur fuga molestiae ullam\\n'\u001b[39m +\n      \u001b[32m'deserunt ratione qui eos\\n'\u001b[39m +\n      \u001b[32m'qui nihil ratione nemo velit ut aut id quo'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m18\u001b[39m,\n    title: \u001b[32m'voluptate et itaque vero tempora molestiae'\u001b[39m,\n    body: \u001b[32m'eveniet quo quis\\n'\u001b[39m +\n      \u001b[32m'laborum totam consequatur non dolor\\n'\u001b[39m +\n      \u001b[32m'ut et est repudiandae\\n'\u001b[39m +\n      \u001b[32m'est voluptatem vel debitis et magnam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m19\u001b[39m,\n    title: \u001b[32m'adipisci placeat illum aut reiciendis qui'\u001b[39m,\n    body: \u001b[32m'illum quis cupiditate provident sit magnam\\n'\u001b[39m +\n      \u001b[32m'ea sed aut omnis\\n'\u001b[39m +\n      \u001b[32m'veniam maiores ullam consequatur atque\\n'\u001b[39m +\n      \u001b[32m'adipisci quo iste expedita sit quos voluptas'\u001b[39m\n  },\n  {\n    userId: \u001b[33m2\u001b[39m,\n    id: \u001b[33m20\u001b[39m,\n    title: \u001b[32m'doloribus ad provident suscipit at'\u001b[39m,\n    body: \u001b[32m'qui consequuntur ducimus possimus quisquam amet similique\\n'\u001b[39m +\n      \u001b[32m'suscipit porro ipsam amet\\n'\u001b[39m +\n      \u001b[32m'eos veritatis officiis exercitationem vel fugit aut necessitatibus totam\\n'\u001b[39m +\n      \u001b[32m'omnis rerum consequatur expedita quidem cumque explicabo'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m21\u001b[39m,\n    title: \u001b[32m'asperiores ea ipsam voluptatibus modi minima quia sint'\u001b[39m,\n    body: \u001b[32m'repellat aliquid praesentium dolorem quo\\n'\u001b[39m +\n      \u001b[32m'sed totam minus non itaque\\n'\u001b[39m +\n      \u001b[32m'nihil labore molestiae sunt dolor eveniet hic recusandae veniam\\n'\u001b[39m +\n      \u001b[32m'tempora et tenetur expedita sunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m22\u001b[39m,\n    title: \u001b[32m'dolor sint quo a velit explicabo quia nam'\u001b[39m,\n    body: \u001b[32m'eos qui et ipsum ipsam suscipit aut\\n'\u001b[39m +\n      \u001b[32m'sed omnis non odio\\n'\u001b[39m +\n      \u001b[32m'expedita earum mollitia molestiae aut atque rem suscipit\\n'\u001b[39m +\n      \u001b[32m'nam impedit esse'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m23\u001b[39m,\n    title: \u001b[32m'maxime id vitae nihil numquam'\u001b[39m,\n    body: \u001b[32m'veritatis unde neque eligendi\\n'\u001b[39m +\n      \u001b[32m'quae quod architecto quo neque vitae\\n'\u001b[39m +\n      \u001b[32m'est illo sit tempora doloremque fugit quod\\n'\u001b[39m +\n      \u001b[32m'et et vel beatae sequi ullam sed tenetur perspiciatis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m24\u001b[39m,\n    title: \u001b[32m'autem hic labore sunt dolores incidunt'\u001b[39m,\n    body: \u001b[32m'enim et ex nulla\\n'\u001b[39m +\n      \u001b[32m'omnis voluptas quia qui\\n'\u001b[39m +\n      \u001b[32m'voluptatem consequatur numquam aliquam sunt\\n'\u001b[39m +\n      \u001b[32m'totam recusandae id dignissimos aut sed asperiores deserunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m25\u001b[39m,\n    title: \u001b[32m'rem alias distinctio quo quis'\u001b[39m,\n    body: \u001b[32m'ullam consequatur ut\\n'\u001b[39m +\n      \u001b[32m'omnis quis sit vel consequuntur\\n'\u001b[39m +\n      \u001b[32m'ipsa eligendi ipsum molestiae et omnis error nostrum\\n'\u001b[39m +\n      \u001b[32m'molestiae illo tempore quia et distinctio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m26\u001b[39m,\n    title: \u001b[32m'est et quae odit qui non'\u001b[39m,\n    body: \u001b[32m'similique esse doloribus nihil accusamus\\n'\u001b[39m +\n      \u001b[32m'omnis dolorem fuga consequuntur reprehenderit fugit recusandae temporibus\\n'\u001b[39m +\n      \u001b[32m'perspiciatis cum ut laudantium\\n'\u001b[39m +\n      \u001b[32m'omnis aut molestiae vel vero'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m27\u001b[39m,\n    title: \u001b[32m'quasi id et eos tenetur aut quo autem'\u001b[39m,\n    body: \u001b[32m'eum sed dolores ipsam sint possimus debitis occaecati\\n'\u001b[39m +\n      \u001b[32m'debitis qui qui et\\n'\u001b[39m +\n      \u001b[32m'ut placeat enim earum aut odit facilis\\n'\u001b[39m +\n      \u001b[32m'consequatur suscipit necessitatibus rerum sed inventore temporibus consequatur'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m28\u001b[39m,\n    title: \u001b[32m'delectus ullam et corporis nulla voluptas sequi'\u001b[39m,\n    body: \u001b[32m'non et quaerat ex quae ad maiores\\n'\u001b[39m +\n      \u001b[32m'maiores recusandae totam aut blanditiis mollitia quas illo\\n'\u001b[39m +\n      \u001b[32m'ut voluptatibus voluptatem\\n'\u001b[39m +\n      \u001b[32m'similique nostrum eum'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m29\u001b[39m,\n    title: \u001b[32m'iusto eius quod necessitatibus culpa ea'\u001b[39m,\n    body: \u001b[32m'odit magnam ut saepe sed non qui\\n'\u001b[39m +\n      \u001b[32m'tempora atque nihil\\n'\u001b[39m +\n      \u001b[32m'accusamus illum doloribus illo dolor\\n'\u001b[39m +\n      \u001b[32m'eligendi repudiandae odit magni similique sed cum maiores'\u001b[39m\n  },\n  {\n    userId: \u001b[33m3\u001b[39m,\n    id: \u001b[33m30\u001b[39m,\n    title: \u001b[32m'a quo magni similique perferendis'\u001b[39m,\n    body: \u001b[32m'alias dolor cumque\\n'\u001b[39m +\n      \u001b[32m'impedit blanditiis non eveniet odio maxime\\n'\u001b[39m +\n      \u001b[32m'blanditiis amet eius quis tempora quia autem rem\\n'\u001b[39m +\n      \u001b[32m'a provident perspiciatis quia'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m31\u001b[39m,\n    title: \u001b[32m'ullam ut quidem id aut vel consequuntur'\u001b[39m,\n    body: \u001b[32m'debitis eius sed quibusdam non quis consectetur vitae\\n'\u001b[39m +\n      \u001b[32m'impedit ut qui consequatur sed aut in\\n'\u001b[39m +\n      \u001b[32m'quidem sit nostrum et maiores adipisci atque\\n'\u001b[39m +\n      \u001b[32m'quaerat voluptatem adipisci repudiandae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m32\u001b[39m,\n    title: \u001b[32m'doloremque illum aliquid sunt'\u001b[39m,\n    body: \u001b[32m'deserunt eos nobis asperiores et hic\\n'\u001b[39m +\n      \u001b[32m'est debitis repellat molestiae optio\\n'\u001b[39m +\n      \u001b[32m'nihil ratione ut eos beatae quibusdam distinctio maiores\\n'\u001b[39m +\n      \u001b[32m'earum voluptates et aut adipisci ea maiores voluptas maxime'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m33\u001b[39m,\n    title: \u001b[32m'qui explicabo molestiae dolorem'\u001b[39m,\n    body: \u001b[32m'rerum ut et numquam laborum odit est sit\\n'\u001b[39m +\n      \u001b[32m'id qui sint in\\n'\u001b[39m +\n      \u001b[32m'quasi tenetur tempore aperiam et quaerat qui in\\n'\u001b[39m +\n      \u001b[32m'rerum officiis sequi cumque quod'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m34\u001b[39m,\n    title: \u001b[32m'magnam ut rerum iure'\u001b[39m,\n    body: \u001b[32m'ea velit perferendis earum ut voluptatem voluptate itaque iusto\\n'\u001b[39m +\n      \u001b[32m'totam pariatur in\\n'\u001b[39m +\n      \u001b[32m'nemo voluptatem voluptatem autem magni tempora minima in\\n'\u001b[39m +\n      \u001b[32m'est distinctio qui assumenda accusamus dignissimos officia nesciunt nobis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m35\u001b[39m,\n    title: \u001b[32m'id nihil consequatur molestias animi provident'\u001b[39m,\n    body: \u001b[32m'nisi error delectus possimus ut eligendi vitae\\n'\u001b[39m +\n      \u001b[32m'placeat eos harum cupiditate facilis reprehenderit voluptatem beatae\\n'\u001b[39m +\n      \u001b[32m'modi ducimus quo illum voluptas eligendi\\n'\u001b[39m +\n      \u001b[32m'et nobis quia fugit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m36\u001b[39m,\n    title: \u001b[32m'fuga nam accusamus voluptas reiciendis itaque'\u001b[39m,\n    body: \u001b[32m'ad mollitia et omnis minus architecto odit\\n'\u001b[39m +\n      \u001b[32m'voluptas doloremque maxime aut non ipsa qui alias veniam\\n'\u001b[39m +\n      \u001b[32m'blanditiis culpa aut quia nihil cumque facere et occaecati\\n'\u001b[39m +\n      \u001b[32m'qui aspernatur quia eaque ut aperiam inventore'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m37\u001b[39m,\n    title: \u001b[32m'provident vel ut sit ratione est'\u001b[39m,\n    body: \u001b[32m'debitis et eaque non officia sed nesciunt pariatur vel\\n'\u001b[39m +\n      \u001b[32m'voluptatem iste vero et ea\\n'\u001b[39m +\n      \u001b[32m'numquam aut expedita ipsum nulla in\\n'\u001b[39m +\n      \u001b[32m'voluptates omnis consequatur aut enim officiis in quam qui'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m38\u001b[39m,\n    title: \u001b[32m'explicabo et eos deleniti nostrum ab id repellendus'\u001b[39m,\n    body: \u001b[32m'animi esse sit aut sit nesciunt assumenda eum voluptas\\n'\u001b[39m +\n      \u001b[32m'quia voluptatibus provident quia necessitatibus ea\\n'\u001b[39m +\n      \u001b[32m'rerum repudiandae quia voluptatem delectus fugit aut id quia\\n'\u001b[39m +\n      \u001b[32m'ratione optio eos iusto veniam iure'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m39\u001b[39m,\n    title: \u001b[32m'eos dolorem iste accusantium est eaque quam'\u001b[39m,\n    body: \u001b[32m'corporis rerum ducimus vel eum accusantium\\n'\u001b[39m +\n      \u001b[32m'maxime aspernatur a porro possimus iste omnis\\n'\u001b[39m +\n      \u001b[32m'est in deleniti asperiores fuga aut\\n'\u001b[39m +\n      \u001b[32m'voluptas sapiente vel dolore minus voluptatem incidunt ex'\u001b[39m\n  },\n  {\n    userId: \u001b[33m4\u001b[39m,\n    id: \u001b[33m40\u001b[39m,\n    title: \u001b[32m'enim quo cumque'\u001b[39m,\n    body: \u001b[32m'ut voluptatum aliquid illo tenetur nemo sequi quo facilis\\n'\u001b[39m +\n      \u001b[32m'ipsum rem optio mollitia quas\\n'\u001b[39m +\n      \u001b[32m'voluptatem eum voluptas qui\\n'\u001b[39m +\n      \u001b[32m'unde omnis voluptatem iure quasi maxime voluptas nam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m41\u001b[39m,\n    title: \u001b[32m'non est facere'\u001b[39m,\n    body: \u001b[32m'molestias id nostrum\\n'\u001b[39m +\n      \u001b[32m'excepturi molestiae dolore omnis repellendus quaerat saepe\\n'\u001b[39m +\n      \u001b[32m'consectetur iste quaerat tenetur asperiores accusamus ex ut\\n'\u001b[39m +\n      \u001b[32m'nam quidem est ducimus sunt debitis saepe'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m42\u001b[39m,\n    title: \u001b[32m'commodi ullam sint et excepturi error explicabo praesentium voluptas'\u001b[39m,\n    body: \u001b[32m'odio fugit voluptatum ducimus earum autem est incidunt voluptatem\\n'\u001b[39m +\n      \u001b[32m'odit reiciendis aliquam sunt sequi nulla dolorem\\n'\u001b[39m +\n      \u001b[32m'non facere repellendus voluptates quia\\n'\u001b[39m +\n      \u001b[32m'ratione harum vitae ut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m43\u001b[39m,\n    title: \u001b[32m'eligendi iste nostrum consequuntur adipisci praesentium sit beatae perferendis'\u001b[39m,\n    body: \u001b[32m'similique fugit est\\n'\u001b[39m +\n      \u001b[32m'illum et dolorum harum et voluptate eaque quidem\\n'\u001b[39m +\n      \u001b[32m'exercitationem quos nam commodi possimus cum odio nihil nulla\\n'\u001b[39m +\n      \u001b[32m'dolorum exercitationem magnam ex et a et distinctio debitis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m44\u001b[39m,\n    title: \u001b[32m'optio dolor molestias sit'\u001b[39m,\n    body: \u001b[32m'temporibus est consectetur dolore\\n'\u001b[39m +\n      \u001b[32m'et libero debitis vel velit laboriosam quia\\n'\u001b[39m +\n      \u001b[32m'ipsum quibusdam qui itaque fuga rem aut\\n'\u001b[39m +\n      \u001b[32m'ea et iure quam sed maxime ut distinctio quae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m45\u001b[39m,\n    title: \u001b[32m'ut numquam possimus omnis eius suscipit laudantium iure'\u001b[39m,\n    body: \u001b[32m'est natus reiciendis nihil possimus aut provident\\n'\u001b[39m +\n      \u001b[32m'ex et dolor\\n'\u001b[39m +\n      \u001b[32m'repellat pariatur est\\n'\u001b[39m +\n      \u001b[32m'nobis rerum repellendus dolorem autem'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m46\u001b[39m,\n    title: \u001b[32m'aut quo modi neque nostrum ducimus'\u001b[39m,\n    body: \u001b[32m'voluptatem quisquam iste\\n'\u001b[39m +\n      \u001b[32m'voluptatibus natus officiis facilis dolorem\\n'\u001b[39m +\n      \u001b[32m'quis quas ipsam\\n'\u001b[39m +\n      \u001b[32m'vel et voluptatum in aliquid'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m47\u001b[39m,\n    title: \u001b[32m'quibusdam cumque rem aut deserunt'\u001b[39m,\n    body: \u001b[32m'voluptatem assumenda ut qui ut cupiditate aut impedit veniam\\n'\u001b[39m +\n      \u001b[32m'occaecati nemo illum voluptatem laudantium\\n'\u001b[39m +\n      \u001b[32m'molestiae beatae rerum ea iure soluta nostrum\\n'\u001b[39m +\n      \u001b[32m'eligendi et voluptate'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m48\u001b[39m,\n    title: \u001b[32m'ut voluptatem illum ea doloribus itaque eos'\u001b[39m,\n    body: \u001b[32m'voluptates quo voluptatem facilis iure occaecati\\n'\u001b[39m +\n      \u001b[32m'vel assumenda rerum officia et\\n'\u001b[39m +\n      \u001b[32m'illum perspiciatis ab deleniti\\n'\u001b[39m +\n      \u001b[32m'laudantium repellat ad ut et autem reprehenderit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m49\u001b[39m,\n    title: \u001b[32m'laborum non sunt aut ut assumenda perspiciatis voluptas'\u001b[39m,\n    body: \u001b[32m'inventore ab sint\\n'\u001b[39m +\n      \u001b[32m'natus fugit id nulla sequi architecto nihil quaerat\\n'\u001b[39m +\n      \u001b[32m'eos tenetur in in eum veritatis non\\n'\u001b[39m +\n      \u001b[32m'quibusdam officiis aspernatur cumque aut commodi aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m5\u001b[39m,\n    id: \u001b[33m50\u001b[39m,\n    title: \u001b[32m'repellendus qui recusandae incidunt voluptates tenetur qui omnis exercitationem'\u001b[39m,\n    body: \u001b[32m'error suscipit maxime adipisci consequuntur recusandae\\n'\u001b[39m +\n      \u001b[32m'voluptas eligendi et est et voluptates\\n'\u001b[39m +\n      \u001b[32m'quia distinctio ab amet quaerat molestiae et vitae\\n'\u001b[39m +\n      \u001b[32m'adipisci impedit sequi nesciunt quis consectetur'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m51\u001b[39m,\n    title: \u001b[32m'soluta aliquam aperiam consequatur illo quis voluptas'\u001b[39m,\n    body: \u001b[32m'sunt dolores aut doloribus\\n'\u001b[39m +\n      \u001b[32m'dolore doloribus voluptates tempora et\\n'\u001b[39m +\n      \u001b[32m'doloremque et quo\\n'\u001b[39m +\n      \u001b[32m'cum asperiores sit consectetur dolorem'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m52\u001b[39m,\n    title: \u001b[32m'qui enim et consequuntur quia animi quis voluptate quibusdam'\u001b[39m,\n    body: \u001b[32m'iusto est quibusdam fuga quas quaerat molestias\\n'\u001b[39m +\n      \u001b[32m'a enim ut sit accusamus enim\\n'\u001b[39m +\n      \u001b[32m'temporibus iusto accusantium provident architecto\\n'\u001b[39m +\n      \u001b[32m'soluta esse reprehenderit qui laborum'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m53\u001b[39m,\n    title: \u001b[32m'ut quo aut ducimus alias'\u001b[39m,\n    body: \u001b[32m'minima harum praesentium eum rerum illo dolore\\n'\u001b[39m +\n      \u001b[32m'quasi exercitationem rerum nam\\n'\u001b[39m +\n      \u001b[32m'porro quis neque quo\\n'\u001b[39m +\n      \u001b[32m'consequatur minus dolor quidem veritatis sunt non explicabo similique'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m54\u001b[39m,\n    title: \u001b[32m'sit asperiores ipsam eveniet odio non quia'\u001b[39m,\n    body: \u001b[32m'totam corporis dignissimos\\n'\u001b[39m +\n      \u001b[32m'vitae dolorem ut occaecati accusamus\\n'\u001b[39m +\n      \u001b[32m'ex velit deserunt\\n'\u001b[39m +\n      \u001b[32m'et exercitationem vero incidunt corrupti mollitia'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m55\u001b[39m,\n    title: \u001b[32m'sit vel voluptatem et non libero'\u001b[39m,\n    body: \u001b[32m'debitis excepturi ea perferendis harum libero optio\\n'\u001b[39m +\n      \u001b[32m'eos accusamus cum fuga ut sapiente repudiandae\\n'\u001b[39m +\n      \u001b[32m'et ut incidunt omnis molestiae\\n'\u001b[39m +\n      \u001b[32m'nihil ut eum odit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m56\u001b[39m,\n    title: \u001b[32m'qui et at rerum necessitatibus'\u001b[39m,\n    body: \u001b[32m'aut est omnis dolores\\n'\u001b[39m +\n      \u001b[32m'neque rerum quod ea rerum velit pariatur beatae excepturi\\n'\u001b[39m +\n      \u001b[32m'et provident voluptas corrupti\\n'\u001b[39m +\n      \u001b[32m'corporis harum reprehenderit dolores eligendi'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m57\u001b[39m,\n    title: \u001b[32m'sed ab est est'\u001b[39m,\n    body: \u001b[32m'at pariatur consequuntur earum quidem\\n'\u001b[39m +\n      \u001b[32m'quo est laudantium soluta voluptatem\\n'\u001b[39m +\n      \u001b[32m'qui ullam et est\\n'\u001b[39m +\n      \u001b[32m'et cum voluptas voluptatum repellat est'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m58\u001b[39m,\n    title: \u001b[32m'voluptatum itaque dolores nisi et quasi'\u001b[39m,\n    body: \u001b[32m'veniam voluptatum quae adipisci id\\n'\u001b[39m +\n      \u001b[32m'et id quia eos ad et dolorem\\n'\u001b[39m +\n      \u001b[32m'aliquam quo nisi sunt eos impedit error\\n'\u001b[39m +\n      \u001b[32m'ad similique veniam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m59\u001b[39m,\n    title: \u001b[32m'qui commodi dolor at maiores et quis id accusantium'\u001b[39m,\n    body: \u001b[32m'perspiciatis et quam ea autem temporibus non voluptatibus qui\\n'\u001b[39m +\n      \u001b[32m'beatae a earum officia nesciunt dolores suscipit voluptas et\\n'\u001b[39m +\n      \u001b[32m'animi doloribus cum rerum quas et magni\\n'\u001b[39m +\n      \u001b[32m'et hic ut ut commodi expedita sunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m6\u001b[39m,\n    id: \u001b[33m60\u001b[39m,\n    title: \u001b[32m'consequatur placeat omnis quisquam quia reprehenderit fugit veritatis facere'\u001b[39m,\n    body: \u001b[32m'asperiores sunt ab assumenda cumque modi velit\\n'\u001b[39m +\n      \u001b[32m'qui esse omnis\\n'\u001b[39m +\n      \u001b[32m'voluptate et fuga perferendis voluptas\\n'\u001b[39m +\n      \u001b[32m'illo ratione amet aut et omnis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m61\u001b[39m,\n    title: \u001b[32m'voluptatem doloribus consectetur est ut ducimus'\u001b[39m,\n    body: \u001b[32m'ab nemo optio odio\\n'\u001b[39m +\n      \u001b[32m'delectus tenetur corporis similique nobis repellendus rerum omnis facilis\\n'\u001b[39m +\n      \u001b[32m'vero blanditiis debitis in nesciunt doloribus dicta dolores\\n'\u001b[39m +\n      \u001b[32m'magnam minus velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m62\u001b[39m,\n    title: \u001b[32m'beatae enim quia vel'\u001b[39m,\n    body: \u001b[32m'enim aspernatur illo distinctio quae praesentium\\n'\u001b[39m +\n      \u001b[32m'beatae alias amet delectus qui voluptate distinctio\\n'\u001b[39m +\n      \u001b[32m'odit sint accusantium autem omnis\\n'\u001b[39m +\n      \u001b[32m'quo molestiae omnis ea eveniet optio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m63\u001b[39m,\n    title: \u001b[32m'voluptas blanditiis repellendus animi ducimus error sapiente et suscipit'\u001b[39m,\n    body: \u001b[32m'enim adipisci aspernatur nemo\\n'\u001b[39m +\n      \u001b[32m'numquam omnis facere dolorem dolor ex quis temporibus incidunt\\n'\u001b[39m +\n      \u001b[32m'ab delectus culpa quo reprehenderit blanditiis asperiores\\n'\u001b[39m +\n      \u001b[32m'accusantium ut quam in voluptatibus voluptas ipsam dicta'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m64\u001b[39m,\n    title: \u001b[32m'et fugit quas eum in in aperiam quod'\u001b[39m,\n    body: \u001b[32m'id velit blanditiis\\n'\u001b[39m +\n      \u001b[32m'eum ea voluptatem\\n'\u001b[39m +\n      \u001b[32m'molestiae sint occaecati est eos perspiciatis\\n'\u001b[39m +\n      \u001b[32m'incidunt a error provident eaque aut aut qui'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m65\u001b[39m,\n    title: \u001b[32m'consequatur id enim sunt et et'\u001b[39m,\n    body: \u001b[32m'voluptatibus ex esse\\n'\u001b[39m +\n      \u001b[32m'sint explicabo est aliquid cumque adipisci fuga repellat labore\\n'\u001b[39m +\n      \u001b[32m'molestiae corrupti ex saepe at asperiores et perferendis\\n'\u001b[39m +\n      \u001b[32m'natus id esse incidunt pariatur'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m66\u001b[39m,\n    title: \u001b[32m'repudiandae ea animi iusto'\u001b[39m,\n    body: \u001b[32m'officia veritatis tenetur vero qui itaque\\n'\u001b[39m +\n      \u001b[32m'sint non ratione\\n'\u001b[39m +\n      \u001b[32m'sed et ut asperiores iusto eos molestiae nostrum\\n'\u001b[39m +\n      \u001b[32m'veritatis quibusdam et nemo iusto saepe'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m67\u001b[39m,\n    title: \u001b[32m'aliquid eos sed fuga est maxime repellendus'\u001b[39m,\n    body: \u001b[32m'reprehenderit id nostrum\\n'\u001b[39m +\n      \u001b[32m'voluptas doloremque pariatur sint et accusantium quia quod aspernatur\\n'\u001b[39m +\n      \u001b[32m'et fugiat amet\\n'\u001b[39m +\n      \u001b[32m'non sapiente et consequatur necessitatibus molestiae'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m68\u001b[39m,\n    title: \u001b[32m'odio quis facere architecto reiciendis optio'\u001b[39m,\n    body: \u001b[32m'magnam molestiae perferendis quisquam\\n'\u001b[39m +\n      \u001b[32m'qui cum reiciendis\\n'\u001b[39m +\n      \u001b[32m'quaerat animi amet hic inventore\\n'\u001b[39m +\n      \u001b[32m'ea quia deleniti quidem saepe porro velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m69\u001b[39m,\n    title: \u001b[32m'fugiat quod pariatur odit minima'\u001b[39m,\n    body: \u001b[32m'officiis error culpa consequatur modi asperiores et\\n'\u001b[39m +\n      \u001b[32m'dolorum assumenda voluptas et vel qui aut vel rerum\\n'\u001b[39m +\n      \u001b[32m'voluptatum quisquam perspiciatis quia rerum consequatur totam quas\\n'\u001b[39m +\n      \u001b[32m'sequi commodi repudiandae asperiores et saepe a'\u001b[39m\n  },\n  {\n    userId: \u001b[33m7\u001b[39m,\n    id: \u001b[33m70\u001b[39m,\n    title: \u001b[32m'voluptatem laborum magni'\u001b[39m,\n    body: \u001b[32m'sunt repellendus quae\\n'\u001b[39m +\n      \u001b[32m'est asperiores aut deleniti esse accusamus repellendus quia aut\\n'\u001b[39m +\n      \u001b[32m'quia dolorem unde\\n'\u001b[39m +\n      \u001b[32m'eum tempora esse dolore'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m71\u001b[39m,\n    title: \u001b[32m'et iusto veniam et illum aut fuga'\u001b[39m,\n    body: \u001b[32m'occaecati a doloribus\\n'\u001b[39m +\n      \u001b[32m'iste saepe consectetur placeat eum voluptate dolorem et\\n'\u001b[39m +\n      \u001b[32m'qui quo quia voluptas\\n'\u001b[39m +\n      \u001b[32m'rerum ut id enim velit est perferendis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m72\u001b[39m,\n    title: \u001b[32m'sint hic doloribus consequatur eos non id'\u001b[39m,\n    body: \u001b[32m'quam occaecati qui deleniti consectetur\\n'\u001b[39m +\n      \u001b[32m'consequatur aut facere quas exercitationem aliquam hic voluptas\\n'\u001b[39m +\n      \u001b[32m'neque id sunt ut aut accusamus\\n'\u001b[39m +\n      \u001b[32m'sunt consectetur expedita inventore velit'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m73\u001b[39m,\n    title: \u001b[32m'consequuntur deleniti eos quia temporibus ab aliquid at'\u001b[39m,\n    body: \u001b[32m'voluptatem cumque tenetur consequatur expedita ipsum nemo quia explicabo\\n'\u001b[39m +\n      \u001b[32m'aut eum minima consequatur\\n'\u001b[39m +\n      \u001b[32m'tempore cumque quae est et\\n'\u001b[39m +\n      \u001b[32m'et in consequuntur voluptatem voluptates aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m74\u001b[39m,\n    title: \u001b[32m'enim unde ratione doloribus quas enim ut sit sapiente'\u001b[39m,\n    body: \u001b[32m'odit qui et et necessitatibus sint veniam\\n'\u001b[39m +\n      \u001b[32m'mollitia amet doloremque molestiae commodi similique magnam et quam\\n'\u001b[39m +\n      \u001b[32m'blanditiis est itaque\\n'\u001b[39m +\n      \u001b[32m'quo et tenetur ratione occaecati molestiae tempora'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m75\u001b[39m,\n    title: \u001b[32m'dignissimos eum dolor ut enim et delectus in'\u001b[39m,\n    body: \u001b[32m'commodi non non omnis et voluptas sit\\n'\u001b[39m +\n      \u001b[32m'autem aut nobis magnam et sapiente voluptatem\\n'\u001b[39m +\n      \u001b[32m'et laborum repellat qui delectus facilis temporibus\\n'\u001b[39m +\n      \u001b[32m'rerum amet et nemo voluptate expedita adipisci error dolorem'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m76\u001b[39m,\n    title: \u001b[32m'doloremque officiis ad et non perferendis'\u001b[39m,\n    body: \u001b[32m'ut animi facere\\n'\u001b[39m +\n      \u001b[32m'totam iusto tempore\\n'\u001b[39m +\n      \u001b[32m'molestiae eum aut et dolorem aperiam\\n'\u001b[39m +\n      \u001b[32m'quaerat recusandae totam odio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m77\u001b[39m,\n    title: \u001b[32m'necessitatibus quasi exercitationem odio'\u001b[39m,\n    body: \u001b[32m'modi ut in nulla repudiandae dolorum nostrum eos\\n'\u001b[39m +\n      \u001b[32m'aut consequatur omnis\\n'\u001b[39m +\n      \u001b[32m'ut incidunt est omnis iste et quam\\n'\u001b[39m +\n      \u001b[32m'voluptates sapiente aliquam asperiores nobis amet corrupti repudiandae provident'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m78\u001b[39m,\n    title: \u001b[32m'quam voluptatibus rerum veritatis'\u001b[39m,\n    body: \u001b[32m'nobis facilis odit tempore cupiditate quia\\n'\u001b[39m +\n      \u001b[32m'assumenda doloribus rerum qui ea\\n'\u001b[39m +\n      \u001b[32m'illum et qui totam\\n'\u001b[39m +\n      \u001b[32m'aut veniam repellendus'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m79\u001b[39m,\n    title: \u001b[32m'pariatur consequatur quia magnam autem omnis non amet'\u001b[39m,\n    body: \u001b[32m'libero accusantium et et facere incidunt sit dolorem\\n'\u001b[39m +\n      \u001b[32m'non excepturi qui quia sed laudantium\\n'\u001b[39m +\n      \u001b[32m'quisquam molestiae ducimus est\\n'\u001b[39m +\n      \u001b[32m'officiis esse molestiae iste et quos'\u001b[39m\n  },\n  {\n    userId: \u001b[33m8\u001b[39m,\n    id: \u001b[33m80\u001b[39m,\n    title: \u001b[32m'labore in ex et explicabo corporis aut quas'\u001b[39m,\n    body: \u001b[32m'ex quod dolorem ea eum iure qui provident amet\\n'\u001b[39m +\n      \u001b[32m'quia qui facere excepturi et repudiandae\\n'\u001b[39m +\n      \u001b[32m'asperiores molestias provident\\n'\u001b[39m +\n      \u001b[32m'minus incidunt vero fugit rerum sint sunt excepturi provident'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m81\u001b[39m,\n    title: \u001b[32m'tempora rem veritatis voluptas quo dolores vero'\u001b[39m,\n    body: \u001b[32m'facere qui nesciunt est voluptatum voluptatem nisi\\n'\u001b[39m +\n      \u001b[32m'sequi eligendi necessitatibus ea at rerum itaque\\n'\u001b[39m +\n      \u001b[32m'harum non ratione velit laboriosam quis consequuntur\\n'\u001b[39m +\n      \u001b[32m'ex officiis minima doloremque voluptas ut aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m82\u001b[39m,\n    title: \u001b[32m'laudantium voluptate suscipit sunt enim enim'\u001b[39m,\n    body: \u001b[32m'ut libero sit aut totam inventore sunt\\n'\u001b[39m +\n      \u001b[32m'porro sint qui sunt molestiae\\n'\u001b[39m +\n      \u001b[32m'consequatur cupiditate qui iste ducimus adipisci\\n'\u001b[39m +\n      \u001b[32m'dolor enim assumenda soluta laboriosam amet iste delectus hic'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m83\u001b[39m,\n    title: \u001b[32m'odit et voluptates doloribus alias odio et'\u001b[39m,\n    body: \u001b[32m'est molestiae facilis quis tempora numquam nihil qui\\n'\u001b[39m +\n      \u001b[32m'voluptate sapiente consequatur est qui\\n'\u001b[39m +\n      \u001b[32m'necessitatibus autem aut ipsa aperiam modi dolore numquam\\n'\u001b[39m +\n      \u001b[32m'reprehenderit eius rem quibusdam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m84\u001b[39m,\n    title: \u001b[32m'optio ipsam molestias necessitatibus occaecati facilis veritatis dolores aut'\u001b[39m,\n    body: \u001b[32m'sint molestiae magni a et quos\\n'\u001b[39m +\n      \u001b[32m'eaque et quasi\\n'\u001b[39m +\n      \u001b[32m'ut rerum debitis similique veniam\\n'\u001b[39m +\n      \u001b[32m'recusandae dignissimos dolor incidunt consequatur odio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m85\u001b[39m,\n    title: \u001b[32m'dolore veritatis porro provident adipisci blanditiis et sunt'\u001b[39m,\n    body: \u001b[32m'similique sed nisi voluptas iusto omnis\\n'\u001b[39m +\n      \u001b[32m'mollitia et quo\\n'\u001b[39m +\n      \u001b[32m'assumenda suscipit officia magnam sint sed tempora\\n'\u001b[39m +\n      \u001b[32m'enim provident pariatur praesentium atque animi amet ratione'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m86\u001b[39m,\n    title: \u001b[32m'placeat quia et porro iste'\u001b[39m,\n    body: \u001b[32m'quasi excepturi consequatur iste autem temporibus sed molestiae beatae\\n'\u001b[39m +\n      \u001b[32m'et quaerat et esse ut\\n'\u001b[39m +\n      \u001b[32m'voluptatem occaecati et vel explicabo autem\\n'\u001b[39m +\n      \u001b[32m'asperiores pariatur deserunt optio'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m87\u001b[39m,\n    title: \u001b[32m'nostrum quis quasi placeat'\u001b[39m,\n    body: \u001b[32m'eos et molestiae\\n'\u001b[39m +\n      \u001b[32m'nesciunt ut a\\n'\u001b[39m +\n      \u001b[32m'dolores perspiciatis repellendus repellat aliquid\\n'\u001b[39m +\n      \u001b[32m'magnam sint rem ipsum est'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m88\u001b[39m,\n    title: \u001b[32m'sapiente omnis fugit eos'\u001b[39m,\n    body: \u001b[32m'consequatur omnis est praesentium\\n'\u001b[39m +\n      \u001b[32m'ducimus non iste\\n'\u001b[39m +\n      \u001b[32m'neque hic deserunt\\n'\u001b[39m +\n      \u001b[32m'voluptatibus veniam cum et rerum sed'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m89\u001b[39m,\n    title: \u001b[32m'sint soluta et vel magnam aut ut sed qui'\u001b[39m,\n    body: \u001b[32m'repellat aut aperiam totam temporibus autem et\\n'\u001b[39m +\n      \u001b[32m'architecto magnam ut\\n'\u001b[39m +\n      \u001b[32m'consequatur qui cupiditate rerum quia soluta dignissimos nihil iure\\n'\u001b[39m +\n      \u001b[32m'tempore quas est'\u001b[39m\n  },\n  {\n    userId: \u001b[33m9\u001b[39m,\n    id: \u001b[33m90\u001b[39m,\n    title: \u001b[32m'ad iusto omnis odit dolor voluptatibus'\u001b[39m,\n    body: \u001b[32m'minus omnis soluta quia\\n'\u001b[39m +\n      \u001b[32m'qui sed adipisci voluptates illum ipsam voluptatem\\n'\u001b[39m +\n      \u001b[32m'eligendi officia ut in\\n'\u001b[39m +\n      \u001b[32m'eos soluta similique molestias praesentium blanditiis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m91\u001b[39m,\n    title: \u001b[32m'aut amet sed'\u001b[39m,\n    body: \u001b[32m'libero voluptate eveniet aperiam sed\\n'\u001b[39m +\n      \u001b[32m'sunt placeat suscipit molestias\\n'\u001b[39m +\n      \u001b[32m'similique fugit nam natus\\n'\u001b[39m +\n      \u001b[32m'expedita consequatur consequatur dolores quia eos et placeat'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m92\u001b[39m,\n    title: \u001b[32m'ratione ex tenetur perferendis'\u001b[39m,\n    body: \u001b[32m'aut et excepturi dicta laudantium sint rerum nihil\\n'\u001b[39m +\n      \u001b[32m'laudantium et at\\n'\u001b[39m +\n      \u001b[32m'a neque minima officia et similique libero et\\n'\u001b[39m +\n      \u001b[32m'commodi voluptate qui'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m93\u001b[39m,\n    title: \u001b[32m'beatae soluta recusandae'\u001b[39m,\n    body: \u001b[32m'dolorem quibusdam ducimus consequuntur dicta aut quo laboriosam\\n'\u001b[39m +\n      \u001b[32m'voluptatem quis enim recusandae ut sed sunt\\n'\u001b[39m +\n      \u001b[32m'nostrum est odit totam\\n'\u001b[39m +\n      \u001b[32m'sit error sed sunt eveniet provident qui nulla'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m94\u001b[39m,\n    title: \u001b[32m'qui qui voluptates illo iste minima'\u001b[39m,\n    body: \u001b[32m'aspernatur expedita soluta quo ab ut similique\\n'\u001b[39m +\n      \u001b[32m'expedita dolores amet\\n'\u001b[39m +\n      \u001b[32m'sed temporibus distinctio magnam saepe deleniti\\n'\u001b[39m +\n      \u001b[32m'omnis facilis nam ipsum natus sint similique omnis'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m95\u001b[39m,\n    title: \u001b[32m'id minus libero illum nam ad officiis'\u001b[39m,\n    body: \u001b[32m'earum voluptatem facere provident blanditiis velit laboriosam\\n'\u001b[39m +\n      \u001b[32m'pariatur accusamus odio saepe\\n'\u001b[39m +\n      \u001b[32m'cumque dolor qui a dicta ab doloribus consequatur omnis\\n'\u001b[39m +\n      \u001b[32m'corporis cupiditate eaque assumenda ad nesciunt'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m96\u001b[39m,\n    title: \u001b[32m'quaerat velit veniam amet cupiditate aut numquam ut sequi'\u001b[39m,\n    body: \u001b[32m'in non odio excepturi sint eum\\n'\u001b[39m +\n      \u001b[32m'labore voluptates vitae quia qui et\\n'\u001b[39m +\n      \u001b[32m'inventore itaque rerum\\n'\u001b[39m +\n      \u001b[32m'veniam non exercitationem delectus aut'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m97\u001b[39m,\n    title: \u001b[32m'quas fugiat ut perspiciatis vero provident'\u001b[39m,\n    body: \u001b[32m'eum non blanditiis soluta porro quibusdam voluptas\\n'\u001b[39m +\n      \u001b[32m'vel voluptatem qui placeat dolores qui velit aut\\n'\u001b[39m +\n      \u001b[32m'vel inventore aut cumque culpa explicabo aliquid at\\n'\u001b[39m +\n      \u001b[32m'perspiciatis est et voluptatem dignissimos dolor itaque sit nam'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m98\u001b[39m,\n    title: \u001b[32m'laboriosam dolor voluptates'\u001b[39m,\n    body: \u001b[32m'doloremque ex facilis sit sint culpa\\n'\u001b[39m +\n      \u001b[32m'soluta assumenda eligendi non ut eius\\n'\u001b[39m +\n      \u001b[32m'sequi ducimus vel quasi\\n'\u001b[39m +\n      \u001b[32m'veritatis est dolores'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m99\u001b[39m,\n    title: \u001b[32m'temporibus sit alias delectus eligendi possimus magni'\u001b[39m,\n    body: \u001b[32m'quo deleniti praesentium dicta non quod\\n'\u001b[39m +\n      \u001b[32m'aut est molestias\\n'\u001b[39m +\n      \u001b[32m'molestias et officia quis nihil\\n'\u001b[39m +\n      \u001b[32m'itaque dolorem quia'\u001b[39m\n  },\n  {\n    userId: \u001b[33m10\u001b[39m,\n    id: \u001b[33m100\u001b[39m,\n    title: \u001b[32m'at nam consequatur ea labore ea harum'\u001b[39m,\n    body: \u001b[32m'cupiditate quo est a modi nesciunt soluta\\n'\u001b[39m +\n      \u001b[32m'ipsa voluptas error itaque dicta in\\n'\u001b[39m +\n      \u001b[32m'autem qui minus magnam et distinctio eum\\n'\u001b[39m +\n      \u001b[32m'accusamus ratione error aut'\u001b[39m\n  }\n]\n"
+      ],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "High"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-178c972c78d01522775c",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /posts - Create new post",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 817,
+      "startTime": "2026-01-02T22:33:52.887Z",
+      "endTime": "2026-01-02T22:33:53.704Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:52.887Z-8-dc4cc216-4408-4ef5-a4fd-146bc025f824",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 8,
+          "startTime": "2026-01-02T22:33:52.887Z",
+          "endTime": "2026-01-02T22:33:52.895Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:52.893Z-2-74775e91-3f82-44c4-b4a6-2592d73cd5f4",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 2,
+              "startTime": "2026-01-02T22:33:52.893Z",
+              "endTime": "2026-01-02T22:33:52.895Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:52.893Z-1-643c1603-6343-4d50-aef8-280d3d383b6c",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T22:33:52.893Z",
+                  "endTime": "2026-01-02T22:33:52.894Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:52.896Z-760-f2d3abc4-e72e-42e4-a5c7-9ccd73d55340",
+          "title": "POST \"/posts\"",
+          "status": "passed",
+          "duration": 760,
+          "startTime": "2026-01-02T22:33:52.896Z",
+          "endTime": "2026-01-02T22:33:53.656Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:23:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:53.657Z-0-c315b974-e6e2-4003-a4fe-1930bac33dfa",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:53.657Z",
+          "endTime": "2026-01-02T22:33:53.657Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:33:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:53.658Z-1-3ca01227-e84d-4151-b496-e73411e3a23d",
+          "title": "Expect \"toBeDefined\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T22:33:53.658Z",
+          "endTime": "2026-01-02T22:33:53.659Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:36:28",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:53.659Z-0-04191e55-00f1-4db9-b140-0620ac00ab84",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:53.659Z",
+          "endTime": "2026-01-02T22:33:53.659Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:37:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:53.660Z-64-e2f9b7dc-9e6b-4f18-baa6-08e0df680e79",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 64,
+          "startTime": "2026-01-02T22:33:53.660Z",
+          "endTime": "2026-01-02T22:33:53.724Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-178c972c78d01522775c_step_2026-01-02T22:33:53.660Z-49-1b593ced-bf86-479a-a0d4-b2fb4fc5091f",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 49,
+              "startTime": "2026-01-02T22:33:53.660Z",
+              "endTime": "2026-01-02T22:33:53.709Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:21:7",
+      "tags": [],
+      "severity": "Low",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "{\n  title: \u001b[32m'Playwright Test'\u001b[39m,\n  body: \u001b[32m'This is an API test'\u001b[39m,\n  userId: \u001b[33m1\u001b[39m,\n  id: \u001b[33m101\u001b[39m\n}\n"
+      ],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "Low"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-ab005251a20253bdf6f6",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > PUT /posts/1 - Update post",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 1142,
+      "startTime": "2026-01-02T22:33:53.724Z",
+      "endTime": "2026-01-02T22:33:54.866Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:53.725Z-32-2ad80776-9658-4600-abed-c46f2a90f099",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 32,
+          "startTime": "2026-01-02T22:33:53.725Z",
+          "endTime": "2026-01-02T22:33:53.757Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:53.739Z-18-74920053-4581-4a1c-b1dd-9ff3d1b22468",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 18,
+              "startTime": "2026-01-02T22:33:53.739Z",
+              "endTime": "2026-01-02T22:33:53.757Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:53.740Z-7-91de3799-07cf-4c67-b378-69cba2b15e46",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 7,
+                  "startTime": "2026-01-02T22:33:53.740Z",
+                  "endTime": "2026-01-02T22:33:53.747Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:53.760Z-1052-0b126597-d164-4b35-8cd1-3f7c80dc826f",
+          "title": "PUT \"/posts/1\"",
+          "status": "passed",
+          "duration": 1052,
+          "startTime": "2026-01-02T22:33:53.760Z",
+          "endTime": "2026-01-02T22:33:54.812Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:43:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:54.822Z-0-c8964616-e1a9-4372-a15f-35e12b018674",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:54.822Z",
+          "endTime": "2026-01-02T22:33:54.822Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:54:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:54.827Z-0-7d4965c7-eb35-42d9-9f4c-d4706920ff4c",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:54.827Z",
+          "endTime": "2026-01-02T22:33:54.827Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:57:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:54.827Z-72-bf694682-c947-412b-a196-e108a60c9be9",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 72,
+          "startTime": "2026-01-02T22:33:54.827Z",
+          "endTime": "2026-01-02T22:33:54.899Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-ab005251a20253bdf6f6_step_2026-01-02T22:33:54.829Z-52-97dc531e-874f-4788-9c30-da9a5b69e7ea",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 52,
+              "startTime": "2026-01-02T22:33:54.829Z",
+              "endTime": "2026-01-02T22:33:54.881Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:41:7",
+      "tags": [],
+      "severity": "High",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "{ id: \u001b[33m1\u001b[39m, title: \u001b[32m'Updated Title'\u001b[39m, body: \u001b[32m'Updated content'\u001b[39m, userId: \u001b[33m1\u001b[39m }\n"
+      ],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "High"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > DELETE /posts/1 - Delete post",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 500,
+      "startTime": "2026-01-02T22:33:54.899Z",
+      "endTime": "2026-01-02T22:33:55.399Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:54.901Z-42-84e75f02-4d86-4e9c-a01d-1a366000dbf3",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 42,
+          "startTime": "2026-01-02T22:33:54.901Z",
+          "endTime": "2026-01-02T22:33:54.943Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:54.935Z-8-bec320d1-c521-43d5-ab16-6630b37b424b",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 8,
+              "startTime": "2026-01-02T22:33:54.935Z",
+              "endTime": "2026-01-02T22:33:54.943Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:54.936Z-4-f319b412-3b1b-484f-889a-a0b209eb18ed",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 4,
+                  "startTime": "2026-01-02T22:33:54.936Z",
+                  "endTime": "2026-01-02T22:33:54.940Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:54.945Z-472-c0ff5872-7417-43ab-9e4f-b99929733c4b",
+          "title": "DELETE \"/posts/1\"",
+          "status": "passed",
+          "duration": 472,
+          "startTime": "2026-01-02T22:33:54.945Z",
+          "endTime": "2026-01-02T22:33:55.417Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:63:42",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:55.418Z-0-1e175f18-cc34-41fd-a2d6-7da4fda1ce25",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:55.418Z",
+          "endTime": "2026-01-02T22:33:55.418Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:66:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:55.420Z-28-70ab0882-ca5e-4f0b-bffa-0a8038517a45",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 28,
+          "startTime": "2026-01-02T22:33:55.420Z",
+          "endTime": "2026-01-02T22:33:55.448Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-e6db8b1163a6a4258eb2_step_2026-01-02T22:33:55.423Z-7-5c74e142-9479-4eb3-a1cb-accc0ddfb519",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 7,
+              "startTime": "2026-01-02T22:33:55.423Z",
+              "endTime": "2026-01-02T22:33:55.430Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:61:7",
+      "tags": [],
+      "severity": "Critical",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "Critical"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-9a39e32452da0236dc30",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /api/login - Successful auth",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 531,
+      "startTime": "2026-01-02T22:33:55.448Z",
+      "endTime": "2026-01-02T22:33:55.979Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:55.477Z-26-f4857c94-dca0-4159-b13c-00851cf21248",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 26,
+          "startTime": "2026-01-02T22:33:55.477Z",
+          "endTime": "2026-01-02T22:33:55.503Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:55.494Z-9-e1de6c8e-470c-4346-b2df-1a2b7e8dfd1b",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 9,
+              "startTime": "2026-01-02T22:33:55.494Z",
+              "endTime": "2026-01-02T22:33:55.503Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:55.495Z-2-62494430-b840-4075-8fb9-77c585c57083",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 2,
+                  "startTime": "2026-01-02T22:33:55.495Z",
+                  "endTime": "2026-01-02T22:33:55.497Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:55.505Z-504-e8d8fe82-0c4f-48a5-a99f-79099de69367",
+          "title": "POST \"/api/login\"",
+          "status": "passed",
+          "duration": 504,
+          "startTime": "2026-01-02T22:33:55.505Z",
+          "endTime": "2026-01-02T22:33:56.009Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:71:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:56.012Z-1-1f944a7d-2604-49bd-953e-1228c0d38182",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T22:33:56.012Z",
+          "endTime": "2026-01-02T22:33:56.013Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:81:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:56.018Z-0-a13b9094-6a45-4028-9edb-067708fdf347",
+          "title": "Expect \"toHaveProperty\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:56.018Z",
+          "endTime": "2026-01-02T22:33:56.018Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:82:35",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:56.018Z-10-dac69271-5899-462d-845a-12de2c570c38",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 10,
+          "startTime": "2026-01-02T22:33:56.018Z",
+          "endTime": "2026-01-02T22:33:56.028Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-9a39e32452da0236dc30_step_2026-01-02T22:33:56.019Z-3-aeee2b99-2060-4010-bc40-f383d8a7d073",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 3,
+              "startTime": "2026-01-02T22:33:56.019Z",
+              "endTime": "2026-01-02T22:33:56.022Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:70:7",
+      "tags": [],
+      "severity": "Medium",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "stdout": [
+        "{ token: \u001b[32m'QpwL5tke4Pnpja7X4'\u001b[39m }\n"
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-99152b3087f5646a6147",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /api/login - Invalid auth",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 502,
+      "startTime": "2026-01-02T22:33:56.028Z",
+      "endTime": "2026-01-02T22:33:56.530Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.029Z-22-d20bea99-64d0-495e-9f4b-4ea5a2264585",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 22,
+          "startTime": "2026-01-02T22:33:56.029Z",
+          "endTime": "2026-01-02T22:33:56.051Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.041Z-10-b52ad682-db68-4a21-9d70-72932f754805",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 10,
+              "startTime": "2026-01-02T22:33:56.041Z",
+              "endTime": "2026-01-02T22:33:56.051Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.042Z-2-5316f011-07af-4059-a13f-e4c322dfabdf",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 2,
+                  "startTime": "2026-01-02T22:33:56.042Z",
+                  "endTime": "2026-01-02T22:33:56.044Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.054Z-471-0c7501e8-880c-4e99-8842-f078bdfb90a3",
+          "title": "POST \"/api/login\"",
+          "status": "passed",
+          "duration": 471,
+          "startTime": "2026-01-02T22:33:56.054Z",
+          "endTime": "2026-01-02T22:33:56.525Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:87:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.527Z-0-a38bafd0-82b2-4997-8b9d-82ec643f95c8",
+          "title": "Expect \"soft toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:56.527Z",
+          "endTime": "2026-01-02T22:33:56.527Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:95:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.529Z-1-6c40acc7-8bfc-4581-906e-67b7be8486ef",
+          "title": "Expect \"soft toHaveProperty\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T22:33:56.529Z",
+          "endTime": "2026-01-02T22:33:56.530Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:96:40",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.530Z-30-4603c453-cd2d-45ea-ac8c-9470d5679fc5",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 30,
+          "startTime": "2026-01-02T22:33:56.530Z",
+          "endTime": "2026-01-02T22:33:56.560Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-99152b3087f5646a6147_step_2026-01-02T22:33:56.531Z-9-144ad207-fa40-4240-959d-ba0c3115f5ac",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 9,
+              "startTime": "2026-01-02T22:33:56.531Z",
+              "endTime": "2026-01-02T22:33:56.540Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:86:7",
+      "tags": [],
+      "severity": "Medium",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > GET /posts - Response time < 1000ms",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 54,
+      "startTime": "2026-01-02T22:33:56.560Z",
+      "endTime": "2026-01-02T22:33:56.614Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.563Z-24-2086ef27-9494-4671-950c-b2818ffdb363",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 24,
+          "startTime": "2026-01-02T22:33:56.563Z",
+          "endTime": "2026-01-02T22:33:56.587Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.581Z-6-76c36741-eb85-49d0-872a-d3de9204ba9b",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 6,
+              "startTime": "2026-01-02T22:33:56.581Z",
+              "endTime": "2026-01-02T22:33:56.587Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.583Z-1-f363125a-cd45-4eb8-95dc-bf08e91219bf",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 1,
+                  "startTime": "2026-01-02T22:33:56.583Z",
+                  "endTime": "2026-01-02T22:33:56.584Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.589Z-26-c1629063-1bb4-4e4d-90b1-72eb52e7451b",
+          "title": "GET \"/posts\"",
+          "status": "passed",
+          "duration": 26,
+          "startTime": "2026-01-02T22:33:56.589Z",
+          "endTime": "2026-01-02T22:33:56.615Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:102:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.616Z-0-ba0252b3-3746-4ccc-9261-b898e59b0f18",
+          "title": "Expect \"toBe\"",
+          "status": "passed",
+          "duration": 0,
+          "startTime": "2026-01-02T22:33:56.616Z",
+          "endTime": "2026-01-02T22:33:56.616Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:106:31",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.618Z-1-7c89f6fc-f0fe-4839-b5f3-f83146195689",
+          "title": "Expect \"toBeLessThan\"",
+          "status": "passed",
+          "duration": 1,
+          "startTime": "2026-01-02T22:33:56.618Z",
+          "endTime": "2026-01-02T22:33:56.619Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:107:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.619Z-32-8acc8cb6-32aa-44e8-8cd4-1a4f97d98893",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 32,
+          "startTime": "2026-01-02T22:33:56.619Z",
+          "endTime": "2026-01-02T22:33:56.651Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-d87a2c3a0621b9a45945_step_2026-01-02T22:33:56.620Z-12-e32c6aca-6614-4a08-a1ea-6e20fb3232b2",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 12,
+              "startTime": "2026-01-02T22:33:56.620Z",
+              "endTime": "2026-01-02T22:33:56.632Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: api.spec.js:100:7",
+      "tags": [],
+      "severity": "Medium",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-9b74486ac94d0b1b6cb0",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > POST /upload - Mock file upload",
+      "suiteName": "Chrome Project",
+      "status": "skipped",
+      "duration": 0,
+      "startTime": "2026-01-02T22:33:57.027Z",
+      "endTime": "2026-01-02T22:33:57.027Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [],
+      "codeSnippet": "Test defined at: api.spec.js:119:7",
+      "tags": [],
+      "severity": "Medium",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": -1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "8747e39b871de0524be5-7e649f8c6664ef809f29",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "API Tests with Real Working Endpoints",
+      "spec_file": "api.spec.js",
+      "name": " > Chrome Project > api.spec.js > API Tests with Real Working Endpoints > GET /api/users/2 - Validate nested data",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 244,
+      "startTime": "2026-01-02T22:33:56.652Z",
+      "endTime": "2026-01-02T22:33:56.896Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.653Z-75-aee64fbf-e0a7-4c62-9a64-b53ac2920420",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 75,
+          "startTime": "2026-01-02T22:33:56.653Z",
+          "endTime": "2026-01-02T22:33:56.728Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.704Z-23-f5b1ac82-9271-4317-a1ad-ce04a216ad49",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 23,
+              "startTime": "2026-01-02T22:33:56.704Z",
+              "endTime": "2026-01-02T22:33:56.727Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.705Z-16-1a04fc7d-165a-474b-859b-0a7e5a3f7535",
+                  "title": "Create request context",
+                  "status": "passed",
+                  "duration": 16,
+                  "startTime": "2026-01-02T22:33:56.705Z",
+                  "endTime": "2026-01-02T22:33:56.721Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.730Z-41-315e390f-d0e0-41e6-87bf-86c5598d82b3",
+          "title": "GET \"/api/users/2\"",
+          "status": "passed",
+          "duration": 41,
+          "startTime": "2026-01-02T22:33:56.730Z",
+          "endTime": "2026-01-02T22:33:56.771Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "api.spec.js:112:36",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.774Z-172-2ef98ee9-5b53-4bfb-bd44-a9bdef95c2ac",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 172,
+          "startTime": "2026-01-02T22:33:56.774Z",
+          "endTime": "2026-01-02T22:33:56.946Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.776Z-160-722500bf-b20b-489a-a3c9-35c3f2d8f084",
+              "title": "Fixture \"request\"",
+              "status": "passed",
+              "duration": 160,
+              "startTime": "2026-01-02T22:33:56.776Z",
+              "endTime": "2026-01-02T22:33:56.936Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        },
+        {
+          "id": "8747e39b871de0524be5-7e649f8c6664ef809f29_step_2026-01-02T22:33:56.946Z-2-0add95b8-d9c8-4523-bbf1-e8a022a2881d",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 2,
+          "startTime": "2026-01-02T22:33:56.946Z",
+          "endTime": "2026-01-02T22:33:56.948Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": []
+        }
+      ],
+      "errorMessage": "SyntaxError: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON",
+      "stackTrace": "SyntaxError: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON\n    at /Users/arghajitsingha/juliaHub-assignment/tests/api.spec.js:113:18",
+      "snippet": "\u001b[0m \u001b[90m 111 |\u001b[39m   test(\u001b[32m\"GET /api/users/2 - Validate nested data\"\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ request }) \u001b[33m=>\u001b[39m {\n \u001b[90m 112 |\u001b[39m     \u001b[36mconst\u001b[39m response \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m request\u001b[33m.\u001b[39m\u001b[36mget\u001b[39m(\u001b[32m\"https://reqres.in/api/users/2\"\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 113 |\u001b[39m     \u001b[36mconst\u001b[39m user \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m response\u001b[33m.\u001b[39mjson()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                  \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 114 |\u001b[39m     \u001b[36mawait\u001b[39m expect(user\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39memail)\u001b[33m.\u001b[39mtoContain(\u001b[32m\"@reqres.in\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 115 |\u001b[39m     \u001b[36mawait\u001b[39m expect(user\u001b[33m.\u001b[39mdata\u001b[33m.\u001b[39mavatar)\u001b[33m.\u001b[39mtoMatch(\u001b[35m/^https:\\/\\//\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 116 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m",
+      "codeSnippet": "Test defined at: api.spec.js:111:7",
+      "tags": [],
+      "severity": "Medium",
+      "screenshots": [],
+      "videoPath": [],
+      "tracePath": "attachments/8747e39b871de0524be5-7e649f8c6664ef809f29/0-1767393237079-trace.zip",
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "n/a",
+      "spec_file": "new-test.spec.js",
+      "name": " > Chrome Project > new-test.spec.js > Wikipedia homepage loads",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 1450,
+      "startTime": "2026-01-02T22:33:57.678Z",
+      "endTime": "2026-01-02T22:33:59.128Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:57.681Z-1209-3b6a6535-4da9-4f54-9860-771ccedc26da",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 1209,
+          "startTime": "2026-01-02T22:33:57.681Z",
+          "endTime": "2026-01-02T22:33:58.890Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:57.692Z-819-26f4eac7-d9ad-4f93-a7b3-26c76581e9aa",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 819,
+              "startTime": "2026-01-02T22:33:57.692Z",
+              "endTime": "2026-01-02T22:33:58.511Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:57.695Z-816-9c2a5447-284a-47e7-bf73-cf90cdfbd7c3",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 816,
+                  "startTime": "2026-01-02T22:33:57.695Z",
+                  "endTime": "2026-01-02T22:33:58.511Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:58.512Z-18-1c2eca2e-b053-4c0c-817d-ea156a520dd4",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 18,
+              "startTime": "2026-01-02T22:33:58.512Z",
+              "endTime": "2026-01-02T22:33:58.530Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:58.514Z-12-6e39aa97-66fb-4ee0-af57-7d3469964bce",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 12,
+                  "startTime": "2026-01-02T22:33:58.514Z",
+                  "endTime": "2026-01-02T22:33:58.526Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:58.530Z-360-cf4c1ba8-23d9-4279-9922-307f8fbf4eeb",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 360,
+              "startTime": "2026-01-02T22:33:58.530Z",
+              "endTime": "2026-01-02T22:33:58.890Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:58.531Z-359-2cdd711f-27d0-4a79-911f-0bc28504af9c",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 359,
+                  "startTime": "2026-01-02T22:33:58.531Z",
+                  "endTime": "2026-01-02T22:33:58.890Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:58.892Z-878-f4d7a984-d392-4db3-9aad-813c37f9678c",
+          "title": "Navigate to \"/\"",
+          "status": "passed",
+          "duration": 878,
+          "startTime": "2026-01-02T22:33:58.892Z",
+          "endTime": "2026-01-02T22:33:59.770Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:7:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:59.772Z-36-39a028a7-c04e-4c66-a999-4ad032e55b41",
+          "title": "Expect \"toHaveTitle\"",
+          "status": "passed",
+          "duration": 36,
+          "startTime": "2026-01-02T22:33:59.772Z",
+          "endTime": "2026-01-02T22:33:59.808Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:8:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:59.810Z-21-136b724e-0a9d-42f2-90cb-c0227ac7dc64",
+          "title": "Expect \"toBeVisible\" getByText('The Free Encyclopedia')",
+          "status": "passed",
+          "duration": 21,
+          "startTime": "2026-01-02T22:33:59.810Z",
+          "endTime": "2026-01-02T22:33:59.831Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:9:57",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:59.831Z-135-cdf5bea7-e58a-42a9-b9b9-5f51f2507323",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 135,
+          "startTime": "2026-01-02T22:33:59.831Z",
+          "endTime": "2026-01-02T22:33:59.966Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:59.832Z-0-eeb2a205-f49e-4717-8858-4473ee339277",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2026-01-02T22:33:59.832Z",
+              "endTime": "2026-01-02T22:33:59.832Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:59.832Z-130-4bcab045-076b-415b-9afe-f4973af64eeb",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 130,
+              "startTime": "2026-01-02T22:33:59.832Z",
+              "endTime": "2026-01-02T22:33:59.962Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-e8b692524f84eab8f10e_step_2026-01-02T22:33:59.891Z-71-7f25d794-bbed-4bf3-b41f-83a147e67f55",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 71,
+                  "startTime": "2026-01-02T22:33:59.891Z",
+                  "endTime": "2026-01-02T22:33:59.962Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: new-test.spec.js:5:6",
+      "tags": [],
+      "severity": "High",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "High"
+        }
+      ],
+      "workerId": 2,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-44d97be1845b132f9656",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "n/a",
+      "spec_file": "new-test.spec.js",
+      "name": " > Chrome Project > new-test.spec.js > English language switch works",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 858,
+      "startTime": "2026-01-02T22:33:59.970Z",
+      "endTime": "2026-01-02T22:34:00.828Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:33:59.971Z-99-60fe119f-f113-4d5f-9d80-aad9430115a2",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 99,
+          "startTime": "2026-01-02T22:33:59.971Z",
+          "endTime": "2026-01-02T22:34:00.070Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:33:59.975Z-4-68579715-dd84-41db-94f7-071e8446dec9",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 4,
+              "startTime": "2026-01-02T22:33:59.975Z",
+              "endTime": "2026-01-02T22:33:59.979Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:33:59.975Z-2-f24b799b-885c-421b-ab21-1b69c28b6e61",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 2,
+                  "startTime": "2026-01-02T22:33:59.975Z",
+                  "endTime": "2026-01-02T22:33:59.977Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:33:59.979Z-91-fb45d7b2-a213-473d-8970-a510f9b7780a",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 91,
+              "startTime": "2026-01-02T22:33:59.979Z",
+              "endTime": "2026-01-02T22:34:00.070Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:33:59.979Z-91-125d561e-098d-4532-be86-10e084f21d5f",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 91,
+                  "startTime": "2026-01-02T22:33:59.979Z",
+                  "endTime": "2026-01-02T22:34:00.070Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.071Z-498-127a484c-892d-4d93-8661-64066aef366f",
+          "title": "Navigate to \"/\"",
+          "status": "passed",
+          "duration": 498,
+          "startTime": "2026-01-02T22:34:00.071Z",
+          "endTime": "2026-01-02T22:34:00.569Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:14:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.570Z-86-cd7016bf-ddb5-4714-a79a-4060c1a38c05",
+          "title": "Click getByText('English')",
+          "status": "failed",
+          "duration": 86,
+          "startTime": "2026-01-02T22:34:00.570Z",
+          "endTime": "2026-01-02T22:34:00.656Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n",
+          "stackTrace": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n\n    at /Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js:15:35",
+          "codeLocation": "new-test.spec.js:15:35",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.657Z-181-041aef86-020c-49df-858a-9d1a0779687c",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 181,
+          "startTime": "2026-01-02T22:34:00.657Z",
+          "endTime": "2026-01-02T22:34:00.838Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.710Z-0-feff5261-48ff-4c32-a176-a922b1712b8d",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 0,
+              "startTime": "2026-01-02T22:34:00.710Z",
+              "endTime": "2026-01-02T22:34:00.710Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.710Z-124-c64c17bf-72c0-4b93-9609-ce05d9c365e2",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 124,
+              "startTime": "2026-01-02T22:34:00.710Z",
+              "endTime": "2026-01-02T22:34:00.834Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.766Z-66-77ef21fa-5e27-45d3-af56-5e3dc8355443",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 66,
+                  "startTime": "2026-01-02T22:34:00.766Z",
+                  "endTime": "2026-01-02T22:34:00.832Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.838Z-22-5f30c212-ad5b-4e3f-b72d-a2157d3916d6",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 22,
+          "startTime": "2026-01-02T22:34:00.838Z",
+          "endTime": "2026-01-02T22:34:00.860Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-44d97be1845b132f9656_step_2026-01-02T22:34:00.838Z-20-30af31c2-2f17-4cf8-af1b-14e8d77661ec",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 20,
+              "startTime": "2026-01-02T22:34:00.838Z",
+              "endTime": "2026-01-02T22:34:00.858Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n",
+      "stackTrace": "Error: locator.click: Error: strict mode violation: getByText('English') resolved to 5 elements:\n    1) <strong>English</strong> aka getByRole('link', { name: 'English 7,102,000+ articles' })\n    2) <option lang=\"en\" value=\"en\" selected=\"selected\">English</option> aka getByLabel('en', { exact: true })\n    3) <option lang=\"en\" value=\"simple\">Simple English</option> aka getByLabel('en', { exact: true })\n    4) <a lang=\"en\" title=\"English\" href=\"//en.wikipedia.org/\">English</a> aka getByTitle('English', { exact: true })\n    5) <a lang=\"en\" href=\"//simple.wikipedia.org/\">Simple English</a> aka getByLabel('All languages').getByText('Simple English')\n\nCall log:\n\u001b[2m  - waiting for getByText('English')\u001b[22m\n\n    at /Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js:15:35",
+      "snippet": "\u001b[0m \u001b[90m 13 |\u001b[39m   pulse\u001b[33m.\u001b[39mseverity(\u001b[32m\"Low\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 14 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m\"https://www.wikipedia.org\"\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 15 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgetByText(\u001b[32m\"English\"\u001b[39m)\u001b[33m.\u001b[39mclick()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 16 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveURL(\u001b[35m/en\\.wikipedia\\.org/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 17 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 18 |\u001b[39m\u001b[0m",
+      "codeSnippet": "Test defined at: new-test.spec.js:12:6",
+      "tags": [],
+      "severity": "Low",
+      "screenshots": [
+        "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/0-1767393240904-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/1-1767393240905-video.webm"
+      ],
+      "tracePath": "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/3-1767393240906-trace.zip",
+      "attachments": [
+        {
+          "name": "error-context",
+          "path": "attachments/f01bc06c38d4ececee44-44d97be1845b132f9656/2-1767393240906-error-context.md",
+          "contentType": "text/markdown"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "Low"
+        }
+      ],
+      "workerId": 2,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "n/a",
+      "spec_file": "new-test.spec.js",
+      "name": " > Chrome Project > new-test.spec.js > Today on Wikipedia shows exactly 5 featured items",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 1287,
+      "startTime": "2026-01-02T22:34:01.476Z",
+      "endTime": "2026-01-02T22:34:02.763Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.479Z-317-9be4a8a5-6c29-4996-9c58-40d841aefdc4",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 317,
+          "startTime": "2026-01-02T22:34:01.479Z",
+          "endTime": "2026-01-02T22:34:01.796Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.491Z-153-0ef2e81d-eef9-4de8-8d6e-d1b9e99a155a",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 153,
+              "startTime": "2026-01-02T22:34:01.491Z",
+              "endTime": "2026-01-02T22:34:01.644Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.493Z-151-f4edda79-56d0-4eb2-8eb3-d6ab53b3d252",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 151,
+                  "startTime": "2026-01-02T22:34:01.493Z",
+                  "endTime": "2026-01-02T22:34:01.644Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.650Z-29-3f418c98-da12-4f96-a121-91e9e880cd4a",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 29,
+              "startTime": "2026-01-02T22:34:01.650Z",
+              "endTime": "2026-01-02T22:34:01.679Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.654Z-21-f264b0fb-e29f-4d70-97ad-6490911aa4f8",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 21,
+                  "startTime": "2026-01-02T22:34:01.654Z",
+                  "endTime": "2026-01-02T22:34:01.675Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.679Z-117-d0e3d92f-bd5a-4ab2-a431-971af7ef2a3e",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 117,
+              "startTime": "2026-01-02T22:34:01.679Z",
+              "endTime": "2026-01-02T22:34:01.796Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.680Z-115-849303b1-b65e-4185-9bff-df259748c0fc",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 115,
+                  "startTime": "2026-01-02T22:34:01.680Z",
+                  "endTime": "2026-01-02T22:34:01.795Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:01.797Z-778-4fb8303a-2252-4554-8c1b-6ed2750f8e18",
+          "title": "Navigate to \"/wiki/Main_Page\"",
+          "status": "passed",
+          "duration": 778,
+          "startTime": "2026-01-02T22:34:01.797Z",
+          "endTime": "2026-01-02T22:34:02.575Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:32:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.578Z-31-e2b65c1b-0f26-475e-a930-3e43b2091b61",
+          "title": "Query count locator('#mp-tfa').getByRole('listitem')",
+          "status": "passed",
+          "duration": 31,
+          "startTime": "2026-01-02T22:34:02.578Z",
+          "endTime": "2026-01-02T22:34:02.609Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "new-test.spec.js:33:71",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.611Z-2-678514ae-f1db-4231-a491-a357b120be1e",
+          "title": "Expect \"toBe\"",
+          "status": "failed",
+          "duration": 2,
+          "startTime": "2026-01-02T22:34:02.611Z",
+          "endTime": "2026-01-02T22:34:02.613Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m",
+          "stackTrace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m\n    at /Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js:34:19",
+          "codeLocation": "new-test.spec.js:34:19",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.614Z-328-4b079557-47be-4c80-bac6-66750b4d1720",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 328,
+          "startTime": "2026-01-02T22:34:02.614Z",
+          "endTime": "2026-01-02T22:34:02.942Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.704Z-1-57d3938f-01f0-4f64-88e6-68dc9b90fd49",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T22:34:02.704Z",
+              "endTime": "2026-01-02T22:34:02.705Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.706Z-229-0244fdae-e3cb-4c63-a681-fed01c330eb2",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 229,
+              "startTime": "2026-01-02T22:34:02.706Z",
+              "endTime": "2026-01-02T22:34:02.935Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.847Z-87-dc477908-1a31-4d0c-bdae-2df73add29e8",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 87,
+                  "startTime": "2026-01-02T22:34:02.847Z",
+                  "endTime": "2026-01-02T22:34:02.934Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.942Z-17-12764068-1cd2-47fd-a418-be3eca9f47dd",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 17,
+          "startTime": "2026-01-02T22:34:02.942Z",
+          "endTime": "2026-01-02T22:34:02.959Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "f01bc06c38d4ececee44-642274dca0e1dd08f300_step_2026-01-02T22:34:02.943Z-15-4c0d813f-ce8d-4d30-9f73-e3146b307d01",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 15,
+              "startTime": "2026-01-02T22:34:02.943Z",
+              "endTime": "2026-01-02T22:34:02.958Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m",
+      "stackTrace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m5\u001b[39m\nReceived: \u001b[31m7\u001b[39m\n    at /Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js:34:19",
+      "snippet": "\u001b[0m \u001b[90m 32 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mgoto(\u001b[32m\"https://en.wikipedia.org/wiki/Main_Page\"\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 33 |\u001b[39m     \u001b[36mconst\u001b[39m items \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mlocator(\u001b[32m\"#mp-tfa\"\u001b[39m)\u001b[33m.\u001b[39mgetByRole(\u001b[32m\"listitem\"\u001b[39m)\u001b[33m.\u001b[39mcount()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 34 |\u001b[39m     expect(items)\u001b[33m.\u001b[39mtoBe(\u001b[35m5\u001b[39m)\u001b[33m;\u001b[39m \u001b[90m// FLAKY: Featured content changes\u001b[39m\n \u001b[90m    |\u001b[39m                   \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 35 |\u001b[39m   }\n \u001b[90m 36 |\u001b[39m )\u001b[33m;\u001b[39m\n \u001b[90m 37 |\u001b[39m\u001b[0m",
+      "codeSnippet": "Test defined at: new-test.spec.js:19:6",
+      "tags": [],
+      "severity": "Medium",
+      "screenshots": [
+        "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/0-1767393243063-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/1-1767393243065-video.webm"
+      ],
+      "tracePath": "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/3-1767393243068-trace.zip",
+      "attachments": [
+        {
+          "name": "error-context",
+          "path": "attachments/f01bc06c38d4ececee44-642274dca0e1dd08f300/2-1767393243066-error-context.md",
+          "contentType": "text/markdown"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "issue",
+          "description": "Flaky test - Featured content changes",
+          "location": {
+            "file": "/Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js",
+            "line": 19,
+            "column": 6
+          }
+        },
+        {
+          "type": "intentional",
+          "description": "This test lies inside the fixme category",
+          "location": {
+            "file": "/Users/arghajitsingha/juliaHub-assignment/tests/new-test.spec.js",
+            "line": 19,
+            "column": 6
+          }
+        },
+        {
+          "type": "pulse_severity",
+          "description": "Medium"
+        }
+      ],
+      "workerId": 3,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "31be70adcd52654ff551-e3f24602648c746d80a8",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "n/a",
+      "spec_file": "test.spec.js",
+      "name": " > Chrome Project > test.spec.js > has title",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 6050,
+      "startTime": "2026-01-02T22:34:03.563Z",
+      "endTime": "2026-01-02T22:34:09.613Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.566Z-308-d3a1a326-0873-4f70-98b7-d35aaf004b49",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 308,
+          "startTime": "2026-01-02T22:34:03.566Z",
+          "endTime": "2026-01-02T22:34:03.874Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.579Z-173-f0f23819-8995-4ec8-a805-c4bf5c00f38f",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 173,
+              "startTime": "2026-01-02T22:34:03.579Z",
+              "endTime": "2026-01-02T22:34:03.752Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.582Z-169-1da796d0-e2a7-4f1c-80e7-1c5fe9440a41",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 169,
+                  "startTime": "2026-01-02T22:34:03.582Z",
+                  "endTime": "2026-01-02T22:34:03.751Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.753Z-18-1c2dc0f0-2327-4025-9e7f-05c98b69f627",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 18,
+              "startTime": "2026-01-02T22:34:03.753Z",
+              "endTime": "2026-01-02T22:34:03.771Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.755Z-14-a14a94dd-cbbe-4b2a-bbaf-8450c7368026",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 14,
+                  "startTime": "2026-01-02T22:34:03.755Z",
+                  "endTime": "2026-01-02T22:34:03.769Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.772Z-102-1c5e8e00-5812-49fc-95ef-3156eb8f3275",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 102,
+              "startTime": "2026-01-02T22:34:03.772Z",
+              "endTime": "2026-01-02T22:34:03.874Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.773Z-101-695d2639-d9cf-4dee-bc49-670483170d22",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 101,
+                  "startTime": "2026-01-02T22:34:03.773Z",
+                  "endTime": "2026-01-02T22:34:03.874Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:03.876Z-297-38de4555-67b5-4592-ac83-5bdd06d933a9",
+          "title": "Navigate to \"/\"",
+          "status": "passed",
+          "duration": 297,
+          "startTime": "2026-01-02T22:34:03.876Z",
+          "endTime": "2026-01-02T22:34:04.173Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "test.spec.js:7:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:04.175Z-5024-fba8531e-c687-4be8-bae1-1bb50d5706e0",
+          "title": "Expect \"toHaveTitle\"",
+          "status": "failed",
+          "duration": 5024,
+          "startTime": "2026-01-02T22:34:04.175Z",
+          "endTime": "2026-01-02T22:34:09.199Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/Arghajit/\u001b[39m\nReceived string:  \u001b[31m\"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[22m\n",
+          "stackTrace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/Arghajit/\u001b[39m\nReceived string:  \u001b[31m\"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[22m\n\n    at /Users/arghajitsingha/juliaHub-assignment/tests/test.spec.js:10:22",
+          "codeLocation": "test.spec.js:10:22",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:09.200Z-607-289f7656-6f9b-4864-8612-9db847732489",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 607,
+          "startTime": "2026-01-02T22:34:09.200Z",
+          "endTime": "2026-01-02T22:34:09.807Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:09.269Z-1-2116b168-6c8e-4555-828a-848fa9b4fb80",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T22:34:09.269Z",
+              "endTime": "2026-01-02T22:34:09.270Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:09.270Z-531-d494d088-d6d8-4953-9ac9-7647c27bc739",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 531,
+              "startTime": "2026-01-02T22:34:09.270Z",
+              "endTime": "2026-01-02T22:34:09.801Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:09.401Z-398-68099dd0-a970-4ea7-80da-82c78b75fc00",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 398,
+                  "startTime": "2026-01-02T22:34:09.401Z",
+                  "endTime": "2026-01-02T22:34:09.799Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:09.807Z-26-69411faf-ddd2-49f6-a0c2-0eb88085e5d8",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 26,
+          "startTime": "2026-01-02T22:34:09.807Z",
+          "endTime": "2026-01-02T22:34:09.833Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-e3f24602648c746d80a8_step_2026-01-02T22:34:09.807Z-24-96f592e1-0d97-4e31-9589-b4799dcb984d",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 24,
+              "startTime": "2026-01-02T22:34:09.807Z",
+              "endTime": "2026-01-02T22:34:09.831Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/Arghajit/\u001b[39m\nReceived string:  \u001b[31m\"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[22m\n",
+      "stackTrace": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nExpected pattern: \u001b[32m/Arghajit/\u001b[39m\nReceived string:  \u001b[31m\"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m    9 × unexpected value \"Fast and reliable end-to-end testing for modern web apps | Playwright\"\u001b[22m\n\n    at /Users/arghajitsingha/juliaHub-assignment/tests/test.spec.js:10:22",
+      "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m\n \u001b[90m  9 |\u001b[39m   \u001b[90m// Expect a title \"to contain\" a substring.\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m   \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[35m/Arghajit/\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                      \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m })\u001b[33m;\u001b[39m\n \u001b[90m 12 |\u001b[39m\n \u001b[90m 13 |\u001b[39m test\u001b[33m.\u001b[39monly(\u001b[32m\"get started link\"\u001b[39m\u001b[33m,\u001b[39m { tag\u001b[33m:\u001b[39m \u001b[32m\"@test\"\u001b[39m }\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m",
+      "codeSnippet": "Test defined at: test.spec.js:5:6",
+      "tags": [],
+      "severity": "High",
+      "screenshots": [
+        "attachments/31be70adcd52654ff551-e3f24602648c746d80a8/0-1767393249922-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/31be70adcd52654ff551-e3f24602648c746d80a8/1-1767393249926-video.webm"
+      ],
+      "tracePath": "attachments/31be70adcd52654ff551-e3f24602648c746d80a8/3-1767393249927-trace.zip",
+      "attachments": [
+        {
+          "name": "error-context",
+          "path": "attachments/31be70adcd52654ff551-e3f24602648c746d80a8/2-1767393249927-error-context.md",
+          "contentType": "text/markdown"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "High"
+        }
+      ],
+      "workerId": 4,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "n/a",
+      "spec_file": "test.spec.js",
+      "name": " > Chrome Project > test.spec.js > get started link",
+      "suiteName": "Chrome Project",
+      "status": "passed",
+      "duration": 1459,
+      "startTime": "2026-01-02T22:34:10.434Z",
+      "endTime": "2026-01-02T22:34:11.893Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.437Z-319-a17dbbd6-54a3-4464-b533-7f058344d888",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 319,
+          "startTime": "2026-01-02T22:34:10.437Z",
+          "endTime": "2026-01-02T22:34:10.756Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.448Z-153-e7d0b752-2ce8-4de0-990f-f4a7361087d2",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 153,
+              "startTime": "2026-01-02T22:34:10.448Z",
+              "endTime": "2026-01-02T22:34:10.601Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.451Z-149-3ec8413a-b687-47c5-9b86-a5044aea85d6",
+                  "title": "Launch browser",
+                  "status": "passed",
+                  "duration": 149,
+                  "startTime": "2026-01-02T22:34:10.451Z",
+                  "endTime": "2026-01-02T22:34:10.600Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.602Z-26-dbfb6e40-aa6d-4581-b397-4cfec1c22901",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 26,
+              "startTime": "2026-01-02T22:34:10.602Z",
+              "endTime": "2026-01-02T22:34:10.628Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.604Z-18-f982adab-659a-4b10-a68f-8a755294ab3b",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 18,
+                  "startTime": "2026-01-02T22:34:10.604Z",
+                  "endTime": "2026-01-02T22:34:10.622Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.629Z-127-86b5a916-912f-44e7-ab83-309df4075648",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 127,
+              "startTime": "2026-01-02T22:34:10.629Z",
+              "endTime": "2026-01-02T22:34:10.756Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.630Z-126-0649c881-e9b0-4c78-aa7b-b51db93c9bd2",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 126,
+                  "startTime": "2026-01-02T22:34:10.630Z",
+                  "endTime": "2026-01-02T22:34:10.756Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:10.758Z-288-ea4b4845-c060-495c-b229-f4b02e26991f",
+          "title": "Navigate to \"/\"",
+          "status": "passed",
+          "duration": 288,
+          "startTime": "2026-01-02T22:34:10.758Z",
+          "endTime": "2026-01-02T22:34:11.046Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "test.spec.js:15:14",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:11.051Z-645-287fd300-33c0-49a8-b920-f7dbcf9b3b07",
+          "title": "Click getByRole('link', { name: 'Get started' })",
+          "status": "passed",
+          "duration": 645,
+          "startTime": "2026-01-02T22:34:11.051Z",
+          "endTime": "2026-01-02T22:34:11.696Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "test.spec.js:18:57",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:11.704Z-71-5838f993-6ff3-479e-9b70-68956ba85f57",
+          "title": "Expect \"toBeVisible\" getByRole('heading', { name: 'Installation' })",
+          "status": "passed",
+          "duration": 71,
+          "startTime": "2026-01-02T22:34:11.704Z",
+          "endTime": "2026-01-02T22:34:11.775Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "test.spec.js:23:5",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:11.776Z-291-4a49fbf6-0cf6-4779-ad58-215ed0ed2418",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 291,
+          "startTime": "2026-01-02T22:34:11.776Z",
+          "endTime": "2026-01-02T22:34:12.067Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:11.778Z-1-0b1f643a-5b8c-47dc-890b-127630d3568c",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T22:34:11.778Z",
+              "endTime": "2026-01-02T22:34:11.779Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:11.779Z-283-deacabde-d4c0-4890-9bfd-d251955eb2a4",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 283,
+              "startTime": "2026-01-02T22:34:11.779Z",
+              "endTime": "2026-01-02T22:34:12.062Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-4bfe55f07ee7660a1cfb_step_2026-01-02T22:34:11.901Z-161-2b94234f-c1ef-4f6b-920e-2d11f763f0fe",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 161,
+                  "startTime": "2026-01-02T22:34:11.901Z",
+                  "endTime": "2026-01-02T22:34:12.062Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "codeSnippet": "Test defined at: test.spec.js:13:6",
+      "tags": [
+        "test"
+      ],
+      "severity": "Minor",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "Minor"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    },
+    {
+      "id": "31be70adcd52654ff551-72b24780ee205af4d7b6",
+      "runId": "run-1767393231306-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "describe": "n/a",
+      "spec_file": "test.spec.js",
+      "name": " > Chrome Project > test.spec.js > flaky: should display and close modal",
+      "suiteName": "Chrome Project",
+      "status": "failed",
+      "duration": 31633,
+      "startTime": "2026-01-02T22:34:12.073Z",
+      "endTime": "2026-01-02T22:34:43.706Z",
+      "browser": "Chrome v143 on Windows 10",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.074Z-104-e959c9ba-d06b-4f58-ad47-c9ceac4e2f5f",
+          "title": "Before Hooks",
+          "status": "passed",
+          "duration": 104,
+          "startTime": "2026-01-02T22:34:12.074Z",
+          "endTime": "2026-01-02T22:34:12.178Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "before",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.078Z-4-95a51a48-b0d8-4d39-909d-bce0aa6e415f",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 4,
+              "startTime": "2026-01-02T22:34:12.078Z",
+              "endTime": "2026-01-02T22:34:12.082Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.078Z-2-e60c1829-024d-42a8-abb9-5262d1d4bc6e",
+                  "title": "Create context",
+                  "status": "passed",
+                  "duration": 2,
+                  "startTime": "2026-01-02T22:34:12.078Z",
+                  "endTime": "2026-01-02T22:34:12.080Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            },
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.082Z-96-62acd831-4db6-4500-a0f7-41c317362354",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 96,
+              "startTime": "2026-01-02T22:34:12.082Z",
+              "endTime": "2026-01-02T22:34:12.178Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.085Z-93-a2715011-8e65-479a-8959-0f36a8bc7175",
+                  "title": "Create page",
+                  "status": "passed",
+                  "duration": 93,
+                  "startTime": "2026-01-02T22:34:12.085Z",
+                  "endTime": "2026-01-02T22:34:12.178Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.179Z-169-610d3298-e2ef-4c9b-ac15-923b21be1718",
+          "title": "Navigate to \"/\"",
+          "status": "passed",
+          "duration": 169,
+          "startTime": "2026-01-02T22:34:12.179Z",
+          "endTime": "2026-01-02T22:34:12.348Z",
+          "browser": "Chrome v143 on Windows 10",
+          "codeLocation": "test.spec.js:31:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:12.372Z-29829-7ea3e822-0f66-4702-a9e4-e0886f4e39bc",
+          "title": "Click locator('[data-testid=\"open-settings\"]')",
+          "status": "failed",
+          "duration": 29829,
+          "startTime": "2026-01-02T22:34:12.372Z",
+          "endTime": "2026-01-02T22:34:42.201Z",
+          "browser": "Chrome v143 on Windows 10",
+          "errorMessage": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"open-settings\"]')\u001b[22m\n",
+          "stackTrace": "Error: page.click: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('[data-testid=\"open-settings\"]')\u001b[22m\n\n    at /Users/arghajitsingha/juliaHub-assignment/tests/test.spec.js:36:16",
+          "codeLocation": "test.spec.js:36:16",
+          "isHook": false,
+          "steps": []
+        },
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:42.082Z-1638-7ae05ae3-b555-4d3a-b7a3-a47a75857841",
+          "title": "After Hooks",
+          "status": "passed",
+          "duration": 1638,
+          "startTime": "2026-01-02T22:34:42.082Z",
+          "endTime": "2026-01-02T22:34:43.720Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:42.145Z-1-d9a66dc5-9b70-4e9a-b387-6e44b19902be",
+              "title": "Fixture \"page\"",
+              "status": "passed",
+              "duration": 1,
+              "startTime": "2026-01-02T22:34:42.145Z",
+              "endTime": "2026-01-02T22:34:42.146Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            },
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:42.146Z-1568-a955d182-3ced-4ea3-8f1f-7ede6f8b9bc1",
+              "title": "Fixture \"context\"",
+              "status": "passed",
+              "duration": 1568,
+              "startTime": "2026-01-02T22:34:42.146Z",
+              "endTime": "2026-01-02T22:34:43.714Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:42.192Z-1518-1974c708-ee2f-4be1-b952-4ff89e2c1728",
+                  "title": "Close context",
+                  "status": "passed",
+                  "duration": 1518,
+                  "startTime": "2026-01-02T22:34:42.192Z",
+                  "endTime": "2026-01-02T22:34:43.710Z",
+                  "browser": "Chrome v143 on Windows 10",
+                  "isHook": false,
+                  "steps": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:43.720Z-25-7e68da55-9624-43d9-9c73-05398463ae31",
+          "title": "Worker Cleanup",
+          "status": "passed",
+          "duration": 25,
+          "startTime": "2026-01-02T22:34:43.720Z",
+          "endTime": "2026-01-02T22:34:43.745Z",
+          "browser": "Chrome v143 on Windows 10",
+          "isHook": true,
+          "hookType": "after",
+          "steps": [
+            {
+              "id": "31be70adcd52654ff551-72b24780ee205af4d7b6_step_2026-01-02T22:34:43.721Z-23-e08801ba-c2e5-4403-b3fb-ff4196c7de03",
+              "title": "Fixture \"browser\"",
+              "status": "passed",
+              "duration": 23,
+              "startTime": "2026-01-02T22:34:43.721Z",
+              "endTime": "2026-01-02T22:34:43.744Z",
+              "browser": "Chrome v143 on Windows 10",
+              "isHook": false,
+              "steps": []
+            }
+          ]
+        }
+      ],
+      "errorMessage": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+      "stackTrace": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+      "codeSnippet": "Test defined at: test.spec.js:26:6",
+      "tags": [
+        "expected-fail"
+      ],
+      "severity": "Critical",
+      "screenshots": [
+        "attachments/31be70adcd52654ff551-72b24780ee205af4d7b6/0-1767393283780-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/31be70adcd52654ff551-72b24780ee205af4d7b6/1-1767393283783-video.webm"
+      ],
+      "tracePath": "attachments/31be70adcd52654ff551-72b24780ee205af4d7b6/3-1767393283784-trace.zip",
+      "attachments": [
+        {
+          "name": "error-context",
+          "path": "attachments/31be70adcd52654ff551-72b24780ee205af4d7b6/2-1767393283783-error-context.md",
+          "contentType": "text/markdown"
+        }
+      ],
+      "annotations": [
+        {
+          "type": "pulse_severity",
+          "description": "Critical"
+        }
+      ],
+      "workerId": 1,
+      "totalWorkers": 4,
+      "configFile": "/Users/arghajitsingha/juliaHub-assignment/playwright.config.js",
+      "metadata": "{\"actualWorkers\":1}"
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2026-01-02T22:34:43.873Z"
+  }
+}
