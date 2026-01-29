@@ -10,10 +10,10 @@
 * **🔧 Improvements**:
   * **Email Template**: Modernized the email template for emailable reports with improved styling and layout.
   * **Enhanced UI update**: Refined the user interface of both the report templates for better user experience and ease of navigation.
-  * **Eleminated `Expand All` and `Collapse All` buttons**: Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
+  * **Eliminated `Expand All` and `Collapse All` buttons**: Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
   * **Easy Sharding**: Resolving the complex sharding technique to make it easier for users to understand and implement. Now, just keep all the shard generated reports in a single directory and run the merge command to get the final merged json report.
 
-- **🐛 Bug Fixes**:  
+* **🐛 Bug Fixes**:  
   * **Fixed send email issue for merged report**: Resolved the problem where the send report script failed to send emails for merged reports after multiple shards.
   * **Fixed all kind of vulnerabilities**: Addresses security concerns by updating dependencies to their latest versions, removing deprecated packages, and following best practices for secure coding. *No Open Source Security Issue*, *No Code Security Issue*, *No Configuration Issue*.
 
@@ -23,8 +23,8 @@
 
 **🚀 Update Highlights**
 
-- **Repository Update**: Repository is public now, [Arghajit47/playwright-pulse](https://github.com/Arghajit47/playwright-pulse). Go ahead, take a look and contribute!
-- **🐛 Fixed** AGPL license related issues in dependency package.
+* **Repository Update**: Repository is public now, [Arghajit47/playwright-pulse](https://github.com/Arghajit47/playwright-pulse). Go ahead, take a look and contribute!
+* **🐛 Fixed** AGPL license related issues in dependency package.
 
 ---
 
@@ -40,7 +40,6 @@
 * **Tag Badges in Email Summaries**: Email report now renders test tags as compact, styled badges beside each test title for better context at a glance.
 * **Severity Distribution Chart**: Added a new "Severity Distribution" chart with *lazy-loading* support to the "Dashboard" tab, visualizing the breakdown of test results by severity level (Minor, Major, Critical) to highlight priority areas.
 * **Custom SMTP Support**: The send email report now supports custom credentials via environment variables (PULSE_MAIL_HOST, PULSE_MAIL_USERNAME, PULSE_MAIL_PASSWORD), allowing direct integration with Gmail and Outlook without manual credential fetching. If nothing mentioned in the environment variables, the reporter will fallback to the older mechanism.
-
 
 * **🔧 Improvements**:
 * **Performance Optimization**: Applied lazy loading (`IntersectionObserver`) to the new duration charts, ensuring they only render when scrolled into view to keep the report lightweight.
@@ -58,19 +57,19 @@
 
 **🚀 Update Highlights**
 
-- **✨ New Features**:
-  - **Custom Annotations Support**: Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
-  - **JIRA/Ticket System Integration**: Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
-  - **Dynamic Output Directory Support**: All CLI scripts now accept `--outputDir` (or `-o`) argument for custom output directories, supporting any folder name or nested path structure.
-  - **Copy AI Prompt Button**: Added "Copy AI Prompt" button in AI Failure Analyzer that copies a complete, ready-to-use prompt with instructions and test details for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
+* **✨ New Features**:
+  * **Custom Annotations Support**: Added full support for Playwright test annotations in reports with dedicated styling, showing Type, Description, and Location details.
+  * **JIRA/Ticket System Integration**: Clickable links for "issue" or "bug" type annotations that automatically detect JIRA tickets and open tickets in new browser tabs.
+  * **Dynamic Output Directory Support**: All CLI scripts now accept `--outputDir` (or `-o`) argument for custom output directories, supporting any folder name or nested path structure.
+  * **Copy AI Prompt Button**: Added "Copy AI Prompt" button in AI Failure Analyzer that copies a complete, ready-to-use prompt with instructions and test details for use with any AI tool (ChatGPT, Claude, Gemini, etc.).
   
-- **🔧 Improvements**:
-  - Migrated from Google Gemini API to Groq API with `llama-3.3-70b-versatile` model for faster and more accurate AI failure analysis.
-  - Enhanced `TestResult` interface with `annotations` field for comprehensive test metadata capture.
-  - Improved CLI scripts architecture to support dynamic directory paths across all commands.
-  - **Automatic Config Detection**: CLI scripts now automatically read `outputDir` from `playwright.config` file, eliminating the need to manually pass `-o` argument, unless overriding is needed.
-  - Optimized API configuration with OpenAI-compatible endpoints and refined parameters.
-  - Beautiful purple/violet themed annotations section for better visual distinction in reports.
+* **🔧 Improvements**:
+  * **Migrated from Google Gemini API to Groq API** with `llama-3.3-70b-versatile` model for faster and more accurate AI failure analysis.
+  * **Enhanced** `TestResult` interface with `annotations` field for comprehensive test metadata capture.
+  * **Improved CLI scripts architecture** to support dynamic directory paths across all commands.
+  * **Automatic Config Detection**: CLI scripts now automatically read `outputDir` from `playwright.config` file, eliminating the need to manually pass `-o` argument, unless overriding is needed.
+  * **Optimized API configuration**: Refined Groq API setup and refined parameters for faster and more accurate AI analysis.
+  * **Beautiful purple/violet themed annotations section**: Added a dedicated section for annotations with a purple/violet theme to better distinguish them from the main report content.
 
 ---
 
@@ -78,10 +77,10 @@
 
 **🚀 Update Highlights**
 
-- **🐛 Bug Fixes**:
-  - Fixed the static report related issues, like;
-    - Other attachments are visible in the static report, but was not getting opened in new tab.
-    - Fixed the low vulnerability issues in the npm package.
+* **🐛 Bug Fixes**:
+  * **Fixed the static report related issues, like;**
+    * Other attachments are visible in the static report, but was not getting opened in new tab.
+    * Fixed the low vulnerability issues in the npm package.
 
 ---
 
@@ -89,8 +88,8 @@
 
 **🚀 Update Highlights**
 
-- **🔧 Improvements**:
-  - Significantly improved the send report feature.
+* **🔧 Improvements**:
+  * **Significantly improved the send report feature.**
 
 ---
 
@@ -98,14 +97,14 @@
 
 **🚀 Update Highlights**
 
-- **🔧 Improvements**:
-  - Significantly expanded README with detailed setup instructions and comprehensive usage examples for better onboarding.
-  - Updated development dependencies to latest stable versions.
-  - Increased minimum Node.js engine requirement for enhanced compatibility.
-  - Increased retry attempts for credential fetching in `send-report`, to handle transient network issues.
-- **🐛 Bug Fixes**:
-  - Fixed issues with "Skipping email sending due to missing or failed credential fetch" in send report.
-  - Resolved security vulnerabilities in the npm package.
+* **🔧 Improvements**:
+  * **Significantly expanded README with detailed setup instructions and comprehensive usage examples for better onboarding.**
+  * **Updated development dependencies to latest stable versions.**
+  * **Increased minimum Node.js engine requirement for enhanced compatibility.**
+  * **Increased retry attempts for credential fetching in `send-report`, to handle transient network issues.**
+* **🐛 Bug Fixes**:
+  * **Fixed issues with "Skipping email sending due to missing or failed credential fetch" in send report.**
+  * **Resolved security vulnerabilities in the npm package.**
 
 ---
 
@@ -113,11 +112,11 @@
 
 **🚀 Update Highlights**
 
-- **🔧 Improvements**:
-  - Added "Error Snippet" logs for failed test cases.
-  - Added "AI Failure Analyzer" for failed test cases, which provides a detailed analysis of the failure, like; possible causes, recommended solutions including the code snippets, for specific failure scenarios automatically.
-  - Static report embeds all the attachments, so no need to have attachments/ directory when viewing the report with better user experience.
-  - Made the static report responsive, less initial load time consuming and dark themed, for better user experience.
+* **🔧 Improvements**:
+  * **Added "Error Snippet" logs for failed test cases.**
+  * **Added "AI Failure Analyzer" for failed test cases, which provides a detailed analysis of the failure, like; possible causes, recommended solutions including the code snippets, for specific failure scenarios automatically.**
+  * **Static report embeds all the attachments, so no need to have attachments/ directory when viewing the report with better user experience.**
+  * **Made the static report responsive, less initial load time consuming and dark themed, for better user experience.**
 
 ---
 
@@ -125,15 +124,16 @@
 
 **🚀 Update Highlights**
 
-- **🔧 Improvements**:
-  - Added "View" options to All kind of attachments for both static and attachment based report.
-  - Added "Test Distribution by Worker" chart, which shows Total no. of skipped, passed and failed test cases in Test History tab, for both static and attachment based report.
-  - Added "Copy Console" for Console Log (stdout) for each test.
-  - Revamped the entire UI design of [Documentation website](https://playwright-pulse-report.netlify.app/)
-  - Changed The logo for the Playwright Pulse Report, throughout all the reporters.
-- **🐛 Bug Fixes**:
-  - Resolved issues with "failed to load attachments" in static report.
-  - Fixed issues with "Copy Prompt" button, in Test Details tab.
+* **🔧 Improvements**:
+  * **Added "View" options** to All kind of attachments for both static and attachment based report.
+  * **Added "Test Distribution by Worker" chart**, which shows Total no. of skipped, passed and failed test cases in Test History tab, for both static and attachment based report.
+  * **Added** "Copy Console" for Console Log (stdout) for each test.
+  * **Revamped** the entire UI design of [Documentation website](https://arghajit47.github.io/playwright-pulse/)
+  * **Changed** The logo for the Playwright Pulse Report, throughout all the reporters.
+
+* **🐛 Bug Fixes**:
+  * **Resolved** issues with "failed to load attachments" in static report.
+  * **Fixed** issues with "Copy Prompt" button, in Test Details tab.
 
 ---
 
@@ -141,9 +141,9 @@
 
 **🚀 Update Highlights**
 
-- **🔧 Improvements**:
-  - Added `resetOnEachRun` config variable to handle Test sequential run, default value is `true`.
-  - Added Gitlab, jenkins CI/CD workflow in the documentation website.
+* **🔧 Improvements**:
+  * **Added `resetOnEachRun` config variable** to handle Test sequential run, default value is `true`.
+  * **Added Github Actions, Gitlab and jenkins CI/CD workflow** in the documentation website.
 
 ---
 
@@ -153,12 +153,12 @@
 
 **🚀 Update Highlights**
 
-- **🔧 Improvements**:
-  - Added Worker Index in the test details tab.
-  - Added `generate-trend` command for only test-history generation.
-- **🐛 Bug Fixes**:
-  - Resolved issues with inconsistent test suite durations.
-  - Fixed layout glitches in the HTML report on smaller screens.
+* **🔧 Improvements**:
+  * **Added Worker Index** in the test details tab.
+  * **Added** `generate-trend` command for only test-history generation.
+* **🐛 Bug Fixes**:
+  * **Resolved** issues with inconsistent test suite durations.
+  * **Fixed** layout glitches in the HTML report on smaller screens.
 
 ---
 
@@ -166,20 +166,20 @@
 
 **🚀 Update Highlights**
 
-- **🏷️ Improvements**
-  - Introduced 'System Information' widget to visualize Details about the test execution environment, like; Host, Os, Cpu Model & Cores, Memory, Node, V8, Cwd.
-- **📊 Enhanced Analytics**:
-  - Improved accuracy in history trend calculations.
-  - Added support for filtering trends by date range.
-  - Added workerIndex support for individual tests in json report.
-- **🐛 Bug Fixes**:
-  - Resolved issues with inconsistent test suite durations.
-  - Fixed layout glitches in the HTML report on smaller screens.
-- **🔧 Improvements**:
-  - Optimized report generation for large test datasets.
-  - Enhanced error handling for missing test data.
-  - Browser Name components in test suite (Accurate browser name, version and os)
-  - Send Report functionality with minified html report (with Minimum important details)
+* **🏷️ Improvements**:
+  * **Introduced 'System Information' widget** to visualize Details about the test execution environment, like; Host, Os, Cpu Model & Cores, Memory, Node, V8, Cwd.
+* **📊 Enhanced Analytics**:
+  * **Improved accuracy in history trend calculations**.
+  * **Added support for filtering trends by date range**.
+  * **Added workerIndex support for individual tests in json report**.
+* **🐛 Bug Fixes**:
+  * **Resolved** issues with inconsistent test suite durations.
+  * **Fixed** layout glitches in the HTML report on smaller screens.
+* **🔧 Improvements**:
+  * **Optimized report generation for large test datasets**.
+  * **Enhanced error handling for missing test data**.
+  * **Browser Name components in test suite** (Accurate browser name, version and os)
+  * **Send Report functionality with minified html report** (with Minimum important details)
 
 ---
 
@@ -187,11 +187,11 @@
 
 **🚀 Fix Update**
 
-- **📈 History Trends** for last 15 runs:
-  - Test suites
-  - Test suite duration
-  - Individual test executions
-- **🐛 Fixed** Project Name components in test suite
+* **📈 History Trends**:
+  * **Test suites**
+  * **Test suite duration**
+  * **Individual test executions**
+* **🐛 Fixed** Project Name components in test suite
 
 ---
 
@@ -199,12 +199,12 @@
 
 **🚀 Major Update**
 
-- **✨ Refined UI** for static HTML reports
-- **📈 History Trends** for:
-  - Test suites
-  - Test suite duration
-  - Individual test executions
-- **🐛 Fixed** Project Name components in test suite
+* **✨ Refined UI** for static HTML reports
+* **📈 History Trends**:
+  * **Test suites**
+  * **Test suite duration**
+  * **Individual test executions**
+* **🐛 Fixed** Project Name components in test suite
 
 ---
 
@@ -212,7 +212,7 @@
 
 ### 🛠️ Fixes
 
-- **📧 Fixed** email report issues
+* **📧 Fixed** email report issues
 
 ---
 
@@ -220,7 +220,7 @@
 
 ### 🎨 Enhancements
 
-- **🖌️ Updated** styling issues
+* **🖌️ Updated** styling issues
 
 ---
 
@@ -228,7 +228,7 @@
 
 ### 🤖 AI Integration
 
-- **🧠 Added AI Analyzer** into the report
+* **🧠 Added AI Analyzer** into the report
 
 ---
 
@@ -236,7 +236,7 @@
 
 ### 📤 New Feature
 
-- **📧 Email-able reports**
+* **📧 Email-able reports**
 
 ---
 
@@ -244,8 +244,8 @@
 
 ### 🔧 Improvements
 
-- **✔️ Fixed** browser filter
-- **🏷️ Added** Browser Tag in Test Suite Card
+* **✔️ Fixed** browser filter
+* **🏷️ Added** Browser Tag in Test Suite Card
 
 ---
 
@@ -253,4 +253,4 @@
 
 ### ⚡️ Performance
 
-- **🧩 Added Sharding Support**
+* **🧩 Added Sharding Support**
