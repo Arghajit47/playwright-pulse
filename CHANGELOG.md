@@ -12,6 +12,7 @@
   * **Enhanced UI update**: Refined the user interface of both the report templates for better user experience and ease of navigation.
   * **Eliminated `Expand All` and `Collapse All` buttons**: Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
   * **Easy Sharding**: Resolving the complex sharding technique to make it easier for users to understand and implement. Now, just keep all the shard generated reports in a single directory and run the merge command to get the final merged json report.
+  * **Significantly improved Documentation**: Enhanced the documentation to provide clear instructions and examples for using the sharding feature, making it easier for users to implement and manage their test suites, in CI/CD or, local.
 
 * **🐛 Bug Fixes**:  
   * **Fixed send email issue for merged report**: Resolved the problem where the send report script failed to send emails for merged reports after multiple shards.
