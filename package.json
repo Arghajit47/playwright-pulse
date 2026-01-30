@@ -65,7 +65,7 @@
     "d3": "^7.9.0",
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
-    "highcharts": "^12.2.0",
+    "highcharts": "^12.4.0",
     "jsdom": "^26.1.0",
     "lucide-react": "^0.475.0",
     "node-fetch": "^3.3.2",
