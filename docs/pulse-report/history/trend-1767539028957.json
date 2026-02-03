@@ -7,18 +7,128 @@
     "failed": 36,
     "skipped": 12,
     "duration": 148710,
-    "environment": {
-      "host": "Arghajits-MacBook-Air.local",
-      "os": "darwin 25.2.0",
-      "cpu": {
-        "model": "Apple M1",
-        "cores": 8
+    "environment": [
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.2.0",
+        "cpu": {
+          "model": "Apple M1",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.19",
+        "cwd": "/Users/arghajitsingha/playwright-test"
       },
-      "memory": "8.00GB",
-      "node": "v20.12.2",
-      "v8": "11.3.244.8-node.19",
-      "cwd": "/Users/arghajitsingha/playwright-test"
-    }
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 24.2.0",
+        "cpu": {
+          "model": "Apple M1 Pro",
+          "cores": 16
+        },
+        "memory": "16.00GB",
+        "node": "v20.12.2",
+        "v8": "11.3.244.8-node.22",
+        "cwd": "/Users/arghajitsingha/playwright-test"
+      }
+    ]
   },
   "results": [
     {

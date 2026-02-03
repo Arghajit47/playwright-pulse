@@ -11,6 +11,7 @@ export interface TestStep {
     errorMessage?: string;
     stackTrace?: string;
     codeLocation?: string;
+    codeSnippet?: string;
     isHook?: boolean;
     hookType?: "before" | "after";
     isFailedStep?: boolean;
@@ -68,7 +69,7 @@ export interface TestRun {
     failed: number;
     skipped: number;
     duration: number;
-    environment?: EnvDetails;
+    environment?: EnvDetails | EnvDetails[];
 }
 export interface TrendDataPoint {
     date: string;

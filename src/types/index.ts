@@ -85,7 +85,7 @@ export interface TestRun {
   failed: number;
   skipped: number;
   duration: number; // total duration for the run
-  environment?: EnvDetails;
+  environment?: EnvDetails | EnvDetails[]; // Single for non-sharded, array for merged sharded reports
 }
 
 export interface TrendDataPoint {

@@ -116,6 +116,30 @@ class PlaywrightPulseReporter {
         const severityAnnotation = annotations.find((a) => a.type === "pulse_severity");
         return (severityAnnotation === null || severityAnnotation === void 0 ? void 0 : severityAnnotation.description) || "Medium";
     }
+    async extractCodeSnippet(filePath, targetLine, targetColumn) {
+        try {
+            const fileContent = await fs.readFile(filePath, "utf-8");
+            const lines = fileContent.split("\n");
+            const contextLines = 1;
+            const startLine = Math.max(0, targetLine - contextLines - 1);
+            const endLine = Math.min(lines.length, targetLine + contextLines);
+            const snippetLines = [];
+            for (let i = startLine; i < endLine; i++) {
+                const lineNum = i + 1;
+                const isTargetLine = lineNum === targetLine;
+                const lineContent = lines[i] || "";
+                snippetLines.push(`${lineNum.toString().padStart(4)} | ${lineContent}`);
+                if (isTargetLine) {
+                    const pointer = " ".repeat(4) + " | " + " ".repeat(targetColumn) + "^";
+                    snippetLines.push(pointer);
+                }
+            }
+            return snippetLines.join("\n");
+        }
+        catch (error) {
+            return undefined;
+        }
+    }
     getBrowserDetails(test) {
         var _a, _b, _c, _d;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
@@ -180,8 +204,10 @@ class PlaywrightPulseReporter {
         const startTime = new Date(step.startTime);
         const endTime = new Date(startTime.getTime() + Math.max(0, duration));
         let codeLocation = "";
+        let codeSnippet = undefined;
         if (step.location) {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
+            codeSnippet = await this.extractCodeSnippet(step.location.file, step.location.line, step.location.column);
         }
         return {
             id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
@@ -194,6 +220,7 @@ class PlaywrightPulseReporter {
             errorMessage: errorMessage,
             stackTrace: ((_d = step.error) === null || _d === void 0 ? void 0 : _d.stack) || undefined,
             codeLocation: codeLocation || undefined,
+            codeSnippet: codeSnippet,
             isHook: step.category === "hook",
             hookType: step.category === "hook"
                 ? step.title.toLowerCase().includes("before")

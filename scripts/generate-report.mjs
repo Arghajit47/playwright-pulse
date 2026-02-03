@@ -688,21 +688,84 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       </div>
   `;
 }
+function generateEnvironmentSection(environmentData) {
+  if (!environmentData) {
+    return '<div class="no-data">Environment data not available.</div>';
+  }
+  
+  if (Array.isArray(environmentData)) {
+    return `
+      <div class="sharded-environments-wrapper">
+        ${environmentData.map((env, index) => `
+          <div class="env-card-wrapper">
+            <div class="env-card-badge">Shard ${index + 1}</div>
+            ${generateEnvironmentDashboard(env)}
+          </div>
+        `).join('')}
+      </div>
+      <style>
+        .sharded-environments-wrapper {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+          gap: 24px;
+          padding: 24px 0;
+        }
+        @media (max-width: 768px) {
+          .sharded-environments-wrapper {
+            grid-template-columns: 1fr;
+          }
+        }
+        .env-card-wrapper {
+          position: relative;
+        }
+        .env-card-badge {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          color: white;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 0.75em;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          z-index: 10;
+          box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+        }
+      </style>
+    `;
+  }
+  
+  return generateEnvironmentDashboard(environmentData);
+}
+
 function generateEnvironmentDashboard(environment) {
-  // Format memory for display
-  const formattedMemory = environment.memory.replace(/(\d+\.\d{2})GB/, "$1 GB");
-
-  // Generate a unique ID for the dashboard
-  const dashboardId = `envDashboard-${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 7)}`;
-
-  // Logic for Run Context
-  const runContext = process.env.CI ? "CI" : "Local Test";
+  const cpuInfo = `model: ${environment.cpu.model}, cores: ${environment.cpu.cores}`;
+  const osInfo = environment.os || 'N/A';
+  const nodeInfo = environment.node || 'N/A';
+  const v8Info = environment.v8 || 'N/A';
+  const cwdInfo = environment.cwd || 'N/A';
+  const formattedMemory = environment.memory || 'N/A';
+  const runContext = process.env.CI ? 'CI' : 'Local Test';
 
   return `
-    <div class="environment-dashboard-wrapper" id="${dashboardId}">
+    <div class="env-modern-card">
       <style>
+        .env-modern-card {
+          background: linear-gradient(to bottom right, #ffffff 0%, #fafafa 100%);
+          border: 0;
+          border-radius: 12px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          margin-top: 24px;
+          transition: all 0.3s ease;
+          font-family: var(--font-family);
+          overflow: hidden;
+        }
+        .env-modern-card:hover {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
         .environment-dashboard-wrapper *,
         .environment-dashboard-wrapper *::before,
         .environment-dashboard-wrapper *::after {
@@ -726,279 +789,259 @@ function generateEnvironmentDashboard(environment) {
           transform: translateZ(0);
         }
 
-        @media (max-width: 768px) {
-            .environment-dashboard-wrapper {
-                grid-template-columns: 1fr;
-                padding: 32px 24px;
-            }
-        }
-        @media (max-width: 480px) {
-            .environment-dashboard-wrapper {
-                padding: 24px;
-            }
-        }
-        
-        .env-dashboard-header {
-          grid-column: 1 / -1;
-          margin-bottom: 24px;
-        }
-        
-        .env-dashboard-title {
-          font-size: 2em;
-          font-weight: 900;
-          color: #0f172a;
-          letter-spacing: -0.02em;
-          margin: 0 0 8px 0;
-        }
-        
-        .env-dashboard-subtitle {
-          font-size: 1.05em;
-          color: #64748b;
-          margin: 0;
-          font-weight: 400;
-        }
-        
-        .env-card {
-          background: white;
-          border: none;
-          border-left: 4px solid #e2e8f0;
-          padding: 28px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          transition: all 0.12s ease;
-          transform: translateZ(0);
-        }
-        
-        .env-card:hover {
-          border-left-color: var(--primary-color);
-          background: #fafbfc;
-        }
-        
         .env-card-header {
-          font-weight: 700;
-          font-size: 1.05em;
-          color: #0f172a;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        
-        .env-card-header svg {
-          width: 18px;
-          height: 18px;
-          fill: #6366f1;
-        }
-
-        .env-card-content {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          padding: 24px 24px 12px;
         }
-        
-        .env-detail-row {
+        .env-card-title-row {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-          gap: 16px;
-          font-size: 1em;
-          padding: 8px 0;
-        }
-        
-        .env-detail-label {
-          color: #64748b;
-          font-weight: 600;
-          font-size: 0.9em;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-          flex-shrink: 0;
-        }
-        
-        .env-detail-value {
-          color: #0f172a;
-          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-          font-size: 0.95em;
-          text-align: right;
-          word-break: break-word;
-          margin-left: auto;
-        }
-        
-        .env-chip {
-          display: inline-flex;
           align-items: center;
-          padding: 6px 14px;
-          border-radius: 6px;
-          font-size: 0.85em;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
         }
-        
-        .env-chip-primary {
-          background-color: #ede9fe;
-          color: #6366f1;
-        }
-        
-        .env-chip-success {
-          background-color: #d1fae5;
-          color: #10b981;
-        }
-        
-        .env-chip-warning {
-          background-color: #fef3c7;
-          color: #f59e0b;
-        }
-        
-        .env-cpu-cores {
+        .env-card-title {
           display: flex;
           align-items: center;
-          gap: 6px; 
+          font-size: 16px;
+          font-weight: 600;
+          color: #0f172a;
+          transition: color 0.3s;
         }
-        
-        .env-core-indicator {
-          width: 12px; 
-          height: 12px;
+        .env-modern-card:hover .env-card-title {
+          color: #6366f1;
+        }
+        .env-card-title svg {
+          width: 16px;
+          height: 16px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }
+        .env-card-subtitle {
+          font-size: 12px;
+          color: #64748b;
+          margin-top: 4px;
+        }
+        .env-icon-badge {
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
-          background-color: var(--success-color);
-          border: 1px solid rgba(0,0,0,0.1); 
+          background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        
-        .env-core-indicator.inactive {
-          background-color: var(--border-light-color);
-          opacity: 0.7; 
-          border-color: var(--border-color);
+        .env-icon-badge svg {
+          width: 16px;
+          height: 16px;
+          stroke: #6366f1;
+          fill: none;
+        }
+        .env-card-content {
+          padding: 0 24px 24px;
+        }
+        .env-items-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        @media (min-width: 768px) {
+          .env-items-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+        .env-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          transition: background-color 0.2s;
+        }
+        .env-item:hover {
+          background-color: rgba(100, 116, 139, 0.05);
+        }
+        .env-item-icon {
+          flex-shrink: 0;
+        }
+        .env-item-icon svg {
+          width: 16px;
+          height: 16px;
+          stroke: #6366f1;
+          fill: none;
+        }
+        .env-item-content {
+          flex-grow: 1;
+          min-width: 0;
+        }
+        .env-item-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: #64748b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .env-item-value {
+          font-size: 12px;
+          font-weight: 600;
+          color: #0f172a;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
       </style>
       
-      <div class="env-dashboard-header">
-        <div>
-          <h3 class="env-dashboard-title">System Environment</h3>
-          <p class="env-dashboard-subtitle">Snapshot of the execution environment</p>
-        </div>
-        <span class="env-chip env-chip-primary">${environment.host}</span>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16V4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h-2v10H4V6zm18-2h-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v2h20V6a2 2 0 0 0-2-2zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
-          Hardware
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">CPU Model</span>
-            <span class="env-detail-value">${environment.cpu.model}</span>
+      <div class="env-card-header">
+        <div class="env-card-title-row">
+          <div>
+            <div class="env-card-title">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                <line x1="6" x2="6.01" y1="18" y2="18"></line>
+              </svg>
+              System Information
+            </div>
+            <div class="env-card-subtitle">Test execution environment details</div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">CPU Cores</span>
-            <span class="env-detail-value">
-              <div class="env-cpu-cores">
-                <span>${environment.cpu.cores || "N/A"} core${environment.cpu.cores !== 1 ? "s" : ""}</span>
-              </div>
-            </span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Memory</span>
-            <span class="env-detail-value">${formattedMemory}</span>
+          <div class="env-icon-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+            </svg>
           </div>
         </div>
       </div>
       
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-0.01 18c-2.76 0-5.26-1.12-7.07-2.93A7.973 7.973 0 0 1 4 12c0-2.21.9-4.21 2.36-5.64A7.994 7.994 0 0 1 11.99 4c4.41 0 8 3.59 8 8 0 2.76-1.12 5.26-2.93 7.07A7.973 7.973 0 0 1 11.99 20zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
-          Operating System
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">OS Type</span>
-            <span class="env-detail-value">${
-              environment.os.split(" ")[0] === "darwin"
-                ? "darwin (macOS)"
-                : environment.os.split(" ")[0] || "Unknown"
-            }</span>
+      <div class="env-card-content">
+        <div class="env-items-grid">
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Host</p>
+              <div class="env-item-value" title="${environment.host}">${environment.host}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">OS Version</span>
-            <span class="env-detail-value">${
-              environment.os.split(" ")[1] || "N/A"
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Os</p>
+              <div class="env-item-value" title="${environment.os}">${environment.os}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Hostname</span>
-            <span class="env-detail-value" title="${environment.host}">${
-              environment.host
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="16" height="16" x="4" y="4" rx="2"></rect>
+                <rect width="6" height="6" x="9" y="9" rx="1"></rect>
+                <path d="M15 2v2"></path>
+                <path d="M15 20v2"></path>
+                <path d="M2 15h2"></path>
+                <path d="M2 9h2"></path>
+                <path d="M20 15h2"></path>
+                <path d="M20 9h2"></path>
+                <path d="M9 2v2"></path>
+                <path d="M9 20v2"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Cpu</p>
+              <div class="env-item-value" title='${JSON.stringify(environment.cpu)}'>${cpuInfo}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-          Node.js Runtime
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">Node Version</span>
-            <span class="env-detail-value">${environment.node}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 19v-3"></path>
+                <path d="M10 19v-3"></path>
+                <path d="M14 19v-3"></path>
+                <path d="M18 19v-3"></path>
+                <path d="M8 11V9"></path>
+                <path d="M16 11V9"></path>
+                <path d="M12 11V9"></path>
+                <path d="M2 15h20"></path>
+                <path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Memory</p>
+              <div class="env-item-value" title="${environment.memory}">${environment.memory}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">V8 Engine</span>
-            <span class="env-detail-value">${environment.v8}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Node</p>
+              <div class="env-item-value" title="${environment.node}">${environment.node}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Working Dir</span>
-            <span class="env-detail-value" title="${environment.cwd}">${
-              environment.cwd.length > 25
-                ? "..." + environment.cwd.slice(-22)
-                : environment.cwd
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">V8</p>
+              <div class="env-item-value" title="${environment.v8}">${environment.v8}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h.71C7.37 8.69 9.48 7 12 7c2.76 0 5 2.24 5 5v1h2c1.66 0 3 1.34 3 3s-1.34 3-3 3z"/></svg>
-          System Summary
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">Platform Arch</span>
-            <span class="env-detail-value">
-              <span class="env-chip ${
-                environment.os.includes("darwin") &&
-                environment.cpu.model.toLowerCase().includes("apple")
-                  ? "env-chip-success"
-                  : "env-chip-warning"
-              }">
-                ${
-                  environment.os.includes("darwin") &&
-                  environment.cpu.model.toLowerCase().includes("apple")
-                    ? "Apple Silicon"
-                    : environment.cpu.model.toLowerCase().includes("arm") ||
-                        environment.cpu.model.toLowerCase().includes("aarch64")
-                      ? "ARM-based"
-                      : "x86/Other"
-                }
-              </span>
-            </span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Memory per Core</span>
-            <span class="env-detail-value">${
-              environment.cpu.cores > 0
-                ? (
-                    parseFloat(environment.memory) / environment.cpu.cores
-                  ).toFixed(2) + " GB"
-                : "N/A"
-            }</span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Run Context</span>
-            <span class="env-detail-value">${runContext}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Working Dir</p>
+              <div class="env-item-value" title="${environment.cwd}">${environment.cwd.length > 30 ? '...' + environment.cwd.slice(-27) : environment.cwd}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -4103,12 +4146,7 @@ function generateHTML(reportData, trendData = null) {
                   400,
                   390,
                 )} 
-                ${
-                  runSummary.environment &&
-                  Object.keys(runSummary.environment).length > 0
-                    ? generateEnvironmentDashboard(runSummary.environment)
-                    : '<div class="no-data">Environment data not available.</div>'
-                }
+                ${generateEnvironmentSection(runSummary.environment)}
               </div> 
               
               <div class="dashboard-column">

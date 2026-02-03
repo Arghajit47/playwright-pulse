@@ -73,6 +73,7 @@ function mergeReports(shardDirs) {
   let combinedResults = [];
   let latestTimestamp = "";
   let latestGeneratedAt = "";
+  let allEnvironments = [];
 
   for (const shardDir of shardDirs) {
     const jsonPath = path.join(shardDir, OUTPUT_FILE);
@@ -94,7 +95,7 @@ function mergeReports(shardDirs) {
       combinedRun.duration += run.duration || 0;
 
       if (run.environment) {
-        combinedRun.environment = run.environment;
+        allEnvironments.push(run.environment);
       }
 
       if (json.results) {
@@ -109,6 +110,10 @@ function mergeReports(shardDirs) {
         `  Warning: Failed to process JSON in ${path.basename(shardDir)}: ${e.message}`,
       );
     }
+  }
+
+  if (allEnvironments.length > 0) {
+    combinedRun.environment = allEnvironments;
   }
 
   const finalJson = {
