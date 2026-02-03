@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://arghajit47.github.io/playwright-pulse/",
   "repository": {
@@ -87,6 +87,8 @@
     "@playwright/test": ">=1.40.0"
   },
   "overrides": {
-    "glob": "^13.0.0"
+    "glob": "^13.0.0",
+    "minimatch": "^10.1.2",
+    "@isaacs/brace-expansion": "^5.0.1"
   }
 }

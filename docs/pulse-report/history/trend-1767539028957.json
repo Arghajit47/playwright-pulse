@@ -117,15 +117,15 @@
         "cwd": "/Users/arghajitsingha/playwright-test"
       },
       {
-        "host": "Arghajits-MacBook-Air.local",
-        "os": "darwin 24.2.0",
+        "host": "runner-u4xqpdyhm-project-55691873-concurrent-0",
+        "os": "linux 5.15.154+",
         "cpu": {
-          "model": "Apple M1 Pro",
-          "cores": 16
+          "model": "AMD EPYC 7B13",
+          "cores": 4
         },
-        "memory": "16.00GB",
-        "node": "v20.12.2",
-        "v8": "11.3.244.8-node.22",
+        "memory": "15.63GB",
+        "node": "v22.20.0",
+        "v8": "12.4.254.21-node.33",
         "cwd": "/Users/arghajitsingha/playwright-test"
       }
     ]

@@ -1,5 +1,25 @@
 # 📜 Changelog
 
+## **Version 0.3.4**
+
+**🚀 Update Highlights**
+
+* **✨ New Features**:
+  * **Sharded Environment Preservation**: Complete tracking of all shard environments in merged reports (array storage instead of overwriting)
+
+* **🔧 Improvements**:
+  * **Modern Environment Dashboard Redesign**: A visually appealing and user-friendly redesign of the environment section of dashboard, with detailed bullet points covering:
+    * Lucide-style SVG icons with W3C namespace
+    * Gradient backgrounds and hover transitions
+    * Responsive grid layout
+    * Sticky header design with 520px scrollable area
+    * Dynamic shard count display
+    * Individual shard badges
+    * Clean UI without redundant headers
+  * **Test skipped steps display**: Now, the report dashboard shows the count of skipped steps for each test, helping users identify any potential issues or areas for improvement.
+  * **Code snippet**: Added a code snippet section to each and every test step, showing the actual code used in that step, making it easier for users to debug and understand the test flow.
+---
+
 ## **Version 0.3.3**
 
 **🚀 Update Highlights**
