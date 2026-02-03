@@ -10,7 +10,7 @@ _The ultimate Playwright reporter — Interactive dashboard with historical tren
 
 ## [Live Demo](https://arghajit47.github.io/playwright-pulse/demo.html)
 
-## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/features.svg)
+## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/features.svg)
 
 ## **Documentation**: [Pulse Report](https://arghajit47.github.io/playwright-pulse/)
 
@@ -21,7 +21,7 @@ The project provides these utility commands:
 | Command                | Description                                                                 |
 |------------------------|-----------------------------------------------------------------------------|
 | `generate-report`      | Generates playwright-pulse-report.html, Loads screenshots and images dynamically from the attachments/ directory, Produces a lighter HTML file with faster initial load, Requires attachments/ directory to be present when viewing the report                                    |
-| `generate-pulse-report`| Generates `playwright-pulse-static-report.html`, Self-contained, no server required, Preserves all dashboard functionality, all the attachments are embadded in the report, no need to have attachments/ directory when viewing the report, with a dark theme and better initial load handling                                            |
+| `generate-pulse-report`| Generates `playwright-pulse-static-report.html`, Self-contained, no server required, Preserves all dashboard functionality, all the attachments are embedded in the report, no need to have attachments/ directory when viewing the report, with a dark theme and better initial load handling                                            |
 | `merge-pulse-report`   | Combines multiple parallel test json reports, basically used in sharding                                     |
 | `generate-trend`       | Analyzes historical trends in test results                                  |
 | `generate-email-report`| Generates email-friendly report versions                                    |
@@ -101,24 +101,7 @@ npx merge-pulse-report --outputDir {YOUR_CUSTOM_REPORT_FOLDER}
 
 **Important:** Make sure your `playwright.config.ts` custom directory matches the CLI script:
 
-```typescript
-import { defineConfig } from "@playwright/test";
-import * as path from "path";
-
-const CUSTOM_REPORT_DIR = path.resolve(__dirname, "{YOUR_CUSTOM_REPORT_FOLDER}");
-
-export default defineConfig({
-  reporter: [
-    ["list"],
-    [
-      "@arghajit/playwright-pulse-report",
-      {
-        outputDir: CUSTOM_REPORT_DIR,  // Must match CLI --outputDir
-      },
-    ],
-  ],
-});
-```
+![Custom Output Directory](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/custom-output-directory-config.png)
 
 ## 📊 Report Options
 
@@ -240,75 +223,99 @@ Under the hood, this will:
 ### Basic Workflow
 
 ```yaml
-# Upload Pulse report from each shard (per matrix.config.type)
-- name: Upload Pulse Report results
-  if: success() || failure()
-  uses: actions/upload-artifact@v4
-  with:
-    name: pulse-report
-    path: pulse-report/
-
-# Download all pulse-report-* artifacts after all shards complete
-- name: Download Pulse Report artifacts
-  uses: actions/download-artifact@v4
-  with:
-    pattern: pulse-report
-    path: downloaded-artifacts
-
-# Merge all sharded JSON reports into one final output
-- name: Generate Pulse Report
-  run: |
-    npm run script merge-report
-    npm run generate-report [or, npm run generate-pulse-report]
-
-# Upload final merged report as CI artifact
-- name: Upload Pulse report
-  uses: actions/upload-artifact@v4
-  with:
-    name: pulse-report
+# .github/workflows/playwright.yml
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm ci
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps
+    - name: Run Playwright tests
+      run: npm run test
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: playwright-report
+        path: playwright-report/
+        retention-days: 30
 ```
+
+For more details, please refer to the [Pulse Report Basic CI/CD Integration](https://arghajit47.github.io/playwright-pulse/advanced-usage.html).
 
 ### Sharded Workflow
 
 ```yaml
-# Upload Pulse report from each shard (per matrix.config.type)
-- name: Upload Pulse Report results
-  if: success() || failure()
-  uses: actions/upload-artifact@v4
-  with:
-    name: pulse-report-${{ matrix.config.type }}
-    path: pulse-report/
+# .github/workflows/playwright.yml
+name: Playwright Tests with Pulse Report
+on: [push]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - run: npx playwright test --shard=${{ matrix.shard }}/${{ strategy.job-total }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-report-shard-${{ matrix.shard }}
+          path: pulse-report/
+          retention-days: 1
 
-# Download all pulse-report-* artifacts after all shards complete
-- name: Download Pulse Report artifacts
-  uses: actions/download-artifact@v4
-  with:
-    pattern: pulse-report-*
-    path: downloaded-artifacts
+  merge-report:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - run: npm ci
 
-# Organize reports into a single folder and rename for merging
-- name: Organize Pulse Report
-  run: |
-    mkdir -p pulse-report
-    for dir in downloaded-artifacts/pulse-report-*; do
-      config_type=$(basename "$dir" | sed 's/pulse-report-//')
-      cp -r "$dir/attachments" "pulse-report/attachments"
-      cp "$dir/playwright-pulse-report.json" "pulse-report/playwright-pulse-report-${config_type}.json"
-    done
+      # Download all shard artifacts to a single directory
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+          pattern: pulse-report-shard-*
 
-# Merge all sharded JSON reports into one final output
-- name: Generate Pulse Report
-  run: |
-    npm run merge-report
-    npm run generate-report [or, npm run generate-pulse-report]
+      # Merge all shard reports into a single report
+      - run: npx merge-pulse-report -o all-reports
 
-# Upload final merged report as CI artifact
-- name: Upload Pulse report
-  uses: actions/upload-artifact@v4
-  with:
-    name: pulse-report
-    path: pulse-report/
+      # Generate the final HTML report
+      - run: npx generate-pulse-report -o all-reports
+
+      # Upload the final merged report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-playwright-pulse-report
+          path: all-reports/
+          retention-days: 7
 ```
+
+For more details, please refer to the [Pulse Report Sharded CI/CD Integration](https://arghajit47.github.io/playwright-pulse/sharding.html).
 
 ## 🧠 Notes
 
@@ -319,13 +326,14 @@ Under the hood, this will:
 - After the test matrix completes, reports are downloaded, renamed, and merged.
 - merge-report is a custom Node.js script that combines all JSON files into one.
 
-## ![Features](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images//pulse-folder-structures.svg)
+## ![Folder-Structure](https://ocpaxmghzmfbuhxzxzae.supabase.co/storage/v1/object/public/images/pulse-report/pulse-folder-structures.svg)
 
 ### 🚀 **Upgrade Now**
 
 ```bash
 npm install @arghajit/playwright-pulse-report@latest
 ```
+
 ---
 
 ## ⚙️ Advanced Configuration
@@ -340,7 +348,7 @@ npx playwright test test1.spec.ts && npx playwright test test2.spec.ts
 
 By default, In this above scenario, the report from test1 will be lost. To solve this, you can use the resetOnEachRun option.
 
-```bash
+```javascript
 // playwright.config.ts
 import { defineConfig } from "@playwright/test";
 import * as path from "path";
