@@ -16,7 +16,7 @@
     * Dynamic shard count display
     * Individual shard badges
     * Clean UI without redundant headers
-  * **Test skipped steps display**: Now, the report dashboard shows the count of skipped steps for each test, helping users identify any potential issues or areas for improvement.
+  * **Test skipped steps display**: Complete step visibility for all test outcomes (passed, failed, skipped), Clear identification of failure/skip points in test execution & Better debugging experience with full execution context.
   * **Code snippet**: Added a code snippet section to each and every test step, showing the actual code used in that step, making it easier for users to debug and understand the test flow.
 ---
 
