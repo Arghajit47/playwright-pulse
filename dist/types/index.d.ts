@@ -13,6 +13,7 @@ export interface TestStep {
     codeLocation?: string;
     isHook?: boolean;
     hookType?: "before" | "after";
+    isFailedStep?: boolean;
     steps?: TestStep[];
 }
 export interface TestResult {

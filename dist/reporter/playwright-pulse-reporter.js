@@ -166,7 +166,7 @@ class PlaywrightPulseReporter {
         }
         return finalString.trim();
     }
-    async processStep(step, testId, browserDetails, testCase) {
+    async processStep(step, testId, browserDetails, testCase, isFailedStep = false) {
         var _a, _b, _c, _d;
         let stepStatus = "passed";
         let errorMessage = ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined;
@@ -200,23 +200,29 @@ class PlaywrightPulseReporter {
                     ? "before"
                     : "after"
                 : undefined,
+            isFailedStep: isFailedStep,
             steps: [],
         };
     }
     async onTestEnd(test, result) {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const browserDetails = this.getBrowserDetails(test);
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
-        const processAllSteps = async (steps) => {
+        const processAllSteps = async (steps, parentFailed = false) => {
             let processed = [];
+            let foundFailedStep = false;
             for (const step of steps) {
-                const processedStep = await this.processStep(step, test.id, browserDetails, test);
+                const isThisStepFailed = !foundFailedStep && (step.error !== undefined || (testStatus === "failed" && !foundFailedStep));
+                if (isThisStepFailed) {
+                    foundFailedStep = true;
+                }
+                const processedStep = await this.processStep(step, test.id, browserDetails, test, isThisStepFailed);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
-                    processedStep.steps = await processAllSteps(step.steps);
+                    processedStep.steps = await processAllSteps(step.steps, isThisStepFailed);
                 }
             }
             return processed;
@@ -268,10 +274,10 @@ class PlaywrightPulseReporter {
             endTime: endTime,
             browser: browserDetails,
             retries: result.retry,
-            steps: ((_h = result.steps) === null || _h === void 0 ? void 0 : _h.length) ? await processAllSteps(result.steps) : [],
-            errorMessage: (_j = result.error) === null || _j === void 0 ? void 0 : _j.message,
-            stackTrace: (_k = result.error) === null || _k === void 0 ? void 0 : _k.stack,
-            snippet: (_l = result.error) === null || _l === void 0 ? void 0 : _l.snippet,
+            steps: result.steps ? await processAllSteps(result.steps) : [],
+            errorMessage: (_h = result.error) === null || _h === void 0 ? void 0 : _h.message,
+            stackTrace: (_j = result.error) === null || _j === void 0 ? void 0 : _j.stack,
+            snippet: (_k = result.error) === null || _k === void 0 ? void 0 : _k.snippet,
             codeSnippet: codeSnippet,
             tags: test.tags.map((tag) => tag.startsWith("@") ? tag.substring(1) : tag),
             severity: this._getSeverity(test.annotations),
@@ -281,7 +287,7 @@ class PlaywrightPulseReporter {
             attachments: [],
             stdout: stdoutMessages.length > 0 ? stdoutMessages : undefined,
             stderr: stderrMessages.length > 0 ? stderrMessages : undefined,
-            annotations: ((_m = test.annotations) === null || _m === void 0 ? void 0 : _m.length) > 0 ? test.annotations : undefined,
+            annotations: ((_l = test.annotations) === null || _l === void 0 ? void 0 : _l.length) > 0 ? test.annotations : undefined,
             ...testSpecificData,
         };
         for (const [index, attachment] of result.attachments.entries()) {
@@ -298,16 +304,16 @@ class PlaywrightPulseReporter {
                 await this._ensureDirExists(path.dirname(absoluteDestPath));
                 await fs.copyFile(attachment.path, absoluteDestPath);
                 if (attachment.contentType.startsWith("image/")) {
-                    (_o = pulseResult.screenshots) === null || _o === void 0 ? void 0 : _o.push(relativeDestPath);
+                    (_m = pulseResult.screenshots) === null || _m === void 0 ? void 0 : _m.push(relativeDestPath);
                 }
                 else if (attachment.contentType.startsWith("video/")) {
-                    (_p = pulseResult.videoPath) === null || _p === void 0 ? void 0 : _p.push(relativeDestPath);
+                    (_o = pulseResult.videoPath) === null || _o === void 0 ? void 0 : _o.push(relativeDestPath);
                 }
                 else if (attachment.name === "trace") {
                     pulseResult.tracePath = relativeDestPath;
                 }
                 else {
-                    (_q = pulseResult.attachments) === null || _q === void 0 ? void 0 : _q.push({
+                    (_p = pulseResult.attachments) === null || _p === void 0 ? void 0 : _p.push({
                         name: attachment.name,
                         path: relativeDestPath,
                         contentType: attachment.contentType,
