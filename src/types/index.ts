@@ -19,6 +19,7 @@ export interface TestStep {
   errorMessage?: string;
   stackTrace?: string;
   codeLocation?: string;
+  codeSnippet?: string; // Code snippet from source file with line numbers
   isHook?: boolean;
   hookType?: "before" | "after";
   isFailedStep?: boolean; // Marks the specific step that caused failure/skip

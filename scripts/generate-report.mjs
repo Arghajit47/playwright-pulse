@@ -2146,6 +2146,13 @@ function generateHTML(reportData, trendData = null) {
                   : ""
               }
               ${
+                step.codeSnippet
+                  ? `<div class="code-snippet-section"><pre class="code-snippet">${sanitizeHTML(
+                      step.codeSnippet,
+                    )}</pre></div>`
+                  : ""
+              }
+              ${
                 step.errorMessage
                   ? `<div class="test-error-summary">
                       ${
@@ -3518,6 +3525,8 @@ function generateHTML(reportData, trendData = null) {
         .step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
         .step-details { display: none; padding: 14px; margin-top: 8px; background: #fdfdfd; border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
         .step-info { margin-bottom: 8px; }
+        .code-snippet-section { margin: 12px 0; }
+        .code-snippet { background-color: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9em; line-height: 1.5; overflow-x: auto; color: #24292e; margin: 0; white-space: pre; }
         .test-error-summary { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
         .test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
         .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 

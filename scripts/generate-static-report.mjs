@@ -2312,6 +2312,13 @@ function generateHTML(reportData, trendData = null) {
                   : ""
               }
               ${
+                step.codeSnippet
+                  ? `<div class="code-snippet-section"><pre class="code-snippet">${sanitizeHTML(
+                      step.codeSnippet,
+                    )}</pre></div>`
+                  : ""
+              }
+              ${
                 step.errorMessage
                   ? `<div class="test-error-summary">
                       ${
@@ -3778,6 +3785,22 @@ function generateHTML(reportData, trendData = null) {
           border-radius: 4px; 
           font-size: 0.85em; 
           font-weight: 600; 
+        }
+        .code-snippet-section { 
+          margin: 12px 0; 
+        }
+        .code-snippet { 
+          background-color: #f8f9fa; 
+          border: 1px solid #e1e4e8; 
+          border-radius: 6px; 
+          padding: 12px; 
+          font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+          font-size: 0.9em; 
+          line-height: 1.5; 
+          overflow-x: auto; 
+          color: #24292e; 
+          margin: 0; 
+          white-space: pre; 
         }
         .nested-steps { 
           margin-top: 12px; 

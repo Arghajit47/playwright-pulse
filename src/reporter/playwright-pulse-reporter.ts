@@ -131,6 +131,39 @@ export class PlaywrightPulseReporter implements Reporter {
     return severityAnnotation?.description || "Medium";
   }
 
+  private async extractCodeSnippet(
+    filePath: string,
+    targetLine: number,
+    targetColumn: number
+  ): Promise<string | undefined> {
+    try {
+      const fileContent = await fs.readFile(filePath, "utf-8");
+      const lines = fileContent.split("\n");
+      
+      const contextLines = 1;
+      const startLine = Math.max(0, targetLine - contextLines - 1);
+      const endLine = Math.min(lines.length, targetLine + contextLines);
+      
+      const snippetLines: string[] = [];
+      for (let i = startLine; i < endLine; i++) {
+        const lineNum = i + 1;
+        const isTargetLine = lineNum === targetLine;
+        const lineContent = lines[i] || "";
+        
+        snippetLines.push(`${lineNum.toString().padStart(4)} | ${lineContent}`);
+        
+        if (isTargetLine) {
+          const pointer = " ".repeat(4) + " | " + " ".repeat(targetColumn) + "^";
+          snippetLines.push(pointer);
+        }
+      }
+      
+      return snippetLines.join("\n");
+    } catch (error) {
+      return undefined;
+    }
+  }
+
   private getBrowserDetails(test: TestCase): string {
     const project = test.parent?.project();
     const projectConfig = project?.use;
@@ -203,11 +236,19 @@ export class PlaywrightPulseReporter implements Reporter {
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
     let codeLocation = "";
+    let codeSnippet: string | undefined = undefined;
+    
     if (step.location) {
       codeLocation = `${path.relative(
         this.config.rootDir,
         step.location.file
       )}:${step.location.line}:${step.location.column}`;
+      
+      codeSnippet = await this.extractCodeSnippet(
+        step.location.file,
+        step.location.line,
+        step.location.column
+      );
     }
 
     return {
@@ -221,6 +262,7 @@ export class PlaywrightPulseReporter implements Reporter {
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
+      codeSnippet: codeSnippet,
       isHook: step.category === "hook",
       hookType:
         step.category === "hook"
