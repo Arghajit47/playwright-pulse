@@ -771,24 +771,106 @@ function generateEnvironmentSection(environmentData) {
 
   if (Array.isArray(environmentData)) {
     return `
-      <div class="sharded-environments-wrapper">
-        ${environmentData
-          .map(
-            (env, index) => `
-          <div class="env-card-wrapper">
-            <div class="env-card-badge">Shard ${index + 1}</div>
-            ${generateEnvironmentDashboard(env)}
+      <div class="sharded-env-section">
+        <div class="sharded-env-header">
+          <div class="sharded-env-title-row">
+            <div>
+              <div class="sharded-env-title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                  <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                  <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                  <line x1="6" x2="6.01" y1="18" y2="18"></line>
+                </svg>
+                System Information
+              </div>
+              <div class="sharded-env-subtitle">Test execution environment details - ${environmentData.length} shard${environmentData.length > 1 ? "s" : ""}</div>
+            </div>
+            <div class="env-icon-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
           </div>
-        `,
-          )
-          .join("")}
+        </div>
+        <div class="sharded-environments-container">
+          <div class="sharded-environments-wrapper">
+            ${environmentData
+              .map(
+                (env, index) => `
+              <div class="env-card-wrapper">
+                <div class="env-card-badge">Shard ${index + 1}</div>
+                ${generateEnvironmentDashboard(env, true)}
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>
       </div>
       <style>
+        .sharded-env-section {
+          border: 1px solid var(--border-light);
+          border-radius: 12px;
+          background: var(--bg-secondary);
+          overflow: hidden;
+        }
+        .sharded-env-header {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: linear-gradient(to bottom right, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+          border-bottom: 1px solid var(--border-light);
+          padding: 24px 24px 16px;
+        }
+        .sharded-env-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .sharded-env-title {
+          display: flex;
+          align-items: center;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+        .sharded-env-title svg {
+          width: 18px;
+          height: 18px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }
+        .sharded-env-subtitle {
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-top: 4px;
+        }
+        .sharded-environments-container {
+          max-height: 520px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 16px;
+        }
+        .sharded-environments-container::-webkit-scrollbar {
+          width: 8px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-track {
+          background: var(--bg-tertiary);
+          border-radius: 4px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: 4px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-thumb:hover {
+          background: var(--border-color);
+        }
         .sharded-environments-wrapper {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
           gap: 24px;
-          padding: 24px 0;
         }
         @media (max-width: 768px) {
           .sharded-environments-wrapper {
@@ -800,7 +882,7 @@ function generateEnvironmentSection(environmentData) {
         }
         .env-card-badge {
           position: absolute;
-          top: 16px;
+          top: -10px;
           right: 16px;
           background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
           color: white;
@@ -820,11 +902,11 @@ function generateEnvironmentSection(environmentData) {
   return generateEnvironmentDashboard(environmentData);
 }
 
-function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
+function generateEnvironmentDashboard(environment, hideHeader = false) {
   const cpuInfo = `model: ${environment.cpu.model}, cores: ${environment.cpu.cores}`;
 
   return `
-    <div class="env-modern-card">
+    <div class="env-modern-card${hideHeader ? " no-header" : ""}">
       <style>
         .env-modern-card {
           background: linear-gradient(to bottom right, var(--bg-primary) 0%, var(--bg-secondary) 100%);
@@ -839,10 +921,22 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
         .env-modern-card:hover {
           box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
         }
+        .env-modern-card {
+          margin-bottom: 0;
+        }
         .env-card-header {
           display: flex;
           flex-direction: column;
           padding: 24px 24px 12px;
+        }
+        .env-modern-card.no-header .env-card-header {
+          display: none;
+        }
+        .env-modern-card.no-header {
+          margin-top: 0;
+        }
+        .env-modern-card.no-header .env-card-content {
+          padding-top: 24px;
         }
         .env-card-title-row {
           display: flex;
@@ -878,7 +972,7 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
         .env-items-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
+          gap: 10px;
         }
         @media (min-width: 768px) {
           .env-items-grid {
@@ -887,11 +981,12 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
         }
         .env-item {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           gap: 8px;
           padding: 8px;
           border-radius: 8px;
           transition: background-color 0.2s;
+          min-height: 48px;
         }
         .env-item:hover {
           background-color: var(--bg-hover);
@@ -921,9 +1016,9 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
           font-size: 12px;
           font-weight: 600;
           color: var(--text-primary);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.4;
         }
         
         .env-dashboard-title {
