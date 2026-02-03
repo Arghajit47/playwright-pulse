@@ -2119,17 +2119,20 @@ function generateHTML(reportData, trendData = null) {
             .map((step) => {
               const hasNestedSteps = step.steps && step.steps.length > 0;
               const isHook = step.hookType;
+              const isFailedStep = step.isFailedStep === true;
               const stepClass = isHook
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
+              const failedStepClass = isFailedStep ? " failed-step-highlight" : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
+              const failedStepIndicator = isFailedStep ? ` <span class="failed-step-marker">⚠️ Failed at this step</span>` : "";
               return `
-          <div class="step-item" style="--depth: ${depth};">
+          <div class="step-item${failedStepClass}" style="--depth: ${depth};">
             <div class="step-header ${stepClass}" role="button" aria-expanded="false">
               <span class="step-icon">${getStatusIcon(step.status)}</span>
               <span class="step-title">${sanitizeHTML(
                 step.title,
-              )}${hookIndicator}</span>
+              )}${hookIndicator}${failedStepIndicator}</span>
               <span class="step-duration">${formatDuration(
                 step.duration,
               )}</span>
@@ -3519,6 +3522,9 @@ function generateHTML(reportData, trendData = null) {
         .test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
         .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 
         .step-hook .step-title { font-style: italic; color: var(--info-color)}
+        .failed-step-highlight { border-left: 4px solid var(--danger-color) !important; background-color: rgba(244,67,54,0.03); }
+        .failed-step-highlight .step-header { background-color: rgba(244,67,54,0.05); border-color: rgba(244,67,54,0.3); }
+        .failed-step-marker { display: inline-block; margin-left: 10px; padding: 2px 8px; background-color: var(--danger-color); color: white; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
         .nested-steps { margin-top: 12px; }
         .attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
         .attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }

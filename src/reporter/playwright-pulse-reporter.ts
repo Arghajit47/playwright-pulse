@@ -187,7 +187,8 @@ export class PlaywrightPulseReporter implements Reporter {
     step: PwStep,
     testId: string,
     browserDetails: string,
-    testCase?: TestCase
+    testCase?: TestCase,
+    isFailedStep: boolean = false
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
     let errorMessage = step.error?.message || undefined;
@@ -227,6 +228,7 @@ export class PlaywrightPulseReporter implements Reporter {
             ? "before"
             : "after"
           : undefined,
+      isFailedStep: isFailedStep,
       steps: [],
     };
   }
@@ -239,19 +241,29 @@ export class PlaywrightPulseReporter implements Reporter {
     const endTime = new Date(startTime.getTime() + result.duration);
 
     const processAllSteps = async (
-      steps: PwStep[]
+      steps: PwStep[],
+      parentFailed: boolean = false
     ): Promise<PulseTestStep[]> => {
       let processed: PulseTestStep[] = [];
+      let foundFailedStep = false;
+      
       for (const step of steps) {
+        const isThisStepFailed = !foundFailedStep && (step.error !== undefined || (testStatus === "failed" && !foundFailedStep));
+        if (isThisStepFailed) {
+          foundFailedStep = true;
+        }
+        
         const processedStep = await this.processStep(
           step,
           test.id,
           browserDetails,
-          test
+          test,
+          isThisStepFailed
         );
         processed.push(processedStep);
+        
         if (step.steps && step.steps.length > 0) {
-          processedStep.steps = await processAllSteps(step.steps);
+          processedStep.steps = await processAllSteps(step.steps, isThisStepFailed);
         }
       }
       return processed;
@@ -320,7 +332,7 @@ export class PlaywrightPulseReporter implements Reporter {
       endTime: endTime,
       browser: browserDetails,
       retries: result.retry,
-      steps: result.steps?.length ? await processAllSteps(result.steps) : [],
+      steps: result.steps ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
       stackTrace: result.error?.stack,
       snippet: result.error?.snippet,

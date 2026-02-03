@@ -2285,17 +2285,20 @@ function generateHTML(reportData, trendData = null) {
             .map((step) => {
               const hasNestedSteps = step.steps && step.steps.length > 0;
               const isHook = step.hookType;
+              const isFailedStep = step.isFailedStep === true;
               const stepClass = isHook
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
+              const failedStepClass = isFailedStep ? " failed-step-highlight" : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
+              const failedStepIndicator = isFailedStep ? ` <span class="failed-step-marker">⚠️ Failed at this step</span>` : "";
               return `
-          <div class="step-item" style="--depth: ${depth};">
+          <div class="step-item${failedStepClass}" style="--depth: ${depth};">
             <div class="step-header ${stepClass}" role="button" aria-expanded="false">
               <span class="step-icon">${getStatusIcon(step.status)}</span>
               <span class="step-title">${sanitizeHTML(
                 step.title,
-              )}${hookIndicator}</span>
+              )}${hookIndicator}${failedStepIndicator}</span>
               <span class="step-duration">${formatDuration(
                 step.duration,
               )}</span>
@@ -3757,6 +3760,24 @@ function generateHTML(reportData, trendData = null) {
             overflow-x: auto;
             font-size: 0.9em;
             border: 1px solid var(--border-light);
+        }
+        .failed-step-highlight { 
+          border-left: 4px solid var(--danger-color) !important; 
+          background-color: rgba(244,67,54,0.03); 
+        }
+        .failed-step-highlight .step-header { 
+          background-color: rgba(244,67,54,0.05); 
+          border-color: rgba(244,67,54,0.3); 
+        }
+        .failed-step-marker { 
+          display: inline-block; 
+          margin-left: 10px; 
+          padding: 2px 8px; 
+          background-color: var(--danger-color); 
+          color: white; 
+          border-radius: 4px; 
+          font-size: 0.85em; 
+          font-weight: 600; 
         }
         .nested-steps { 
           margin-top: 12px; 

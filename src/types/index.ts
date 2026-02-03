@@ -21,6 +21,7 @@ export interface TestStep {
   codeLocation?: string;
   isHook?: boolean;
   hookType?: "before" | "after";
+  isFailedStep?: boolean; // Marks the specific step that caused failure/skip
   steps?: TestStep[]; // Nested steps
 }
 
