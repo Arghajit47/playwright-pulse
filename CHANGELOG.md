@@ -17,7 +17,6 @@
     * Individual shard badges
     * Clean UI without redundant headers
   * **Test skipped steps display**: Complete step visibility for all test outcomes (passed, failed, skipped), Clear identification of failure/skip points in test execution & Better debugging experience with full execution context.
-  * **Code snippet**: Added a code snippet section to each and every test step, showing the actual code used in that step, making it easier for users to debug and understand the test flow.
   * **Enhanced CLI experience**: Added new "logo" in CLI command execution and "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
 
 ---
