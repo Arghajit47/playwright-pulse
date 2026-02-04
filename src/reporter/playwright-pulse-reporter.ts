@@ -131,42 +131,27 @@ export class PlaywrightPulseReporter implements Reporter {
     return severityAnnotation?.description || "Medium";
   }
 
-  private async extractCodeSnippet(
+  private extractCodeSnippet(
     filePath: string,
     targetLine: number,
     targetColumn: number
-  ): Promise<string | undefined> {
+  ): string {
     try {
-      const fileContent = await fs.readFile(filePath, "utf-8");
-      const lines = fileContent.split("\n");
+      const fsSync = require('fs');
+      if (!fsSync.existsSync(filePath)) {
+        return '';
+      }
+      
+      const content = fsSync.readFileSync(filePath, 'utf8');
+      const lines = content.split('\n');
       
       if (targetLine < 1 || targetLine > lines.length) {
-        return undefined;
+        return '';
       }
       
-      const contextLines = 2;
-      const startLine = Math.max(0, targetLine - contextLines - 1);
-      const endLine = Math.min(lines.length, targetLine + contextLines);
-      
-      const snippetLines: string[] = [];
-      for (let i = startLine; i < endLine; i++) {
-        const lineNum = i + 1;
-        const isTargetLine = lineNum === targetLine;
-        const lineContent = lines[i] || "";
-        const prefix = isTargetLine ? ">" : " ";
-        
-        snippetLines.push(`${prefix} ${lineNum.toString().padStart(4)} | ${lineContent}`);
-        
-        if (isTargetLine && targetColumn > 0) {
-          const pointer = "  " + " ".repeat(4) + " | " + " ".repeat(Math.max(0, targetColumn)) + "^";
-          snippetLines.push(pointer);
-        }
-      }
-      
-      return snippetLines.length > 0 ? snippetLines.join("\n") : undefined;
-    } catch (error) {
-      console.error(`Failed to extract code snippet from ${filePath}:${targetLine}:${targetColumn}`, error);
-      return undefined;
+      return lines[targetLine - 1]?.trim() || '';
+    } catch (e) {
+      return '';
     }
   }
 
@@ -242,7 +227,7 @@ export class PlaywrightPulseReporter implements Reporter {
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
     let codeLocation = "";
-    let codeSnippet: string | undefined = undefined;
+    let codeSnippet: string = '';
     
     if (step.location) {
       codeLocation = `${path.relative(
@@ -250,24 +235,11 @@ export class PlaywrightPulseReporter implements Reporter {
         step.location.file
       )}:${step.location.line}:${step.location.column}`;
       
-      try {
-        codeSnippet = await this.extractCodeSnippet(
-          step.location.file,
-          step.location.line,
-          step.location.column
-        );
-        
-        if (!codeSnippet) {
-          console.warn(
-            `Pulse Reporter: extractCodeSnippet returned undefined for step "${step.title}" at ${step.location.file}:${step.location.line}:${step.location.column}`
-          );
-        }
-      } catch (error) {
-        console.error(
-          `Pulse Reporter: Failed to extract code snippet for step "${step.title}":`,
-          error
-        );
-      }
+      codeSnippet = this.extractCodeSnippet(
+        step.location.file,
+        step.location.line,
+        step.location.column
+      );
     }
 
     return {
@@ -330,19 +302,12 @@ export class PlaywrightPulseReporter implements Reporter {
       return processed;
     };
 
-    let codeSnippet: string | undefined = undefined;
-    try {
-      if (test.location?.file && test.location?.line && test.location?.column) {
-        codeSnippet = await this.extractCodeSnippet(
-          test.location.file,
-          test.location.line,
-          test.location.column
-        );
-      }
-    } catch (e) {
-      console.warn(
-        `Pulse Reporter: Could not extract code snippet for ${test.title}`,
-        e
+    let codeSnippet: string = '';
+    if (test.location?.file && test.location?.line && test.location?.column) {
+      codeSnippet = this.extractCodeSnippet(
+        test.location.file,
+        test.location.line,
+        test.location.column
       );
     }
     // 1. Get Spec File Name

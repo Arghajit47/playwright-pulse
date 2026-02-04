@@ -116,33 +116,22 @@ class PlaywrightPulseReporter {
         const severityAnnotation = annotations.find((a) => a.type === "pulse_severity");
         return (severityAnnotation === null || severityAnnotation === void 0 ? void 0 : severityAnnotation.description) || "Medium";
     }
-    async extractCodeSnippet(filePath, targetLine, targetColumn) {
+    extractCodeSnippet(filePath, targetLine, targetColumn) {
+        var _a;
         try {
-            const fileContent = await fs.readFile(filePath, "utf-8");
-            const lines = fileContent.split("\n");
+            const fsSync = require('fs');
+            if (!fsSync.existsSync(filePath)) {
+                return '';
+            }
+            const content = fsSync.readFileSync(filePath, 'utf8');
+            const lines = content.split('\n');
             if (targetLine < 1 || targetLine > lines.length) {
-                return undefined;
+                return '';
             }
-            const contextLines = 2;
-            const startLine = Math.max(0, targetLine - contextLines - 1);
-            const endLine = Math.min(lines.length, targetLine + contextLines);
-            const snippetLines = [];
-            for (let i = startLine; i < endLine; i++) {
-                const lineNum = i + 1;
-                const isTargetLine = lineNum === targetLine;
-                const lineContent = lines[i] || "";
-                const prefix = isTargetLine ? ">" : " ";
-                snippetLines.push(`${prefix} ${lineNum.toString().padStart(4)} | ${lineContent}`);
-                if (isTargetLine && targetColumn > 0) {
-                    const pointer = "  " + " ".repeat(4) + " | " + " ".repeat(Math.max(0, targetColumn)) + "^";
-                    snippetLines.push(pointer);
-                }
-            }
-            return snippetLines.length > 0 ? snippetLines.join("\n") : undefined;
+            return ((_a = lines[targetLine - 1]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
         }
-        catch (error) {
-            console.error(`Failed to extract code snippet from ${filePath}:${targetLine}:${targetColumn}`, error);
-            return undefined;
+        catch (e) {
+            return '';
         }
     }
     getBrowserDetails(test) {
@@ -209,18 +198,10 @@ class PlaywrightPulseReporter {
         const startTime = new Date(step.startTime);
         const endTime = new Date(startTime.getTime() + Math.max(0, duration));
         let codeLocation = "";
-        let codeSnippet = undefined;
+        let codeSnippet = '';
         if (step.location) {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
-            try {
-                codeSnippet = await this.extractCodeSnippet(step.location.file, step.location.line, step.location.column);
-                if (!codeSnippet) {
-                    console.warn(`Pulse Reporter: extractCodeSnippet returned undefined for step "${step.title}" at ${step.location.file}:${step.location.line}:${step.location.column}`);
-                }
-            }
-            catch (error) {
-                console.error(`Pulse Reporter: Failed to extract code snippet for step "${step.title}":`, error);
-            }
+            codeSnippet = this.extractCodeSnippet(step.location.file, step.location.line, step.location.column);
         }
         return {
             id: `${testId}_step_${startTime.toISOString()}-${duration}-${(0, crypto_1.randomUUID)()}`,
@@ -267,14 +248,9 @@ class PlaywrightPulseReporter {
             }
             return processed;
         };
-        let codeSnippet = undefined;
-        try {
-            if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
-                codeSnippet = await this.extractCodeSnippet(test.location.file, test.location.line, test.location.column);
-            }
-        }
-        catch (e) {
-            console.warn(`Pulse Reporter: Could not extract code snippet for ${test.title}`, e);
+        let codeSnippet = '';
+        if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
+            codeSnippet = this.extractCodeSnippet(test.location.file, test.location.line, test.location.column);
         }
         // 1. Get Spec File Name
         const specFileName = ((_e = test.location) === null || _e === void 0 ? void 0 : _e.file)
