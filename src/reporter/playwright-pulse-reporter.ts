@@ -140,7 +140,11 @@ export class PlaywrightPulseReporter implements Reporter {
       const fileContent = await fs.readFile(filePath, "utf-8");
       const lines = fileContent.split("\n");
       
-      const contextLines = 1;
+      if (targetLine < 1 || targetLine > lines.length) {
+        return undefined;
+      }
+      
+      const contextLines = 2;
       const startLine = Math.max(0, targetLine - contextLines - 1);
       const endLine = Math.min(lines.length, targetLine + contextLines);
       
@@ -149,17 +153,19 @@ export class PlaywrightPulseReporter implements Reporter {
         const lineNum = i + 1;
         const isTargetLine = lineNum === targetLine;
         const lineContent = lines[i] || "";
+        const prefix = isTargetLine ? ">" : " ";
         
-        snippetLines.push(`${lineNum.toString().padStart(4)} | ${lineContent}`);
+        snippetLines.push(`${prefix} ${lineNum.toString().padStart(4)} | ${lineContent}`);
         
-        if (isTargetLine) {
-          const pointer = " ".repeat(4) + " | " + " ".repeat(targetColumn) + "^";
+        if (isTargetLine && targetColumn > 0) {
+          const pointer = "  " + " ".repeat(4) + " | " + " ".repeat(Math.max(0, targetColumn)) + "^";
           snippetLines.push(pointer);
         }
       }
       
-      return snippetLines.join("\n");
+      return snippetLines.length > 0 ? snippetLines.join("\n") : undefined;
     } catch (error) {
+      console.error(`Failed to extract code snippet from ${filePath}:${targetLine}:${targetColumn}`, error);
       return undefined;
     }
   }
@@ -244,11 +250,24 @@ export class PlaywrightPulseReporter implements Reporter {
         step.location.file
       )}:${step.location.line}:${step.location.column}`;
       
-      codeSnippet = await this.extractCodeSnippet(
-        step.location.file,
-        step.location.line,
-        step.location.column
-      );
+      try {
+        codeSnippet = await this.extractCodeSnippet(
+          step.location.file,
+          step.location.line,
+          step.location.column
+        );
+        
+        if (!codeSnippet) {
+          console.warn(
+            `Pulse Reporter: extractCodeSnippet returned undefined for step "${step.title}" at ${step.location.file}:${step.location.line}:${step.location.column}`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `Pulse Reporter: Failed to extract code snippet for step "${step.title}":`,
+          error
+        );
+      }
     }
 
     return {
@@ -314,11 +333,11 @@ export class PlaywrightPulseReporter implements Reporter {
     let codeSnippet: string | undefined = undefined;
     try {
       if (test.location?.file && test.location?.line && test.location?.column) {
-        const relativePath = path.relative(
-          this.config.rootDir,
-          test.location.file
+        codeSnippet = await this.extractCodeSnippet(
+          test.location.file,
+          test.location.line,
+          test.location.column
         );
-        codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
       }
     } catch (e) {
       console.warn(

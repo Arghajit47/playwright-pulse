@@ -6,6 +6,7 @@ import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
 import { getOutputDir } from "./config-reader.mjs";
+import { animate } from "./terminal-logo.mjs";
 
 /**
  * Dynamically imports the 'chalk' library for terminal string styling.
@@ -6643,6 +6644,8 @@ async function runScript(scriptPath, args = []) {
  * prepares the data, and then generates and writes the final HTML report file.
  */
 async function main() {
+  await animate();
+  
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
@@ -6837,7 +6840,7 @@ async function main() {
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`,
+        `Pulse report generated successfully at: ${reportHtmlPath}`,
       ),
     );
     console.log(chalk.gray(`(You can open this file in your browser)`));

@@ -6,6 +6,7 @@ import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
 import { getOutputDir } from "./config-reader.mjs";
+import { animate } from "./terminal-logo.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -4822,6 +4823,8 @@ async function runScript(scriptPath, args = []) {
   });
 }
 async function main() {
+  await animate();
+  
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
@@ -5013,7 +5016,7 @@ async function main() {
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`,
+        `Pulse report generated successfully at: ${reportHtmlPath}`,
       ),
     );
     console.log(chalk.gray(`(You can open this file in your browser)`));

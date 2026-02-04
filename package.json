@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.18",
+  "version": "0.3.19",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://arghajit47.github.io/playwright-pulse/",
   "repository": {
@@ -34,12 +34,14 @@
   ],
   "license": "MIT",
   "bin": {
+    "logo": "node scripts/terminal-logo.mjs",
     "generate-pulse-report": "scripts/generate-static-report.mjs",
     "generate-report": "scripts/generate-report.mjs",
     "merge-pulse-report": "scripts/merge-pulse-report.js",
     "send-email": "scripts/sendReport.mjs",
     "generate-trend": "scripts/generate-trend.mjs",
-    "generate-email-report": "scripts/generate-email-report.mjs"
+    "generate-email-report": "scripts/generate-email-report.mjs",
+    "pulse-logo": "scripts/terminal-logo.mjs"
   },
   "exports": {
     ".": {

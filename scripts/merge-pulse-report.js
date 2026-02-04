@@ -180,6 +180,9 @@ function cleanupShardDirectories(shardDirs) {
 
 // Main execution
 (async () => {
+  const { animate } = await import("./terminal-logo.mjs");
+  await animate();
+  
   const REPORT_DIR = await getReportDir();
 
   console.log(`\n🔄 Playwright Pulse - Merge Reports (Sharding Mode)\n`);

@@ -3,6 +3,7 @@
 import * as fs from "fs/promises";
 import path from "path";
 import { getOutputDir } from "./config-reader.mjs";
+import { animate } from "./terminal-logo.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -712,6 +713,8 @@ function generateMinifiedHTML(reportData) {
   `;
 }
 async function main() {
+  await animate();
+  
   const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
   const minifiedReportHtmlPath = path.resolve(outputDir, MINIFIED_HTML_FILE); // Path for the new minified HTML
@@ -763,8 +766,8 @@ async function main() {
     await fs.writeFile(minifiedReportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Minified Pulse summary report generated successfully at: ${minifiedReportHtmlPath}`
-      )
+        `Minified Pulse summary report generated successfully at: ${minifiedReportHtmlPath}`,
+      ),
     );
     console.log(chalk.gray(`(This HTML file is designed to be lightweight)`));
   } catch (error) {
