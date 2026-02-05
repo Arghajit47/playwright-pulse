@@ -14,7 +14,6 @@ export interface TestStep {
     codeSnippet?: string;
     isHook?: boolean;
     hookType?: "before" | "after";
-    isFailedStep?: boolean;
     steps?: TestStep[];
 }
 export interface TestResult {
@@ -60,6 +59,7 @@ export interface TestResult {
             column: number;
         };
     }[];
+    retryHistory?: TestResult[];
 }
 export interface TestRun {
     id: string;

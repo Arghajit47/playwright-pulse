@@ -184,7 +184,7 @@ class PlaywrightPulseReporter {
         }
         return finalString.trim();
     }
-    async processStep(step, testId, browserDetails, testCase, isFailedStep = false) {
+    async processStep(step, testId, browserDetails, testCase) {
         var _a, _b, _c, _d;
         let stepStatus = "passed";
         let errorMessage = ((_a = step.error) === null || _a === void 0 ? void 0 : _a.message) || undefined;
@@ -221,7 +221,6 @@ class PlaywrightPulseReporter {
                     ? "before"
                     : "after"
                 : undefined,
-            isFailedStep: isFailedStep,
             steps: [],
         };
     }
@@ -232,18 +231,13 @@ class PlaywrightPulseReporter {
         const testStatus = convertStatus(result.status, test);
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
-        const processAllSteps = async (steps, parentFailed = false) => {
+        const processAllSteps = async (steps) => {
             let processed = [];
-            let foundFailedStep = false;
             for (const step of steps) {
-                const isThisStepFailed = !foundFailedStep && (step.error !== undefined || (testStatus === "failed" && !foundFailedStep));
-                if (isThisStepFailed) {
-                    foundFailedStep = true;
-                }
-                const processedStep = await this.processStep(step, test.id, browserDetails, test, isThisStepFailed);
+                const processedStep = await this.processStep(step, test.id, browserDetails, test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
-                    processedStep.steps = await processAllSteps(step.steps, isThisStepFailed);
+                    processedStep.steps = await processAllSteps(step.steps);
                 }
             }
             return processed;
@@ -342,15 +336,24 @@ class PlaywrightPulseReporter {
         this.results.push(pulseResult);
     }
     _getFinalizedResults(allResults) {
-        const finalResultsMap = new Map();
+        const resultsMap = new Map();
         for (const result of allResults) {
-            const existing = finalResultsMap.get(result.id);
-            // Keep the result with the highest retry attempt for each test ID
-            if (!existing || result.retries >= existing.retries) {
-                finalResultsMap.set(result.id, result);
+            if (!resultsMap.has(result.id)) {
+                resultsMap.set(result.id, []);
             }
+            resultsMap.get(result.id).push(result);
         }
-        return Array.from(finalResultsMap.values());
+        const finalResults = [];
+        for (const [testId, attempts] of resultsMap.entries()) {
+            attempts.sort((a, b) => a.retries - b.retries);
+            const firstAttempt = attempts[0];
+            const retryAttempts = attempts.slice(1);
+            if (retryAttempts.length > 0) {
+                firstAttempt.retryHistory = retryAttempts;
+            }
+            finalResults.push(firstAttempt);
+        }
+        return finalResults;
     }
     onError(error) {
         var _a;

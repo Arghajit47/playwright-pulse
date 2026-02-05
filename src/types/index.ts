@@ -22,7 +22,6 @@ export interface TestStep {
   codeSnippet?: string; // Code snippet from source file with line numbers
   isHook?: boolean;
   hookType?: "before" | "after";
-  isFailedStep?: boolean; // Marks the specific step that caused failure/skip
   steps?: TestStep[]; // Nested steps
 }
 
@@ -75,6 +74,8 @@ export interface TestResult {
       column: number;
     };
   }[];
+
+  retryHistory?: TestResult[];
 }
 
 export interface TestRun {

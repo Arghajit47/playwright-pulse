@@ -242,6 +242,17 @@ function generateMinifiedHTML(reportData) {
           severity
         )}; font-size: 0.8em; font-weight: 600; padding: 3px 8px; border-radius: 4px; color: #fff; margin-left: 10px; white-space: nowrap;">${severity}</span>`;
 
+        // --- NEW: Retry Count Badge ---
+        const retryCountBadge = (test.retryHistory && test.retryHistory.length > 0)
+          ? `<span style="background-color: #f59e0b; border: 1px solid #d97706; font-size: 0.8em; font-weight: 700; padding: 4px 10px; border-radius: 50px; color: #fff; margin-left: 10px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
+                <path d="M1 4v6h6"/>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+              </svg>
+              Retry Count: ${test.retryHistory.length}
+            </span>`
+          : '';
+
         // --- NEW: Tags Logic ---
         const tagsBadges = (test.tags || [])
           .map(
@@ -266,6 +277,7 @@ function generateMinifiedHTML(reportData) {
                 test.name
               )}">${sanitizeHTML(testTitle)}</span>
               
+              ${retryCountBadge}
               ${severityBadge}
               ${tagsBadges}
             </li>
@@ -532,10 +544,10 @@ function generateMinifiedHTML(reportData) {
             </div>
             <div class="run-info">
                 <strong>Run Date:</strong> ${formatDate(
-                  runSummary.timestamp
+                  runSummary.timestamp,
                 )}<br>
                 <strong>Total Duration:</strong> ${formatDuration(
-                  runSummary.duration
+                  runSummary.duration,
                 )}
             </div>
         </header>
@@ -583,11 +595,11 @@ function generateMinifiedHTML(reportData) {
             <div class="filters-section">
                 <input type="text" id="filter-min-name" placeholder="Search by test name...">
                 <select id="filter-min-status">
-                    <option value="">All Statuses</option>
-                    <option value="passed">Passed</option>
-                    <option value="failed">Failed</option>
-                    <option value="skipped">Skipped</option>
-                    <option value="unknown">Unknown</option>
+                    <option value="">All Status</option>
+                    <option value="passed">✅ Passed</option>
+                    <option value="failed">❌ Failed</option>
+                    <option value="skipped">⏭️ Skipped</option>
+                    <option value="unknown">❓ Unknown</option>
                 </select>
                 <select id="filter-min-browser">
                     <option value="">All Browsers</option>
@@ -595,8 +607,8 @@ function generateMinifiedHTML(reportData) {
                       .map(
                         (browser) =>
                           `<option value="${sanitizeHTML(
-                            browser.toLowerCase()
-                          )}">${sanitizeHTML(capitalize(browser))}</option>`
+                            browser.toLowerCase(),
+                          )}">${sanitizeHTML(capitalize(browser))}</option>`,
                       )
                       .join("")}
                 </select>

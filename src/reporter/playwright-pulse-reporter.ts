@@ -211,8 +211,7 @@ export class PlaywrightPulseReporter implements Reporter {
     step: PwStep,
     testId: string,
     browserDetails: string,
-    testCase?: TestCase,
-    isFailedStep: boolean = false
+    testCase?: TestCase
   ): Promise<PulseTestStep> {
     let stepStatus: PulseTestStatus = "passed";
     let errorMessage = step.error?.message || undefined;
@@ -261,7 +260,6 @@ export class PlaywrightPulseReporter implements Reporter {
             ? "before"
             : "after"
           : undefined,
-      isFailedStep: isFailedStep,
       steps: [],
     };
   }
@@ -274,29 +272,21 @@ export class PlaywrightPulseReporter implements Reporter {
     const endTime = new Date(startTime.getTime() + result.duration);
 
     const processAllSteps = async (
-      steps: PwStep[],
-      parentFailed: boolean = false
+      steps: PwStep[]
     ): Promise<PulseTestStep[]> => {
       let processed: PulseTestStep[] = [];
-      let foundFailedStep = false;
       
       for (const step of steps) {
-        const isThisStepFailed = !foundFailedStep && (step.error !== undefined || (testStatus === "failed" && !foundFailedStep));
-        if (isThisStepFailed) {
-          foundFailedStep = true;
-        }
-        
         const processedStep = await this.processStep(
           step,
           test.id,
           browserDetails,
-          test,
-          isThisStepFailed
+          test
         );
         processed.push(processedStep);
         
         if (step.steps && step.steps.length > 0) {
-          processedStep.steps = await processAllSteps(step.steps, isThisStepFailed);
+          processedStep.steps = await processAllSteps(step.steps);
         }
       }
       return processed;
@@ -419,15 +409,31 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   private _getFinalizedResults(allResults: TestResult[]): TestResult[] {
-    const finalResultsMap = new Map<string, TestResult>();
+    const resultsMap = new Map<string, TestResult[]>();
+    
     for (const result of allResults) {
-      const existing = finalResultsMap.get(result.id);
-      // Keep the result with the highest retry attempt for each test ID
-      if (!existing || result.retries >= existing.retries) {
-        finalResultsMap.set(result.id, result);
+      if (!resultsMap.has(result.id)) {
+        resultsMap.set(result.id, []);
       }
+      resultsMap.get(result.id)!.push(result);
     }
-    return Array.from(finalResultsMap.values());
+    
+    const finalResults: TestResult[] = [];
+    
+    for (const [testId, attempts] of resultsMap.entries()) {
+      attempts.sort((a, b) => a.retries - b.retries);
+      
+      const firstAttempt = attempts[0];
+      const retryAttempts = attempts.slice(1);
+      
+      if (retryAttempts.length > 0) {
+        firstAttempt.retryHistory = retryAttempts;
+      }
+      
+      finalResults.push(firstAttempt);
+    }
+    
+    return finalResults;
   }
 
   onError(error: any): void {
