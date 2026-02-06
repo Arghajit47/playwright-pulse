@@ -2345,44 +2345,16 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
-        return `
-      <div class="test-case" data-status="${
-        test.status
-      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
-        .join(",")
-        .toLowerCase()}">
-        <div class="test-case-header" role="button" aria-expanded="false">
-          <div class="test-case-summary">
-            <span class="test-case-title" title="${sanitizeHTML(
-              test.name,
-            )}">${sanitizeHTML(testTitle)}</span>
-            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
-          </div>
-          <div class="test-case-meta">
-            ${severityBadge}
-            ${retryBadge}
-            ${
-              test.tags && test.tags.length > 0
-                ? test.tags
-                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-                    .join(" ")
-                : ""
-            }
-          </div>
-          <div class="test-case-status-duration">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status,
-            ).toUpperCase()}</span>
-            <span class="test-duration">${formatDuration(test.duration)}</span>
-          </div>
-        </div>
-        <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+        // Function to generate test content HTML (used for base run and retry tabs)
+        const getTestContentHTML = (testData, runSuffix) => {
+          const logId = `stdout-log-${test.id ||index}-${runSuffix}`;
+          return `
+          <p><strong>Full Path:</strong> ${sanitizeHTML(testData.name)}</p>
           ${
-            test.annotations && test.annotations.length > 0
+            testData.annotations && testData.annotations.length > 0
               ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
                   <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
-                  ${test.annotations
+                  ${testData.annotations
                     .map((annotation, idx) => {
                       const isIssueOrBug =
                         annotation.type === "issue" ||
@@ -2390,7 +2362,7 @@ function generateHTML(reportData, trendData = null) {
                       const descriptionText = annotation.description || "";
                       const typeLabel = sanitizeHTML(annotation.type);
                       const descriptionHtml =
-                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\\d+$/)
                           ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
                               descriptionText,
                             )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
@@ -2405,7 +2377,7 @@ function generateHTML(reportData, trendData = null) {
                           }</div>`
                         : "";
                       return `<div style="margin-bottom: ${
-                        idx < test.annotations.length - 1 ? "10px" : "0"
+                        idx < testData.annotations.length - 1 ? "10px" : "0"
                       };">
                       <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
                       ${
@@ -2421,15 +2393,15 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
-            test.workerId,
+            testData.workerId,
           )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers,
+            testData.totalWorkers,
           )}]</p>
           ${
-            test.errorMessage
-              ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.errorMessage,
-                )}
+            testData.errorMessage
+              ? `<div class="test-error-summary"><div class="stack-trace">${formatPlaywrightError(
+                  testData.errorMessage,
+                )}</div>
                 <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
@@ -2443,6 +2415,7 @@ function generateHTML(reportData, trendData = null) {
                           font-size: 12px;
                           border-color: #8B0000;
                           color: #8B0000;
+                          align-self: flex-end;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2453,50 +2426,48 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.snippet
+            testData.snippet
               ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-                  test.snippet,
+                  testData.snippet,
                 )}</code></pre></div>`
               : ""
           }
           <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
+          <div class="steps-list">${generateStepsHTML(testData.steps)}</div>
           ${(() => {
-            if (!test.stdout || test.stdout.length === 0) return "";
-            // Create a unique ID for the <pre> element to target it for copying
-            const logId = `stdout-log-${test.id || index}`;
+            if (!testData.stdout || testData.stdout.length === 0) return "";
             return `<div class="console-output-section">
                           <h4>Console Output (stdout)
-                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</button>
+                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</ button>
                           </h4>
                           <div class="log-wrapper">
                               <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                                test.stdout
+                                testData.stdout
                                   .map((line) => sanitizeHTML(line))
-                                  .join("\n"),
+                                  .join("\\n"),
                               )}</pre>
                           </div>
                       </div>`;
           })()}
           ${
-            test.stderr && test.stderr.length > 0
+            testData.stderr && testData.stderr.length > 0
               ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                  test.stderr.map((line) => sanitizeHTML(line)).join("\n"),
+                  testData.stderr.map((line) => sanitizeHTML(line)).join("\\n"),
                 )}</pre></div>`
               : ""
           }
           ${
-            test.screenshots && test.screenshots.length > 0
+            testData.screenshots && testData.screenshots.length > 0
               ? `
             <div class="attachments-section">
                 <h4>Screenshots</h4>
                 <div class="attachments-grid">
-                ${test.screenshots
+                ${testData.screenshots
                   .map(
-                    (screenshot, index) => `
+                    (screenshot, screenshotIndex) => `
                     <div class="attachment-item">
                     <img src="${fixPath(screenshot)}" alt="Screenshot ${
-                      index + 1
+                      screenshotIndex + 1
                     }">
                     <div class="attachment-info">
                         <div class="trace-actions">
@@ -2505,7 +2476,7 @@ function generateHTML(reportData, trendData = null) {
                         )}" target="_blank" class="view-full">View Full Image</a>
                         <a href="${fixPath(
                           screenshot,
-                        )}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
+                        )}" target="_blank" download="screenshot-${Date.now()}-${screenshotIndex}.png">Download</a>
                         </div>
                     </div>
                     </div>
@@ -2518,9 +2489,9 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.videoPath && test.videoPath.length > 0
-              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
-                  .map((videoUrl, index) => {
+            testData.videoPath && testData.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${testData.videoPath
+                  .map((videoUrl, videoIndex) => {
                     const fixedVideoUrl = fixPath(videoUrl);
                     const fileExtension = String(fixedVideoUrl)
                       .split(".")
@@ -2536,7 +2507,7 @@ function generateHTML(reportData, trendData = null) {
                       }[fileExtension] || "video/mp4";
                     return `<div class="attachment-item video-item">
                             <video controls width="100%" height="auto" title="Video ${
-                              index + 1
+                              videoIndex + 1
                             }">
                                 <source src="${sanitizeHTML(
                                   fixedVideoUrl,
@@ -2547,7 +2518,7 @@ function generateHTML(reportData, trendData = null) {
                                 <div class="trace-actions">
                                 <a href="${sanitizeHTML(
                                   fixedVideoUrl,
-                                )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
+                                )}" target="_blank" download="video-${Date.now()}-${videoIndex}.${fileExtension}">Download</a>
                                 </div>
                             </div>
                         </div>`;
@@ -2556,7 +2527,7 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.tracePath
+            testData.tracePath
               ? `
             <div class="attachments-section">
                 <h4>Trace Files</h4>
@@ -2565,15 +2536,15 @@ function generateHTML(reportData, trendData = null) {
                         <div class="trace-preview">
                         <span class="trace-icon">📄</span>
                         <span class="trace-name">${sanitizeHTML(
-                          path.basename(test.tracePath),
+                          path.basename(testData.tracePath),
                         )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                             <a href="${sanitizeHTML(
-                              fixPath(test.tracePath),
+                              fixPath(testData.tracePath),
                             )}" target="_blank" download="${sanitizeHTML(
-                              path.basename(test.tracePath),
+                              path.basename(testData.tracePath),
                             )}" class="download-trace">Download Trace</a>
                         </div>
                         </div>
@@ -2584,12 +2555,12 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.attachments && test.attachments.length > 0
+            testData.attachments && testData.attachments.length > 0
               ? `
             <div class="attachments-section">
                 <h4>Other Attachments</h4>
                 <div class="attachments-grid">
-                ${test.attachments
+                ${testData.attachments
                   .map(
                     (attachment) => `
                     <div class="attachment-item generic-attachment">
@@ -2625,13 +2596,66 @@ function generateHTML(reportData, trendData = null) {
             `
               : ""
           }
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-                  sanitizeHTML(test.codeSnippet),
-                )}</code></pre></div>`
-              : ""
-          }
+          
+        `;
+        };
+
+        return `
+      <div class="test-case" data-status="${
+        test.status
+      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
+        .join(",")
+        .toLowerCase()}">
+        <div class="test-case-header" role="button" aria-expanded="false">
+          <div class="test-case-summary">
+            <span class="test-case-title" title="${sanitizeHTML(
+              test.name,
+            )}">${sanitizeHTML(testTitle)}</span>
+            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
+          </div>
+          <div class="test-case-meta">
+            ${severityBadge}
+            ${retryBadge}
+            ${
+              test.tags && test.tags.length > 0
+                ? test.tags
+                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                    .join(" ")
+                : ""
+            }
+          </div>
+          <div class="test-case-status-duration">
+            <span class="status-badge ${getStatusClass(test.status)}">${String(
+              test.status,
+            ).toUpperCase()}</span>
+            <span class="test-duration">${formatDuration(test.duration)}</span>
+          </div>
+        </div>
+        <div class="test-case-content" style="display: none;">
+          ${test.retryHistory && test.retryHistory.length > 0 ? `
+            <div class="retry-tabs-container">
+              <div class="retry-tabs-header">
+                <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
+                   🎯 Base Run
+                </button>
+                ${test.retryHistory.map((retry, idx) => `
+                  <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
+                    🔄 Retry-${idx + 1}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <div id="base-run-${test.id}" class="retry-tab-content active">
+                ${getTestContentHTML(test, 'base')}
+              </div>
+              
+              ${test.retryHistory.map((retry, idx) => `
+                <div id="retry-${idx + 1}-${test.id}" class="retry-tab-content" style="display: none;">
+                  ${getTestContentHTML(retry, `retry-${idx + 1}`)}
+                </div>
+              `).join('')}
+            </div>
+          ` : getTestContentHTML(test, 'single')}
         </div>
       </div>`;
       })
@@ -2757,7 +2781,6 @@ function generateHTML(reportData, trendData = null) {
           background: #ffffff;
           border-radius: 12px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          border: 1px solid #e2e8f0;
           overflow: hidden;
         }
         .run-info-item {
@@ -3646,6 +3669,51 @@ function generateHTML(reportData, trendData = null) {
           margin-left: 8px;
         }
 
+        /* --- RETRY TABS --- */
+        .retry-tabs-container {
+          margin-top: 16px;
+        }
+
+        .retry-tabs-header {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid var(--border-medium);
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .retry-tab {
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--text-color-secondary);
+          transition: all 0.2s ease;
+        }
+
+        .retry-tab:hover {
+          color: var(--primary-color);
+          background: rgba(147, 51, 234, 0.05);
+        }
+
+        .retry-tab.active {
+          color: #a855f7;
+          border-bottom-color: #a855f7;
+          background: rgba(147, 51, 234, 0.1);
+        }
+
+        .retry-tab-content {
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
         .tag { 
           display: inline-flex;
           align-items: center;
@@ -3676,7 +3744,16 @@ function generateHTML(reportData, trendData = null) {
         }
         .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
         .test-case-content p { margin-bottom: 10px; font-size: 1em; }
-        .test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(244,67,54,0.05); border: 1px solid rgba(244,67,54,0.2); border-left: 4px solid var(--danger-color); border-radius: 4px; }
+        .test-error-summary { 
+          margin-bottom: 20px; 
+          padding: 14px; 
+          background-color: rgba(244,67,54,0.05); 
+          border: 1px solid rgba(244,67,54,0.2); 
+          border-left: 4px solid var(--danger-color); 
+          border-radius: 4px; 
+          display: flex;
+          flex-direction: column;
+        }
         .test-error-summary h4 { color: var(--danger-color); margin-top:0;}
         .test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
         .steps-list { margin: 18px 0; }
@@ -4373,6 +4450,33 @@ function generateHTML(reportData, trendData = null) {
             button.textContent = 'Failed';
              setTimeout(() => { button.textContent = originalText; }, 2000);
         });
+    }
+    
+    // --- Retry Tab Switching Function ---
+    function switchRetryTab(event, tabId) {
+      const tabButton = event.currentTarget;
+      const tabsContainer = tabButton.closest('.retry-tabs-container');
+      
+      // Hide all tab contents in this container
+      const allTabContents = tabsContainer.querySelectorAll('.retry-tab-content');
+      allTabContents.forEach(content => {
+        content.style.display = 'none';
+        content.classList.remove('active');
+      });
+      
+      // Remove active class from all tabs
+      const allTabs = tabsContainer.querySelectorAll('.retry-tab');
+      allTabs.forEach(tab => tab.classList.remove('active'));
+      
+      // Show selected tab content
+      const selectedContent = document.getElementById(tabId);
+      if (selectedContent) {
+        selectedContent.style.display = 'block';
+        selectedContent.classList.add('active');
+      }
+      
+      // Add active class to clicked tab
+      tabButton.classList.add('active');
     }
     
     // --- AI Failure Analyzer Functions ---
