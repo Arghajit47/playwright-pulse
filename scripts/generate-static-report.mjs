@@ -2442,8 +2442,8 @@ function generateHTML(reportData, trendData = null) {
 
   // Calculate retry statistics
   const totalRetried = (results || []).reduce((acc, test) => {
-    if (test.retries && test.retries > 0) {
-      return acc + 1;
+    if (test.retryHistory && test.retryHistory.length > 0) {
+      return acc + test.retryHistory.length;
     }
     return acc;
   }, 0);
@@ -2494,6 +2494,10 @@ function generateHTML(reportData, trendData = null) {
         // --- Simplified Severity Badge ---
         const severity = test.severity || "Medium";
         const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
+
+        // --- Retry Count Badge (only show if retries occurred) ---
+        const retryCount = test.retryHistory ? test.retryHistory.length : 0;
+        const retryBadge = retryCount > 0 ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
 
         // --- Step Generation ---
         const generateStepsHTML = (steps, depth = 0) => {
@@ -2579,6 +2583,7 @@ function generateHTML(reportData, trendData = null) {
           </div>
           <div class="test-case-meta">
             ${severityBadge}
+            ${retryBadge}
             ${
               test.tags && test.tags.length > 0
                 ? test.tags
@@ -3634,6 +3639,20 @@ function generateHTML(reportData, trendData = null) {
           color: #94a3b8;
           background-color: rgba(148, 163, 184, 0.1);
           border-color: rgba(148, 163, 184, 0.25);
+        }
+
+        /* --- RETRY COUNT BADGE --- */
+        .retry-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 5px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          background: rgba(147, 51, 234, 0.15);
+          color: #a855f7;
+          border: 1px solid rgba(147, 51, 234, 0.3);
+          margin-left: 8px;
         }
 
 .tag { 
