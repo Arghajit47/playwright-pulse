@@ -58,7 +58,9 @@
       id="menu-toggle"
       aria-label="Open navigation menu"
     >
-      ☰
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+      </svg>
     </button>
     <div class="page-wrapper">
       <nav class="sidebar" id="sidebar">
@@ -72,6 +74,7 @@
           </li>
           <li><a href="comparison.html">Comparison</a></li>
           <li><a href="reference.html" class="active">Reference</a></li>
+          <li><a href="view.html">View Reporter Images</a></li>
           <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
           <li>
             <a
@@ -91,6 +94,48 @@
         <h1>Reference</h1>
         <section id="changelog">
           <h2>Changelog</h2>
+          <h4>Version 0.3.4</h4>
+          <ul>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Sharded Environment Preservation:</b> Complete tracking of all shard environments in merged reports.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Modern Environment Dashboard Redesign:</b> A visually appealing and user-friendly
+              redesign of the environment section of dashboard, with detailed bullet points.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Test skipped steps display:</b> Complete step visibility for all test outcomes
+              (passed, failed, skipped), Clear identification of failure/skip points in test execution & Better debugging
+              experience with full execution context.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Retry History:</b> Added retry history to the JSON report, which will show the retry
+              history of individual tests.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Retry Count:</b> Added retry count to the HTML report(s), which will show the retry
+              count of individual tests, in Test Run Summary Tab.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Failed Test pointer:</b> Added failed test pointer to the HTML report(s), which will
+              show the exact code snippet at which the test failed.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Test Step Code Snippet:</b> Added test step code snippet to the HTML report(s), which
+              will show the exact code snippet of individual test step.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Enhanced CLI experience:</b> Added new "logo" in CLI command execution and
+              "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Fixed Browser Distribution chart:</b> Fixed the browser distribution chart to show the correct/full name in
+              distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then
+              the chart will show the top 3 browsers and the rest will be shown as "+X more browsers" format.
+            </li>
+          </ul>
           <h4>Version 0.3.3</h4>
           <ul>
             <li>
