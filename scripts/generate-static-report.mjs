@@ -2550,7 +2550,7 @@ function generateHTML(reportData, trendData = null) {
                             )}</div>`
                           : ""
                       }
-                      <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s; align-self: flex-end;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
+                      <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s; align-self: flex-end; width: auto;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
                     </div>`
                   : ""
               }
@@ -2630,15 +2630,17 @@ function generateHTML(reportData, trendData = null) {
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
-                          background: #f0f0f0;
-                          border: 2px solid #ccc;
-                          border-radius: 4px;
+                          padding: 6px 12px;
+                          background: rgba(248, 113, 113, 0.15);
+                          border: 2px solid var(--danger-color);
+                          border-radius: 6px;
                           cursor: pointer;
                           font-size: 12px;
-                          border-color: #8B0000;
-                          color: #8B0000;
+                          color: var(--danger-color);
+                          font-weight: 600;
+                          transition: 0.2s;
                           align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2859,11 +2861,11 @@ function generateHTML(reportData, trendData = null) {
             <div class="retry-tabs-container">
               <div class="retry-tabs-header">
                 <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
-                   🎯 Base Run
+                   Base Run
                 </button>
                 ${test.retryHistory.map((retry, idx) => `
                   <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
-                    🔄 Retry-${idx + 1}
+                    Retry-${idx + 1}
                   </button>
                 `).join('')}
               </div>

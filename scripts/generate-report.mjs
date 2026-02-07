@@ -2314,7 +2314,7 @@ function generateHTML(reportData, trendData = null) {
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
+                          padding: 6px 12px;
                           background: #f0f0f0;
                           border: 2px solid #ccc;
                           border-radius: 4px;
@@ -2322,6 +2322,8 @@ function generateHTML(reportData, trendData = null) {
                           font-size: 12px;
                           border-color: #8B0000;
                           color: #8B0000;
+                          align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2407,7 +2409,7 @@ function generateHTML(reportData, trendData = null) {
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
+                          padding: 6px 12px;
                           background: #f0f0f0;
                           border: 2px solid #ccc;
                           border-radius: 4px;
@@ -2416,6 +2418,7 @@ function generateHTML(reportData, trendData = null) {
                           border-color: #8B0000;
                           color: #8B0000;
                           align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2636,11 +2639,11 @@ function generateHTML(reportData, trendData = null) {
             <div class="retry-tabs-container">
               <div class="retry-tabs-header">
                 <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
-                   🎯 Base Run
+                   Base Run
                 </button>
                 ${test.retryHistory.map((retry, idx) => `
                   <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
-                    🔄 Retry-${idx + 1}
+                    Retry-${idx + 1}
                   </button>
                 `).join('')}
               </div>
