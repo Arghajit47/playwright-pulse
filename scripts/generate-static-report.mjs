@@ -1832,8 +1832,8 @@ function generateSuitesWidget(suitesData) {
 
   // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
   return `
-<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
-  <div class="suites-header" style="flex-shrink: 0;">
+<div class="suites-widget fixed-height-widget">
+  <div class="suites-header">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1843,7 +1843,7 @@ function generateSuitesWidget(suitesData) {
     )} tests</span>
   </div>
 
-  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+  <div class="suites-grid-container">
       <div class="suites-grid">
     ${suitesData
       .map(
@@ -3424,23 +3424,33 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small-tooltip.status-unknown { 
           background-color: #9ca3af; 
         }
-        .suites-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          margin-bottom: 20px; 
+        .suites-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        .summary-badge { 
-          background-color: var(--border-light); 
-          color: var(--text-secondary); 
-          padding: 7px 14px; 
-          border-radius: 16px; 
-          font-size: 0.9em; 
+        .summary-badge { background-color: var(--border-light); color: var(--text-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
+        .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .suites-widget {
+          display: flex;
+          flex-direction: column;
         }
-        .suites-grid { 
-          display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
-          gap: 20px; 
+        .fixed-height-widget {
+          height: 450px;
+        }
+        .suites-grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .fixed-height-widget {
+                height: auto;
+                max-height: 600px;
+            }
         }
         .suite-card {
           background: var(--bg-card); /* Changed from #ffffff */

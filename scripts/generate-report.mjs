@@ -1613,10 +1613,10 @@ function generateSuitesWidget(suitesData) {
     return `<div class="suites-widget" style="height: 450px;"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
   }
 
-  // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
+  // Uses CSS classes for responsiveness instead of inline styles
   return `
-<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
-  <div class="suites-header" style="flex-shrink: 0;">
+<div class="suites-widget fixed-height-widget">
+  <div class="suites-header">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1626,7 +1626,7 @@ function generateSuitesWidget(suitesData) {
     )} tests</span>
   </div>
   
-  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+  <div class="suites-grid-container">
       <div class="suites-grid">
         ${suitesData
           .map(
@@ -3384,9 +3384,34 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
         .status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
         .status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
-        .suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .suites-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
         .summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
         .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .suites-widget {
+          display: flex;
+          flex-direction: column;
+        }
+        .fixed-height-widget {
+          height: 450px;
+        }
+        .suites-grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .fixed-height-widget {
+                height: auto;
+                max-height: 600px;
+            }
+        }
         .suite-card {
           background: #ffffff;
           border: 1px solid var(--border-light);
