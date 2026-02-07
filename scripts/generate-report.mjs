@@ -2227,9 +2227,8 @@ function generateHTML(reportData, trendData = null) {
   const browserStats = (results || []).reduce((acc, test) => {
     let browserName = "unknown";
     if (test.browser) {
-      // Extract browser name from strings like "Chrome v143 on Windows 10"
-      const match = test.browser.match(/^(\w+)/);
-      browserName = match ? match[1] : test.browser;
+      // Use full browser name
+      browserName = test.browser;
     }
     acc[browserName] = (acc[browserName] || 0) + 1;
     return acc;
@@ -2950,9 +2949,17 @@ function generateHTML(reportData, trendData = null) {
           color: #0f172a;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
           color: #64748b;
+          white-space: nowrap;
+          flex-shrink: 0;
           font-weight: 700;
           font-size: 0.95em;
         }
@@ -4316,19 +4323,19 @@ function generateHTML(reportData, trendData = null) {
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
                     ${browserBreakdown
-                      .slice(0, 5)
+                      .slice(0, 3)
                       .map(
                         (b) =>
                           `<div class="browser-item">
-                        <span class="browser-name">${sanitizeHTML(b.browser)}</span>
+                        <span class="browser-name" title="${sanitizeHTML(b.browser)}">${sanitizeHTML(b.browser)}</span>
                         <span class="browser-stats">${b.percentage}% (${b.count})</span>
                       </div>`,
                       )
                       .join("")}
                     ${
-                      browserBreakdown.length > 5
+                      browserBreakdown.length > 3
                         ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
-                      <span>+${browserBreakdown.length - 5} more browsers</span>
+                      <span>+${browserBreakdown.length - 3} more browsers</span>
                     </div>`
                         : ""
                     }

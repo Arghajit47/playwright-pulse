@@ -17,7 +17,14 @@
     * Individual shard badges
     * Clean UI without redundant headers
   * **Test skipped steps display**: Complete step visibility for all test outcomes (passed, failed, skipped), Clear identification of failure/skip points in test execution & Better debugging experience with full execution context.
+  * **retryHistory**: Added retry history to the JSON/HTML report(s), which will show the retry history of individual tests.
+  * **Retry Count**: Added retry count to the HTML report(s), which will show the retry count of individual tests, in Test Run Summary Tab.
+  * **Failed Test pointer**: Added failed test pointer to the HTML report(s), which will show the exact code snippet at which the test failed.
+  * **Test Step Code Snippet**: Added test step code snippet to the HTML report(s), which will show the exact code snippet of individual test step.
   * **Enhanced CLI experience**: Added new "logo" in CLI command execution and "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
+
+* **🐛 Bug Fixes**: 
+  * **Fixed Browser Distributon chart**: Fixed the browser distribution chart to show the correct/full name in distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then the chart will show the top 3 browsers and the rest will be shown as "+x more browsers".
 
 ---
 
