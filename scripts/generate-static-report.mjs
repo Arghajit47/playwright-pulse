@@ -1850,33 +1850,29 @@ function generateSuitesWidget(suitesData) {
         (suite) => `
     <div class="suite-card status-${suite.statusOverall}">
       <div class="suite-card-header">
-        <h3 class="suite-name" title="${sanitizeHTML(
-          suite.name,
-        )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+        <h3 class="suite-name" title="${sanitizeHTML(suite.name)} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+        <div class="status-indicator-dot status-${suite.statusOverall}" title="${suite.statusOverall.charAt(0).toUpperCase() + suite.statusOverall.slice(1)}"></div>
       </div>
-      <div style="margin-bottom: 12px;"><span class="browser-tag" title="🌐 ${sanitizeHTML(suite.browser)}">🌐 ${sanitizeHTML(
-        suite.browser,
-      )}</span></div>
+      
+      <div class="browser-tag" title="🌐Browser: ${sanitizeHTML(suite.browser)}">
+        <span style="font-size: 1.1em;">🌐</span> ${sanitizeHTML(suite.browser)}
+      </div>
+      
       <div class="suite-card-body">
-        <span class="test-count">${suite.count} test${
-          suite.count !== 1 ? "s" : ""
-        }</span>
+        <span class="test-count-label">${suite.count} Test${suite.count !== 1 ? "s" : ""}</span>
         <div class="suite-stats">
-            ${
-              suite.passed > 0
-                ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-                : ""
-            }
-            ${
-              suite.failed > 0
-                ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-                : ""
-            }
-            ${
-              suite.skipped > 0
-                ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-                : ""
-            }
+            <span class="stat-pill passed" title="Passed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                ${suite.passed}
+            </span>
+            <span class="stat-pill failed" title="Failed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                ${suite.failed}
+            </span>
+            <span class="stat-pill skipped" title="Skipped">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                 ${suite.skipped}
+            </span>
         </div>
       </div>
     </div>`,
@@ -2921,6 +2917,8 @@ function generateHTML(reportData, trendData = null) {
   --light-gray-color: #262626; --medium-gray-color: #333333; --dark-gray-color: #a3a3a3;
   --text-color: #f9fafb; --text-color-secondary: #e5e7eb; --border-color: #262626;
   --card-background-color: #0d0d0d;
+  --neutral-100: #171717; --neutral-200: #262626; --neutral-300: #404040;
+  --bg-hover: #171717;
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-2xl: 24px;
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
@@ -3249,17 +3247,9 @@ function generateHTML(reportData, trendData = null) {
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 20px;
         }
+        /* Updated Suite Cards in Main Block */
         .suite-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-light);
-          border-radius: 8px;
-          padding: 20px;
-          transition: all 0.2s ease;
-        }
-        .suite-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          border-color: var(--primary-color);
+           /* See line ~3455 for main definition */
         }
         .suite-name {
           font-size: 1.1em;
@@ -3452,52 +3442,122 @@ function generateHTML(reportData, trendData = null) {
           grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
           gap: 20px; 
         }
-        .suite-card { 
-          border: none; 
-          border-left: 4px solid var(--border-light); 
-          padding: 24px; 
-          background-color: var(--bg-card); 
-          transition: all 0.15s ease; 
+        .suite-card {
+          background: var(--bg-card); /* Changed from #ffffff */
+          border: 1px solid var(--border-medium); /* Changed from border-light for better contrast */
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2); /* Darker shadow */
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
         }
-        .suite-card:hover { 
-          background: rgba(255, 255, 255, 0.03); 
-          border-left-color: var(--border-medium); 
+        .suite-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+          background: var(--bg-card-hover);
+          border-color: var(--primary-dark);
         }
-        .suite-card.status-passed { 
-          border-left-color: #10b981; 
+        .suite-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: var(--neutral-200);
+          opacity: 0.8;
+          transition: background 0.3s ease;
         }
-        .suite-card.status-passed:hover { 
-          background: rgba(16, 185, 129, 0.05); 
+        .suite-card.status-passed::before { background: var(--success-color); }
+        .suite-card.status-failed::before { background: var(--danger-color); }
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+        
+        .suite-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
         }
-        .suite-card.status-failed { 
-          border-left-color: #ef4444; 
+        .suite-name {
+          font-size: 1.15em;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-right: 12px;
         }
-        .suite-card.status-failed:hover { 
-          background: rgba(239, 68, 68, 0.05); 
+         .status-indicator-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          margin-top: 6px;
         }
-        .suite-card.status-skipped { 
-          border-left-color: #f59e0b; 
-        }
-        .suite-card.status-skipped:hover { 
-          background: rgba(245, 158, 11, 0.05); 
-        }
-        .suite-card-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: flex-start; 
-          margin-bottom: 12px; 
-        }
-        .suite-name { 
-          font-weight: 600; 
-          font-size: 1.05em; 
-          color: #f9fafb; 
-          margin-right: 10px; 
-          word-break: break-word;
-        }
+        .status-indicator-dot.status-passed { background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+        .status-indicator-dot.status-failed { background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+        .status-indicator-dot.status-skipped { background-color: var(--warning-color); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }
+
         .browser-tag {
+          font-size: 0.8em;
+          font-weight: 600;
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
+          padding: 4px 10px;
+          border-radius: 20px;
+          border: 1px solid var(--border-light);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 20px;
+          align-self: flex-start;
+          box-shadow: none;
+          text-shadow: none;
+        }
+        .browser-tag:hover {
+             /* Remove hover effect from previous */
+        }
+        
+        .suite-card-body {
+          margin-top: auto;
+        }
+        
+        .test-count-label {
           font-size: 0.85em;
           font-weight: 600;
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 8px;
+          display: block;
+        }
+
+        .suite-stats {
+          display: flex;
+          gap: 8px;
+          background: var(--bg-secondary);
+          padding: 10px 14px;
+          border-radius: 10px;
+          justify-content: space-between;
+        }
+        
+        .stat-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9em;
+          font-weight: 600;
+        }
+        .stat-pill svg { width: 14px; height: 14px; }
+        .stat-pill.passed { color: var(--success-dark); }
+        .stat-pill.failed { color: var(--danger-dark); }
+        .stat-pill.skipped { color: var(--warning-dark); }
           color: #93c5fd;
           padding: 6px 12px;
           border-radius: var(--radius-sm);
