@@ -1613,10 +1613,10 @@ function generateSuitesWidget(suitesData) {
     return `<div class="suites-widget" style="height: 450px;"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
   }
 
-  // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
+  // Uses CSS classes for responsiveness instead of inline styles
   return `
-<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
-  <div class="suites-header" style="flex-shrink: 0;">
+<div class="suites-widget fixed-height-widget">
+  <div class="suites-header">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1626,40 +1626,36 @@ function generateSuitesWidget(suitesData) {
     )} tests</span>
   </div>
   
-  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+  <div class="suites-grid-container">
       <div class="suites-grid">
         ${suitesData
           .map(
             (suite) => `
         <div class="suite-card status-${suite.statusOverall}">
           <div class="suite-card-header">
-        <h3 class="suite-name" title="${sanitizeHTML(
-          suite.name,
-        )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
-      </div>
-      <div style="margin-bottom: 12px;"><span class="browser-tag" title="🌐 ${sanitizeHTML(suite.browser)}">🌐 ${sanitizeHTML(
-        suite.browser,
-      )}</span></div>
-      <div class="suite-card-body">
-            <span class="test-count">${suite.count} test${
-              suite.count !== 1 ? "s" : ""
-            }</span>
+            <h3 class="suite-name" title="${sanitizeHTML(suite.name)} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+            <div class="status-indicator-dot status-${suite.statusOverall}" title="${suite.statusOverall.charAt(0).toUpperCase() + suite.statusOverall.slice(1)}"></div>
+          </div>
+          
+          <div class="browser-tag" title="🌐Browser: ${sanitizeHTML(suite.browser)}">
+            <span style="font-size: 1.1em;">🌐</span> ${sanitizeHTML(suite.browser)}
+          </div>
+          
+          <div class="suite-card-body">
+            <span class="test-count-label">${suite.count} Test${suite.count !== 1 ? "s" : ""}</span>
             <div class="suite-stats">
-                ${
-                  suite.passed > 0
-                    ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-                    : ""
-                }
-                ${
-                  suite.failed > 0
-                    ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-                    : ""
-                }
-                ${
-                  suite.skipped > 0
-                    ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-                    : ""
-                }
+              <span class="stat-pill passed" title="Passed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                ${suite.passed}
+              </span>
+              <span class="stat-pill failed" title="Failed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                ${suite.failed}
+              </span>
+              <span class="stat-pill skipped" title="Skipped">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                 ${suite.skipped}
+              </span>
             </div>
           </div>
         </div>`,
@@ -2217,8 +2213,8 @@ function generateHTML(reportData, trendData = null) {
 
   // Calculate retry statistics
   const totalRetried = (results || []).reduce((acc, test) => {
-    if (test.retries && test.retries > 0) {
-      return acc + 1;
+    if (test.retryHistory && test.retryHistory.length > 0) {
+      return acc + test.retryHistory.length;
     }
     return acc;
   }, 0);
@@ -2227,9 +2223,8 @@ function generateHTML(reportData, trendData = null) {
   const browserStats = (results || []).reduce((acc, test) => {
     let browserName = "unknown";
     if (test.browser) {
-      // Extract browser name from strings like "Chrome v143 on Windows 10"
-      const match = test.browser.match(/^(\w+)/);
-      browserName = match ? match[1] : test.browser;
+      // Use full browser name
+      browserName = test.browser;
     }
     acc[browserName] = (acc[browserName] || 0) + 1;
     return acc;
@@ -2255,6 +2250,10 @@ function generateHTML(reportData, trendData = null) {
         // --- Simplified Severity Badge ---
         const severity = test.severity || "Medium";
         const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
+        
+        // --- Retry Count Badge (only show if retries occurred) ---
+        const retryCount = test.retryHistory ? test.retryHistory.length : 0;
+        const retryBadge = retryCount > 0 ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
             return "<div class='no-steps'>No steps recorded for this test.</div>";
@@ -2310,7 +2309,7 @@ function generateHTML(reportData, trendData = null) {
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
+                          padding: 6px 12px;
                           background: #f0f0f0;
                           border: 2px solid #ccc;
                           border-radius: 4px;
@@ -2318,6 +2317,8 @@ function generateHTML(reportData, trendData = null) {
                           font-size: 12px;
                           border-color: #8B0000;
                           color: #8B0000;
+                          align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2341,43 +2342,16 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
-        return `
-      <div class="test-case" data-status="${
-        test.status
-      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
-        .join(",")
-        .toLowerCase()}">
-        <div class="test-case-header" role="button" aria-expanded="false">
-          <div class="test-case-summary">
-            <span class="test-case-title" title="${sanitizeHTML(
-              test.name,
-            )}">${sanitizeHTML(testTitle)}</span>
-            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
-          </div>
-          <div class="test-case-meta">
-            ${severityBadge}
-            ${
-              test.tags && test.tags.length > 0
-                ? test.tags
-                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-                    .join(" ")
-                : ""
-            }
-          </div>
-          <div class="test-case-status-duration">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status,
-            ).toUpperCase()}</span>
-            <span class="test-duration">${formatDuration(test.duration)}</span>
-          </div>
-        </div>
-        <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+        // Function to generate test content HTML (used for base run and retry tabs)
+        const getTestContentHTML = (testData, runSuffix) => {
+          const logId = `stdout-log-${test.id ||index}-${runSuffix}`;
+          return `
+          <p><strong>Full Path:</strong> ${sanitizeHTML(testData.name)}</p>
           ${
-            test.annotations && test.annotations.length > 0
+            testData.annotations && testData.annotations.length > 0
               ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
                   <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
-                  ${test.annotations
+                  ${testData.annotations
                     .map((annotation, idx) => {
                       const isIssueOrBug =
                         annotation.type === "issue" ||
@@ -2385,7 +2359,7 @@ function generateHTML(reportData, trendData = null) {
                       const descriptionText = annotation.description || "";
                       const typeLabel = sanitizeHTML(annotation.type);
                       const descriptionHtml =
-                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\\d+$/)
                           ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
                               descriptionText,
                             )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
@@ -2400,7 +2374,7 @@ function generateHTML(reportData, trendData = null) {
                           }</div>`
                         : "";
                       return `<div style="margin-bottom: ${
-                        idx < test.annotations.length - 1 ? "10px" : "0"
+                        idx < testData.annotations.length - 1 ? "10px" : "0"
                       };">
                       <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
                       ${
@@ -2416,21 +2390,21 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
-            test.workerId,
+            testData.workerId,
           )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers,
+            testData.totalWorkers,
           )}]</p>
           ${
-            test.errorMessage
-              ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.errorMessage,
-                )}
+            testData.errorMessage
+              ? `<div class="test-error-summary"><div class="stack-trace">${formatPlaywrightError(
+                  testData.errorMessage,
+                )}</div>
                 <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
+                          padding: 6px 12px;
                           background: #f0f0f0;
                           border: 2px solid #ccc;
                           border-radius: 4px;
@@ -2438,6 +2412,8 @@ function generateHTML(reportData, trendData = null) {
                           font-size: 12px;
                           border-color: #8B0000;
                           color: #8B0000;
+                          align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2448,50 +2424,48 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.snippet
+            testData.snippet
               ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-                  test.snippet,
+                  testData.snippet,
                 )}</code></pre></div>`
               : ""
           }
           <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
+          <div class="steps-list">${generateStepsHTML(testData.steps)}</div>
           ${(() => {
-            if (!test.stdout || test.stdout.length === 0) return "";
-            // Create a unique ID for the <pre> element to target it for copying
-            const logId = `stdout-log-${test.id || index}`;
+            if (!testData.stdout || testData.stdout.length === 0) return "";
             return `<div class="console-output-section">
                           <h4>Console Output (stdout)
-                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</button>
+                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</ button>
                           </h4>
                           <div class="log-wrapper">
                               <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                                test.stdout
+                                testData.stdout
                                   .map((line) => sanitizeHTML(line))
-                                  .join("\n"),
+                                  .join("\\n"),
                               )}</pre>
                           </div>
                       </div>`;
           })()}
           ${
-            test.stderr && test.stderr.length > 0
+            testData.stderr && testData.stderr.length > 0
               ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                  test.stderr.map((line) => sanitizeHTML(line)).join("\n"),
+                  testData.stderr.map((line) => sanitizeHTML(line)).join("\\n"),
                 )}</pre></div>`
               : ""
           }
           ${
-            test.screenshots && test.screenshots.length > 0
+            testData.screenshots && testData.screenshots.length > 0
               ? `
             <div class="attachments-section">
                 <h4>Screenshots</h4>
                 <div class="attachments-grid">
-                ${test.screenshots
+                ${testData.screenshots
                   .map(
-                    (screenshot, index) => `
+                    (screenshot, screenshotIndex) => `
                     <div class="attachment-item">
                     <img src="${fixPath(screenshot)}" alt="Screenshot ${
-                      index + 1
+                      screenshotIndex + 1
                     }">
                     <div class="attachment-info">
                         <div class="trace-actions">
@@ -2500,7 +2474,7 @@ function generateHTML(reportData, trendData = null) {
                         )}" target="_blank" class="view-full">View Full Image</a>
                         <a href="${fixPath(
                           screenshot,
-                        )}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
+                        )}" target="_blank" download="screenshot-${Date.now()}-${screenshotIndex}.png">Download</a>
                         </div>
                     </div>
                     </div>
@@ -2513,9 +2487,9 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.videoPath && test.videoPath.length > 0
-              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
-                  .map((videoUrl, index) => {
+            testData.videoPath && testData.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${testData.videoPath
+                  .map((videoUrl, videoIndex) => {
                     const fixedVideoUrl = fixPath(videoUrl);
                     const fileExtension = String(fixedVideoUrl)
                       .split(".")
@@ -2531,7 +2505,7 @@ function generateHTML(reportData, trendData = null) {
                       }[fileExtension] || "video/mp4";
                     return `<div class="attachment-item video-item">
                             <video controls width="100%" height="auto" title="Video ${
-                              index + 1
+                              videoIndex + 1
                             }">
                                 <source src="${sanitizeHTML(
                                   fixedVideoUrl,
@@ -2542,7 +2516,7 @@ function generateHTML(reportData, trendData = null) {
                                 <div class="trace-actions">
                                 <a href="${sanitizeHTML(
                                   fixedVideoUrl,
-                                )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
+                                )}" target="_blank" download="video-${Date.now()}-${videoIndex}.${fileExtension}">Download</a>
                                 </div>
                             </div>
                         </div>`;
@@ -2551,7 +2525,7 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.tracePath
+            testData.tracePath
               ? `
             <div class="attachments-section">
                 <h4>Trace Files</h4>
@@ -2560,15 +2534,15 @@ function generateHTML(reportData, trendData = null) {
                         <div class="trace-preview">
                         <span class="trace-icon">📄</span>
                         <span class="trace-name">${sanitizeHTML(
-                          path.basename(test.tracePath),
+                          path.basename(testData.tracePath),
                         )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                             <a href="${sanitizeHTML(
-                              fixPath(test.tracePath),
+                              fixPath(testData.tracePath),
                             )}" target="_blank" download="${sanitizeHTML(
-                              path.basename(test.tracePath),
+                              path.basename(testData.tracePath),
                             )}" class="download-trace">Download Trace</a>
                         </div>
                         </div>
@@ -2579,12 +2553,12 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.attachments && test.attachments.length > 0
+            testData.attachments && testData.attachments.length > 0
               ? `
             <div class="attachments-section">
                 <h4>Other Attachments</h4>
                 <div class="attachments-grid">
-                ${test.attachments
+                ${testData.attachments
                   .map(
                     (attachment) => `
                     <div class="attachment-item generic-attachment">
@@ -2620,13 +2594,66 @@ function generateHTML(reportData, trendData = null) {
             `
               : ""
           }
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-                  sanitizeHTML(test.codeSnippet),
-                )}</code></pre></div>`
-              : ""
-          }
+          
+        `;
+        };
+
+        return `
+      <div class="test-case" data-status="${
+        test.status
+      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
+        .join(",")
+        .toLowerCase()}">
+        <div class="test-case-header" role="button" aria-expanded="false">
+          <div class="test-case-summary">
+            <span class="test-case-title" title="${sanitizeHTML(
+              test.name,
+            )}">${sanitizeHTML(testTitle)}</span>
+            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
+          </div>
+          <div class="test-case-meta">
+            ${severityBadge}
+            ${retryBadge}
+            ${
+              test.tags && test.tags.length > 0
+                ? test.tags
+                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                    .join(" ")
+                : ""
+            }
+          </div>
+          <div class="test-case-status-duration">
+            <span class="status-badge ${getStatusClass(test.status)}">${String(
+              test.status,
+            ).toUpperCase()}</span>
+            <span class="test-duration">${formatDuration(test.duration)}</span>
+          </div>
+        </div>
+        <div class="test-case-content" style="display: none;">
+          ${test.retryHistory && test.retryHistory.length > 0 ? `
+            <div class="retry-tabs-container">
+              <div class="retry-tabs-header">
+                <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
+                   Base Run
+                </button>
+                ${test.retryHistory.map((retry, idx) => `
+                  <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
+                    Retry-${idx + 1}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <div id="base-run-${test.id}" class="retry-tab-content active">
+                ${getTestContentHTML(test, 'base')}
+              </div>
+              
+              ${test.retryHistory.map((retry, idx) => `
+                <div id="retry-${idx + 1}-${test.id}" class="retry-tab-content" style="display: none;">
+                  ${getTestContentHTML(retry, `retry-${idx + 1}`)}
+                </div>
+              `).join('')}
+            </div>
+          ` : getTestContentHTML(test, 'single')}
         </div>
       </div>`;
       })
@@ -2677,7 +2704,9 @@ function generateHTML(reportData, trendData = null) {
           --glow-primary: 0 0 20px rgba(99, 102, 241, 0.4), 0 0 40px rgba(99, 102, 241, 0.2);
           --glow-success: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2);
           --glow-danger: 0 0 20px rgba(239, 68, 68, 0.4), 0 0 40px rgba(239, 68, 68, 0.2);
-        }
+          --bg-card: #ffffff; --bg-card-hover: #f8fafc;
+          --gradient-card: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+          --border-medium: #cbd5e1;
         * { margin: 0; padding: 0; box-sizing: border-box; }
         ::selection { background: var(--primary-color); color: white; }
         ::-webkit-scrollbar { width: 0; height: 0; display: none; }
@@ -2749,11 +2778,11 @@ function generateHTML(reportData, trendData = null) {
           display: flex;
           gap: 16px;
           align-items: stretch;
-          background: #ffffff;
+          background: transparent;
           border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
+          padding: 0;
+          box-shadow: var(--shadow-md); /* Inherited from base static style */
+          overflow: hidden; /* Inherited */
         }
         .run-info-item {
           display: flex;
@@ -2762,54 +2791,61 @@ function generateHTML(reportData, trendData = null) {
           padding: 16px 28px;
           position: relative;
           flex: 1;
-          min-width: 0;
-          max-width: 100%;
-          overflow-wrap: break-word;
-          word-break: break-word;
+          min-width: fit-content;
         }
-        .run-info-item:not(:last-child)::after {
-          content: '';
-          position: absolute;
-          right: 0;
-          top: 20%;
-          bottom: 20%;
-          width: 1px;
-          background: linear-gradient(to bottom, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
-        }
+
         .run-info-item:first-child {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 50%, rgba(217, 119, 6, 0.1) 100%);
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(251, 191, 36, 0.25), 0 0 40px rgba(251, 191, 36, 0.08);
+        }
+        .run-info-item:first-child:hover {
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.22) 50%, rgba(217, 119, 6, 0.15) 100%);
+          border-color: rgba(251, 191, 36, 0.4);
+          box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(251, 191, 36, 0.35), 0 0 50px rgba(251, 191, 36, 0.15);
         }
         .run-info-item:last-child {
-          background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(124, 58, 237, 0.12) 50%, rgba(109, 40, 217, 0.08) 100%);
+          border: 1px solid rgba(139, 92, 246, 0.3);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.08);
+        }
+        .run-info-item:last-child:hover {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(124, 58, 237, 0.18) 50%, rgba(109, 40, 217, 0.12) 100%);
+          border-color: rgba(139, 92, 246, 0.4);
+          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(139, 92, 246, 0.35), 0 0 50px rgba(139, 92, 246, 0.15);
         }
         .run-info strong { 
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           font-size: 0.7em;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          color: #64748b;
+          letter-spacing: 1.2px;
+          color: #9ca3af;
           margin: 0;
           font-weight: 700;
         }
         .run-info strong::before {
           content: '';
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           background: currentColor;
-          opacity: 0.6;
+          opacity: 0.7;
+          box-shadow: 0 0 8px currentColor;
         }
         .run-info-item:first-child strong {
-          color: #92400e;
+          color: var(--warning-light);
         }
         .run-info-item:last-child strong {
-          color: #5b21b6;
+          color: var(--secondary-light);
         }
         .run-info span {
+          font-size: 1.5em;
           font-weight: 800;
-          color: #0f172a;
+          color: #0f172a; /* Adjusted for light theme consistency, static uses #f9fafb */
           font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
           letter-spacing: -0.02em;
           line-height: 1.2;
@@ -2919,9 +2955,17 @@ function generateHTML(reportData, trendData = null) {
           color: #0f172a;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
           color: #64748b;
+          white-space: nowrap;
+          flex-shrink: 0;
           font-weight: 700;
           font-size: 0.95em;
         }
@@ -2965,9 +3009,11 @@ function generateHTML(reportData, trendData = null) {
             align-items: flex-start;
           }
           .run-info { 
+            flex-direction: column;
+            gap: 0;
             width: 100%;
-            justify-content: flex-start;
-            gap: 24px;
+            border-radius: 14px;
+            overflow: hidden;
           }
           .dashboard-grid { 
             grid-template-columns: repeat(2, 1fr);
@@ -2976,11 +3022,23 @@ function generateHTML(reportData, trendData = null) {
           .summary-card:nth-child(n+7) { border-bottom: none; }
           .filters { 
             padding: 24px;
-            flex-direction: column;
+            flex-wrap: wrap;
+            gap: 12px;
           }
-          .filters input { min-width: 100%; }
-          .filters select { min-width: 100%; }
-          .filters button { width: 100%; }
+          .filters input { 
+            flex: 1 1 auto;
+            min-width: 0; 
+            width: auto;
+          }
+          .filters select { 
+            flex: 0 0 auto;
+            min-width: 0;
+            width: auto; 
+          }
+          .filters button { 
+            width: auto;
+            flex: 0 0 auto;
+          }
           .copy-btn {
             font-size: 0.75em;
             padding: 8px 16px;
@@ -3179,16 +3237,13 @@ function generateHTML(reportData, trendData = null) {
             display: none;
           }
           .run-info-item:not(:last-child) {
-            border-bottom: 1px solid var(--light-gray-color);
+            border-bottom: 1px solid var(--border-medium);
           }
-          .run-info strong {
-            font-size: 0.65em;
+          .run-info strong { 
+            font-size: 0.65em; 
           }
-          .run-info span {
-            font-size: 1.1em;
-            white-space: normal;
-            word-break: break-word;
-            overflow-wrap: break-word;
+          .run-info span { 
+            font-size: 1.1em; 
           }
           .tabs {
             flex-wrap: wrap;
@@ -3350,59 +3405,146 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
         .status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
         .status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
-        .suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .suites-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
         .summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
         .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .suite-card { 
-          border: none;
-          border-left: 4px solid #e2e8f0;
-          padding: 24px; 
-          background: cornsilk;
-          transition: all 0.15s ease;
-          border-radius: 10px;
+        .suites-widget {
+          display: flex;
+          flex-direction: column;
         }
-        .suite-card:hover { 
-          background: #fafbfc;
-          border-left-color: #6366f1;
+        .fixed-height-widget {
+          height: 450px;
         }
-        .suite-card.status-passed { border-left-color: #10b981; }
-        .suite-card.status-passed:hover { background: rgba(16, 185, 129, 0.02); }
-        .suite-card.status-failed { border-left-color: #ef4444; }
-        .suite-card.status-failed:hover { background: rgba(239, 68, 68, 0.02); }
-        .suite-card.status-skipped { border-left-color: #f59e0b; }
-        .suite-card.status-skipped:hover { background: rgba(245, 158, 11, 0.02); }
-        .suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
+        .suites-grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .fixed-height-widget {
+                height: auto;
+                max-height: 600px;
+            }
+        }
+        .suite-card {
+          background: #ffffff;
+          border: 1px solid var(--border-light);
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
+        }
+        .suite-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          border-color: var(--primary-light);
+        }
+        .suite-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: var(--neutral-200);
+          opacity: 0.8;
+          transition: background 0.3s ease;
+        }
+        .suite-card.status-passed::before { background: var(--success-color); }
+        .suite-card.status-failed::before { background: var(--danger-color); }
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+        
+        .suite-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
+        }
+        .suite-name {
+          font-size: 1.15em;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-right: 12px;
+        }
+        .status-indicator-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          margin-top: 6px;
+        }
+        .status-indicator-dot.status-passed { background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+        .status-indicator-dot.status-failed { background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+        .status-indicator-dot.status-skipped { background-color: var(--warning-color); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }
+
         .browser-tag {
+          font-size: 0.8em;
+          font-weight: 600;
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
+          padding: 4px 10px;
+          border-radius: 20px;
+          border: 1px solid var(--border-light);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 20px;
+          align-self: flex-start;
+          box-shadow: none;
+          text-shadow: none;
+        }
+        
+        .suite-card-body {
+          margin-top: auto;
+        }
+        
+        .test-count-label {
           font-size: 0.85em;
           font-weight: 600;
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
-          padding: 6px 12px;
-          border-radius: var(--radius-sm);
-          border: 1px solid rgba(96, 165, 250, 0.3);
-          display: inline-block;
-          box-shadow: 0 2px 8px rgba(96, 165, 250, 0.15), inset 0 1px 0 rgba(96, 165, 250, 0.2);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-          letter-spacing: 0.3px;
-          max-width: 200px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          vertical-align: middle;
-          cursor: help;
-          transition: all 0.2s ease;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 8px;
+          display: block;
         }
-        .browser-tag:hover {
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.3) 0%, rgba(59, 130, 246, 0.25) 100%);
-          border-color: rgba(96, 165, 250, 0.5);
+
+        .suite-stats {
+          display: flex;
+          gap: 8px;
+          background: var(--bg-secondary);
+          padding: 10px 14px;
+          border-radius: 10px;
+          justify-content: space-between;
         }
-        .suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
-        .suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
-        .suite-stats span { display: flex; align-items: center; gap: 6px; }
-        .suite-stats svg { vertical-align: middle; font-size: 1.15em; }
-        .suite-stats .stat-passed { color: #10b981; }
-        .suite-stats .stat-failed { color: #ef4444; }
-        .suite-stats .stat-skipped { color: #f59e0b; }
+        
+        .stat-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9em;
+          font-weight: 600;
+        }
+        .stat-pill svg { width: 14px; height: 14px; }
+        .stat-pill.passed { color: var(--success-dark); }
+        .stat-pill.failed { color: var(--danger-dark); }
+        .stat-pill.skipped { color: var(--warning-dark); }
         .filters {
           display: flex;
           flex-wrap: wrap;
@@ -3434,6 +3576,7 @@ function generateHTML(reportData, trendData = null) {
           min-width: 180px;
           background: white;
           cursor: pointer;
+          width: 100%;
         }
         .filters select:focus { 
           outline: none;
@@ -3627,6 +3770,65 @@ function generateHTML(reportData, trendData = null) {
           border-color: rgba(148, 163, 184, 0.25);
         }
 
+        /* --- RETRY COUNT BADGE --- */
+        .retry-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 5px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          background: rgba(147, 51, 234, 0.15);
+          color: #a855f7;
+          border: 1px solid rgba(147, 51, 234, 0.3);
+          margin-left: 8px;
+        }
+
+        /* --- RETRY TABS --- */
+        .retry-tabs-container {
+          margin-top: 16px;
+        }
+
+        .retry-tabs-header {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid var(--border-medium);
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .retry-tab {
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--text-color-secondary);
+          transition: all 0.2s ease;
+        }
+
+        .retry-tab:hover {
+          color: var(--primary-color);
+          background: rgba(147, 51, 234, 0.05);
+        }
+
+        .retry-tab.active {
+          color: #a855f7;
+          border-bottom-color: #a855f7;
+          background: rgba(147, 51, 234, 0.1);
+        }
+
+        .retry-tab-content {
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
         .tag { 
           display: inline-flex;
           align-items: center;
@@ -3657,7 +3859,16 @@ function generateHTML(reportData, trendData = null) {
         }
         .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
         .test-case-content p { margin-bottom: 10px; font-size: 1em; }
-        .test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(244,67,54,0.05); border: 1px solid rgba(244,67,54,0.2); border-left: 4px solid var(--danger-color); border-radius: 4px; }
+        .test-error-summary { 
+          margin-bottom: 20px; 
+          padding: 14px; 
+          background-color: rgba(244,67,54,0.05); 
+          border: 1px solid rgba(244,67,54,0.2); 
+          border-left: 4px solid var(--danger-color); 
+          border-radius: 4px; 
+          display: flex;
+          flex-direction: column;
+        }
         .test-error-summary h4 { color: var(--danger-color); margin-top:0;}
         .test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
         .steps-list { margin: 18px 0; }
@@ -3810,6 +4021,7 @@ function generateHTML(reportData, trendData = null) {
           color: var(--text-color); 
           pointer-events: auto;
           cursor: pointer;
+          width: 100%;
         }
         .filters button.clear-filters-btn:active,
         .filters button.clear-filters-btn:focus {
@@ -4217,19 +4429,19 @@ function generateHTML(reportData, trendData = null) {
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
                     ${browserBreakdown
-                      .slice(0, 5)
+                      .slice(0, 3)
                       .map(
                         (b) =>
                           `<div class="browser-item">
-                        <span class="browser-name">${sanitizeHTML(b.browser)}</span>
+                        <span class="browser-name" title="${sanitizeHTML(b.browser)}">${sanitizeHTML(b.browser)}</span>
                         <span class="browser-stats">${b.percentage}% (${b.count})</span>
                       </div>`,
                       )
                       .join("")}
                     ${
-                      browserBreakdown.length > 5
+                      browserBreakdown.length > 3
                         ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
-                      <span>+${browserBreakdown.length - 5} more browsers</span>
+                      <span>+${browserBreakdown.length - 3} more browsers</span>
                     </div>`
                         : ""
                     }
@@ -4354,6 +4566,33 @@ function generateHTML(reportData, trendData = null) {
             button.textContent = 'Failed';
              setTimeout(() => { button.textContent = originalText; }, 2000);
         });
+    }
+    
+    // --- Retry Tab Switching Function ---
+    function switchRetryTab(event, tabId) {
+      const tabButton = event.currentTarget;
+      const tabsContainer = tabButton.closest('.retry-tabs-container');
+      
+      // Hide all tab contents in this container
+      const allTabContents = tabsContainer.querySelectorAll('.retry-tab-content');
+      allTabContents.forEach(content => {
+        content.style.display = 'none';
+        content.classList.remove('active');
+      });
+      
+      // Remove active class from all tabs
+      const allTabs = tabsContainer.querySelectorAll('.retry-tab');
+      allTabs.forEach(tab => tab.classList.remove('active'));
+      
+      // Show selected tab content
+      const selectedContent = document.getElementById(tabId);
+      if (selectedContent) {
+        selectedContent.style.display = 'block';
+        selectedContent.classList.add('active');
+      }
+      
+      // Add active class to clicked tab
+      tabButton.classList.add('active');
     }
     
     // --- AI Failure Analyzer Functions ---

@@ -1832,8 +1832,8 @@ function generateSuitesWidget(suitesData) {
 
   // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
   return `
-<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
-  <div class="suites-header" style="flex-shrink: 0;">
+<div class="suites-widget fixed-height-widget">
+  <div class="suites-header">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1843,40 +1843,36 @@ function generateSuitesWidget(suitesData) {
     )} tests</span>
   </div>
 
-  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+  <div class="suites-grid-container">
       <div class="suites-grid">
     ${suitesData
       .map(
         (suite) => `
     <div class="suite-card status-${suite.statusOverall}">
       <div class="suite-card-header">
-        <h3 class="suite-name" title="${sanitizeHTML(
-          suite.name,
-        )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+        <h3 class="suite-name" title="${sanitizeHTML(suite.name)} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+        <div class="status-indicator-dot status-${suite.statusOverall}" title="${suite.statusOverall.charAt(0).toUpperCase() + suite.statusOverall.slice(1)}"></div>
       </div>
-      <div style="margin-bottom: 12px;"><span class="browser-tag" title="🌐 ${sanitizeHTML(suite.browser)}">🌐 ${sanitizeHTML(
-        suite.browser,
-      )}</span></div>
+      
+      <div class="browser-tag" title="🌐Browser: ${sanitizeHTML(suite.browser)}">
+        <span style="font-size: 1.1em;">🌐</span> ${sanitizeHTML(suite.browser)}
+      </div>
+      
       <div class="suite-card-body">
-        <span class="test-count">${suite.count} test${
-          suite.count !== 1 ? "s" : ""
-        }</span>
+        <span class="test-count-label">${suite.count} Test${suite.count !== 1 ? "s" : ""}</span>
         <div class="suite-stats">
-            ${
-              suite.passed > 0
-                ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-                : ""
-            }
-            ${
-              suite.failed > 0
-                ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-                : ""
-            }
-            ${
-              suite.skipped > 0
-                ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-                : ""
-            }
+            <span class="stat-pill passed" title="Passed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                ${suite.passed}
+            </span>
+            <span class="stat-pill failed" title="Failed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                ${suite.failed}
+            </span>
+            <span class="stat-pill skipped" title="Skipped">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                 ${suite.skipped}
+            </span>
         </div>
       </div>
     </div>`,
@@ -2442,8 +2438,8 @@ function generateHTML(reportData, trendData = null) {
 
   // Calculate retry statistics
   const totalRetried = (results || []).reduce((acc, test) => {
-    if (test.retries && test.retries > 0) {
-      return acc + 1;
+    if (test.retryHistory && test.retryHistory.length > 0) {
+      return acc + test.retryHistory.length;
     }
     return acc;
   }, 0);
@@ -2452,9 +2448,8 @@ function generateHTML(reportData, trendData = null) {
   const browserStats = (results || []).reduce((acc, test) => {
     let browserName = "unknown";
     if (test.browser) {
-      // Extract browser name from strings like "Chrome v143 on Windows 10"
-      const match = test.browser.match(/^(\w+)/);
-      browserName = match ? match[1] : test.browser;
+      // Use full browser name
+      browserName = test.browser;
     }
     acc[browserName] = (acc[browserName] || 0) + 1;
     return acc;
@@ -2494,6 +2489,10 @@ function generateHTML(reportData, trendData = null) {
         // --- Simplified Severity Badge ---
         const severity = test.severity || "Medium";
         const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
+
+        // --- Retry Count Badge (only show if retries occurred) ---
+        const retryCount = test.retryHistory ? test.retryHistory.length : 0;
+        const retryBadge = retryCount > 0 ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
 
         // --- Step Generation ---
         const generateStepsHTML = (steps, depth = 0) => {
@@ -2546,7 +2545,7 @@ function generateHTML(reportData, trendData = null) {
                             )}</div>`
                           : ""
                       }
-                      <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
+                      <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s; align-self: flex-end; width: auto;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
                     </div>`
                   : ""
               }
@@ -2564,6 +2563,263 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
+        // Function to generate test content HTML (used for base run and retry tabs)
+        const getTestContentHTML = (testData, runSuffix) => {
+          const logId = `stdout-log-${test.id ||index}-${runSuffix}`;
+          return `
+          <p><strong>Full Path:</strong> ${sanitizeHTML(testData.name)}</p>
+          ${
+            testData.annotations && testData.annotations.length > 0
+              ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                  <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                  ${testData.annotations
+                    .map((annotation, idx) => {
+                      const isIssueOrBug =
+                        annotation.type === "issue" ||
+                        annotation.type === "bug";
+                      const descriptionText = annotation.description || "";
+                      const typeLabel = sanitizeHTML(annotation.type);
+                      const descriptionHtml =
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\\d+$/)
+                          ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                              descriptionText,
+                            )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                              descriptionText,
+                            )}</a>`
+                          : sanitizeHTML(descriptionText);
+                      const locationText = annotation.location
+                        ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                            annotation.location.file,
+                          )}:${annotation.location.line}:${
+                            annotation.location.column
+                          }</div>`
+                        : "";
+                      return `<div style="margin-bottom: ${
+                        idx < testData.annotations.length - 1 ? "10px" : "0"
+                      };">
+                      <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                      ${
+                        descriptionText
+                          ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                          : ""
+                      }
+                      ${locationText}
+                    </div>`;
+                    })
+                    .join("")}
+                </div>`
+              : ""
+          }
+          <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
+            testData.workerId,
+          )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
+            testData.totalWorkers,
+          )}]</p>
+          ${
+            testData.errorMessage
+              ? `<div class="test-error-summary"><div class="stack-trace">${formatPlaywrightError(
+                  testData.errorMessage,
+                )}</div>
+                <button 
+                        class="copy-error-btn" 
+                        onclick="copyErrorToClipboard(this)"
+                        style="
+                          margin-top: 8px;
+                          padding: 6px 12px;
+                          background: rgba(248, 113, 113, 0.15);
+                          border: 2px solid var(--danger-color);
+                          border-radius: 6px;
+                          cursor: pointer;
+                          font-size: 12px;
+                          color: var(--danger-color);
+                          font-weight: 600;
+                          transition: 0.2s;
+                          align-self: flex-end;
+                          width: auto;
+                          "
+                            onmouseover="this.style.background='#e0e0e0'"
+                            onmouseout="this.style.background='#f0f0f0'"
+                      > 
+                        Copy Error Prompt
+                      </button>
+                </div>`
+              : ""
+          }
+          ${
+            testData.snippet
+              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                  testData.snippet,
+                )}</code></pre></div>`
+              : ""
+          }
+          <h4>Steps</h4>
+          <div class="steps-list">${generateStepsHTML(testData.steps)}</div>
+          ${(() => {
+            if (!testData.stdout || testData.stdout.length === 0) return "";
+            return `<div class="console-output-section">
+                          <h4>Console Output (stdout)
+                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</ button>
+                          </h4>
+                          <div class="log-wrapper">
+                              <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                                testData.stdout
+                                  .map((line) => sanitizeHTML(line))
+                                  .join("\\n"),
+                              )}</pre>
+                          </div>
+                      </div>`;
+          })()}
+          ${
+            testData.stderr && testData.stderr.length > 0
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  testData.stderr.map((line) => sanitizeHTML(line)).join("\\n"),
+                )}</pre></div>`
+              : ""
+          }
+          ${
+            testData.screenshots && testData.screenshots.length > 0
+              ? `
+            <div class="attachments-section">
+                <h4>Screenshots</h4>
+                <div class="attachments-grid">
+                ${testData.screenshots
+                  .map(
+                    (screenshot, screenshotIndex) => `
+                    <div class="attachment-item">
+                    <img src="${sanitizeHTML(screenshot)}" alt="Screenshot ${
+                      screenshotIndex + 1
+                    }">
+                    <div class="attachment-info">
+                        <div class="trace-actions">
+                        <a href="${sanitizeHTML(
+                          screenshot,
+                        )}" target="_blank" class="view-full">View Full Image</a>
+                        <a href="${sanitizeHTML(
+                          screenshot,
+                        )}" target="_blank" download="screenshot-${Date.now()}-${screenshotIndex}.png">Download</a>
+                        </div>
+                    </div>
+                    </div>
+                `,
+                  )
+                  .join("")}
+                </div>
+            </div>
+            `
+              : ""
+          }
+          ${
+            testData.videoPath && testData.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${testData.videoPath
+                  .map((videoUrl, videoIndex) => {
+                    const fixedVideoUrl = sanitizeHTML(videoUrl);
+                    const fileExtension = String(fixedVideoUrl)
+                      .split(".")
+                      .pop()
+                      .toLowerCase();
+                    const mimeType =
+                      {
+                        mp4: "video/mp4",
+                        webm: "video/webm",
+                        ogg: "video/ogg",
+                        mov: "video/quicktime",
+                        avi: "video/x-msvideo",
+                      }[fileExtension] || "video/mp4";
+                    return `<div class="attachment-item video-item">
+                            <video controls width="100%" height="auto" title="Video ${
+                              videoIndex + 1
+                            }">
+                                <source src="${sanitizeHTML(
+                                  fixedVideoUrl,
+                                )}" type="${mimeType}">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="attachment-info">
+                                <div class="trace-actions">
+                                <a href="${sanitizeHTML(
+                                  fixedVideoUrl,
+                                )}" target="_blank" download="video-${Date.now()}-${videoIndex}.${fileExtension}">Download</a>
+                                </div>
+                            </div>
+                        </div>`;
+                  })
+                  .join("")}</div></div>`
+              : ""
+          }
+          ${
+            testData.tracePath
+              ? `
+            <div class="attachments-section">
+                <h4>Trace Files</h4>
+                <div class="attachments-grid">
+                    <div class="attachment-item trace-item">
+                        <div class="trace-preview">
+                        <span class="trace-icon">📄</span>
+                        <span class="trace-name">${sanitizeHTML(
+                          path.basename(testData.tracePath),
+                        )}</span>
+                        </div>
+                        <div class="attachment-info">
+                        <div class="trace-actions">
+                            <a href="${sanitizeHTML(
+                              sanitizeHTML(testData.tracePath),
+                            )}" target="_blank" download="${sanitizeHTML(
+                              path.basename(testData.tracePath),
+                            )}" class="download-trace">Download Trace</a>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+              : ""
+          }
+          ${
+            testData.attachments && testData.attachments.length > 0
+              ? `
+            <div class="attachments-section">
+                <h4>Other Attachments</h4>
+                <div class="attachments-grid">
+                ${testData.attachments
+                  .map(
+                    (attachment) => `
+                    <div class="attachment-item generic-attachment">
+                        <div class="attachment-icon">${getAttachmentIcon(
+                          attachment.contentType,
+                        )}</div>
+                        <div class="attachment-caption">
+                        <span class="attachment-name" title="${sanitizeHTML(
+                          attachment.name,
+                        )}">${sanitizeHTML(attachment.name)}</span>
+                        <span class="attachment-type">${sanitizeHTML(
+                          attachment.contentType,
+                        )}</span>
+                        </div>
+                        <div class="attachment-info">
+                        <div class="trace-actions">
+                        <a href="${sanitizeHTML(
+                          sanitizeHTML(attachment.path),
+                        )}" target="_blank" class="view-full">View</a>
+                            <a href="${sanitizeHTML(
+                              sanitizeHTML(attachment.path),
+                            )}" target="_blank" download="${sanitizeHTML(
+                              attachment.name,
+                            )}" class="download-trace">Download</a>
+                        </div>
+                        </div>
+                    </div>
+                `,
+                  )
+                  .join("")}
+                </div>
+            </div>
+            `
+              : ""
+          }
+        `;
+        };
+
+
         return `
       <div class="test-case" data-status="${
         test.status
@@ -2579,6 +2835,7 @@ function generateHTML(reportData, trendData = null) {
           </div>
           <div class="test-case-meta">
             ${severityBadge}
+            ${retryBadge}
             ${
               test.tags && test.tags.length > 0
                 ? test.tags
@@ -2595,189 +2852,30 @@ function generateHTML(reportData, trendData = null) {
           </div>
         </div>
         <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
-          ${
-            test.annotations && test.annotations.length > 0
-              ? `<div class="annotations-section">
-                  <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 1.1em;">📌 Annotations</h4>
-                  ${test.annotations
-                    .map((annotation, idx) => {
-                      const isIssueOrBug =
-                        annotation.type === "issue" ||
-                        annotation.type === "bug";
-                      const descriptionText = annotation.description || "";
-                      const typeLabel = sanitizeHTML(annotation.type);
-                      const descriptionHtml =
-                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
-                          ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
-                              descriptionText,
-                            )}" style="color: var(--info-color); text-decoration: underline; cursor: pointer; font-weight: 600;">${sanitizeHTML(
-                              descriptionText,
-                            )}</a>`
-                          : sanitizeHTML(descriptionText);
-                      const locationText = annotation.location
-                        ? `<div style="font-size: 0.85em; color: var(--text-tertiary); margin-top: 4px;">Location: ${sanitizeHTML(
-                            annotation.location.file,
-                          )}:${annotation.location.line}:${
-                            annotation.location.column
-                          }</div>`
-                        : "";
-                      return `<div style="margin-bottom: ${
-                        idx < test.annotations.length - 1 ? "10px" : "0"
-                      };"><strong>Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>${
-                        descriptionText
-                          ? `<br><strong>Description:</strong> ${descriptionHtml}`
-                          : ""
-                      }${locationText}</div>`;
-                    })
-                    .join("")}
-                </div>`
-              : ""
-          }
-          <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
-            test.workerId,
-          )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers,
-          )}]</p>
-          ${
-            test.errorMessage
-              ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.errorMessage,
-                )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 4px 8px; background: #f0f0f0; border: 2px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 12px; border-color: #8B0000; color: #8B0000;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Copy Error Prompt</button></div>`
-              : ""
-          }
-          ${
-            test.snippet
-              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-                  test.snippet,
-                )}</code></pre></div>`
-              : ""
-          }
-          <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
-          
-          ${(() => {
-            if (!test.stdout || test.stdout.length === 0) return "";
-            // FIXED: Now using 'testIndex' which is guaranteed to be defined
-            const logId = `stdout-log-${test.id || testIndex}`;
-            return `<div class="console-output-section"><h4>Console Output (stdout) <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</button></h4><div class="log-wrapper"><pre id="${logId}" class="console-log stdout-log" style="background-color: var(--bg-tertiary); color: #f3e8c3; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; border: 1px solid var(--border-light);">${formatPlaywrightError(
-              test.stdout.map((line) => sanitizeHTML(line)).join("\n"),
-            )}</pre></div></div>`;
-          })()}
-          
-          ${(() => {
-            if (!test.stderr || test.stderr.length === 0) return "";
-            // FIXED: Using 'testIndex'
-            const logId = `stderr-log-${test.id || testIndex}`;
-            return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: var(--bg-tertiary); color: #f87171; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; border: 1px solid var(--border-light);">${formatPlaywrightError(
-              test.stderr.map((line) => sanitizeHTML(line)).join("\n"),
-            )}</pre></div>`;
-          })()}
-
-          ${(() => {
-            if (!test.screenshots || test.screenshots.length === 0) return "";
-            const screenshotsHTML = test.screenshots
-              .map((screenshotPath, sIndex) => {
-                try {
-                  const imagePath = path.resolve(
-                    DEFAULT_OUTPUT_DIR,
-                    screenshotPath,
-                  );
-                  if (!fsExistsSync(imagePath))
-                    return `<div class="attachment-item error">Screenshot not found</div>`;
-                  const base64ImageData =
-                    readFileSync(imagePath).toString("base64");
-                  // LAZY LOAD: Using helper with unique ID
-                  return createLazyMedia(
-                    base64ImageData,
-                    "image/png",
-                    "image",
-                    sIndex + 1,
-                    `screenshot-${testIndex}-${sIndex}.png`,
-                  );
-                } catch (e) {
-                  return `<div class="attachment-item error">Error loading screenshot</div>`;
-                }
-              })
-              .join("");
-            return `<div class="attachments-section"><h4>Screenshots</h4><div class="attachments-grid">${screenshotsHTML}</div></div>`;
-          })()}
-
-          ${(() => {
-            if (!test.videoPath || test.videoPath.length === 0) return "";
-            const videosHTML = test.videoPath
-              .map((videoPath, vIndex) => {
-                try {
-                  const videoFilePath = path.resolve(
-                    DEFAULT_OUTPUT_DIR,
-                    videoPath,
-                  );
-                  if (!fsExistsSync(videoFilePath))
-                    return `<div class="attachment-item error">Video not found</div>`;
-                  const videoBase64 =
-                    readFileSync(videoFilePath).toString("base64");
-                  const ext = path.extname(videoPath).slice(1).toLowerCase();
-                  const mime =
-                    { mp4: "video/mp4", webm: "video/webm" }[ext] ||
-                    "video/mp4";
-                  // LAZY LOAD: Using helper with unique ID
-                  return createLazyMedia(
-                    videoBase64,
-                    mime,
-                    "video",
-                    vIndex + 1,
-                    `video-${testIndex}-${vIndex}.${ext}`,
-                  );
-                } catch (e) {
-                  return `<div class="attachment-item error">Error loading video</div>`;
-                }
-              })
-              .join("");
-            return `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${videosHTML}</div></div>`;
-          })()}
-
-          ${
-            test.tracePath
-              ? `<div class="attachments-section"><h4>Trace Files</h4><div class="attachments-grid"><div class="attachment-item trace-item"><div class="trace-preview"><span class="trace-icon">📄</span><span class="trace-name">${sanitizeHTML(
-                  path.basename(test.tracePath),
-                )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                  test.tracePath,
-                )}" target="_blank" download="${sanitizeHTML(
-                  path.basename(test.tracePath),
-                )}" class="download-trace">Download Trace</a></div></div></div></div></div>`
-              : ""
-          }
-          ${
-            test.attachments && test.attachments.length > 0
-              ? `<div class="attachments-section"><h4>Other Attachments</h4><div class="attachments-grid">${test.attachments
-                  .map(
-                    (attachment) =>
-                      `<div class="attachment-item generic-attachment"><div class="attachment-icon">${getAttachmentIcon(
-                        attachment.contentType,
-                      )}</div><div class="attachment-caption"><span class="attachment-name" title="${sanitizeHTML(
-                        attachment.name,
-                      )}">${sanitizeHTML(
-                        attachment.name,
-                      )}</span><span class="attachment-type">${sanitizeHTML(
-                        attachment.contentType,
-                      )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                        attachment.path,
-                      )}" target="_blank" class="view-full">View</a><a href="${sanitizeHTML(
-                        attachment.path,
-                      )}" target="_blank" download="${sanitizeHTML(
-                        attachment.name,
-                      )}" class="download-trace">Download</a></div></div></div>`,
-                  )
-                  .join("")}</div></div>`
-              : ""
-          }
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-                  sanitizeHTML(test.codeSnippet),
-                )}</code></pre></div>`
-              : ""
-          }
+          ${test.retryHistory && test.retryHistory.length > 0 ? `
+            <div class="retry-tabs-container">
+              <div class="retry-tabs-header">
+                <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
+                   Base Run
+                </button>
+                ${test.retryHistory.map((retry, idx) => `
+                  <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
+                    Retry-${idx + 1}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <div id="base-run-${test.id}" class="retry-tab-content active">
+                ${getTestContentHTML(test, 'base')}
+              </div>
+              
+              ${test.retryHistory.map((retry, idx) => `
+                <div id="retry-${idx + 1}-${test.id}" class="retry-tab-content" style="display: none;">
+                  ${getTestContentHTML(retry, `retry-${idx + 1}`)}
+                </div>
+              `).join('')}
+            </div>
+          ` : getTestContentHTML(test, 'single')}
         </div>
       </div>`;
       })
@@ -2819,6 +2917,8 @@ function generateHTML(reportData, trendData = null) {
   --light-gray-color: #262626; --medium-gray-color: #333333; --dark-gray-color: #a3a3a3;
   --text-color: #f9fafb; --text-color-secondary: #e5e7eb; --border-color: #262626;
   --card-background-color: #0d0d0d;
+  --neutral-100: #171717; --neutral-200: #262626; --neutral-300: #404040;
+  --bg-hover: #171717;
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-2xl: 24px;
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
@@ -2910,7 +3010,6 @@ function generateHTML(reportData, trendData = null) {
           background: var(--gradient-card);
           border-radius: 14px;
           box-shadow: var(--shadow-md);
-          border: 1px solid var(--border-light);
           overflow: hidden;
         }
         .run-info-item {
@@ -3084,8 +3183,17 @@ function generateHTML(reportData, trendData = null) {
           color: #f9fafb;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
+          color: #9ca3af;
+          white-space: nowrap;
+          flex-shrink: 0;
           color: #9ca3af;
           font-weight: 700;
           font-size: 0.95em;
@@ -3139,17 +3247,9 @@ function generateHTML(reportData, trendData = null) {
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 20px;
         }
+        /* Updated Suite Cards in Main Block */
         .suite-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-light);
-          border-radius: 8px;
-          padding: 20px;
-          transition: all 0.2s ease;
-        }
-        .suite-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          border-color: var(--primary-color);
+           /* See line ~3455 for main definition */
         }
         .suite-name {
           font-size: 1.1em;
@@ -3324,70 +3424,150 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small-tooltip.status-unknown { 
           background-color: #9ca3af; 
         }
-        .suites-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          margin-bottom: 20px; 
+        .suites-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        .summary-badge { 
-          background-color: var(--border-light); 
-          color: var(--text-secondary); 
-          padding: 7px 14px; 
-          border-radius: 16px; 
-          font-size: 0.9em; 
+        .summary-badge { background-color: var(--border-light); color: var(--text-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
+        .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .suites-widget {
+          display: flex;
+          flex-direction: column;
         }
-        .suites-grid { 
-          display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
-          gap: 20px; 
+        .fixed-height-widget {
+          height: 450px;
         }
-        .suite-card { 
-          border: none; 
-          border-left: 4px solid var(--border-light); 
-          padding: 24px; 
-          background-color: var(--bg-card); 
-          transition: all 0.15s ease; 
+        .suites-grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
         }
-        .suite-card:hover { 
-          background: rgba(255, 255, 255, 0.03); 
-          border-left-color: var(--border-medium); 
+        
+        @media (max-width: 768px) {
+            .fixed-height-widget {
+                height: auto;
+                max-height: 600px;
+            }
         }
-        .suite-card.status-passed { 
-          border-left-color: #10b981; 
+        .suite-card {
+          background: var(--bg-card); /* Changed from #ffffff */
+          border: 1px solid var(--border-medium); /* Changed from border-light for better contrast */
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2); /* Darker shadow */
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
         }
-        .suite-card.status-passed:hover { 
-          background: rgba(16, 185, 129, 0.05); 
+        .suite-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+          background: var(--bg-card-hover);
+          border-color: var(--primary-dark);
         }
-        .suite-card.status-failed { 
-          border-left-color: #ef4444; 
+        .suite-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: var(--neutral-200);
+          opacity: 0.8;
+          transition: background 0.3s ease;
         }
-        .suite-card.status-failed:hover { 
-          background: rgba(239, 68, 68, 0.05); 
+        .suite-card.status-passed::before { background: var(--success-color); }
+        .suite-card.status-failed::before { background: var(--danger-color); }
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+        
+        .suite-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
         }
-        .suite-card.status-skipped { 
-          border-left-color: #f59e0b; 
+        .suite-name {
+          font-size: 1.15em;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-right: 12px;
         }
-        .suite-card.status-skipped:hover { 
-          background: rgba(245, 158, 11, 0.05); 
+         .status-indicator-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          margin-top: 6px;
         }
-        .suite-card-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: flex-start; 
-          margin-bottom: 12px; 
-        }
-        .suite-name { 
-          font-weight: 600; 
-          font-size: 1.05em; 
-          color: #f9fafb; 
-          margin-right: 10px; 
-          word-break: break-word;
-        }
+        .status-indicator-dot.status-passed { background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+        .status-indicator-dot.status-failed { background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+        .status-indicator-dot.status-skipped { background-color: var(--warning-color); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }
+
         .browser-tag {
+          font-size: 0.8em;
+          font-weight: 600;
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
+          padding: 4px 10px;
+          border-radius: 20px;
+          border: 1px solid var(--border-light);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 20px;
+          align-self: flex-start;
+          box-shadow: none;
+          text-shadow: none;
+        }
+        .browser-tag:hover {
+             /* Remove hover effect from previous */
+        }
+        
+        .suite-card-body {
+          margin-top: auto;
+        }
+        
+        .test-count-label {
           font-size: 0.85em;
           font-weight: 600;
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 8px;
+          display: block;
+        }
+
+        .suite-stats {
+          display: flex;
+          gap: 8px;
+          background: var(--bg-secondary);
+          padding: 10px 14px;
+          border-radius: 10px;
+          justify-content: space-between;
+        }
+        
+        .stat-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9em;
+          font-weight: 600;
+        }
+        .stat-pill svg { width: 14px; height: 14px; }
+        .stat-pill.passed { color: var(--success-dark); }
+        .stat-pill.failed { color: var(--danger-dark); }
+        .stat-pill.skipped { color: var(--warning-dark); }
           color: #93c5fd;
           padding: 6px 12px;
           border-radius: var(--radius-sm);
@@ -3636,6 +3816,65 @@ function generateHTML(reportData, trendData = null) {
           border-color: rgba(148, 163, 184, 0.25);
         }
 
+        /* --- RETRY COUNT BADGE --- */
+        .retry-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 5px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          background: rgba(147, 51, 234, 0.15);
+          color: #a855f7;
+          border: 1px solid rgba(147, 51, 234, 0.3);
+          margin-left: 8px;
+        }
+
+        /* --- RETRY TABS --- */
+        .retry-tabs-container {
+          margin-top: 16px;
+        }
+
+        .retry-tabs-header {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid var(--border-medium);
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .retry-tab {
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--text-color-secondary);
+          transition: all 0.2s ease;
+        }
+
+        .retry-tab:hover {
+          color: var(--primary-color);
+          background: rgba(147, 51, 234, 0.05);
+        }
+
+        .retry-tab.active {
+          color: #a855f7;
+          border-bottom-color: #a855f7;
+          background: rgba(147, 51, 234, 0.1);
+        }
+
+        .retry-tab-content {
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
 .tag { 
           display: inline-flex;
           align-items: center;
@@ -3685,7 +3924,9 @@ function generateHTML(reportData, trendData = null) {
           background-color: rgba(248,113,113,0.08); 
           border: 1px solid rgba(248,113,113,0.25); 
           border-left: 4px solid var(--danger-color); 
-          border-radius: 4px; 
+          border-radius: 4px;
+          display: flex;
+          flex-direction: column; 
         }
         .test-error-summary h4 { 
           color: #ef4444; 
@@ -5378,8 +5619,17 @@ function generateHTML(reportData, trendData = null) {
           color: #f9fafb;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
+          color: #9ca3af;
+          white-space: nowrap;
+          flex-shrink: 0;
           color: #9ca3af;
           font-weight: 700;
           font-size: 0.95em;
@@ -5856,19 +6106,19 @@ function generateHTML(reportData, trendData = null) {
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
                     ${browserBreakdown
-                      .slice(0, 5)
+                      .slice(0, 3)
                       .map(
                         (b) =>
                           `<div class="browser-item">
-                        <span class="browser-name">${sanitizeHTML(b.browser)}</span>
+                        <span class="browser-name" title="${sanitizeHTML(b.browser)}">${sanitizeHTML(b.browser)}</span>
                         <span class="browser-stats">${b.percentage}% (${b.count})</span>
                       </div>`,
                       )
                       .join("")}
                     ${
-                      browserBreakdown.length > 5
+                      browserBreakdown.length > 3
                         ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid var(--border-light); margin-top: 8px; padding-top: 8px;">
-                      <span>+${browserBreakdown.length - 5} more browsers</span>
+                      <span>+${browserBreakdown.length - 3} more browsers</span>
                     </div>`
                         : ""
                     }
@@ -5988,6 +6238,29 @@ function generateHTML(reportData, trendData = null) {
             return (ms / 1000).toFixed(1) + "s"; 
         }
     }
+    function switchRetryTab(event, tabId) {
+        // Find container
+        const container = event.target.closest('.retry-tabs-container');
+        
+        // Update tab buttons
+        const buttons = container.querySelectorAll('.retry-tab');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Update content
+        const contents = container.querySelectorAll('.retry-tab-content');
+        contents.forEach(content => {
+            content.style.display = 'none';
+            content.classList.remove('active');
+        });
+        
+        const activeContent = container.querySelector('#' + tabId);
+        if (activeContent) {
+            activeContent.style.display = 'block';
+            activeContent.classList.add('active');
+        }
+    }
+
     function copyLogContent(elementId, button) {
         const logElement = document.getElementById(elementId);
         if (!logElement) {
