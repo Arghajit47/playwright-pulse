@@ -439,8 +439,7 @@ tr:nth-of-type(even) {
 .clear-search {
   position: absolute;
   right: 2.5rem;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 4%;
   background: none;
   border: none;
   font-size: 1.5rem;
