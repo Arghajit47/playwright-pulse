@@ -18,6 +18,7 @@
 
 * **🐛 Bug Fixes**: 
   * **Fixed Browser Distributon chart**: Fixed the browser distribution chart to show the correct/full name in distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then the chart will show the top 3 browsers and the rest will be shown as "+X more browsers".
+  * **Minor fixes in Documentation**: "View Reporter Images" tab addition in the documentation.
 
 ---
 
