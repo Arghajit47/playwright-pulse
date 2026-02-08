@@ -4422,7 +4422,7 @@ function generateHTML(reportData, trendData = null) {
                   runSummary.duration,
                 )}</div></div>
                 <div class="summary-card">
-                  <h3>🔄 Retry Count</h3>
+                  <h3>Total Retry Count</h3>
                   <div class="value">${totalRetried}</div>
                 </div>
                 <div class="summary-card">
