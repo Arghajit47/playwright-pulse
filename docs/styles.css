@@ -265,6 +265,7 @@ pre code {
   margin: 1.5rem 0;
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-light);
+  display: flex;
 }
 
 table {
@@ -489,7 +490,7 @@ tr:nth-of-type(even) {
 
 /* 🍔 Mobile Menu Toggle */
 .menu-toggle {
-  display: block;
+  display: flex;
   position: fixed;
   top: 0.75rem;
   left: var(--container-padding);
@@ -505,7 +506,6 @@ tr:nth-of-type(even) {
   line-height: 1;
   transition: none;
   /* Smooth hamburger animation */
-  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -515,7 +515,6 @@ tr:nth-of-type(even) {
 .menu-toggle::before,
 .menu-toggle::after,
 .menu-toggle span {
-  content: "";
   display: block;
   width: 20px;
   height: 2px;
@@ -881,7 +880,7 @@ section {
   }
 
   .menu-toggle {
-    display: none;
+    display: flex;
   }
 
   .overlay {
