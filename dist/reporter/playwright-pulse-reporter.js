@@ -228,7 +228,19 @@ class PlaywrightPulseReporter {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const browserDetails = this.getBrowserDetails(test);
-        const testStatus = convertStatus(result.status, test);
+        // Captured outcome from Playwright
+        const outcome = test.outcome();
+        // Calculate final status based on the last result (Last-Run-Wins)
+        // result.status in onTestEnd is typically the status of the test run (passed if flaky passed)
+        // But we double check the last result in test.results just to be sure/consistent
+        const lastResult = test.results[test.results.length - 1];
+        const finalStatus = convertStatus(lastResult ? lastResult.status : result.status, test);
+        // Existing behavior: fail if flaky (implied by user request "existing status field should remain failed")
+        // If outcome is flaky, status should be 'failed' to indicate initial failure, but final_status is 'passed'
+        let testStatus = finalStatus;
+        if (outcome === 'flaky') {
+            testStatus = 'flaky';
+        }
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
         const processAllSteps = async (steps) => {
@@ -278,6 +290,8 @@ class PlaywrightPulseReporter {
             name: test.titlePath().join(" > "),
             suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
             status: testStatus,
+            outcome: outcome === 'flaky' ? outcome : undefined, // Only Include if flaky
+            final_status: finalStatus, // New Field
             duration: result.duration,
             startTime: startTime,
             endTime: endTime,
@@ -350,6 +364,17 @@ class PlaywrightPulseReporter {
             const retryAttempts = attempts.slice(1);
             if (retryAttempts.length > 0) {
                 firstAttempt.retryHistory = retryAttempts;
+                // Calculate final status and outcome from the last attempt if retries exist
+                const lastAttempt = attempts[attempts.length - 1];
+                firstAttempt.final_status = lastAttempt.status;
+                // If the last attempt was flaky, ensure outcome is set on the main result
+                if (lastAttempt.outcome === 'flaky') {
+                    firstAttempt.outcome = 'flaky';
+                }
+            }
+            else {
+                // If no retries, ensure final_status is undefined (as requested)
+                delete firstAttempt.final_status;
             }
             finalResults.push(firstAttempt);
         }

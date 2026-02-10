@@ -267,7 +267,23 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
     const browserDetails = this.getBrowserDetails(test);
-    const testStatus = convertStatus(result.status, test);
+    
+    // Captured outcome from Playwright
+    const outcome = test.outcome();
+
+    // Calculate final status based on the last result (Last-Run-Wins)
+    // result.status in onTestEnd is typically the status of the test run (passed if flaky passed)
+    // But we double check the last result in test.results just to be sure/consistent
+    const lastResult = test.results[test.results.length - 1];
+    const finalStatus = convertStatus(lastResult ? lastResult.status : result.status, test);
+    
+    // Existing behavior: fail if flaky (implied by user request "existing status field should remain failed")
+    // If outcome is flaky, status should be 'failed' to indicate initial failure, but final_status is 'passed'
+    let testStatus = finalStatus;
+    if (outcome === 'flaky') {
+      testStatus = 'flaky';
+    }
+
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
 
@@ -343,6 +359,8 @@ export class PlaywrightPulseReporter implements Reporter {
       suiteName:
         project?.name || this.config.projects[0]?.name || "Default Suite",
       status: testStatus,
+      outcome: outcome === 'flaky' ? outcome : undefined, // Only Include if flaky
+      final_status: finalStatus, // New Field
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
@@ -428,6 +446,18 @@ export class PlaywrightPulseReporter implements Reporter {
       
       if (retryAttempts.length > 0) {
         firstAttempt.retryHistory = retryAttempts;
+        
+        // Calculate final status and outcome from the last attempt if retries exist
+        const lastAttempt = attempts[attempts.length - 1];
+        firstAttempt.final_status = lastAttempt.status;
+        
+        // If the last attempt was flaky, ensure outcome is set on the main result
+        if (lastAttempt.outcome === 'flaky') {
+            firstAttempt.outcome = 'flaky';
+        }
+      } else {
+        // If no retries, ensure final_status is undefined (as requested)
+        delete firstAttempt.final_status;
       }
       
       finalResults.push(firstAttempt);

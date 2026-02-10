@@ -339,6 +339,12 @@ function generateTestTrendsChart(trendData) {
       color: "var(--warning-color)",
       marker: { symbol: "circle" },
     },
+    {
+      name: "Flaky",
+      data: runs.map((r) => r.flaky || 0),
+      color: "var(--neutral-500)",
+      marker: { symbol: "circle" },
+    },
   ];
   const runsForTooltip = runs.map((r) => ({
     runId: r.runId,
@@ -542,6 +548,9 @@ function generateTestHistoryChart(history) {
       case "skipped":
         color = "var(--warning-color)";
         break;
+      case "flaky":
+        color = "var(--neutral-500)";
+        break;
       default:
         color = "var(--dark-gray-color)";
     }
@@ -657,6 +666,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
               break;
             case "Failed":
               color = "var(--danger-color)";
+              break;
+            case "Flaky":
+              color = "var(--neutral-500)";
               break;
             case "Skipped":
               color = "var(--warning-color)";
@@ -904,7 +916,10 @@ function generateEnvironmentSection(environmentData) {
 }
 
 function generateEnvironmentDashboard(environment, hideHeader = false) {
-  const cpuInfo = `model: ${environment.cpu.model}, cores: ${environment.cpu.cores}`;
+  const cpuModel = environment.cpu && environment.cpu.model ? environment.cpu.model : "N/A";
+  const cpuCores = environment.cpu && environment.cpu.cores ? environment.cpu.cores : "N/A";
+  const cpuInfo = `model: ${cpuModel}, cores: ${cpuCores}`;
+  const cwdInfo = environment.cwd || "N/A";
 
   return `
     <div class="env-modern-card${hideHeader ? " no-header" : ""}">
@@ -1294,7 +1309,7 @@ function generateEnvironmentDashboard(environment, hideHeader = false) {
             </div>
             <div class="env-item-content">
               <p class="env-item-label">Working Dir</p>
-              <div class="env-item-value" title="${environment.cwd}">${environment.cwd.length > 30 ? "..." + environment.cwd.slice(-27) : environment.cwd}</div>
+              <div class="env-item-value" title="${cwdInfo}">${cwdInfo.length > 30 ? "..." + cwdInfo.slice(-27) : cwdInfo}</div>
             </div>
           </div>
         </div>
@@ -1645,6 +1660,7 @@ function generateTestHistoryContent(trendData) {
         <option value="">All Statuses</option>
         <option value="passed">Passed</option>
         <option value="failed">Failed</option>
+        <option value="flaky">Flaky</option>
         <option value="skipped">Skipped</option>
     </select>
     <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button>
@@ -1717,6 +1733,8 @@ function getStatusClass(status) {
       return "status-failed";
     case "skipped":
       return "status-skipped";
+    case "flaky":
+      return "status-flaky";
     default:
       return "status-unknown";
   }
@@ -1734,6 +1752,8 @@ function getStatusIcon(status) {
       return "❌";
     case "skipped":
       return "⏭️";
+    case "flaky":
+      return "⚠️";
     default:
       return "❓";
   }
@@ -1774,6 +1794,7 @@ function getSuitesData(results) {
         browser: browser,
         passed: 0,
         failed: 0,
+        flaky: 0,
         skipped: 0,
         count: 0,
         statusOverall: "passed",
@@ -1781,12 +1802,15 @@ function getSuitesData(results) {
     }
     const suite = suitesMap.get(key);
     suite.count++;
-    const currentStatus = String(test.status).toLowerCase();
+    let currentStatus = String(test.status).toLowerCase();
+    if (test.outcome === 'flaky') currentStatus = 'flaky';
     if (currentStatus && suite[currentStatus] !== undefined) {
       suite[currentStatus]++;
     }
     if (currentStatus === "failed") suite.statusOverall = "failed";
-    else if (currentStatus === "skipped" && suite.statusOverall !== "failed")
+    else if (currentStatus === "flaky" && suite.statusOverall !== "failed")
+        suite.statusOverall = "flaky";
+    else if (currentStatus === "skipped" && suite.statusOverall !== "failed" && suite.statusOverall !== "flaky")
       suite.statusOverall = "skipped";
   });
   return Array.from(suitesMap.values());
@@ -1868,6 +1892,10 @@ function generateSuitesWidget(suitesData) {
             <span class="stat-pill failed" title="Failed">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
                 ${suite.failed}
+            </span>
+            <span class="stat-pill flaky" title="Flaky">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                ${suite.flaky || 0}
             </span>
             <span class="stat-pill skipped" title="Skipped">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
@@ -2251,6 +2279,7 @@ function generateSeverityDistributionChart(results) {
   const data = {
     passed: [0, 0, 0, 0, 0],
     failed: [0, 0, 0, 0, 0],
+    flaky: [0, 0, 0, 0, 0],
     skipped: [0, 0, 0, 0, 0],
   };
 
@@ -2269,6 +2298,8 @@ function generateSeverityDistributionChart(results) {
       status === "interrupted"
     ) {
       data.failed[index]++;
+    } else if (status === "flaky") {
+        data.flaky[index]++;
     } else {
       data.skipped[index]++;
     }
@@ -2282,6 +2313,7 @@ function generateSeverityDistributionChart(results) {
   const seriesData = [
     { name: "Passed", data: data.passed, color: "var(--success-color)" },
     { name: "Failed", data: data.failed, color: "var(--danger-color)" },
+    { name: "Flaky", data: data.flaky, color: "var(--neutral-500)" },
     { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
   ];
 
@@ -2431,10 +2463,13 @@ function generateHTML(reportData, trendData = null) {
   const skipPercentage = Math.round(
     ((runSummary.skipped || 0) / totalTestsOr1) * 100,
   );
+    const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
   const avgTestDuration =
     runSummary.totalTests > 0
       ? formatDuration(runSummary.duration / runSummary.totalTests)
       : "0.0s";
+
+  const flakyCount = (results || []).filter(r => r.outcome === 'flaky').length;
 
   // Calculate retry statistics
   const totalRetried = (results || []).reduce((acc, test) => {
@@ -2443,6 +2478,39 @@ function generateHTML(reportData, trendData = null) {
     }
     return acc;
   }, 0);
+
+  // --- RECALCULATE KPI METRICS BASED ON FINAL_STATUS ---
+  let calculatedPassed = 0;
+  let calculatedFailed = 0;
+  let calculatedSkipped = 0;
+  let calculatedFlaky = 0;
+  let calculatedTotal = 0;
+
+  (results || []).forEach(test => {
+      calculatedTotal++;
+      let statusToUse = test.status;
+      if (test.outcome === 'flaky' || test.status === 'flaky') {
+          statusToUse = 'flaky';
+      } else if (test.retryHistory && test.retryHistory.length > 0 && test.final_status) {
+          statusToUse = test.final_status;
+      }
+      
+      const s = String(statusToUse).toLowerCase();
+      if (s === 'passed') calculatedPassed++;
+      else if (s === 'skipped') calculatedSkipped++;
+      else if (s === 'flaky') calculatedFlaky++;
+      else calculatedFailed++; // Treat everything else as failed for simplicity, or add specific checks
+  });
+
+  // Override runSummary counts with our calculated ones if results exist
+  if (results && results.length > 0) {
+      runSummary.passed = calculatedPassed;
+      runSummary.failed = calculatedFailed;
+      runSummary.skipped = calculatedSkipped;
+      runSummary.flaky = calculatedFlaky;
+      runSummary.totalTests = calculatedTotal;
+  }
+
 
   // Calculate browser distribution
   const browserStats = (results || []).reduce((acc, test) => {
@@ -2563,9 +2631,28 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
+        // Helper for Tab Badges
+        const getSmallStatusBadge = (status) => {
+            const s = String(status).toLowerCase();
+            let colorVar = 'var(--text-tertiary)';
+            if(s === 'passed') colorVar = 'var(--success-color)';
+            else if(s === 'failed') colorVar = 'var(--danger-color)';
+            else if(s === 'skipped') colorVar = 'var(--warning-color)';
+            
+            return `<span style="
+                display: inline-block; 
+                width: 8px; 
+                height: 8px; 
+                border-radius: 50%; 
+                background-color: ${colorVar}; 
+                margin-left: 6px;
+                vertical-align: middle;
+            " title="${s}"></span>`;
+        };
+
         // Function to generate test content HTML (used for base run and retry tabs)
         const getTestContentHTML = (testData, runSuffix) => {
-          const logId = `stdout-log-${test.id ||index}-${runSuffix}`;
+          const logId = `stdout-log-${test.id || testIndex}-${runSuffix}`;
           return `
           <p><strong>Full Path:</strong> ${sanitizeHTML(testData.name)}</p>
           ${
@@ -2820,9 +2907,18 @@ function generateHTML(reportData, trendData = null) {
         };
 
 
+       // Determine header status: use final_status if retried, else normal status
+       const headerStatus = (test.retryHistory && test.retryHistory.length > 0 && test.final_status) 
+          ? test.final_status 
+          : test.status;
+
+       const outcomeBadge = (test.outcome && test.outcome !== 'flaky') 
+          ? `<span class="outcome-badge ${test.outcome}">${test.outcome}</span>` 
+          : '';
+
         return `
       <div class="test-case" data-status="${
-        test.status
+        headerStatus
       }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
         .join(",")
         .toLowerCase()}">
@@ -2836,6 +2932,7 @@ function generateHTML(reportData, trendData = null) {
           <div class="test-case-meta">
             ${severityBadge}
             ${retryBadge}
+            ${outcomeBadge}
             ${
               test.tags && test.tags.length > 0
                 ? test.tags
@@ -2845,8 +2942,8 @@ function generateHTML(reportData, trendData = null) {
             }
           </div>
           <div class="test-case-status-duration">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status,
+            <span class="status-badge ${getStatusClass(headerStatus)}">${String(
+              headerStatus,
             ).toUpperCase()}</span>
             <span class="test-duration">${formatDuration(test.duration)}</span>
           </div>
@@ -2856,11 +2953,11 @@ function generateHTML(reportData, trendData = null) {
             <div class="retry-tabs-container">
               <div class="retry-tabs-header">
                 <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
-                   Base Run
+                   Base Run ${getSmallStatusBadge(test.final_status || test.status)}
                 </button>
                 ${test.retryHistory.map((retry, idx) => `
                   <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
-                    Retry-${idx + 1}
+                    Retry ${idx + 1} ${getSmallStatusBadge(retry.final_status || retry.status)}
                   </button>
                 `).join('')}
               </div>
@@ -3362,6 +3459,16 @@ function generateHTML(reportData, trendData = null) {
         .summary-card.status-skipped .value { 
           color: #f59e0b; 
         }
+        .summary-card.flaky-status { 
+          background: rgba(156, 163, 175, 0.08); 
+        }
+        .summary-card.flaky-status:hover { 
+          background: rgba(156, 163, 175, 0.15); 
+          box-shadow: 0 4px 12px rgba(156, 163, 175, 0.2);
+        }
+        .summary-card.flaky-status .value { 
+          color: #9ca3af; 
+        }
         .summary-card:not([class*='status-']) .value { 
           color: #f9fafb; 
         }
@@ -3484,7 +3591,27 @@ function generateHTML(reportData, trendData = null) {
         }
         .suite-card.status-passed::before { background: var(--success-color); }
         .suite-card.status-failed::before { background: var(--danger-color); }
+        .suite-card.status-flaky::before { background: var(--neutral-500); }
         .suite-card.status-skipped::before { background: var(--warning-color); }
+        
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+
+        /* Outcome Badge */
+        .outcome-badge {
+            background-color: var(--secondary-color); 
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 8px;
+            letter-spacing: 0.5px;
+        }
+        .outcome-badge.flaky {
+            background-color: #eab308; /* Yellow-500 */
+            color: #000;
+        }
         
         .suite-card-header {
           display: flex;
@@ -3567,6 +3694,7 @@ function generateHTML(reportData, trendData = null) {
         .stat-pill svg { width: 14px; height: 14px; }
         .stat-pill.passed { color: var(--success-dark); }
         .stat-pill.failed { color: var(--danger-dark); }
+        .stat-pill.flaky { color: #4b5563; }
         .stat-pill.skipped { color: var(--warning-dark); }
           color: #93c5fd;
           padding: 6px 12px;
@@ -3760,6 +3888,11 @@ function generateHTML(reportData, trendData = null) {
         }
         .status-badge.status-skipped {
           background: var(--warning-color);
+        }
+        .status-badge.status-flaky {
+          background-color: #C0C0C0; 
+          color: #000000; 
+          border: 1px solid #A0A0A0;
         }
         .status-badge.status-unknown {
           background: var(--dark-gray-color);
@@ -4393,6 +4526,10 @@ function generateHTML(reportData, trendData = null) {
         }
         .status-badge-small.status-skipped { 
           background-color: #f59e0b; 
+        }
+        .status-badge-small.status-flaky { 
+          background-color: #C0C0C0; 
+          color: #000000;
         }
         .status-badge-small.status-unknown { 
           background-color: var(--dark-gray-color); 
@@ -6094,7 +6231,8 @@ function generateHTML(reportData, trendData = null) {
                 <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
                   runSummary.skipped || 0
                 }</div><div class="trend-percentage">${skipPercentage}%</div></div>
-                <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
+                <div class="summary-card flaky-status"><h3>Flaky</h3><div class="value">${runSummary.flaky || 0}</div>
+                <div class="trend-percentage">${flakyPercentage}%</div></div>
                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
                   runSummary.duration,
                 )}</div></div>
@@ -6131,6 +6269,7 @@ function generateHTML(reportData, trendData = null) {
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
+                    { label: "Flaky", value: runSummary.flaky || 0 },
                     { label: "Skipped", value: runSummary.skipped || 0 },
                   ],
                   400,
@@ -6147,7 +6286,7 @@ function generateHTML(reportData, trendData = null) {
         <div id="test-runs" class="tab-content">
             <div class="filters" style="border-color: black; border-style: groove;">
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
+                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="flaky">Flaky</option><option value="skipped">Skipped</option></select>
                 <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
                   new Set(
                     (results || []).map((test) => test.browser || "unknown"),
@@ -7087,6 +7226,7 @@ async function main() {
           passed: histRunReport.run.passed,
           failed: histRunReport.run.failed,
           skipped: histRunReport.run.skipped || 0,
+          flaky: histRunReport.run.flaky || (histRunReport.results ? histRunReport.results.filter(r => r.status === 'flaky' || r.outcome === 'flaky').length : 0),
         });
 
         if (histRunReport.results && Array.isArray(histRunReport.results)) {
@@ -7095,7 +7235,7 @@ async function main() {
             (test) => ({
               testName: test.name,
               duration: test.duration,
-              status: test.status,
+              status: test.final_status || test.status,
               timestamp: new Date(test.startTime),
             }),
           );

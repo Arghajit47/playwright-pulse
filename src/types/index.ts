@@ -6,7 +6,8 @@ export type TestStatus =
   | "skipped"
   | "expected-failure"
   | "unexpected-success"
-  | "explicitly-skipped";
+  | "explicitly-skipped"
+  | "flaky";
 
 export interface TestStep {
   id: string;
@@ -45,6 +46,9 @@ export interface TestResult {
   suiteName?: string;
   runId: string; // Identifier for the test run this belongs to
   browser: string; // Browser name (e.g., "chromium", "firefox", "webkit")
+
+  outcome?: string; // Captures Playwright's testCase.outcome()
+  final_status?: TestStatus; // Captures the Last-Run-Wins status
 
   // --- MODIFIED & NEW ATTACHMENT FIELDS ---
   screenshots?: string[];
