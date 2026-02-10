@@ -1338,11 +1338,11 @@ function generateWorkerDistributionChart(results) {
     const workerId =
       typeof test.workerId !== "undefined" ? test.workerId : "N/A";
     if (!acc[workerId]) {
-      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, flaky: 0, tests: [] };
     }
 
     const status = String(test.status).toLowerCase();
-    if (status === "passed" || status === "failed" || status === "skipped") {
+    if (status === "passed" || status === "failed" || status === "skipped" || status === "flaky") {
       acc[workerId][status]++;
     }
 
@@ -1387,6 +1387,7 @@ function generateWorkerDistributionChart(results) {
   const passedData = workerIds.map((id) => workerData[id].passed);
   const failedData = workerIds.map((id) => workerData[id].failed);
   const skippedData = workerIds.map((id) => workerData[id].skipped);
+  const flakyData = workerIds.map((id) => workerData[id].flaky);
 
   const categoriesString = JSON.stringify(categories);
   const fullDataString = JSON.stringify(fullWorkerData);
@@ -1394,6 +1395,7 @@ function generateWorkerDistributionChart(results) {
     { name: "Passed", data: passedData, color: "var(--success-color)" },
     { name: "Failed", data: failedData, color: "var(--danger-color)" },
     { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
+    { name: "Flaky", data: flakyData, color: "var(--neutral-500)" },
   ]);
 
   // The HTML now includes the chart container, the modal, and styles for the modal
@@ -2457,13 +2459,7 @@ function generateHTML(reportData, trendData = null) {
     duration: 0,
     timestamp: new Date().toISOString(),
   };
-  const totalTestsOr1 = runSummary.totalTests || 1;
-  const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
-  const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
-  const skipPercentage = Math.round(
-    ((runSummary.skipped || 0) / totalTestsOr1) * 100,
-  );
-    const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
+
   const avgTestDuration =
     runSummary.totalTests > 0
       ? formatDuration(runSummary.duration / runSummary.totalTests)
@@ -2488,18 +2484,25 @@ function generateHTML(reportData, trendData = null) {
 
   (results || []).forEach(test => {
       calculatedTotal++;
+      // New Logic: If outcome is 'flaky', it overrides everything.
       let statusToUse = test.status;
-      if (test.outcome === 'flaky' || test.status === 'flaky') {
-          statusToUse = 'flaky';
+      if (test.outcome === 'flaky') {
+        statusToUse = 'flaky';
+      } else if (test.status === 'flaky') { 
+         // Just in case outcome wasn't set but status was (unlikely with new reporter)
+         statusToUse = 'flaky';
       } else if (test.retryHistory && test.retryHistory.length > 0 && test.final_status) {
-          statusToUse = test.final_status;
+        statusToUse = test.final_status;
       }
+      
+      // Update test status in place for charts
+      test.status = statusToUse;
       
       const s = String(statusToUse).toLowerCase();
       if (s === 'passed') calculatedPassed++;
       else if (s === 'skipped') calculatedSkipped++;
       else if (s === 'flaky') calculatedFlaky++;
-      else calculatedFailed++; // Treat everything else as failed for simplicity, or add specific checks
+      else calculatedFailed++; // failed, timedout, interrupted
   });
 
   // Override runSummary counts with our calculated ones if results exist
@@ -2510,6 +2513,14 @@ function generateHTML(reportData, trendData = null) {
       runSummary.flaky = calculatedFlaky;
       runSummary.totalTests = calculatedTotal;
   }
+
+  const totalTestsOr1 = runSummary.totalTests || 1;
+  const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
+  const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
+  const skipPercentage = Math.round(
+    ((runSummary.skipped || 0) / totalTestsOr1) * 100,
+  );
+  const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
 
 
   // Calculate browser distribution

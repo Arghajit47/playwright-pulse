@@ -2234,13 +2234,7 @@ function generateHTML(reportData, trendData = null) {
     return p.replace(new RegExp(`^${DEFAULT_OUTPUT_DIR}[\\\\/]`), "");
   };
 
-  const totalTestsOr1 = runSummary.totalTests || 1;
-  const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
-  const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
-  const skipPercentage = Math.round(
-    ((runSummary.skipped || 0) / totalTestsOr1) * 100,
-  );
-  const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
+
   const avgTestDuration =
     runSummary.totalTests > 0
       ? formatDuration(runSummary.duration / runSummary.totalTests)
@@ -2265,19 +2259,25 @@ function generateHTML(reportData, trendData = null) {
 
   (results || []).forEach(test => {
       calculatedTotal++;
-      // If retries exist and final_status is present, use it. Otherwise use test.status.
+      // New Logic: If outcome is 'flaky', it overrides everything.
       let statusToUse = test.status;
-      if (test.outcome === 'flaky' || test.status === 'flaky') {
+      if (test.outcome === 'flaky') {
         statusToUse = 'flaky';
+      } else if (test.status === 'flaky') { 
+         // Just in case outcome wasn't set but status was (unlikely with new reporter)
+         statusToUse = 'flaky';
       } else if (test.retryHistory && test.retryHistory.length > 0 && test.final_status) {
         statusToUse = test.final_status;
       }
+      
+      // Update test status in place for charts
+      test.status = statusToUse;
       
       const s = String(statusToUse).toLowerCase();
       if (s === 'passed') calculatedPassed++;
       else if (s === 'skipped') calculatedSkipped++;
       else if (s === 'flaky') calculatedFlaky++;
-      else calculatedFailed++; // Treat everything else as failed for simplicity, or add specific checks
+      else calculatedFailed++; // failed, timedout, interrupted
   });
 
   // Override runSummary counts with our calculated ones if results exist
@@ -2288,6 +2288,14 @@ function generateHTML(reportData, trendData = null) {
       runSummary.flaky = calculatedFlaky;
       runSummary.totalTests = calculatedTotal;
   }
+
+  const totalTestsOr1 = runSummary.totalTests || 1;
+  const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
+  const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
+  const skipPercentage = Math.round(
+    ((runSummary.skipped || 0) / totalTestsOr1) * 100,
+  );
+  const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
 
 
   // Calculate browser distribution

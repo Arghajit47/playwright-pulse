@@ -92,6 +92,7 @@ function mergeReports(shardDirs) {
       combinedRun.passed += run.passed || 0;
       combinedRun.failed += run.failed || 0;
       combinedRun.skipped += run.skipped || 0;
+      combinedRun.flaky = (combinedRun.flaky || 0) + (run.flaky || 0);
       combinedRun.duration += run.duration || 0;
 
       if (run.environment) {
@@ -228,7 +229,7 @@ function cleanupShardDirectories(shardDirs) {
 
   console.log(`\n✅ Merged report saved as ${OUTPUT_FILE}`);
   console.log(`   Total tests: ${merged.run.totalTests}`);
-  console.log(`   Passed: ${merged.run.passed} | Failed: ${merged.run.failed} | Skipped: ${merged.run.skipped}`);
+  console.log(`   Passed: ${merged.run.passed} | Failed: ${merged.run.failed} | Skipped: ${merged.run.skipped} | Flaky: ${merged.run.flaky}`);
 
   // 5. Cleanup Shard Directories
   cleanupShardDirectories(shardDirs);

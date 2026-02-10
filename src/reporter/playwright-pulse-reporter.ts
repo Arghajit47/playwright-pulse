@@ -452,8 +452,9 @@ export class PlaywrightPulseReporter implements Reporter {
         firstAttempt.final_status = lastAttempt.status;
         
         // If the last attempt was flaky, ensure outcome is set on the main result
-        if (lastAttempt.outcome === 'flaky') {
+        if (lastAttempt.outcome === 'flaky' || lastAttempt.status === 'flaky') {
             firstAttempt.outcome = 'flaky';
+            firstAttempt.status = 'flaky';
         }
       } else {
         // If no retries, ensure final_status is undefined (as requested)
@@ -562,6 +563,9 @@ export class PlaywrightPulseReporter implements Reporter {
     finalRunData.skipped = finalResultsList.filter(
       (r) => r.status === "skipped"
     ).length;
+    finalRunData.flaky = finalResultsList.filter(
+      (r) => r.status === "flaky"
+    ).length;
     finalRunData.totalTests = finalResultsList.length;
 
     const reviveDates = (key: string, value: any): any => {
@@ -641,6 +645,7 @@ export class PlaywrightPulseReporter implements Reporter {
       passed: finalResults.filter((r) => r.status === "passed").length,
       failed: finalResults.filter((r) => r.status === "failed").length,
       skipped: finalResults.filter((r) => r.status === "skipped").length,
+      flaky: finalResults.filter((r) => r.status === "flaky").length,
       duration,
       environment: environmentDetails,
     };

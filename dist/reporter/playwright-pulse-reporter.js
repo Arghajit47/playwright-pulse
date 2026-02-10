@@ -368,8 +368,9 @@ class PlaywrightPulseReporter {
                 const lastAttempt = attempts[attempts.length - 1];
                 firstAttempt.final_status = lastAttempt.status;
                 // If the last attempt was flaky, ensure outcome is set on the main result
-                if (lastAttempt.outcome === 'flaky') {
+                if (lastAttempt.outcome === 'flaky' || lastAttempt.status === 'flaky') {
                     firstAttempt.outcome = 'flaky';
+                    firstAttempt.status = 'flaky';
                 }
             }
             else {
@@ -438,6 +439,7 @@ class PlaywrightPulseReporter {
         finalRunData.passed = finalResultsList.filter((r) => r.status === "passed").length;
         finalRunData.failed = finalResultsList.filter((r) => r.status === "failed").length;
         finalRunData.skipped = finalResultsList.filter((r) => r.status === "skipped").length;
+        finalRunData.flaky = finalResultsList.filter((r) => r.status === "flaky").length;
         finalRunData.totalTests = finalResultsList.length;
         const reviveDates = (key, value) => {
             const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -498,6 +500,7 @@ class PlaywrightPulseReporter {
             passed: finalResults.filter((r) => r.status === "passed").length,
             failed: finalResults.filter((r) => r.status === "failed").length,
             skipped: finalResults.filter((r) => r.status === "skipped").length,
+            flaky: finalResults.filter((r) => r.status === "flaky").length,
             duration,
             environment: environmentDetails,
         };
