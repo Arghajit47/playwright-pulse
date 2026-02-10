@@ -342,7 +342,7 @@ function generateTestTrendsChart(trendData) {
     {
       name: "Flaky",
       data: runs.map((r) => r.flaky || 0),
-      color: "var(--neutral-500)",
+      color: "#00ccd3",
       marker: { symbol: "circle" },
     },
   ];
@@ -668,7 +668,7 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
               color = "var(--danger-color)";
               break;
             case "Flaky":
-              color = "var(--neutral-500)";
+              color = "#00ccd3";
               break;
             case "Skipped":
               color = "var(--warning-color)";
@@ -1395,7 +1395,7 @@ function generateWorkerDistributionChart(results) {
     { name: "Passed", data: passedData, color: "var(--success-color)" },
     { name: "Failed", data: failedData, color: "var(--danger-color)" },
     { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
-    { name: "Flaky", data: flakyData, color: "var(--neutral-500)" },
+    { name: "Flaky", data: flakyData, color: "#00ccd3" },
   ]);
 
   // The HTML now includes the chart container, the modal, and styles for the modal
@@ -2315,7 +2315,7 @@ function generateSeverityDistributionChart(results) {
   const seriesData = [
     { name: "Passed", data: data.passed, color: "var(--success-color)" },
     { name: "Failed", data: data.failed, color: "var(--danger-color)" },
-    { name: "Flaky", data: data.flaky, color: "var(--neutral-500)" },
+    { name: "Flaky", data: data.flaky, color: "#00ccd3" },
     { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
   ];
 
@@ -2468,9 +2468,18 @@ function generateHTML(reportData, trendData = null) {
   const flakyCount = (results || []).filter(r => r.outcome === 'flaky').length;
 
   // Calculate retry statistics
+  let retriedTestsCount = 0;
   const totalRetried = (results || []).reduce((acc, test) => {
     if (test.retryHistory && test.retryHistory.length > 0) {
-      return acc + test.retryHistory.length;
+      // Filter out any "passed" or "skipped" entries in the history
+      // We only count attempts that actually failed or timed out, triggering a retry.
+      const unsuccessfulRetries = test.retryHistory.filter(attempt => 
+        attempt.status === 'failed' || attempt.status === 'timedout' || attempt.status === 'flaky'
+      );
+      if (unsuccessfulRetries.length > 0) {
+        retriedTestsCount++;
+      }
+      return acc + unsuccessfulRetries.length;
     }
     return acc;
   }, 0);
@@ -2649,6 +2658,7 @@ function generateHTML(reportData, trendData = null) {
             if(s === 'passed') colorVar = 'var(--success-color)';
             else if(s === 'failed') colorVar = 'var(--danger-color)';
             else if(s === 'skipped') colorVar = 'var(--warning-color)';
+            else if(s === 'flaky') colorVar = '#00ccd3';
             
             return `<span style="
                 display: inline-block; 
@@ -3017,7 +3027,8 @@ function generateHTML(reportData, trendData = null) {
   --success-color: #34d399; --success-dark: #10b981; --success-light: #6ee7b7;
   --danger-color: #f87171; --danger-dark: #ef4444; --danger-light: #fca5a5;
   --warning-color: #fbbf24; --warning-dark: #f59e0b; --warning-light: #fcd34d;
-  --info-color: #9ca3af; 
+  --info-color: #9ca3af;
+  --flaky-color: #00ccd3; 
   --text-primary: #f9fafb; --text-secondary: #e5e7eb; --text-tertiary: #d1d5db;
   --bg-primary: #000000; --bg-secondary: #0a0a0a; --bg-tertiary: #050505;
   --bg-card: #0d0d0d; --bg-card-hover: #121212;
@@ -3471,14 +3482,14 @@ function generateHTML(reportData, trendData = null) {
           color: #f59e0b; 
         }
         .summary-card.flaky-status { 
-          background: rgba(156, 163, 175, 0.08); 
+          background: rgba(0, 204, 211, 0.05); 
         }
         .summary-card.flaky-status:hover { 
-          background: rgba(156, 163, 175, 0.15); 
-          box-shadow: 0 4px 12px rgba(156, 163, 175, 0.2);
+          background: rgba(0, 204, 211, 0.15); 
+          box-shadow: 0 4px 12px rgba(0, 204, 211, 0.2);
         }
         .summary-card.flaky-status .value { 
-          color: #9ca3af; 
+          color: #00ccd3; 
         }
         .summary-card:not([class*='status-']) .value { 
           color: #f9fafb; 
@@ -3602,7 +3613,7 @@ function generateHTML(reportData, trendData = null) {
         }
         .suite-card.status-passed::before { background: var(--success-color); }
         .suite-card.status-failed::before { background: var(--danger-color); }
-        .suite-card.status-flaky::before { background: var(--neutral-500); }
+        .suite-card.status-flaky::before { background: #00ccd3; }
         .suite-card.status-skipped::before { background: var(--warning-color); }
         
         .suite-card.status-skipped::before { background: var(--warning-color); }
@@ -3620,8 +3631,8 @@ function generateHTML(reportData, trendData = null) {
             letter-spacing: 0.5px;
         }
         .outcome-badge.flaky {
-            background-color: #eab308; /* Yellow-500 */
-            color: #000;
+            background-color: #00ccd3;
+            color: #fff;
         }
         
         .suite-card-header {
@@ -3705,7 +3716,7 @@ function generateHTML(reportData, trendData = null) {
         .stat-pill svg { width: 14px; height: 14px; }
         .stat-pill.passed { color: var(--success-dark); }
         .stat-pill.failed { color: var(--danger-dark); }
-        .stat-pill.flaky { color: #4b5563; }
+        .stat-pill.flaky { color: #00ccd3; }
         .stat-pill.skipped { color: var(--warning-dark); }
           color: #93c5fd;
           padding: 6px 12px;
@@ -3901,9 +3912,8 @@ function generateHTML(reportData, trendData = null) {
           background: var(--warning-color);
         }
         .status-badge.status-flaky {
-          background-color: #C0C0C0; 
-          color: #000000; 
-          border: 1px solid #A0A0A0;
+          background-color: #00ccd3; 
+          color: #fff; 
         }
         .status-badge.status-unknown {
           background: var(--dark-gray-color);
@@ -4539,8 +4549,8 @@ function generateHTML(reportData, trendData = null) {
           background-color: #f59e0b; 
         }
         .status-badge-small.status-flaky { 
-          background-color: #C0C0C0; 
-          color: #000000;
+          background-color: #00ccd3; 
+          color: #fff;
         }
         .status-badge-small.status-unknown { 
           background-color: var(--dark-gray-color); 
@@ -6246,10 +6256,11 @@ function generateHTML(reportData, trendData = null) {
                 <div class="trend-percentage">${flakyPercentage}%</div></div>
                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
                   runSummary.duration,
-                )}</div></div>
+                )}</div><div class="trend-percentage">Avg. Test Duration ${avgTestDuration}</div></div>
                 <div class="summary-card">
                   <h3>Total Retry Count</h3>
                   <div class="value">${totalRetried}</div>
+                  <div class="trend-percentage">Test Retried ${retriedTestsCount}</div>
                 </div>
                 <div class="summary-card">
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>

@@ -298,7 +298,7 @@ function generateTestTrendsChart(trendData) {
     {
       name: "Flaky",
       data: runs.map((r) => r.flaky || 0),
-      color: "var(--neutral-500)",
+      color: "#00ccd3",
       marker: { symbol: "circle" },
     },
   ];
@@ -600,7 +600,7 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
               color = "var(--danger-color)";
               break;
             case "Flaky":
-              color = "var(--neutral-500)";
+              color = "#00ccd3";
               break;
             case "Skipped":
               color = "var(--warning-color)";
@@ -1234,7 +1234,7 @@ function generateWorkerDistributionChart(results) {
   const seriesString = JSON.stringify([
     { name: "Passed", data: passedData, color: "var(--success-color)" },
     { name: "Failed", data: failedData, color: "var(--danger-color)" },
-    { name: "Flaky", data: flakyData, color: "var(--neutral-500)" },
+    { name: "Flaky", data: flakyData, color: "#00ccd3" },
     { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
   ]);
 
@@ -1327,7 +1327,7 @@ function generateWorkerDistributionChart(results) {
                 if (test.status === 'passed') color = 'var(--success-color)';
                 else if (test.status === 'failed') color = 'var(--danger-color)';
                 else if (test.status === 'skipped') color = 'var(--warning-color)';
-                else if (test.status === 'flaky') color = 'var(--neutral-500)';
+                else if (test.status === 'flaky') color = '#00ccd3';
 
                 const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
                 testListHtml += \`<li style="color: \${color};"><span style="color: \${color}">[\${test.status.toUpperCase()}]</span> \${escapedName}</li>\`;
@@ -2120,7 +2120,7 @@ function generateSeverityDistributionChart(results) {
   const seriesData = [
     { name: "Passed", data: data.passed, color: "var(--success-color)" },
     { name: "Failed", data: data.failed, color: "var(--danger-color)" },
-    { name: "Flaky", data: data.flaky, color: "var(--neutral-500)" },
+    { name: "Flaky", data: data.flaky, color: "#00ccd3" },
     { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
   ];
 
@@ -2243,9 +2243,18 @@ function generateHTML(reportData, trendData = null) {
   const flakyCount = (results || []).filter(r => r.outcome === 'flaky').length;
 
   // Calculate retry statistics
+  let retriedTestsCount = 0;
   const totalRetried = (results || []).reduce((acc, test) => {
     if (test.retryHistory && test.retryHistory.length > 0) {
-      return acc + test.retryHistory.length;
+      // Filter out any "passed" or "skipped" entries in the history
+      // We only count attempts that actually failed or timed out, triggering a retry.
+      const unsuccessfulRetries = test.retryHistory.filter(attempt => 
+        attempt.status === 'failed' || attempt.status === 'timedout' || attempt.status === 'flaky'
+      );
+      if (unsuccessfulRetries.length > 0) {
+        retriedTestsCount++;
+      }
+      return acc + unsuccessfulRetries.length;
     }
     return acc;
   }, 0);
@@ -2428,6 +2437,7 @@ function generateHTML(reportData, trendData = null) {
             if(s === 'passed') colorVar = 'var(--success-color)';
             else if(s === 'failed') colorVar = 'var(--danger-color)';
             else if(s === 'skipped') colorVar = 'var(--warning-color)';
+            else if(s === 'flaky') colorVar = '#00ccd3';
             
             return `<span style="
                 display: inline-block; 
@@ -2794,7 +2804,8 @@ function generateHTML(reportData, trendData = null) {
           --success-color: #10b981; --success-dark: #059669; --success-light: #34d399;
           --danger-color: #ef4444; --danger-dark: #dc2626; --danger-light: #f87171;
           --warning-color: #f59e0b; --warning-dark: #d97706; --warning-light: #fbbf24;
-          --info-color: #3b82f6; 
+          --info-color: #3b82f6;
+          --flaky-color: #00ccd3; 
           --neutral-50: #fafafa; --neutral-100: #f5f5f5; --neutral-200: #e5e5e5; --neutral-300: #d4d4d4;
           --neutral-400: #a3a3a3; --neutral-500: #737373; --neutral-600: #525252; --neutral-700: #404040;
           --neutral-800: #262626; --neutral-900: #171717;
@@ -3472,19 +3483,19 @@ function generateHTML(reportData, trendData = null) {
           box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
         }
         .summary-card.status-failed .value { color: #ef4444; }
-        .summary-card.status-flaky::before { background: var(--neutral-500); }
+        .summary-card.status-flaky::before { background: #00ccd3; }
         .summary-card.status-skipped { background: rgba(245, 158, 11, 0.02); }
         .summary-card.status-skipped:hover { 
           background: rgba(245, 158, 11, 0.15); 
           box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
         }
         .summary-card.status-skipped .value { color: #f59e0b; }
-        .summary-card.flaky-status { background: rgba(156, 163, 175, 0.05); }
+        .summary-card.flaky-status { background: rgba(0, 204, 211, 0.05); }
         .summary-card.flaky-status:hover { 
-          background: rgba(156, 163, 175, 0.15); 
-          box-shadow: 0 4px 12px rgba(156, 163, 175, 0.2);
+          background: rgba(0, 204, 211, 0.15); 
+          box-shadow: 0 4px 12px rgba(0, 204, 211, 0.2);
         }
-        .summary-card.flaky-status .value { color: #64748b; }
+        .summary-card.flaky-status .value { color: #00ccd3; }
         .summary-card:not([class*='status-']) .value { color: #0f172a; }
         .dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: start; }
         .dashboard-column { 
@@ -3584,7 +3595,7 @@ function generateHTML(reportData, trendData = null) {
         }
         .suite-card.status-passed::before { background: var(--success-color); }
         .suite-card.status-failed::before { background: var(--danger-color); }
-        .suite-card.status-flaky::before { background: var(--neutral-500); }
+        .suite-card.status-flaky::before { background: #00ccd3; }
         .suite-card.status-skipped::before { background: var(--warning-color); }
         
         /* Outcome Badge */
@@ -3600,8 +3611,8 @@ function generateHTML(reportData, trendData = null) {
             letter-spacing: 0.5px;
         }
         .outcome-badge.flaky {
-            background-color: #eab308; /* Yellow-500 */
-            color: #000;
+            background-color: #00ccd3;
+            color: #fff;
         }
 
         .suite-card-header {
@@ -3630,9 +3641,9 @@ function generateHTML(reportData, trendData = null) {
         }
         .status-indicator-dot.status-passed { background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
         .status-indicator-dot.status-failed { background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
-        .status-indicator-dot.status-flaky { background-color: var(--neutral-500); box-shadow: 0 0 0 4px rgba(107, 114, 128, 0.15); }
+        .status-indicator-dot.status-flaky { background-color: #00ccd3; box-shadow: 0 0 0 4px rgba(0, 204, 211, 0.15); }
         .status-indicator-dot.status-skipped { background-color: rgba(245, 158, 11, 0.1); color: var(--warning-dark); border: 1px solid rgba(245, 158, 11, 0.2); }
-        .status-flaky { background-color: #C0C0C0; color: #000000; border: 1px solid #A0A0A0; }
+        .status-flaky { background-color: rgba(0, 204, 211, 0.1); color: #00ccd3; border: 1px solid #00ccd3; }
 
         .browser-tag {
           font-size: 0.8em;
@@ -3684,7 +3695,7 @@ function generateHTML(reportData, trendData = null) {
         .stat-pill svg { width: 14px; height: 14px; }
         .stat-pill.passed { color: var(--success-dark); }
         .stat-pill.failed { color: var(--danger-dark); }
-        .stat-pill.flaky { color: #4b5563; }
+        .stat-pill.flaky { color: #00ccd3; }
         .stat-pill.skipped { color: var(--warning-dark); }
         .filters {
           display: flex;
@@ -3849,7 +3860,7 @@ function generateHTML(reportData, trendData = null) {
           border-radius: 0;
           font-size: 0.7em;
           font-weight: 800;
-          color: white;
+          color: black;
           text-transform: uppercase;
           min-width: 100px;
           text-align: center;
@@ -4560,13 +4571,14 @@ function generateHTML(reportData, trendData = null) {
                 }</div><div class="trend-percentage">${skipPercentage}%</div></div>
                 <div class="summary-card flaky-status"><h3>Flaky</h3><div class="value">${runSummary.flaky || 0}</div>
                 <div class="trend-percentage">${flakyPercentage}%</div></div>
-                <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
-                  runSummary.duration,
-                )}</div></div>
-                <div class="summary-card">
-                  <h3>Total Retry Count</h3>
-                  <div class="value">${totalRetried}</div>
-                </div>
+                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
+                   runSummary.duration,
+                 )}</div><div class="trend-percentage">Avg. Test Duration ${avgTestDuration}</div></div>
+                 <div class="summary-card">
+                   <h3>Total Retry Count</h3>
+                   <div class="value">${totalRetried}</div>
+                   <div class="trend-percentage">Test Retried ${retriedTestsCount}</div>
+                 </div>
                 <div class="summary-card">
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">

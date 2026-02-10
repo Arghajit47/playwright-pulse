@@ -15,10 +15,13 @@
   * **Failed Test pointer**: Added failed test pointer to the HTML report(s), which will show the exact code snippet at which the test failed.
   * **Test Step Code Snippet**: Added test step code snippet to the HTML report(s), which will show the exact code snippet of individual test step.
   * **Enhanced CLI experience**: Added new "logo" in CLI command execution and "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
+  * **Flaky Test Card**: Added flaky test card to the HTML report(s), which will show the flaky test count in the Dashboard Tab.
+  * **Added Flaky test in charts**: Added flaky test in charts present everywhere in the HTML report(s), which now considers the flaky test count in the all tabs.
 
 * **🐛 Bug Fixes**: 
   * **Fixed Browser Distributon chart**: Fixed the browser distribution chart to show the correct/full name in distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then the chart will show the top 3 browsers and the rest will be shown as "+X more browsers".
   * **Minor fixes in Documentation**: "View Reporter Images" tab addition in the documentation.
+  * **Removed 'unknown' test status**: Removed '❓ unknown' test status option from the email HTML report, replaced with '⚠ flaky' based on the test outcome.
 
 ---
 

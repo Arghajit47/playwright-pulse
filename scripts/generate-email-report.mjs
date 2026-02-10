@@ -160,6 +160,8 @@ function getStatusClass(status) {
       return "status-failed";
     case "skipped":
       return "status-skipped";
+    case "flaky":
+      return "status-flaky";
     default:
       return "status-unknown";
   }
@@ -172,6 +174,8 @@ function getStatusIcon(status) {
       return "❌";
     case "skipped":
       return "⏭️";
+    case "flaky":
+      return "⚠";
     default:
       return "❓";
   }
@@ -243,13 +247,16 @@ function generateMinifiedHTML(reportData) {
         )}; font-size: 0.8em; font-weight: 600; padding: 3px 8px; border-radius: 4px; color: #fff; margin-left: 10px; white-space: nowrap;">${severity}</span>`;
 
         // --- NEW: Retry Count Badge ---
-        const retryCountBadge = (test.retryHistory && test.retryHistory.length > 0)
+        const unsuccessfulRetries = (test.retryHistory || []).filter(attempt => 
+          attempt.status === 'failed' || attempt.status === 'timedout' || attempt.status === 'flaky'
+        );
+        const retryCountBadge = (unsuccessfulRetries.length > 0)
           ? `<span style="background-color: #f59e0b; border: 1px solid #d97706; font-size: 0.8em; font-weight: 700; padding: 4px 10px; border-radius: 50px; color: #fff; margin-left: 10px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;">
                 <path d="M1 4v6h6"/>
                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
               </svg>
-              Retry Count: ${test.retryHistory.length}
+              Retry Count: ${unsuccessfulRetries.length}
             </span>`
           : '';
 
@@ -310,6 +317,7 @@ function generateMinifiedHTML(reportData) {
             --light-gray-color: #ecf0f1; /* Light Grey */
             --medium-gray-color: #bdc3c7; /* Medium Grey */
             --dark-gray-color: #7f8c8d; /* Dark Grey */
+            --flaky-color: #00ccd3; /* Cyan/Teal for Flaky */
             --text-color: #34495e; /* Dark Grey/Blue for text */
             --background-color: #f8f9fa;
             --card-background-color: #ffffff;
@@ -400,6 +408,8 @@ function generateMinifiedHTML(reportData) {
         .stat-card.failed .value { color: var(--danger-color); }
         .stat-card.skipped { border-left-color: var(--warning-color); }
         .stat-card.skipped .value { color: var(--warning-color); }
+        .stat-card.flaky { border-left-color: var(--flaky-color); }
+        .stat-card.flaky .value { color: var(--flaky-color); }
 
         .section-title {
             font-size: 1.5em;
@@ -494,6 +504,7 @@ function generateMinifiedHTML(reportData) {
         .test-item.status-passed .test-status-label { background-color: var(--success-color); }
         .test-item.status-failed .test-status-label { background-color: var(--danger-color); }
         .test-item.status-skipped .test-status-label { background-color: var(--warning-color); }
+        .test-item.status-flaky .test-status-label { background-color: var(--flaky-color); }
         .test-item.status-unknown .test-status-label { background-color: var(--dark-gray-color); }
         
         .no-tests {
@@ -570,6 +581,10 @@ function generateMinifiedHTML(reportData) {
                     <h3>Skipped</h3>
                     <div class="value">${runSummary.skipped || 0}</div>
                 </div>
+                <div class="stat-card flaky">
+                    <h3>Flaky</h3>
+                    <div class="value">${runSummary.flaky || 0}</div>
+                </div>
             </div>
         </section>
 
@@ -599,7 +614,7 @@ function generateMinifiedHTML(reportData) {
                     <option value="passed">✅ Passed</option>
                     <option value="failed">❌ Failed</option>
                     <option value="skipped">⏭️ Skipped</option>
-                    <option value="unknown">❓ Unknown</option>
+                    <option value="flaky">⚠ Flaky</option>
                 </select>
                 <select id="filter-min-browser">
                     <option value="">All Browsers</option>

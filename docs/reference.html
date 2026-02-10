@@ -128,6 +128,12 @@
               <strong>Improved:</strong> <b>Enhanced CLI experience:</b> Added new "logo" in CLI command execution and
               "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
             </li>
+            <li><strong>Flaky Test Card:</strong>Added flaky test card to the HTML report(s), which will show the flaky test count
+              in the Dashboard Tab.
+            </li>
+            <li><strong>Added Flaky test in charts:</strong>Added flaky test in charts present everywhere in the HTML report(s),
+              which now considers the flaky test count in the all tabs.
+            </li>
             <li>
               <strong>Fix:</strong>
               <b>Fixed Browser Distribution chart:</b> Fixed the browser distribution chart to show the correct/full name in
@@ -137,6 +143,11 @@
             <li>
               <strong>Fix:</strong>
               <b>Minor fixes in Documentation:</b> "View Reporter Images" tab addition in the documentation.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Removed "unknown" test status:</b> Removed "❓ unknown" test status option from the email HTML report, replaced with
+              "⚠ flaky" based on the test outcome.
             </li>
           </ul>
           <h2>Version 0.3.3</h2>
