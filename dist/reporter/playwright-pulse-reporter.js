@@ -374,8 +374,9 @@ class PlaywrightPulseReporter {
                 }
             }
             else {
-                // If no retries, ensure final_status is undefined (as requested)
+                // If no retries, ensure final_status and retryHistory are removed
                 delete firstAttempt.final_status;
+                delete firstAttempt.retryHistory;
             }
             finalResults.push(firstAttempt);
         }

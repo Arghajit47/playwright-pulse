@@ -2579,8 +2579,8 @@ function generateHTML(reportData, trendData = null) {
         const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
 
         // --- Retry Count Badge (only show if retries occurred) ---
-        const retryCount = test.retryHistory ? test.retryHistory.length : 0;
-        const retryBadge = retryCount > 0 ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
+        const retryCount = (test.retryHistory && test.retryHistory.length > 0) ? test.retryHistory.length : 0;
+        const retryBadge = (test.retryHistory && test.retryHistory.length > 0) ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
 
         // --- Step Generation ---
         const generateStepsHTML = (steps, depth = 0) => {
