@@ -444,7 +444,14 @@ export class PlaywrightPulseReporter implements Reporter {
       const firstAttempt = attempts[0];
       const retryAttempts = attempts.slice(1);
       
-      if (retryAttempts.length > 0) {
+      
+      // Only populate retryHistory if there were actual failures that triggered retries
+      // If all attempts passed, we don't need to show retry history
+      const hasActualRetries = retryAttempts.length > 0 && retryAttempts.some(attempt => 
+        attempt.status === 'failed' || attempt.status === 'flaky' || firstAttempt.status === 'failed' || firstAttempt.status === 'flaky'
+      );
+      
+      if (hasActualRetries) {
         firstAttempt.retryHistory = retryAttempts;
         
         // Calculate final status and outcome from the last attempt if retries exist
@@ -457,7 +464,7 @@ export class PlaywrightPulseReporter implements Reporter {
             firstAttempt.status = 'flaky';
         }
       } else {
-        // If no retries, ensure final_status and retryHistory are removed
+        // If no actual retries (all attempts passed), ensure final_status and retryHistory are removed
         delete firstAttempt.final_status;
         delete firstAttempt.retryHistory;
       }
