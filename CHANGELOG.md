@@ -20,7 +20,7 @@
   * **Added image compression**: Added compression to the HTML report(s), which will compress the images in the report, so that 1000+ failed test cases with attached screenshots in attachments folder, will not make the report size too large.
 
 * **🐛 Bug Fixes**: 
-  * **Fixed Browser Distributon chart**: Fixed the browser distribution chart to show the correct/full name in distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then the chart will show the top 3 browsers and the rest will be shown as "+X more browsers".
+  * **Fixed Browser Distribution chart**: Fixed the browser distribution chart to show the correct/full name in distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then the chart will show the top 3 browsers and the rest will be shown as "+X more browsers".
   * **Minor fixes in Documentation**: "View Reporter Images" tab addition in the documentation.
   * **Removed 'unknown' test status**: Removed '❓ unknown' test status option from the email HTML report, replaced with '⚠ flaky' based on the test outcome.
 

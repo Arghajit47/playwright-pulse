@@ -245,11 +245,13 @@ jobs:
       run: npx playwright install --with-deps
     - name: Run Playwright tests
       run: npm run test
+    - name: Generate Pulse Report
+      run: npx generate-report
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: playwright-report
-        path: playwright-report/
+        name: pulse-report
+        path: pulse-report/
         retention-days: 30
 ```
 
