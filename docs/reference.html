@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Reference - Playwright Pulse Report</title>
+    <title>Changelog - Playwright Pulse Report</title>
     <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="./asset/logo.png" />
     <link rel="stylesheet" href="styles.css" />
@@ -58,7 +58,9 @@
       id="menu-toggle"
       aria-label="Open navigation menu"
     >
-      ☰
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+      </svg>
     </button>
     <div class="page-wrapper">
       <nav class="sidebar" id="sidebar">
@@ -71,7 +73,8 @@
             <a href="sharding.html">Sharding</a>
           </li>
           <li><a href="comparison.html">Comparison</a></li>
-          <li><a href="reference.html" class="active">Reference</a></li>
+          <li><a href="reference.html" class="active">Changelog</a></li>
+          <li><a href="view.html">View Reporter Images</a></li>
           <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
           <li>
             <a
@@ -88,10 +91,66 @@
       </nav>
       <div class="overlay" id="overlay"></div>
       <main class="main-content">
-        <h1>Reference</h1>
+        <h1>Changelog</h1>
         <section id="changelog">
-          <h2>Changelog</h2>
-          <h4>Version 0.3.3</h4>
+          <h2>Version 0.3.4</h2>
+          <ul>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Sharded Environment Preservation:</b> Complete tracking of all shard environments in merged reports.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Modern Environment Dashboard Redesign:</b> A visually appealing and user-friendly
+              redesign of the environment section of dashboard, with detailed bullet points.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Test skipped steps display:</b> Complete step visibility for all test outcomes
+              (passed, failed, skipped), Clear identification of failure/skip points in test execution & Better debugging
+              experience with full execution context.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Retry History:</b> Added retry history to the JSON report, which will show the retry
+              history of individual tests.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Retry Count:</b> Added retry count to the HTML report(s), which will show the retry
+              count of individual tests, in Test Run Summary Tab.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Failed Test pointer:</b> Added failed test pointer to the HTML report(s), which will
+              show the exact code snippet at which the test failed.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Test Step Code Snippet:</b> Added test step code snippet to the HTML report(s), which
+              will show the exact code snippet of individual test step.
+            </li>
+            <li>
+              <strong>Improved:</strong> <b>Enhanced CLI experience:</b> Added new "logo" in CLI command execution and
+              "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
+            </li>
+            <li><strong>Flaky Test Card:</strong>Added flaky test card to the HTML report(s), which will show the flaky test count
+              in the Dashboard Tab.
+            </li>
+            <li><strong>Added Flaky test in charts:</strong>Added flaky test in charts present everywhere in the HTML report(s),
+              which now considers the flaky test count in the all tabs.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Fixed Browser Distribution chart:</b> Fixed the browser distribution chart to show the correct/full name in
+              distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then
+              the chart will show the top 3 browsers and the rest will be shown as "+X more browsers" format.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Minor fixes in Documentation:</b> "View Reporter Images" tab addition in the documentation.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Removed "unknown" test status:</b> Removed "❓ unknown" test status option from the email HTML report, replaced with
+              "⚠ flaky" based on the test outcome.
+            </li>
+          </ul>
+          <h2>Version 0.3.3</h2>
           <ul>
             <li>
               <strong>New Feature:</strong>
@@ -125,7 +184,7 @@
               <b>Fixed all kind of vulnerabilities:</b> Addresses security concerns by updating dependencies to their latest versions, removing deprecated packages, and following best practices for secure coding. <b>No Open Source Security Issue</b>, <b>No Code Security Issue</b>, <b>No Configuration Issue</b>.
             </li>
           </ul>
-          <h4>Version 0.3.2</h4>
+          <h2>Version 0.3.2</h2>
           <ul>
             <li>
               <strong>Repository Update:</strong>
@@ -136,7 +195,7 @@
               AGPL license related issues in dependency package.
             </li>
           </ul>
-          <h4>Version 0.3.1</h4>
+          <h2>Version 0.3.1</h2>
           <ul>
             <li>
               <strong>New Feature:</strong>
@@ -199,8 +258,7 @@
               speed by implementing lazy loading for detailed test case content.
             </li>
           </ul>
-
-          <h4>Version 0.3.0</h4>
+          <h2>Version 0.3.0</h2>
           <ul>
             <li>
               <strong>New Feature:</strong> <b>Custom Annotations Support</b> -
@@ -259,7 +317,7 @@
               reports.
             </li>
           </ul>
-          <h4>Version 0.2.10</h4>
+          <h2>Version 0.2.10</h2>
           <ul>
             <li>
               <strong>Fixed:</strong> <b>Static report attachments</b> - Other
@@ -270,11 +328,11 @@
               low severity npm package vulnerabilities.
             </li>
           </ul>
-          <h4>Version 0.2.9</h4>
+          <h2>Version 0.2.9</h2>
           <ul>
             <li><strong>Improved:</strong> <b>send report</b> feature.</li>
           </ul>
-          <h4>Version 0.2.8</h4>
+          <h2>Version 0.2.8</h2>
           <ul>
             <li>
               <strong>Improved:</strong> <b>Readme file</b> detailed setup
@@ -306,7 +364,7 @@
               security vulnerabilities in the npm package.
             </li>
           </ul>
-          <h4>Version 0.2.6</h4>
+          <h2>Version 0.2.6</h2>
           <ul>
             <li>
               <strong>Improved:</strong> <b>Debug logging</b> with entire test
@@ -318,7 +376,7 @@
               with new refreshed UI.
             </li>
           </ul>
-          <h4>Version 0.2.5</h4>
+          <h2>Version 0.2.5</h2>
           <ul>
             <li>
               <strong>Added:</strong> <b>Test Distribution by Worker</b> chart,
@@ -355,7 +413,7 @@
               button, in Test Details tab.
             </li>
           </ul>
-          <h4>Version 0.2.4</h4>
+          <h2>Version 0.2.4</h2>
           <ul>
             <li>
               <strong>Improvements:</strong> Added
@@ -367,7 +425,7 @@
               workflow in the documentation website.
             </li>
           </ul>
-          <h4>Version 0.2.3</h4>
+          <h2>Version 0.2.3</h2>
           <ul>
             <li>
               <strong>Added:</strong> Support for HTML, JSON, TEXT, CSV, and PDF
@@ -379,7 +437,7 @@
               test suites.
             </li>
           </ul>
-          <h4>Version 0.2.2</h4>
+          <h2>Version 0.2.2</h2>
           <ul>
             <li>
               <strong>Added:</strong> Introduced
@@ -391,7 +449,7 @@
               trend calculations.
             </li>
           </ul>
-          <h4>Version 0.2.1</h4>
+          <h2>Version 0.2.1</h2>
           <ul>
             <li>
               <strong>Feature:</strong> Added history trends for the last 15
@@ -402,14 +460,14 @@
               test suite view.
             </li>
           </ul>
-          <h4>Version 0.2.0</h4>
+          <h2>Version 0.2.0</h2>
           <ul>
             <li>
               <strong>Major Update:</strong> Refined UI for static HTML reports
               and implemented History Trends.
             </li>
           </ul>
-          <h4>Version 0.1.6</h4>
+          <h2>Version 0.1.6</h2>
           <ul>
             <li>
               <strong>Update:</strong> Initial release of stable reporter
@@ -417,7 +475,7 @@
             </li>
           </ul>
 
-          <h4>Version 0.1.5</h4>
+          <h2>Version 0.1.5</h2>
           <ul>
             <li>
               <strong>Fix:</strong> Resolved path resolution issues for
@@ -425,7 +483,7 @@
             </li>
           </ul>
 
-          <h4>Version 0.1.4</h4>
+          <h2>Version 0.1.4</h2>
           <ul>
             <li>
               <strong>Feature:</strong> Added support for custom output
@@ -433,7 +491,7 @@
             </li>
           </ul>
 
-          <h4>Version 0.1.3</h4>
+          <h2>Version 0.1.3</h2>
           <ul>
             <li>
               <strong>Improvement:</strong> Enhanced error formatting in the
@@ -441,7 +499,7 @@
             </li>
           </ul>
 
-          <h4>Version 0.1.2</h4>
+          <h2>Version 0.1.2</h2>
           <ul>
             <li>
               <strong>Fix:</strong> Corrected JSON data structure for empty
@@ -449,7 +507,7 @@
             </li>
           </ul>
 
-          <h4>Version 0.1.1</h4>
+          <h2>Version 0.1.1</h2>
           <ul>
             <li>
               <strong>Initial Release:</strong> Beta launch of the Playwright

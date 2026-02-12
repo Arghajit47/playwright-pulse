@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Report Features - Playwright Pulse Report</title>
+    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="./asset/logo.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="search.css" />
+</head>
+
+<body>
+    <header class="enhanced-header">
+        <div class="header-left">
+            <img src="./asset/FullLogo.png" alt="Playwright Pulse Report Banner" class="header-logo" />
+            </div>
+
+        <div class="header-controls">
+            <div class="search-container">
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..." autocomplete="off" />
+                    <button class="clear-search" id="clearSearch">×</button>
+                    <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                    </svg>
+                </div>
+                <div class="search-dropdown" id="searchDropdown"></div>
+            </div>
+
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path
+                        d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+                    <path
+                        d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+                </svg>
+            </button>
+        </div>
+    </header>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+        </svg>
+    </button>
+    <div class="page-wrapper">
+        <nav class="sidebar" id="sidebar">
+            <ul class="sidebar-nav">
+                <li><a href="index.html">Getting Started</a></li>
+                <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+                <li>
+                    <a href="report-features.html">Report Features</a>
+                </li>
+                <li><a href="advanced-usage.html">Advanced Usage</a></li>
+                <li>
+                    <a href="sharding.html">Sharding</a>
+                </li>
+                <li><a href="comparison.html">Comparison</a></li>
+                <li><a href="reference.html">Changelog</a></li>
+                <li><a href="view.html" class="active">View Reporter Images</a></li>
+                <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
+                <li>
+                    <a href="https://arghajit47.github.io/playwright-pulse-dashboard/" class="external-link" target="_blank"
+                        rel="noopener noreferrer">
+                        Pulse Dashboard
+                        <img class="new" src="./asset/new.png" alt="new_icon" />
+                    </a>
+                    </li>
+                    </ul>
+                    </nav>
+                    <div class="overlay" id="overlay"></div>
+                    <main class="main-content">
+            <h1>View Reporter Images - All Tabs</h1>
+            <section id="feature-dashboard">
+                <h2>Dashboard View</h2>
+                <div class="screenshots-grid">
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Pulse-Report.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Pulse-Report.png" alt="Pulse Report Overview" />
+                        </a>
+                        <p><strong>Pulse Report Dashboard Tab Overview</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Pulse-Static-Report.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Pulse-Static-Report.png" alt="Pulse Static Report Overview" />
+                        </a>
+                        <p><strong>Pulse Static Report Dashboard Tab Overview</strong></p>
+                    </div>
+                </div>
+            </section>
+            <section id="feature-test-run-summary">
+                <h2>Test Run Summary View</h2>
+                <div class="screenshots-grid">
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Pulse Report Test Run Summary.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Pulse Report Test Run Summary.png" alt="Pulse Report Test Run Summary" />
+                        </a>
+                        <p><strong>Pulse Report Test Run Summary</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Pulse Report Test Details attachments.png" target="_blank"
+                            rel="noopener noreferrer">
+                            <img src="./asset/desktop/Pulse Report Test Details attachments.png"
+                                alt="Pulse Report Test Details attachments" />
+                        </a>
+                        <p><strong>Pulse Report Test Details attachments</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Test Run Retry.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Test Run Retry.png" alt="Test Run Retry" />
+                        </a>
+                        <p><strong>Test Run Retry Steps</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Static Report - Test Run Retry Steps.png" target="_blank"
+                            rel="noopener noreferrer">
+                            <img src="./asset/desktop/Static Report - Test Run Retry Steps.png" alt="Test Run Retry" />
+                        </a>
+                        <p><strong>Static Report - Test Run Retry Steps</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Static Report - Test Run Summary.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Static Report - Test Run Summary.png" alt="Test Run Retry" />
+                        </a>
+                        <p><strong>Static Report - Test Run Summary</strong></p>
+                    </div>
+                </div>
+            </section>
+            <section id="feature-test-history">
+                <h2>Test History View</h2>
+                <div class="screenshots-grid">
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Generic Report-Test History.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Generic Report-Test History.png"
+                                alt="Generic Report - Test History & Worker Trends" />
+                        </a>
+                        <p><strong>Generic Report - Test History & Worker Trends</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Generic Report-Workers+Individual Test Run History.png" target="_blank"
+                            rel="noopener noreferrer">
+                            <img src="./asset/desktop/Generic Report-Workers+Individual Test Run History.png"
+                                alt="Generic Report - Workers trends & Individual Test Run History" />
+                        </a>
+                        <p><strong>Generic Report - Workers trends & Individual Test Run History</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Test Details for Worker.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Test Details for Worker.png" alt="Test Details for Workers" />
+                        </a>
+                        <p><strong>Test Details for Workers</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Static Report-Test Details for Worker.png" target="_blank"
+                            rel="noopener noreferrer">
+                            <img src="./asset/desktop/Static Report-Test Details for Worker.png" alt="Test Details for Workers" />
+                        </a>
+                        <p><strong>Static Report - Test Details for Workers</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Static Report-Test History.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Static Report-Test History.png" alt="Test Details for Workers" />
+                        </a>
+                        <p><strong>Static Report - Test History</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Static Report-Individual Test Run.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Static Report-Individual Test Run.png" alt="Test Details for Workers" />
+                        </a>
+                        <p><strong>Static Report - Individual Test Run History</strong></p>
+                    </div>
+                </div>
+            </section>
+            <section id="feature-analysis">
+                <h2>AI Analysis View</h2>
+                <div class="screenshots-grid">
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/AI Failure Analyzer.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/AI Failure Analyzer.png" alt="AI Failure Analyzer" />
+                        </a>
+                        <p><strong>Generic Report - AI Failure Analyzer</strong></p>
+                    </div>
+                    <div class="screenshot-item">
+                        <a href="./asset/desktop/Static Report-AI Failure Analyzer.png" target="_blank" rel="noopener noreferrer">
+                            <img src="./asset/desktop/Static Report-AI Failure Analyzer.png" alt="AI Failure Analyzer" />
+                        </a>
+                        <p><strong>Static Report - AI Failure Analyzer</strong></p>
+                    </div>
+            
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="search.js"></script>
+    <script src="script.js"></script>
+    </body>
+
+</html>

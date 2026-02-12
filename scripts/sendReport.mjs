@@ -8,6 +8,7 @@ import {
   existsSync as fsExistsSync, // Renamed
 } from "fs"; // CHANGED for specific functions
 import { fileURLToPath } from "url";
+import { animate } from "./terminal-logo.mjs";
 import { fork } from "child_process"; // This was missing in your sendReport.js but present in generate-email-report.js and needed for runScript
 import "dotenv/config"; // CHANGED for dotenv
 import { getOutputDir } from "./config-reader.mjs";
@@ -485,6 +486,8 @@ async function fetchCredentials(reportDir, retries = 10) {
 }
 
 const main = async () => {
+  await animate();
+  
   // Ensure fetch is initialized (dynamic import at top or here)
   if (!fetch) {
     try {

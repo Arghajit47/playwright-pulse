@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-export type TestStatus = "passed" | "failed" | "skipped" | "expected-failure" | "unexpected-success" | "explicitly-skipped";
+export type TestStatus = "passed" | "failed" | "skipped" | "expected-failure" | "unexpected-success" | "explicitly-skipped" | "flaky";
 export interface TestStep {
     id: string;
     title: string;
@@ -11,6 +11,7 @@ export interface TestStep {
     errorMessage?: string;
     stackTrace?: string;
     codeLocation?: string;
+    codeSnippet?: string;
     isHook?: boolean;
     hookType?: "before" | "after";
     steps?: TestStep[];
@@ -35,6 +36,8 @@ export interface TestResult {
     suiteName?: string;
     runId: string;
     browser: string;
+    outcome?: string;
+    final_status?: TestStatus;
     screenshots?: string[];
     videoPath?: string[];
     tracePath?: string;
@@ -58,6 +61,7 @@ export interface TestResult {
             column: number;
         };
     }[];
+    retryHistory?: TestResult[];
 }
 export interface TestRun {
     id: string;
@@ -66,14 +70,16 @@ export interface TestRun {
     passed: number;
     failed: number;
     skipped: number;
+    flaky?: number;
     duration: number;
-    environment?: EnvDetails;
+    environment?: EnvDetails | EnvDetails[];
 }
 export interface TrendDataPoint {
     date: string;
     passed: number;
     failed: number;
     skipped: number;
+    flaky?: number;
 }
 export interface SummaryMetric {
     label: string;

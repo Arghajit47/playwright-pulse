@@ -6,7 +6,8 @@ export type TestStatus =
   | "skipped"
   | "expected-failure"
   | "unexpected-success"
-  | "explicitly-skipped";
+  | "explicitly-skipped"
+  | "flaky";
 
 export interface TestStep {
   id: string;
@@ -19,6 +20,7 @@ export interface TestStep {
   errorMessage?: string;
   stackTrace?: string;
   codeLocation?: string;
+  codeSnippet?: string; // Code snippet from source file with line numbers
   isHook?: boolean;
   hookType?: "before" | "after";
   steps?: TestStep[]; // Nested steps
@@ -44,6 +46,9 @@ export interface TestResult {
   suiteName?: string;
   runId: string; // Identifier for the test run this belongs to
   browser: string; // Browser name (e.g., "chromium", "firefox", "webkit")
+
+  outcome?: string; // Captures Playwright's testCase.outcome()
+  final_status?: TestStatus; // Captures the Last-Run-Wins status
 
   // --- MODIFIED & NEW ATTACHMENT FIELDS ---
   screenshots?: string[];
@@ -73,6 +78,8 @@ export interface TestResult {
       column: number;
     };
   }[];
+
+  retryHistory?: TestResult[];
 }
 
 export interface TestRun {
@@ -82,8 +89,9 @@ export interface TestRun {
   passed: number;
   failed: number;
   skipped: number;
+  flaky?: number;
   duration: number; // total duration for the run
-  environment?: EnvDetails;
+  environment?: EnvDetails | EnvDetails[]; // Single for non-sharded, array for merged sharded reports
 }
 
 export interface TrendDataPoint {
@@ -91,6 +99,7 @@ export interface TrendDataPoint {
   passed: number;
   failed: number;
   skipped: number;
+  flaky?: number;
 }
 
 export interface SummaryMetric {
