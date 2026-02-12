@@ -28,6 +28,7 @@ export interface TestResult {
     tags?: string[];
     suiteName?: string;
     runId: string;
+    retryHistory?: TestResult[];
 }
 export interface TestRun {
     id: string;

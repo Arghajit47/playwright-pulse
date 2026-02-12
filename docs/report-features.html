@@ -1,124 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Report Features - Playwright Pulse Report</title>
-    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
-    <link rel="apple-touch-icon" href="./asset/logo.png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="search.css" />
-  </head>
-  <body>
-    <header class="enhanced-header">
-      <div class="header-left">
-        <img
-          src="./asset/FullLogo.png"
-          alt="Playwright Pulse Report Banner"
-          class="header-logo"
-        />
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Features - Playwright Pulse Report</title>
+  <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="./asset/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="search.css" />
+</head>
+
+<body>
+  <header class="enhanced-header">
+    <div class="header-left">
+      <img src="./asset/FullLogo.png" alt="Playwright Pulse Report Banner" class="header-logo" />
       </div>
 
-      <div class="header-controls">
-        <div class="search-container">
-          <div class="search-wrapper">
-            <input
-              type="text"
-              class="search-input"
-              id="searchInput"
-              placeholder="Search documentation..."
-              autocomplete="off"
-            />
-            <button class="clear-search" id="clearSearch">×</button>
-            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-              />
-            </svg>
-          </div>
-          <div class="search-dropdown" id="searchDropdown"></div>
-        </div>
-
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+    <div class="header-controls">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..." autocomplete="off" />
+          <button class="clear-search" id="clearSearch">×</button>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
             <path
-              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
-            />
-            <path
-              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
-            />
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
           </svg>
-        </button>
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
       </div>
-    </header>
-    <button
-      class="menu-toggle"
-      id="menu-toggle"
-      aria-label="Open navigation menu"
-    >
-      ☰
-    </button>
-    <div class="page-wrapper">
-      <nav class="sidebar" id="sidebar">
-        <ul class="sidebar-nav">
-          <li><a href="index.html">Getting Started</a></li>
-          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
-          <li>
-            <a href="report-features.html" class="active">Report Features</a>
-          </li>
-          <li><a href="advanced-usage.html">Advanced Usage</a></li>
-          <li>
-            <a href="sharding.html">Sharding</a>
-          </li>
-          <li><a href="comparison.html">Comparison</a></li>
-          <li><a href="reference.html">Reference</a></li>
-          <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
-          <li>
-            <a
-              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
-              class="external-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Pulse Dashboard
-              <img class="new" src="./asset/new.png" alt="new_icon" />
-            </a>
-          </li>
-        </ul>
-      </nav>
-      <div class="overlay" id="overlay"></div>
-      <main class="main-content">
-        <h1>Report Features</h1>
-        <p>
-          The generated HTML report is a powerful single-page application with
-          several views.
-        </p>
 
-        <section id="feature-dashboard">
-          <h2>Dashboard View</h2>
-          <p>
-            The default view provides a high-level overview of the test run.
-          </p>
-          <div class="screenshots-grid">
-            <div class="screenshot-item">
-              <a href="./asset/Pulse-Dashboard.png" target="_blank" rel="noopener noreferrer">
-                <img src="./asset/Pulse-Dashboard.png" alt="Pulse Dashboard Overview" />
-              </a>
-              <p><strong>Pulse Report Dashboard Overview</strong></p>
-            </div>
-            <div class="screenshot-item">
-              <a href="./asset/Pulse-Static-Dashboard.png" target="_blank" rel="noopener noreferrer">
-                <img src="./asset/Pulse-Static-Dashboard.png" alt="Pulse Static Dashboard Overview" />
-              </a>
-              <p><strong>Pulse Static Report Dashboard Overview</strong></p>
-            </div>
-          </div>
-          <h4>Key Components:</h4>
-          <ul>
-            <li>
-              <strong>Summary Cards:</strong> At-a-glance metrics for Total
-              Tests, Passed, Failed, Skipped, Average Test Time, and Total Run
-              Duration.
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+          <path d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+    </svg>
+  </button>
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Getting Started</a></li>
+        <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+        <li>
+          <a href="report-features.html" class="active">Report Features</a>
+        </li>
+        <li><a href="advanced-usage.html">Advanced Usage</a></li>
+        <li>
+          <a href="sharding.html">Sharding</a>
+        </li>
+        <li><a href="comparison.html">Comparison</a></li>
+        <li><a href="reference.html">Changelog</a></li>
+        <li><a href="view.html">View Reporter Images</a></li>
+        <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
+        <li>
+          <a href="https://arghajit47.github.io/playwright-pulse-dashboard/" class="external-link" target="_blank"
+            rel="noopener noreferrer">
+            Pulse Dashboard
+            <img class="new" src="./asset/new.png" alt="new_icon" />
+          </a>
+          </li>
+          </ul>
+          </nav>
+          <div class="overlay" id="overlay"></div>
+          <main class="main-content">
+            <h1>Report Features</h1>
+            <p>
+              The generated HTML report is a powerful single-page application with
+              several views.
+            </p>
+
+      <section id="feature-dashboard">
+        <h2>Dashboard View</h2>
+        <p>
+          The default view provides a high-level overview of the test run.
+        </p>
+        <h4>Key Components:</h4>
+        <ul>
+          <li>
+            <strong>Summary Cards:</strong> At-a-glance metrics for Total
+            Tests, Passed, Failed, Skipped, Average Test Time, and Total Run
+            Duration, Retry Count, Browser Distributions.
             </li>
             <li>
               <strong>Test Distribution Pie Chart:</strong> A visual breakdown
@@ -126,287 +95,241 @@
             </li>
             <li>
               <strong>System Environment Widget:</strong> Displays information
-              about the execution environment.
+            about the execution environment, be it local, CI/CD or, sharding.
             </li>
             <li>
               <strong>Test Suites Widget:</strong> Lists all test suites that
               were run, showing the test count and pass/fail/skip status for
               each.
             </li>
-          </ul>
-        </section>
+            </ul>
+            </section>
 
-        <section id="feature-test-runs">
-          <h2>Test Run Summary View</h2>
-          <p>
-            This tab provides a detailed, filterable list of every test case in
-            the run.
-          </p>
-          <div class="screenshots-grid">
-            <div class="screenshot-item">
-              <a href="./asset/Pulse Report Test Run Summary.png" target="_blank" rel="noopener noreferrer">
-                <img
-                  src="./asset/Pulse Report Test Run Summary.png"
-                  alt="Pulse Report Test Run Summary"
-                />
-              </a>
-              <p><strong>Pulse Report Test Run Summary</strong></p>
-            </div>
-            <div class="screenshot-item">
-              <a href="./asset/Pulse Report Test Details attachments.png" target="_blank" rel="noopener noreferrer">
-                <img
-                  src="./asset/Pulse Report Test Details attachments.png"
-                  alt="Pulse Report Test Run Details with Attachments"
-                />
-              </a>
-              <p><strong>Pulse Report Test Details with Attachments</strong></p>
-            </div>
-
-          </div>
-          <h4>Key Components:</h4>
-          <ul>
-            <li>
-              <strong>Filtering:</strong> Powerful filters allow you to narrow
-              down the view by test name, status (Passed, Failed, Skipped), and
-              browser.
+      <section id="feature-test-runs">
+        <h2>Test Run Summary View</h2>
+        <p>
+          This tab provides a detailed, filterable list of every test case in
+          the run.
+        </p>
+        <h4>Key Components:</h4>
+        <ul>
+          <li>
+            <strong>Filtering:</strong> Powerful filters allow you to narrow
+            down the view by test name, status (Passed, Failed, Skipped), and
+            browser.
+          </li>
+          <li>
+            <strong>Expandable Test Cases:</strong> Click on any test case to
+            expand it and view its details.
+          </li>
+          <li>
+            <strong>Step-by-Step Execution:</strong> See a full breakdown of
+            every test step, including duration and status. Nested steps are
+            indented for clarity.
+          </li>
+          <li>
+            <strong>Error Details:</strong> For failed tests, the exact error
+            message and a color-coded stack trace are displayed. A "Copy Error
+            Prompt" button is available for easy debugging.
+          </li>
+          <li>
+            <strong>Attachments:</strong> All associated screenshots, videos,
+            traces and other attachment (html, csv, json, text, xml, etc.)
+            files are displayed as thumbnails and are viewable or downloadable
+            directly from the report.
+          </li>
+          <li>
+            <strong>Annotations & Tags:</strong> Within all the test cases, user can
+            add playwright's built-in annotations and tags to provide additional context or
+            information.
+          </li>
+          <li>
+            <strong>Retry Count:</strong> Within all failed test cases if retry is enabled, user can now
+            see retry count for each individual test case. [available in version 0.3.4 or, later]
             </li>
             <li>
-              <strong>Expandable Test Cases:</strong> Click on any test case to
-              expand it and view its details.
+              <strong>Retry Run Steps:</strong> Within all failed test cases if retry is enabled, user can now
+              see test run steps for base run as well as each retry runs, with respective informations (attachments, console logs,
+              error messages, etc.). [available in version 0.3.4 or, later]
             </li>
             <li>
-              <strong>Step-by-Step Execution:</strong> See a full breakdown of
-              every test step, including duration and status. Nested steps are
-              indented for clarity.
-            </li>
-            <li>
-              <strong>Error Details:</strong> For failed tests, the exact error
-              message and a color-coded stack trace are displayed. A "Copy Error
-              Prompt" button is available for easy debugging.
-            </li>
-            <li>
-              <strong>Attachments:</strong> All associated screenshots, videos,
-              traces and other attachment (html, csv, json, text, xml, etc.)
-              files are displayed as thumbnails and are viewable or downloadable
-              directly from the report.
-            </li>
-            <li>
-              <strong>Annotations & Tags:</strong> Within all the test cases, user can
-              add playwright's built-in annotations and tags to provide additional context or
-              information.
-            </li>
-            <li>
-              <strong>Console Logs:</strong> Any <code>stdout</code> or
-              <code>stderr</code> output captured during the test is displayed
-              in its own section.
+            <strong>Console Logs:</strong> Any <code>stdout</code> or
+            <code>stderr</code> output captured during the test is displayed
+            in its own section.
             </li>
             <li>
               <strong>Test Severity:</strong> Within all the test cases, user can now
               add test specific severity annotations to help categorize tests
               based on their importance or risk level. Also, in Dashboard, user can visualize
-              the test <b>severity distribution</b> using a stacked-column chart. There are 5 
+              the test <b>severity distribution</b> using a stacked-column chart. There are 5
               severity levels: <i><b>Critical</b>, <b>High</b>, <b>Medium</b>, <b>Low</b>, and <b>Minor</b></i>.
             </li>
-          </ul>
+            </ul>
+            </section>
+
+      <section id="feature-test-history">
+        <h2>Test History View</h2>
+        <p>
+          This tab visualizes trends and historical data from the last 15 test
+          runs.
+        </p>
+        <h4>Key Components:</h4>
+        <ul>
+          <li>
+            <strong>Execution Trend Charts:</strong> Two main charts show the
+            evolution of your test suite over time:
+            <ul>
+              <li>
+                <strong>Test Volume &amp; Outcome Trends:</strong> A line
+                chart tracking the total, passed, failed, and skipped test
+                counts across runs.
+              </li>
+              <li>
+                <strong>Execution Duration Trends:</strong> An area chart
+                showing how the total run duration has changed over time.
+              </li>
+              <li>
+                <strong>Duration by Spec files:</strong> An area chart
+                showing the duration distribution of tests across different spec files.
+              </li>
+              <li>
+                <strong>Duration by Test Describe:</strong> An stacked-column chart
+                showing the duration distribution of tests across different test describe blocks.
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Test Distribution by Worker:</strong> Bar chart for no. of
+            tests, outcomes with respect to each worker.
+          </li>
+          <li>
+            <strong>Individual Test History:</strong> A grid of cards, one for
+            each unique test case. Each card shows:
+            <ul>
+              <li>The latest status of the test.</li>
+              <li>
+                A mini-chart showing the duration and status of that specific
+                test over the last 15 runs.
+              </li>
+              <li>
+                A collapsible details section with a table of its full run
+                history.
+              </li>
+            </ul>
+          </li>
+        </ul>
+        <ul></ul>
         </section>
 
-        <section id="feature-test-history">
-          <h2>Test History View</h2>
-          <p>
-            This tab visualizes trends and historical data from the last 15 test
-            runs.
-          </p>
-          <div class="screenshots-grid">
-            <div class="screenshot-item">
-              <a href="./asset/Test History long.png" target="_blank" rel="noopener noreferrer">
-                <img
-                  src="./asset/Test History long.png"
-                  alt="Test History & Worker Trends"
-                />
-              </a>
-              <p><strong>Test History & Worker Trends</strong></p>
-            </div>
-            <div class="screenshot-item">
-              <a href="./asset/Duration by Spec files and Test Describe.png" target="_blank" rel="noopener noreferrer">
-                <img
-                  src="./asset/Duration by Spec files and Test Describe.png"
-                  alt="Duration by Spec files and Test Describe Chart"
-                />
-              </a>
-              <p><strong>Duration by Spec files and Test Describe Chart</strong></p>
-            </div>
-            <div class="screenshot-item">
-              <a href="./asset/Test Details for Worker.png" target="_blank" rel="noopener noreferrer">
-                <img
-                  src="./asset/Test Details for Worker.png"
-                  alt="Test Details for Workers"
-                />
-              </a>
-              <p><strong>Test Details for Workers</strong></p>
-            </div>
-          </div>
-          <h4>Key Components:</h4>
-          <ul>
-            <li>
-              <strong>Execution Trend Charts:</strong> Two main charts show the
-              evolution of your test suite over time:
-              <ul>
-                <li>
-                  <strong>Test Volume &amp; Outcome Trends:</strong> A line
-                  chart tracking the total, passed, failed, and skipped test
-                  counts across runs.
-                </li>
-                <li>
-                  <strong>Execution Duration Trends:</strong> An area chart
-                  showing how the total run duration has changed over time.
-                </li>
-                <li>
-                  <strong>Duration by Spec files:</strong> An area chart
-                  showing the duration distribution of tests across different spec files.
-                </li>
-                <li>
-                  <strong>Duration by Test Describe:</strong> An stacked-column chart
-                  showing the duration distribution of tests across different test describe blocks.
-                </li>
-              </ul>
-            </li>
-            <li>
-              <strong>Test Distribution by Worker:</strong> Bar chart for no. of
-              tests, outcomes with respect to each worker.
-            </li>
-            <li>
-              <strong>Individual Test History:</strong> A grid of cards, one for
-              each unique test case. Each card shows:
-              <ul>
-                <li>The latest status of the test.</li>
-                <li>
-                  A mini-chart showing the duration and status of that specific
-                  test over the last 15 runs.
-                </li>
-                <li>
-                  A collapsible details section with a table of its full run
-                  history.
-                </li>
-              </ul>
-            </li>
-          </ul>
-          <ul></ul>
-        </section>
+      <section id="feature-ai-analysis">
+        <h2>AI Analysis View</h2>
+        <p>
+          This tab embeds an external web tool to provide AI-powered analysis
+          of your test results.
+        </p>
+        <div class="note">
+          The AI Analysis tool is an embedded third-party application and
+          requires an internet connection to function.
+        </div>
+        <h4>Key Components:</h4>
+        <ul>
+          <li><strong>General Information:</strong> Shows the aggregate number of tests executed across all browsers
+            alongside
+            the total time taken for those failed test cases.</li>
+          <li><strong>AI Fix:</strong> Analyzes the Error that failed the test case and uses AI to suggest a fix. The
+            JSON
+            formatted response then being beautified and displayed in the UI. Maximum 5 suggestions will be displayed.
+          </li>
+          <li><strong>Copy AI Prompt:</strong> Copy the AI prompt used to generate the suggestions and paste it in any
+            AI tool
+            to get the similar JSON Formatted suggestions. Test code, error message and other relevant information are
+            included
+            in the prompt.</li>
+        </ul>
+      </section>
 
-        <section id="feature-ai-analysis">
-          <h2>AI Analysis View</h2>
-          <p>
-            This tab embeds an external web tool to provide AI-powered analysis
-            of your test results.
-          </p>
-          <div class="screenshots-grid">
-            <div class="screenshot-item">
-              <a href="./asset/AI Failure Analyzer.png" target="_blank" rel="noopener noreferrer">
-                <img
-                  src="./asset/AI Failure Analyzer.png"
-                  alt="AI Failure Analyzer"
-                />
-              </a>
-              <p><strong>AI Failure Analyzer</strong></p>
-            </div>
-          </div>
-          <div class="note">
-            The AI Analysis tool is an embedded third-party application and
-            requires an internet connection to function.
-          </div>
-        </section>
-
-        <section id="email-report">
-          <h2>Email Report (Default Flow)</h2>
-          <div class="note">
-            Email will be sent with a light-weight html file, which can be
-            opened in mail preview application.
-          </div>
-          <strong>1. Configure `.env`:</strong>
-          <div id="run-execution" class="code-container">
-            <pre><code class="language-javascript">RECIPIENT_EMAIL_1=recipient1@example.com
+      <section id="email-report">
+        <h2>Email Report (Default Flow)</h2>
+        <div class="note">
+          Email will be sent with a light-weight html file, which can be
+          opened in mail preview application.
+        </div>
+        <strong>1. Configure `.env`:</strong>
+        <div id="run-execution" class="code-container">
+          <pre><code class="language-javascript">RECIPIENT_EMAIL_1=recipient1@example.com
 RECIPIENT_EMAIL_2=recipient2@example.com
 # ... up to 5 recipients</code><button class="copy-button">Copy</button></pre>
-          </div>
-          <strong>2. Send report:</strong>
-          <div id="run-execution" class="code-container">
-            <pre><code class="language-javascript">npx send-email</code><button class="copy-button">Copy</button></pre>
-          </div>
-          or,
-          <div id="run-execution" class="code-container">
-            <pre><code class="language-javascript">npm run send-email</code><button class="copy-button">Copy</button></pre>
-          </div>
-          <div class="screenshots-grid">
-            <div class="screenshot-item">
-              <a href="./asset/email-template.png" target="_blank" rel="noopener noreferrer">
-                <img src="./asset/email-template.png" alt="Email template" />
-              </a>
-              <p><strong>Email template</strong></p>
-            </div>
-            <div class="screenshot-item">
-              <a href="./asset/email report.png" target="_blank" rel="noopener noreferrer">
-                <img src="./asset/email report.png" alt="Email Report HTML" />
-              </a>
-              <p><strong>Email Report HTML</strong></p>
-            </div>
-          </div>
-          <div class="note">
-            Email will be received from
-            <code>personalpostmanreporter@gmail.com</code> email ID, if needed
-            kindly check the spam/junk folder to receive the mail.
-          </div>
-        </section>
-        <section id="custom-email-report">
-          <h2>Email Report (Custom Flow)</h2>
+        </div>
+        <strong>2. Send report:</strong>
+        <div id="run-execution" class="code-container">
+          <pre><code class="language-javascript">npx send-email</code><button class="copy-button">Copy</button></pre>
+        </div>
+        or,
+        <div id="run-execution" class="code-container">
+          <pre><code class="language-javascript">npm run send-email</code><button class="copy-button">Copy</button></pre>
+        </div>
+        <div class="note">
+          Email will be received from
+          <code>personalpostmanreporter@gmail.com</code> email ID, if needed
+          kindly check the spam/junk folder to receive the mail.
+        </div>
+        <h2>Email Report (Custom Flow)</h2>
 
-          <h3>1. Configure Recipients</h3>
-          <p>Set up to 5 recipients via environment variables:</p>
-          <div class="code-container">
-            <pre><code class="language-bash">RECIPIENT_EMAIL_1=recipient1@example.com
+        <h3>1. Configure Recipients</h3>
+        <p>Set up to 5 recipients via environment variables:</p>
+        <div class="code-container">
+          <pre><code class="language-bash">RECIPIENT_EMAIL_1=recipient1@example.com
 RECIPIENT_EMAIL_2=recipient2@example.com
 RECIPIENT_EMAIL_3=recipient3@example.com
 RECIPIENT_EMAIL_4=recipient4@example.com
 RECIPIENT_EMAIL_5=recipient5@example.com</code><button class="copy-button">Copy</button></pre>
-          </div>
+        </div>
 
-          <h3>2. Choose Credential Flow</h3>
-          <p>The script supports two ways to obtain SMTP credentials:</p>
+        <h3>2. Choose Credential Flow</h3>
+        <p>The script supports two ways to obtain SMTP credentials:</p>
 
-          <strong>Environment-based credentials</strong>
-          <p>Provide mail host and credentials via environment variables:</p>
-          <div class="code-container">
-            <pre><code class="language-bash">PULSE_MAIL_HOST=gmail        # or: outlook
+        <strong>Environment-based credentials</strong>
+        <p>Provide mail host and credentials via environment variables:</p>
+        <div class="code-container">
+          <pre><code class="language-bash">PULSE_MAIL_HOST=gmail        # or: outlook
 PULSE_MAIL_USERNAME=you@example.com
 PULSE_MAIL_PASSWORD=your_app_password</code><button class="copy-button">Copy</button></pre>
-          </div>
-          <ul>
-            <li><code>PULSE_MAIL_HOST</code> supports <code>gmail</code> or <code>outlook</code> only.</li>
-            <li>For Gmail/Outlook, use an app password or SMTP-enabled credentials.</li>
-          </ul>
-          <div class="info-note">Here's the link to know how to get the <a href="https://support.happyfox.com/kb/article/1510-gmail-smtp-using-app-specific-passwords/">Gmail SMTP Using App-Specific Passwords</a> (recommended) and for <b>Outlook SMTP Server</b>, your outlook password is <code>PULSE_MAIL_PASSWORD</code></div>
+        </div>
+        <ul>
+          <li><code>PULSE_MAIL_HOST</code> supports <code>gmail</code> or <code>outlook</code> only.</li>
+          <li>For Gmail/Outlook, use an app password or SMTP-enabled credentials.</li>
+        </ul>
+        <div class="info-note">Here's the link to know how to get the <a
+            href="https://support.happyfox.com/kb/article/1510-gmail-smtp-using-app-specific-passwords/">Gmail SMTP
+            Using App-Specific Passwords</a> (recommended) and for <b>Outlook SMTP Server</b>, your outlook password is
+          <code>PULSE_MAIL_PASSWORD</code>
+        </div>
 
-          <div class="note">If the above variables are not set, the script fallbacks to default <a href="#email-report">send mail functionality</a> for compatibility.</div>
+        <div class="note">If the above variables are not set, the script fallbacks to default <a href="#email-report">send mail
+            functionality</a> for compatibility.</div>
 
-          <h3>3. Run the CLI (for Default & Advanced flow)</h3>
-          <p>Use the default output directory:</p>
-          <div class="code-container">
-            <pre><code class="language-bash">npx send-email</code><button class="copy-button">Copy</button></pre>
-          </div>
-          
-          <p>Or point to a custom report directory, which can be used in both default and custom flow (note: custom report directory must contain <code>playwright-pulse-report.json</code>):</p>
-          <div class="code-container">
-            <pre><code class="language-bash">npx send-email --outputDir &lt;YOUR_CUSTOM_REPORT_FOLDER&gt;</code><button class="copy-button">Copy</button></pre>
-          </div>
+        <h3>3. Run the CLI (for Default & Advanced flow)</h3>
+        <p>Use the default output directory:</p>
+        <div class="code-container">
+          <pre><code class="language-bash">npx send-email</code><button class="copy-button">Copy</button></pre>
+        </div>
 
-          <div class="note">
-            Now, mail will be received from
-            <code>`{PULSE_MAIL_USERNAME}`</code> gmail/outlook mail ID, if needed
-            kindly check the spam/junk folder to receive the mail.
-          </div>
+        <p>Or point to a custom report directory, which can be used in both default and custom flow (note: custom report
+          directory must contain <code>playwright-pulse-report.json</code>):</p>
+        <div class="code-container">
+          <pre><code class="language-bash">npx send-email --outputDir &lt;YOUR_CUSTOM_REPORT_FOLDER&gt;</code><button class="copy-button">Copy</button></pre>
+        </div>
+
+        <div class="note">
+          Now, mail will be received from
+          <code>`{PULSE_MAIL_USERNAME}`</code> gmail/outlook mail ID, if needed
+          kindly check the spam/junk folder to receive the mail.
+        </div>
         </section>
-      </main>
-    </div>
-    <script src="search.js"></script>
-    <script src="script.js"></script>
-  </body>
+        </main>
+        </div>
+        <script src="search.js"></script>
+        <script src="script.js"></script>
+        </body>
+
 </html>

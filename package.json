@@ -1,7 +1,7 @@
 {
   "name": "@arghajit/playwright-pulse-report",
   "author": "Arghajit Singha",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://arghajit47.github.io/playwright-pulse/",
   "repository": {
@@ -34,12 +34,14 @@
   ],
   "license": "MIT",
   "bin": {
+    "logo": "node scripts/terminal-logo.mjs",
     "generate-pulse-report": "scripts/generate-static-report.mjs",
     "generate-report": "scripts/generate-report.mjs",
     "merge-pulse-report": "scripts/merge-pulse-report.js",
     "send-email": "scripts/sendReport.mjs",
     "generate-trend": "scripts/generate-trend.mjs",
-    "generate-email-report": "scripts/generate-email-report.mjs"
+    "generate-email-report": "scripts/generate-email-report.mjs",
+    "pulse-logo": "scripts/terminal-logo.mjs"
   },
   "exports": {
     ".": {
@@ -71,6 +73,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.3",
     "patch-package": "^8.0.0",
+    "sharp": "^0.33.5",
     "ua-parser-js": "^1.0.41",
     "zod": "^3.24.2"
   },
@@ -87,6 +90,10 @@
     "@playwright/test": ">=1.40.0"
   },
   "overrides": {
-    "glob": "^13.0.0"
+    "brace-expansion": "^2.0.2",
+    "@isaacs/brace-expansion": "^5.0.1",
+    "glob": "^13.0.0",
+    "minimatch": "^10.1.2",
+    "lodash": "^4.17.23"
   }
 }

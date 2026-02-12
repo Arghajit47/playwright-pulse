@@ -6,6 +6,7 @@ import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
 import { getOutputDir } from "./config-reader.mjs";
+import { animate } from "./terminal-logo.mjs";
 
 /**
  * Dynamically imports the 'chalk' library for terminal string styling.
@@ -338,6 +339,12 @@ function generateTestTrendsChart(trendData) {
       color: "var(--warning-color)",
       marker: { symbol: "circle" },
     },
+    {
+      name: "Flaky",
+      data: runs.map((r) => r.flaky || 0),
+      color: "#00ccd3",
+      marker: { symbol: "circle" },
+    },
   ];
   const runsForTooltip = runs.map((r) => ({
     runId: r.runId,
@@ -541,6 +548,9 @@ function generateTestHistoryChart(history) {
       case "skipped":
         color = "var(--warning-color)";
         break;
+      case "flaky":
+        color = "var(--neutral-500)";
+        break;
       default:
         color = "var(--dark-gray-color)";
     }
@@ -657,6 +667,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
             case "Failed":
               color = "var(--danger-color)";
               break;
+            case "Flaky":
+              color = "#00ccd3";
+              break;
             case "Skipped":
               color = "var(--warning-color)";
               break;
@@ -764,62 +777,264 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
  * @param {number} [dashboardHeight=600] The height of the dashboard.
  * @returns {string} The HTML string for the environment dashboard.
  */
-function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
-  // Format memory for display
-  const formattedMemory = environment.memory.replace(/(\d+\.\d{2})GB/, "$1 GB");
+function generateEnvironmentSection(environmentData) {
+  if (!environmentData) {
+    return '<div class="no-data">Environment data not available.</div>';
+  }
 
-  // Generate a unique ID for the dashboard
-  const dashboardId = `envDashboard-${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 7)}`;
+  if (Array.isArray(environmentData)) {
+    return `
+      <div class="sharded-env-section">
+        <div class="sharded-env-header">
+          <div class="sharded-env-title-row">
+            <div>
+              <div class="sharded-env-title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                  <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                  <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                  <line x1="6" x2="6.01" y1="18" y2="18"></line>
+                </svg>
+                System Information
+              </div>
+              <div class="sharded-env-subtitle">Test execution environment details - ${environmentData.length} shard${environmentData.length > 1 ? "s" : ""}</div>
+            </div>
+            <div class="env-icon-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="sharded-environments-container">
+          <div class="sharded-environments-wrapper">
+            ${environmentData
+              .map(
+                (env, index) => `
+              <div class="env-card-wrapper">
+                <div class="env-card-badge">Shard ${index + 1}</div>
+                ${generateEnvironmentDashboard(env, true)}
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>
+      </div>
+      <style>
+        .sharded-env-section {
+          border: 1px solid var(--border-light);
+          border-radius: 12px;
+          background: var(--bg-secondary);
+          overflow: hidden;
+        }
+        .sharded-env-header {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: linear-gradient(to bottom right, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+          border-bottom: 1px solid var(--border-light);
+          padding: 24px 24px 16px;
+        }
+        .sharded-env-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .sharded-env-title {
+          display: flex;
+          align-items: center;
+          font-size: 18px;
+          font-weight: 600;
+          color: var(--text-primary);
+        }
+        .sharded-env-title svg {
+          width: 18px;
+          height: 18px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }
+        .sharded-env-subtitle {
+          font-size: 13px;
+          color: var(--text-secondary);
+          margin-top: 4px;
+        }
+        .sharded-environments-container {
+          max-height: 520px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 16px;
+        }
+        .sharded-environments-container::-webkit-scrollbar {
+          width: 8px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-track {
+          background: var(--bg-tertiary);
+          border-radius: 4px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-thumb {
+          background: var(--border-medium);
+          border-radius: 4px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-thumb:hover {
+          background: var(--border-color);
+        }
+        .sharded-environments-wrapper {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+          gap: 24px;
+        }
+        @media (max-width: 768px) {
+          .sharded-environments-wrapper {
+            grid-template-columns: 1fr;
+          }
+        }
+        .env-card-wrapper {
+          position: relative;
+        }
+        .env-card-badge {
+          position: absolute;
+          top: -10px;
+          right: 16px;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          color: white;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 0.75em;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          z-index: 10;
+          box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+        }
+      </style>
+    `;
+  }
 
-  const cardHeight = Math.floor(dashboardHeight * 0.44);
-  const cardContentPadding = 16; // px
+  return generateEnvironmentDashboard(environmentData);
+}
 
-  // Logic for Run Context
-  const runContext = process.env.CI ? "CI" : "Local Test";
+function generateEnvironmentDashboard(environment, hideHeader = false) {
+  const cpuModel = environment.cpu && environment.cpu.model ? environment.cpu.model : "N/A";
+  const cpuCores = environment.cpu && environment.cpu.cores ? environment.cpu.cores : "N/A";
+  const cpuInfo = `model: ${cpuModel}, cores: ${cpuCores}`;
+  const cwdInfo = environment.cwd || "N/A";
 
   return `
-    <div class="environment-dashboard-wrapper" id="${dashboardId}">
+    <div class="env-modern-card${hideHeader ? " no-header" : ""}">
       <style>
-        .environment-dashboard-wrapper *,
-        .environment-dashboard-wrapper *::before,
-        .environment-dashboard-wrapper *::after {
-          box-sizing: border-box;
-        }
-
-        .environment-dashboard-wrapper {
-          --primary-color: var(--primary-dark, #6366f1);
-          --success-color: var(--success-dark, #10b981);
-          --warning-color: var(--warning-dark, #f59e0b);
-          
-          background-color: var(--bg-tertiary);
-          padding: 48px; 
-          border-bottom: 1px solid var(--border-light);
+        .env-modern-card {
+          background: linear-gradient(to bottom right, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+          border: 0;
+          border-radius: 12px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          margin-top: 24px;
+          transition: all 0.3s ease;
           font-family: var(--font-family);
+          overflow: hidden;
+        }
+        .env-modern-card:hover {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .env-modern-card {
+          margin-bottom: 0;
+        }
+        .env-card-header {
+          display: flex;
+          flex-direction: column;
+          padding: 24px 24px 12px;
+        }
+        .env-modern-card.no-header .env-card-header {
+          display: none;
+        }
+        .env-modern-card.no-header {
+          margin-top: 0;
+        }
+        .env-modern-card.no-header .env-card-content {
+          padding-top: 24px;
+        }
+        .env-card-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .env-card-title {
+          display: flex;
+          align-items: center;
+          font-size: 16px;
+          font-weight: 600;
           color: var(--text-primary);
+          transition: color 0.3s;
+        }
+        .env-modern-card:hover .env-card-title {
+          color: var(--primary-dark, #6366f1);
+        }
+        .env-card-title svg {
+          width: 16px;
+          height: 16px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }
+        .env-card-subtitle {
+          font-size: 12px;
+          color: var(--text-secondary);
+          margin-top: 4px;
+        }
+        .env-card-content {
+          padding: 0 24px 24px;
+        }
+        .env-items-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 32px;
-          font-size: 15px;
-          transform: translateZ(0);
+          gap: 10px;
         }
-
-        @media (max-width: 768px) {
-            .environment-dashboard-wrapper {
-                grid-template-columns: 1fr;
-                padding: 32px 24px;
-            }
+        @media (min-width: 768px) {
+          .env-items-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
         }
-        @media (max-width: 480px) {
-            .environment-dashboard-wrapper {
-                padding: 24px;
-            }
+        .env-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          transition: background-color 0.2s;
+          min-height: 48px;
         }
-        
-        .env-dashboard-header {
-          grid-column: 1 / -1;
-          margin-bottom: 24px;
+        .env-item:hover {
+          background-color: var(--bg-hover);
+        }
+        .env-item-icon {
+          flex-shrink: 0;
+        }
+        .env-item-icon svg {
+          width: 16px;
+          height: 16px;
+          stroke: var(--primary-dark, #6366f1);
+          fill: none;
+        }
+        .env-item-content {
+          flex-grow: 1;
+          min-width: 0;
+        }
+        .env-item-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--text-secondary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .env-item-value {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-primary);
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.4;
         }
         
         .env-dashboard-title {
@@ -951,133 +1166,151 @@ function generateEnvironmentDashboard(environment, dashboardHeight = 600) {
         }
       </style>
       
-      <div class="env-dashboard-header">
-        <div>
-          <h3 class="env-dashboard-title">System Environment</h3>
-          <p class="env-dashboard-subtitle">Snapshot of the execution environment</p>
-        </div>
-        <span class="env-chip env-chip-primary">${environment.host}</span>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16V4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h-2v10H4V6zm18-2h-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v2h20V6a2 2 0 0 0-2-2zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
-          Hardware
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">CPU Model</span>
-            <span class="env-detail-value">${environment.cpu.model}</span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">CPU Cores</span>
-            <span class="env-detail-value">
-              <div class="env-cpu-cores">
-                <span>${environment.cpu.cores || "N/A"} core${environment.cpu.cores !== 1 ? "s" : ""}</span>
-              </div>
-            </span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Memory</span>
-            <span class="env-detail-value">${formattedMemory}</span>
+      <div class="env-card-header">
+        <div class="env-card-title-row">
+          <div>
+            <div class="env-card-title">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                <line x1="6" x2="6.01" y1="18" y2="18"></line>
+              </svg>
+              System Information
+            </div>
+            <div class="env-card-subtitle">Test execution environment details</div>
           </div>
         </div>
       </div>
       
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-0.01 18c-2.76 0-5.26-1.12-7.07-2.93A7.973 7.973 0 0 1 4 12c0-2.21.9-4.21 2.36-5.64A7.994 7.994 0 0 1 11.99 4c4.41 0 8 3.59 8 8 0 2.76-1.12 5.26-2.93 7.07A7.973 7.973 0 0 1 11.99 20zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
-          Operating System
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">OS Type</span>
-            <span class="env-detail-value">${
-              environment.os.split(" ")[0] === "darwin"
-                ? "darwin (macOS)"
-                : environment.os.split(" ")[0] || "Unknown"
-            }</span>
+      <div class="env-card-content">
+        <div class="env-items-grid">
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Host</p>
+              <div class="env-item-value" title="${environment.host}">${environment.host}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">OS Version</span>
-            <span class="env-detail-value">${
-              environment.os.split(" ")[1] || "N/A"
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Os</p>
+              <div class="env-item-value" title="${environment.os}">${environment.os}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Hostname</span>
-            <span class="env-detail-value" title="${environment.host}">${
-              environment.host
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="16" height="16" x="4" y="4" rx="2"></rect>
+                <rect width="6" height="6" x="9" y="9" rx="1"></rect>
+                <path d="M15 2v2"></path>
+                <path d="M15 20v2"></path>
+                <path d="M2 15h2"></path>
+                <path d="M2 9h2"></path>
+                <path d="M20 15h2"></path>
+                <path d="M20 9h2"></path>
+                <path d="M9 2v2"></path>
+                <path d="M9 20v2"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Cpu</p>
+              <div class="env-item-value" title='${JSON.stringify(environment.cpu)}'>${cpuInfo}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-          Node.js Runtime
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">Node Version</span>
-            <span class="env-detail-value">${environment.node}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 19v-3"></path>
+                <path d="M10 19v-3"></path>
+                <path d="M14 19v-3"></path>
+                <path d="M18 19v-3"></path>
+                <path d="M8 11V9"></path>
+                <path d="M16 11V9"></path>
+                <path d="M12 11V9"></path>
+                <path d="M2 15h20"></path>
+                <path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Memory</p>
+              <div class="env-item-value" title="${environment.memory}">${environment.memory}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">V8 Engine</span>
-            <span class="env-detail-value">${environment.v8}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Node</p>
+              <div class="env-item-value" title="${environment.node}">${environment.node}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Working Dir</span>
-            <span class="env-detail-value" title="${environment.cwd}">${
-              environment.cwd.length > 25
-                ? "..." + environment.cwd.slice(-22)
-                : environment.cwd
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">V8</p>
+              <div class="env-item-value" title="${environment.v8}">${environment.v8}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h.71C7.37 8.69 9.48 7 12 7c2.76 0 5 2.24 5 5v1h2c1.66 0 3 1.34 3 3s-1.34 3-3 3z"/></svg>
-          System Summary
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">Platform Arch</span>
-            <span class="env-detail-value">
-              <span class="env-chip ${
-                environment.os.includes("darwin") &&
-                environment.cpu.model.toLowerCase().includes("apple")
-                  ? "env-chip-success"
-                  : "env-chip-warning"
-              }">
-                ${
-                  environment.os.includes("darwin") &&
-                  environment.cpu.model.toLowerCase().includes("apple")
-                    ? "Apple Silicon"
-                    : environment.cpu.model.toLowerCase().includes("arm") ||
-                        environment.cpu.model.toLowerCase().includes("aarch64")
-                      ? "ARM-based"
-                      : "x86/Other"
-                }
-              </span>
-            </span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Memory per Core</span>
-            <span class="env-detail-value">${
-              environment.cpu.cores > 0
-                ? (
-                    parseFloat(environment.memory) / environment.cpu.cores
-                  ).toFixed(2) + " GB"
-                : "N/A"
-            }</span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Run Context</span>
-            <span class="env-detail-value">${runContext}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Working Dir</p>
+              <div class="env-item-value" title="${cwdInfo}">${cwdInfo.length > 30 ? "..." + cwdInfo.slice(-27) : cwdInfo}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1105,11 +1338,11 @@ function generateWorkerDistributionChart(results) {
     const workerId =
       typeof test.workerId !== "undefined" ? test.workerId : "N/A";
     if (!acc[workerId]) {
-      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, flaky: 0, tests: [] };
     }
 
     const status = String(test.status).toLowerCase();
-    if (status === "passed" || status === "failed" || status === "skipped") {
+    if (status === "passed" || status === "failed" || status === "skipped" || status === "flaky") {
       acc[workerId][status]++;
     }
 
@@ -1154,6 +1387,7 @@ function generateWorkerDistributionChart(results) {
   const passedData = workerIds.map((id) => workerData[id].passed);
   const failedData = workerIds.map((id) => workerData[id].failed);
   const skippedData = workerIds.map((id) => workerData[id].skipped);
+  const flakyData = workerIds.map((id) => workerData[id].flaky);
 
   const categoriesString = JSON.stringify(categories);
   const fullDataString = JSON.stringify(fullWorkerData);
@@ -1161,6 +1395,7 @@ function generateWorkerDistributionChart(results) {
     { name: "Passed", data: passedData, color: "var(--success-color)" },
     { name: "Failed", data: failedData, color: "var(--danger-color)" },
     { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
+    { name: "Flaky", data: flakyData, color: "#00ccd3" },
   ]);
 
   // The HTML now includes the chart container, the modal, and styles for the modal
@@ -1427,6 +1662,7 @@ function generateTestHistoryContent(trendData) {
         <option value="">All Statuses</option>
         <option value="passed">Passed</option>
         <option value="failed">Failed</option>
+        <option value="flaky">Flaky</option>
         <option value="skipped">Skipped</option>
     </select>
     <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button>
@@ -1499,6 +1735,8 @@ function getStatusClass(status) {
       return "status-failed";
     case "skipped":
       return "status-skipped";
+    case "flaky":
+      return "status-flaky";
     default:
       return "status-unknown";
   }
@@ -1516,6 +1754,8 @@ function getStatusIcon(status) {
       return "❌";
     case "skipped":
       return "⏭️";
+    case "flaky":
+      return "⚠️";
     default:
       return "❓";
   }
@@ -1556,6 +1796,7 @@ function getSuitesData(results) {
         browser: browser,
         passed: 0,
         failed: 0,
+        flaky: 0,
         skipped: 0,
         count: 0,
         statusOverall: "passed",
@@ -1563,12 +1804,15 @@ function getSuitesData(results) {
     }
     const suite = suitesMap.get(key);
     suite.count++;
-    const currentStatus = String(test.status).toLowerCase();
+    let currentStatus = String(test.status).toLowerCase();
+    if (test.outcome === 'flaky') currentStatus = 'flaky';
     if (currentStatus && suite[currentStatus] !== undefined) {
       suite[currentStatus]++;
     }
     if (currentStatus === "failed") suite.statusOverall = "failed";
-    else if (currentStatus === "skipped" && suite.statusOverall !== "failed")
+    else if (currentStatus === "flaky" && suite.statusOverall !== "failed")
+        suite.statusOverall = "flaky";
+    else if (currentStatus === "skipped" && suite.statusOverall !== "failed" && suite.statusOverall !== "flaky")
       suite.statusOverall = "skipped";
   });
   return Array.from(suitesMap.values());
@@ -1614,8 +1858,8 @@ function generateSuitesWidget(suitesData) {
 
   // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
   return `
-<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
-  <div class="suites-header" style="flex-shrink: 0;">
+<div class="suites-widget fixed-height-widget">
+  <div class="suites-header">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1625,40 +1869,40 @@ function generateSuitesWidget(suitesData) {
     )} tests</span>
   </div>
 
-  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+  <div class="suites-grid-container">
       <div class="suites-grid">
     ${suitesData
       .map(
         (suite) => `
     <div class="suite-card status-${suite.statusOverall}">
       <div class="suite-card-header">
-        <h3 class="suite-name" title="${sanitizeHTML(
-          suite.name,
-        )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+        <h3 class="suite-name" title="${sanitizeHTML(suite.name)} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+        <div class="status-indicator-dot status-${suite.statusOverall}" title="${suite.statusOverall.charAt(0).toUpperCase() + suite.statusOverall.slice(1)}"></div>
       </div>
-      <div style="margin-bottom: 12px;"><span class="browser-tag" title="🌐 ${sanitizeHTML(suite.browser)}">🌐 ${sanitizeHTML(
-        suite.browser,
-      )}</span></div>
+      
+      <div class="browser-tag" title="🌐Browser: ${sanitizeHTML(suite.browser)}">
+        <span style="font-size: 1.1em;">🌐</span> ${sanitizeHTML(suite.browser)}
+      </div>
+      
       <div class="suite-card-body">
-        <span class="test-count">${suite.count} test${
-          suite.count !== 1 ? "s" : ""
-        }</span>
+        <span class="test-count-label">${suite.count} Test${suite.count !== 1 ? "s" : ""}</span>
         <div class="suite-stats">
-            ${
-              suite.passed > 0
-                ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-                : ""
-            }
-            ${
-              suite.failed > 0
-                ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-                : ""
-            }
-            ${
-              suite.skipped > 0
-                ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-                : ""
-            }
+            <span class="stat-pill passed" title="Passed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                ${suite.passed}
+            </span>
+            <span class="stat-pill failed" title="Failed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                ${suite.failed}
+            </span>
+            <span class="stat-pill flaky" title="Flaky">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                ${suite.flaky || 0}
+            </span>
+            <span class="stat-pill skipped" title="Skipped">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                 ${suite.skipped}
+            </span>
         </div>
       </div>
     </div>`,
@@ -2037,6 +2281,7 @@ function generateSeverityDistributionChart(results) {
   const data = {
     passed: [0, 0, 0, 0, 0],
     failed: [0, 0, 0, 0, 0],
+    flaky: [0, 0, 0, 0, 0],
     skipped: [0, 0, 0, 0, 0],
   };
 
@@ -2055,6 +2300,8 @@ function generateSeverityDistributionChart(results) {
       status === "interrupted"
     ) {
       data.failed[index]++;
+    } else if (status === "flaky") {
+        data.flaky[index]++;
     } else {
       data.skipped[index]++;
     }
@@ -2068,6 +2315,7 @@ function generateSeverityDistributionChart(results) {
   const seriesData = [
     { name: "Passed", data: data.passed, color: "var(--success-color)" },
     { name: "Failed", data: data.failed, color: "var(--danger-color)" },
+    { name: "Flaky", data: data.flaky, color: "#00ccd3" },
     { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
   ];
 
@@ -2211,32 +2459,85 @@ function generateHTML(reportData, trendData = null) {
     duration: 0,
     timestamp: new Date().toISOString(),
   };
+
+  const avgTestDuration =
+    runSummary.totalTests > 0
+      ? formatDuration(runSummary.duration / runSummary.totalTests)
+      : "0.0s";
+
+  const flakyCount = (results || []).filter(r => r.outcome === 'flaky').length;
+
+  // Calculate retry statistics
+  let retriedTestsCount = 0;
+  const totalRetried = (results || []).reduce((acc, test) => {
+    if (test.retryHistory && test.retryHistory.length > 0) {
+      // Filter out any "passed" or "skipped" entries in the history
+      // We only count attempts that actually failed or timed out, triggering a retry.
+      const unsuccessfulRetries = test.retryHistory.filter(attempt => 
+        attempt.status === 'failed' || attempt.status === 'timedout' || attempt.status === 'flaky'
+      );
+      if (unsuccessfulRetries.length > 0) {
+        retriedTestsCount++;
+      }
+      return acc + unsuccessfulRetries.length;
+    }
+    return acc;
+  }, 0);
+
+  // --- RECALCULATE KPI METRICS BASED ON FINAL_STATUS ---
+  let calculatedPassed = 0;
+  let calculatedFailed = 0;
+  let calculatedSkipped = 0;
+  let calculatedFlaky = 0;
+  let calculatedTotal = 0;
+
+  (results || []).forEach(test => {
+      calculatedTotal++;
+      // New Logic: If outcome is 'flaky', it overrides everything.
+      let statusToUse = test.status;
+      if (test.outcome === 'flaky') {
+        statusToUse = 'flaky';
+      } else if (test.status === 'flaky') { 
+         // Just in case outcome wasn't set but status was (unlikely with new reporter)
+         statusToUse = 'flaky';
+      } else if (test.retryHistory && test.retryHistory.length > 0 && test.final_status) {
+        statusToUse = test.final_status;
+      }
+      
+      // Update test status in place for charts
+      test.status = statusToUse;
+      
+      const s = String(statusToUse).toLowerCase();
+      if (s === 'passed') calculatedPassed++;
+      else if (s === 'skipped') calculatedSkipped++;
+      else if (s === 'flaky') calculatedFlaky++;
+      else calculatedFailed++; // failed, timedout, interrupted
+  });
+
+  // Override runSummary counts with our calculated ones if results exist
+  if (results && results.length > 0) {
+      runSummary.passed = calculatedPassed;
+      runSummary.failed = calculatedFailed;
+      runSummary.skipped = calculatedSkipped;
+      runSummary.flaky = calculatedFlaky;
+      runSummary.totalTests = calculatedTotal;
+  }
+
   const totalTestsOr1 = runSummary.totalTests || 1;
   const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
   const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
   const skipPercentage = Math.round(
     ((runSummary.skipped || 0) / totalTestsOr1) * 100,
   );
-  const avgTestDuration =
-    runSummary.totalTests > 0
-      ? formatDuration(runSummary.duration / runSummary.totalTests)
-      : "0.0s";
+  const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
 
-  // Calculate retry statistics
-  const totalRetried = (results || []).reduce((acc, test) => {
-    if (test.retries && test.retries > 0) {
-      return acc + 1;
-    }
-    return acc;
-  }, 0);
 
   // Calculate browser distribution
   const browserStats = (results || []).reduce((acc, test) => {
     let browserName = "unknown";
     if (test.browser) {
-      // Extract browser name from strings like "Chrome v143 on Windows 10"
-      const match = test.browser.match(/^(\w+)/);
-      browserName = match ? match[1] : test.browser;
+      // Use full browser name
+      browserName = test.browser;
     }
     acc[browserName] = (acc[browserName] || 0) + 1;
     return acc;
@@ -2277,6 +2578,10 @@ function generateHTML(reportData, trendData = null) {
         const severity = test.severity || "Medium";
         const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
 
+        // --- Retry Count Badge (only show if retries occurred) ---
+        const retryCount = (test.retryHistory && test.retryHistory.length > 0) ? test.retryHistory.length : 0;
+        const retryBadge = (test.retryHistory && test.retryHistory.length > 0) ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
+
         // --- Step Generation ---
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
@@ -2285,17 +2590,20 @@ function generateHTML(reportData, trendData = null) {
             .map((step) => {
               const hasNestedSteps = step.steps && step.steps.length > 0;
               const isHook = step.hookType;
+              const isFailedStep = step.isFailedStep === true;
               const stepClass = isHook
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
+              const failedStepClass = isFailedStep ? " failed-step-highlight" : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
+              const failedStepIndicator = isFailedStep ? ` <span class="failed-step-marker">⚠️ Failed at this step</span>` : "";
               return `
-          <div class="step-item" style="--depth: ${depth};">
+          <div class="step-item${failedStepClass}" style="--depth: ${depth};">
             <div class="step-header ${stepClass}" role="button" aria-expanded="false">
               <span class="step-icon">${getStatusIcon(step.status)}</span>
               <span class="step-title">${sanitizeHTML(
                 step.title,
-              )}${hookIndicator}</span>
+              )}${hookIndicator}${failedStepIndicator}</span>
               <span class="step-duration">${formatDuration(
                 step.duration,
               )}</span>
@@ -2309,6 +2617,13 @@ function generateHTML(reportData, trendData = null) {
                   : ""
               }
               ${
+                step.codeSnippet
+                  ? `<div class="code-snippet-section"><pre class="code-snippet">${sanitizeHTML(
+                      step.codeSnippet,
+                    )}</pre></div>`
+                  : ""
+              }
+              ${
                 step.errorMessage
                   ? `<div class="test-error-summary">
                       ${
@@ -2318,7 +2633,7 @@ function generateHTML(reportData, trendData = null) {
                             )}</div>`
                           : ""
                       }
-                      <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
+                      <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s; align-self: flex-end; width: auto;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
                     </div>`
                   : ""
               }
@@ -2336,9 +2651,295 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
+        // Helper for Tab Badges
+        const getSmallStatusBadge = (status) => {
+            const s = String(status).toLowerCase();
+            let colorVar = 'var(--text-tertiary)';
+            if(s === 'passed') colorVar = 'var(--success-color)';
+            else if(s === 'failed') colorVar = 'var(--danger-color)';
+            else if(s === 'skipped') colorVar = 'var(--warning-color)';
+            else if(s === 'flaky') colorVar = '#00ccd3';
+            
+            return `<span style="
+                display: inline-block; 
+                width: 8px; 
+                height: 8px; 
+                border-radius: 50%; 
+                background-color: ${colorVar}; 
+                margin-left: 6px;
+                vertical-align: middle;
+            " title="${s}"></span>`;
+        };
+
+        // Function to generate test content HTML (used for base run and retry tabs)
+        const getTestContentHTML = (testData, runSuffix) => {
+          const logId = `stdout-log-${test.id || testIndex}-${runSuffix}`;
+          return `
+          <p><strong>Full Path:</strong> ${sanitizeHTML(testData.name)}</p>
+          ${
+            testData.annotations && testData.annotations.length > 0
+              ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
+                  <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
+                  ${testData.annotations
+                    .map((annotation, idx) => {
+                      const isIssueOrBug =
+                        annotation.type === "issue" ||
+                        annotation.type === "bug";
+                      const descriptionText = annotation.description || "";
+                      const typeLabel = sanitizeHTML(annotation.type);
+                      const descriptionHtml =
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\\d+$/)
+                          ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
+                              descriptionText,
+                            )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
+                              descriptionText,
+                            )}</a>`
+                          : sanitizeHTML(descriptionText);
+                      const locationText = annotation.location
+                        ? `<div style="font-size: 0.85em; color: #6b7280; margin-top: 4px;">Location: ${sanitizeHTML(
+                            annotation.location.file,
+                          )}:${annotation.location.line}:${
+                            annotation.location.column
+                          }</div>`
+                        : "";
+                      return `<div style="margin-bottom: ${
+                        idx < testData.annotations.length - 1 ? "10px" : "0"
+                      };">
+                      <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
+                      ${
+                        descriptionText
+                          ? `<br><strong style="color: #8b5cf6;">Description:</strong> ${descriptionHtml}`
+                          : ""
+                      }
+                      ${locationText}
+                    </div>`;
+                    })
+                    .join("")}
+                </div>`
+              : ""
+          }
+          <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
+            testData.workerId,
+          )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
+            testData.totalWorkers,
+          )}]</p>
+          ${
+            testData.errorMessage
+              ? `<div class="test-error-summary"><div class="stack-trace">${formatPlaywrightError(
+                  testData.errorMessage,
+                )}</div>
+                <button 
+                        class="copy-error-btn" 
+                        onclick="copyErrorToClipboard(this)"
+                        style="
+                          margin-top: 8px;
+                          padding: 6px 12px;
+                          background: rgba(248, 113, 113, 0.15);
+                          border: 2px solid var(--danger-color);
+                          border-radius: 6px;
+                          cursor: pointer;
+                          font-size: 12px;
+                          color: var(--danger-color);
+                          font-weight: 600;
+                          transition: 0.2s;
+                          align-self: flex-end;
+                          width: auto;
+                          "
+                            onmouseover="this.style.background='#e0e0e0'"
+                            onmouseout="this.style.background='#f0f0f0'"
+                      > 
+                        Copy Error Prompt
+                      </button>
+                </div>`
+              : ""
+          }
+          ${
+            testData.snippet
+              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
+                  testData.snippet,
+                )}</code></pre></div>`
+              : ""
+          }
+          <h4>Steps</h4>
+          <div class="steps-list">${generateStepsHTML(testData.steps)}</div>
+          ${(() => {
+            if (!testData.stdout || testData.stdout.length === 0) return "";
+            return `<div class="console-output-section">
+                          <h4>Console Output (stdout)
+                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</ button>
+                          </h4>
+                          <div class="log-wrapper">
+                              <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                                testData.stdout
+                                  .map((line) => sanitizeHTML(line))
+                                  .join("\\n"),
+                              )}</pre>
+                          </div>
+                      </div>`;
+          })()}
+          ${
+            testData.stderr && testData.stderr.length > 0
+              ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
+                  testData.stderr.map((line) => sanitizeHTML(line)).join("\\n"),
+                )}</pre></div>`
+              : ""
+          }
+          ${
+            testData.screenshots && testData.screenshots.length > 0
+              ? `
+            <div class="attachments-section">
+                <h4>Screenshots</h4>
+                <div class="attachments-grid">
+                ${testData.screenshots
+                  .map(
+                    (screenshot, screenshotIndex) => `
+                    <div class="attachment-item">
+                    <img src="${sanitizeHTML(screenshot)}" alt="Screenshot ${
+                      screenshotIndex + 1
+                    }">
+                    <div class="attachment-info">
+                        <div class="trace-actions">
+                        <a href="${sanitizeHTML(
+                          screenshot,
+                        )}" target="_blank" class="view-full">View Full Image</a>
+                        <a href="${sanitizeHTML(
+                          screenshot,
+                        )}" target="_blank" download="screenshot-${Date.now()}-${screenshotIndex}.png">Download</a>
+                        </div>
+                    </div>
+                    </div>
+                `,
+                  )
+                  .join("")}
+                </div>
+            </div>
+            `
+              : ""
+          }
+          ${
+            testData.videoPath && testData.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${testData.videoPath
+                  .map((videoUrl, videoIndex) => {
+                    const fixedVideoUrl = sanitizeHTML(videoUrl);
+                    const fileExtension = String(fixedVideoUrl)
+                      .split(".")
+                      .pop()
+                      .toLowerCase();
+                    const mimeType =
+                      {
+                        mp4: "video/mp4",
+                        webm: "video/webm",
+                        ogg: "video/ogg",
+                        mov: "video/quicktime",
+                        avi: "video/x-msvideo",
+                      }[fileExtension] || "video/mp4";
+                    return `<div class="attachment-item video-item">
+                            <video controls width="100%" height="auto" title="Video ${
+                              videoIndex + 1
+                            }">
+                                <source src="${sanitizeHTML(
+                                  fixedVideoUrl,
+                                )}" type="${mimeType}">
+                                Your browser does not support the video tag.
+                            </video>
+                            <div class="attachment-info">
+                                <div class="trace-actions">
+                                <a href="${sanitizeHTML(
+                                  fixedVideoUrl,
+                                )}" target="_blank" download="video-${Date.now()}-${videoIndex}.${fileExtension}">Download</a>
+                                </div>
+                            </div>
+                        </div>`;
+                  })
+                  .join("")}</div></div>`
+              : ""
+          }
+          ${
+            testData.tracePath
+              ? `
+            <div class="attachments-section">
+                <h4>Trace Files</h4>
+                <div class="attachments-grid">
+                    <div class="attachment-item trace-item">
+                        <div class="trace-preview">
+                        <span class="trace-icon">📄</span>
+                        <span class="trace-name">${sanitizeHTML(
+                          path.basename(testData.tracePath),
+                        )}</span>
+                        </div>
+                        <div class="attachment-info">
+                        <div class="trace-actions">
+                            <a href="${sanitizeHTML(
+                              sanitizeHTML(testData.tracePath),
+                            )}" target="_blank" download="${sanitizeHTML(
+                              path.basename(testData.tracePath),
+                            )}" class="download-trace">Download Trace</a>
+                        </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `
+              : ""
+          }
+          ${
+            testData.attachments && testData.attachments.length > 0
+              ? `
+            <div class="attachments-section">
+                <h4>Other Attachments</h4>
+                <div class="attachments-grid">
+                ${testData.attachments
+                  .map(
+                    (attachment) => `
+                    <div class="attachment-item generic-attachment">
+                        <div class="attachment-icon">${getAttachmentIcon(
+                          attachment.contentType,
+                        )}</div>
+                        <div class="attachment-caption">
+                        <span class="attachment-name" title="${sanitizeHTML(
+                          attachment.name,
+                        )}">${sanitizeHTML(attachment.name)}</span>
+                        <span class="attachment-type">${sanitizeHTML(
+                          attachment.contentType,
+                        )}</span>
+                        </div>
+                        <div class="attachment-info">
+                        <div class="trace-actions">
+                        <a href="${sanitizeHTML(
+                          sanitizeHTML(attachment.path),
+                        )}" target="_blank" class="view-full">View</a>
+                            <a href="${sanitizeHTML(
+                              sanitizeHTML(attachment.path),
+                            )}" target="_blank" download="${sanitizeHTML(
+                              attachment.name,
+                            )}" class="download-trace">Download</a>
+                        </div>
+                        </div>
+                    </div>
+                `,
+                  )
+                  .join("")}
+                </div>
+            </div>
+            `
+              : ""
+          }
+        `;
+        };
+
+
+       // Determine header status: use final_status if retried, else normal status
+       const headerStatus = (test.retryHistory && test.retryHistory.length > 0 && test.final_status) 
+          ? test.final_status 
+          : test.status;
+
+       const outcomeBadge = (test.outcome && test.outcome !== 'flaky') 
+          ? `<span class="outcome-badge ${test.outcome}">${test.outcome}</span>` 
+          : '';
+
         return `
       <div class="test-case" data-status="${
-        test.status
+        headerStatus
       }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
         .join(",")
         .toLowerCase()}">
@@ -2351,6 +2952,8 @@ function generateHTML(reportData, trendData = null) {
           </div>
           <div class="test-case-meta">
             ${severityBadge}
+            ${retryBadge}
+            ${outcomeBadge}
             ${
               test.tags && test.tags.length > 0
                 ? test.tags
@@ -2360,196 +2963,37 @@ function generateHTML(reportData, trendData = null) {
             }
           </div>
           <div class="test-case-status-duration">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status,
+            <span class="status-badge ${getStatusClass(headerStatus)}">${String(
+              headerStatus,
             ).toUpperCase()}</span>
             <span class="test-duration">${formatDuration(test.duration)}</span>
           </div>
         </div>
         <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
-          ${
-            test.annotations && test.annotations.length > 0
-              ? `<div class="annotations-section">
-                  <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 1.1em;">📌 Annotations</h4>
-                  ${test.annotations
-                    .map((annotation, idx) => {
-                      const isIssueOrBug =
-                        annotation.type === "issue" ||
-                        annotation.type === "bug";
-                      const descriptionText = annotation.description || "";
-                      const typeLabel = sanitizeHTML(annotation.type);
-                      const descriptionHtml =
-                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
-                          ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
-                              descriptionText,
-                            )}" style="color: var(--info-color); text-decoration: underline; cursor: pointer; font-weight: 600;">${sanitizeHTML(
-                              descriptionText,
-                            )}</a>`
-                          : sanitizeHTML(descriptionText);
-                      const locationText = annotation.location
-                        ? `<div style="font-size: 0.85em; color: var(--text-tertiary); margin-top: 4px;">Location: ${sanitizeHTML(
-                            annotation.location.file,
-                          )}:${annotation.location.line}:${
-                            annotation.location.column
-                          }</div>`
-                        : "";
-                      return `<div style="margin-bottom: ${
-                        idx < test.annotations.length - 1 ? "10px" : "0"
-                      };"><strong>Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>${
-                        descriptionText
-                          ? `<br><strong>Description:</strong> ${descriptionHtml}`
-                          : ""
-                      }${locationText}</div>`;
-                    })
-                    .join("")}
-                </div>`
-              : ""
-          }
-          <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
-            test.workerId,
-          )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers,
-          )}]</p>
-          ${
-            test.errorMessage
-              ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.errorMessage,
-                )}<button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 4px 8px; background: #f0f0f0; border: 2px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 12px; border-color: #8B0000; color: #8B0000;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Copy Error Prompt</button></div>`
-              : ""
-          }
-          ${
-            test.snippet
-              ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-                  test.snippet,
-                )}</code></pre></div>`
-              : ""
-          }
-          <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
-          
-          ${(() => {
-            if (!test.stdout || test.stdout.length === 0) return "";
-            // FIXED: Now using 'testIndex' which is guaranteed to be defined
-            const logId = `stdout-log-${test.id || testIndex}`;
-            return `<div class="console-output-section"><h4>Console Output (stdout) <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</button></h4><div class="log-wrapper"><pre id="${logId}" class="console-log stdout-log" style="background-color: var(--bg-tertiary); color: #f3e8c3; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; border: 1px solid var(--border-light);">${formatPlaywrightError(
-              test.stdout.map((line) => sanitizeHTML(line)).join("\n"),
-            )}</pre></div></div>`;
-          })()}
-          
-          ${(() => {
-            if (!test.stderr || test.stderr.length === 0) return "";
-            // FIXED: Using 'testIndex'
-            const logId = `stderr-log-${test.id || testIndex}`;
-            return `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: var(--bg-tertiary); color: #f87171; padding: 1.25em; border-radius: 0.85em; line-height: 1.2; border: 1px solid var(--border-light);">${formatPlaywrightError(
-              test.stderr.map((line) => sanitizeHTML(line)).join("\n"),
-            )}</pre></div>`;
-          })()}
-
-          ${(() => {
-            if (!test.screenshots || test.screenshots.length === 0) return "";
-            const screenshotsHTML = test.screenshots
-              .map((screenshotPath, sIndex) => {
-                try {
-                  const imagePath = path.resolve(
-                    DEFAULT_OUTPUT_DIR,
-                    screenshotPath,
-                  );
-                  if (!fsExistsSync(imagePath))
-                    return `<div class="attachment-item error">Screenshot not found</div>`;
-                  const base64ImageData =
-                    readFileSync(imagePath).toString("base64");
-                  // LAZY LOAD: Using helper with unique ID
-                  return createLazyMedia(
-                    base64ImageData,
-                    "image/png",
-                    "image",
-                    sIndex + 1,
-                    `screenshot-${testIndex}-${sIndex}.png`,
-                  );
-                } catch (e) {
-                  return `<div class="attachment-item error">Error loading screenshot</div>`;
-                }
-              })
-              .join("");
-            return `<div class="attachments-section"><h4>Screenshots</h4><div class="attachments-grid">${screenshotsHTML}</div></div>`;
-          })()}
-
-          ${(() => {
-            if (!test.videoPath || test.videoPath.length === 0) return "";
-            const videosHTML = test.videoPath
-              .map((videoPath, vIndex) => {
-                try {
-                  const videoFilePath = path.resolve(
-                    DEFAULT_OUTPUT_DIR,
-                    videoPath,
-                  );
-                  if (!fsExistsSync(videoFilePath))
-                    return `<div class="attachment-item error">Video not found</div>`;
-                  const videoBase64 =
-                    readFileSync(videoFilePath).toString("base64");
-                  const ext = path.extname(videoPath).slice(1).toLowerCase();
-                  const mime =
-                    { mp4: "video/mp4", webm: "video/webm" }[ext] ||
-                    "video/mp4";
-                  // LAZY LOAD: Using helper with unique ID
-                  return createLazyMedia(
-                    videoBase64,
-                    mime,
-                    "video",
-                    vIndex + 1,
-                    `video-${testIndex}-${vIndex}.${ext}`,
-                  );
-                } catch (e) {
-                  return `<div class="attachment-item error">Error loading video</div>`;
-                }
-              })
-              .join("");
-            return `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${videosHTML}</div></div>`;
-          })()}
-
-          ${
-            test.tracePath
-              ? `<div class="attachments-section"><h4>Trace Files</h4><div class="attachments-grid"><div class="attachment-item trace-item"><div class="trace-preview"><span class="trace-icon">📄</span><span class="trace-name">${sanitizeHTML(
-                  path.basename(test.tracePath),
-                )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                  test.tracePath,
-                )}" target="_blank" download="${sanitizeHTML(
-                  path.basename(test.tracePath),
-                )}" class="download-trace">Download Trace</a></div></div></div></div></div>`
-              : ""
-          }
-          ${
-            test.attachments && test.attachments.length > 0
-              ? `<div class="attachments-section"><h4>Other Attachments</h4><div class="attachments-grid">${test.attachments
-                  .map(
-                    (attachment) =>
-                      `<div class="attachment-item generic-attachment"><div class="attachment-icon">${getAttachmentIcon(
-                        attachment.contentType,
-                      )}</div><div class="attachment-caption"><span class="attachment-name" title="${sanitizeHTML(
-                        attachment.name,
-                      )}">${sanitizeHTML(
-                        attachment.name,
-                      )}</span><span class="attachment-type">${sanitizeHTML(
-                        attachment.contentType,
-                      )}</span></div><div class="attachment-info"><div class="trace-actions"><a href="${sanitizeHTML(
-                        attachment.path,
-                      )}" target="_blank" class="view-full">View</a><a href="${sanitizeHTML(
-                        attachment.path,
-                      )}" target="_blank" download="${sanitizeHTML(
-                        attachment.name,
-                      )}" class="download-trace">Download</a></div></div></div>`,
-                  )
-                  .join("")}</div></div>`
-              : ""
-          }
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-                  sanitizeHTML(test.codeSnippet),
-                )}</code></pre></div>`
-              : ""
-          }
+          ${test.retryHistory && test.retryHistory.length > 0 ? `
+            <div class="retry-tabs-container">
+              <div class="retry-tabs-header">
+                <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
+                   Base Run ${getSmallStatusBadge(test.final_status || test.status)}
+                </button>
+                ${test.retryHistory.map((retry, idx) => `
+                  <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
+                    Retry ${idx + 1} ${getSmallStatusBadge(retry.final_status || retry.status)}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <div id="base-run-${test.id}" class="retry-tab-content active">
+                ${getTestContentHTML(test, 'base')}
+              </div>
+              
+              ${test.retryHistory.map((retry, idx) => `
+                <div id="retry-${idx + 1}-${test.id}" class="retry-tab-content" style="display: none;">
+                  ${getTestContentHTML(retry, `retry-${idx + 1}`)}
+                </div>
+              `).join('')}
+            </div>
+          ` : getTestContentHTML(test, 'single')}
         </div>
       </div>`;
       })
@@ -2583,7 +3027,8 @@ function generateHTML(reportData, trendData = null) {
   --success-color: #34d399; --success-dark: #10b981; --success-light: #6ee7b7;
   --danger-color: #f87171; --danger-dark: #ef4444; --danger-light: #fca5a5;
   --warning-color: #fbbf24; --warning-dark: #f59e0b; --warning-light: #fcd34d;
-  --info-color: #9ca3af; 
+  --info-color: #9ca3af;
+  --flaky-color: #00ccd3; 
   --text-primary: #f9fafb; --text-secondary: #e5e7eb; --text-tertiary: #d1d5db;
   --bg-primary: #000000; --bg-secondary: #0a0a0a; --bg-tertiary: #050505;
   --bg-card: #0d0d0d; --bg-card-hover: #121212;
@@ -2591,6 +3036,8 @@ function generateHTML(reportData, trendData = null) {
   --light-gray-color: #262626; --medium-gray-color: #333333; --dark-gray-color: #a3a3a3;
   --text-color: #f9fafb; --text-color-secondary: #e5e7eb; --border-color: #262626;
   --card-background-color: #0d0d0d;
+  --neutral-100: #171717; --neutral-200: #262626; --neutral-300: #404040;
+  --bg-hover: #171717;
   --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-2xl: 24px;
   --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
@@ -2682,7 +3129,6 @@ function generateHTML(reportData, trendData = null) {
           background: var(--gradient-card);
           border-radius: 14px;
           box-shadow: var(--shadow-md);
-          border: 1px solid var(--border-light);
           overflow: hidden;
         }
         .run-info-item {
@@ -2856,8 +3302,17 @@ function generateHTML(reportData, trendData = null) {
           color: #f9fafb;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
+          color: #9ca3af;
+          white-space: nowrap;
+          flex-shrink: 0;
           color: #9ca3af;
           font-weight: 700;
           font-size: 0.95em;
@@ -2893,57 +3348,7 @@ function generateHTML(reportData, trendData = null) {
           padding: 10px !important; 
           border-radius: 6px !important; 
         }
-        .env-dashboard {
-          background: var(--gradient-card);
-          border: 1px solid var(--border-light);
-          border-radius: 12px;
-          padding: 24px;
-          margin-top: 20px;
-          box-shadow: var(--shadow-md);
-        }
-        .env-dashboard-title {
-          font-size: 1.2em;
-          font-weight: 700;
-          color: #f9fafb;
-          margin-bottom: 8px;
-        }
-        .env-dashboard-subtitle {
-          font-size: 0.9em;
-          color: #9ca3af;
-          margin-bottom: 16px;
-        }
-        .env-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-          gap: 12px;
-        }
-        .env-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-light);
-          border-radius: 8px;
-          padding: 14px;
-          transition: all 0.3s ease;
-        }
-        .env-card:hover {
-          transform: translateY(-3px);
-          border-color: var(--primary-color);
-          box-shadow: var(--shadow-lg), var(--glow-primary);
-          background: var(--bg-card);
-        }
-        .env-card-header {
-          font-size: 0.85em;
-          color: #9ca3af;
-          margin-bottom: 6px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          font-weight: 600;
-        }
-        .env-card-value {
-          font-size: 1.1em;
-          color: #f9fafb;
-          font-weight: 700;
-          word-break: break-word;
-        }
+
         .suites-widget {
           background: var(--bg-card);
           border: 1px solid var(--border-light);
@@ -2961,17 +3366,9 @@ function generateHTML(reportData, trendData = null) {
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
           gap: 20px;
         }
+        /* Updated Suite Cards in Main Block */
         .suite-card {
-          background: var(--bg-secondary);
-          border: 1px solid var(--border-light);
-          border-radius: 8px;
-          padding: 20px;
-          transition: all 0.2s ease;
-        }
-        .suite-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          border-color: var(--primary-color);
+           /* See line ~3455 for main definition */
         }
         .suite-name {
           font-size: 1.1em;
@@ -3084,6 +3481,16 @@ function generateHTML(reportData, trendData = null) {
         .summary-card.status-skipped .value { 
           color: #f59e0b; 
         }
+        .summary-card.flaky-status { 
+          background: rgba(0, 204, 211, 0.05); 
+        }
+        .summary-card.flaky-status:hover { 
+          background: rgba(0, 204, 211, 0.15); 
+          box-shadow: 0 4px 12px rgba(0, 204, 211, 0.2);
+        }
+        .summary-card.flaky-status .value { 
+          color: #00ccd3; 
+        }
         .summary-card:not([class*='status-']) .value { 
           color: #f9fafb; 
         }
@@ -3146,70 +3553,171 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small-tooltip.status-unknown { 
           background-color: #9ca3af; 
         }
-        .suites-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          margin-bottom: 20px; 
+        .suites-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
-        .summary-badge { 
-          background-color: var(--border-light); 
-          color: var(--text-secondary); 
-          padding: 7px 14px; 
-          border-radius: 16px; 
-          font-size: 0.9em; 
+        .summary-badge { background-color: var(--border-light); color: var(--text-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
+        .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .suites-widget {
+          display: flex;
+          flex-direction: column;
         }
-        .suites-grid { 
-          display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); 
-          gap: 20px; 
+        .fixed-height-widget {
+          height: 450px;
         }
-        .suite-card { 
-          border: none; 
-          border-left: 4px solid var(--border-light); 
-          padding: 24px; 
-          background-color: var(--bg-card); 
-          transition: all 0.15s ease; 
+        .suites-grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
         }
-        .suite-card:hover { 
-          background: rgba(255, 255, 255, 0.03); 
-          border-left-color: var(--border-medium); 
+        
+        @media (max-width: 768px) {
+            .fixed-height-widget {
+                height: auto;
+                max-height: 600px;
+            }
         }
-        .suite-card.status-passed { 
-          border-left-color: #10b981; 
+        .suite-card {
+          background: var(--bg-card); /* Changed from #ffffff */
+          border: 1px solid var(--border-medium); /* Changed from border-light for better contrast */
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2); /* Darker shadow */
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
         }
-        .suite-card.status-passed:hover { 
-          background: rgba(16, 185, 129, 0.05); 
+        .suite-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+          background: var(--bg-card-hover);
+          border-color: var(--primary-dark);
         }
-        .suite-card.status-failed { 
-          border-left-color: #ef4444; 
+        .suite-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: var(--neutral-200);
+          opacity: 0.8;
+          transition: background 0.3s ease;
         }
-        .suite-card.status-failed:hover { 
-          background: rgba(239, 68, 68, 0.05); 
+        .suite-card.status-passed::before { background: var(--success-color); }
+        .suite-card.status-failed::before { background: var(--danger-color); }
+        .suite-card.status-flaky::before { background: #00ccd3; }
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+        
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+
+        /* Outcome Badge */
+        .outcome-badge {
+            background-color: var(--secondary-color); 
+            color: #000;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 8px;
+            letter-spacing: 0.5px;
         }
-        .suite-card.status-skipped { 
-          border-left-color: #f59e0b; 
+        .outcome-badge.flaky {
+            background-color: #00ccd3;
+            color: #fff;
         }
-        .suite-card.status-skipped:hover { 
-          background: rgba(245, 158, 11, 0.05); 
+        
+        .suite-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
         }
-        .suite-card-header { 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: flex-start; 
-          margin-bottom: 12px; 
+        .suite-name {
+          font-size: 1.15em;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-right: 12px;
         }
-        .suite-name { 
-          font-weight: 600; 
-          font-size: 1.05em; 
-          color: #f9fafb; 
-          margin-right: 10px; 
-          word-break: break-word;
+         .status-indicator-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          margin-top: 6px;
         }
+        .status-indicator-dot.status-passed { background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+        .status-indicator-dot.status-failed { background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+        .status-indicator-dot.status-skipped { background-color: var(--warning-color); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }
+
         .browser-tag {
+          font-size: 0.8em;
+          font-weight: 600;
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
+          padding: 4px 10px;
+          border-radius: 20px;
+          border: 1px solid var(--border-light);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 20px;
+          align-self: flex-start;
+          box-shadow: none;
+          text-shadow: none;
+        }
+        .browser-tag:hover {
+             /* Remove hover effect from previous */
+        }
+        
+        .suite-card-body {
+          margin-top: auto;
+        }
+        
+        .test-count-label {
           font-size: 0.85em;
           font-weight: 600;
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 8px;
+          display: block;
+        }
+
+        .suite-stats {
+          display: flex;
+          gap: 8px;
+          background: var(--bg-secondary);
+          padding: 10px 14px;
+          border-radius: 10px;
+          justify-content: space-between;
+        }
+        
+        .stat-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9em;
+          font-weight: 600;
+        }
+        .stat-pill svg { width: 14px; height: 14px; }
+        .stat-pill.passed { color: var(--success-dark); }
+        .stat-pill.failed { color: var(--danger-dark); }
+        .stat-pill.flaky { color: #00ccd3; }
+        .stat-pill.skipped { color: var(--warning-dark); }
           color: #93c5fd;
           padding: 6px 12px;
           border-radius: var(--radius-sm);
@@ -3403,6 +3911,10 @@ function generateHTML(reportData, trendData = null) {
         .status-badge.status-skipped {
           background: var(--warning-color);
         }
+        .status-badge.status-flaky {
+          background-color: #00ccd3; 
+          color: #fff; 
+        }
         .status-badge.status-unknown {
           background: var(--dark-gray-color);
         }
@@ -3458,6 +3970,65 @@ function generateHTML(reportData, trendData = null) {
           border-color: rgba(148, 163, 184, 0.25);
         }
 
+        /* --- RETRY COUNT BADGE --- */
+        .retry-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 5px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          background: rgba(147, 51, 234, 0.15);
+          color: #a855f7;
+          border: 1px solid rgba(147, 51, 234, 0.3);
+          margin-left: 8px;
+        }
+
+        /* --- RETRY TABS --- */
+        .retry-tabs-container {
+          margin-top: 16px;
+        }
+
+        .retry-tabs-header {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid var(--border-medium);
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .retry-tab {
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--text-color-secondary);
+          transition: all 0.2s ease;
+        }
+
+        .retry-tab:hover {
+          color: var(--primary-color);
+          background: rgba(147, 51, 234, 0.05);
+        }
+
+        .retry-tab.active {
+          color: #a855f7;
+          border-bottom-color: #a855f7;
+          background: rgba(147, 51, 234, 0.1);
+        }
+
+        .retry-tab-content {
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
 .tag { 
           display: inline-flex;
           align-items: center;
@@ -3507,7 +4078,9 @@ function generateHTML(reportData, trendData = null) {
           background-color: rgba(248,113,113,0.08); 
           border: 1px solid rgba(248,113,113,0.25); 
           border-left: 4px solid var(--danger-color); 
-          border-radius: 4px; 
+          border-radius: 4px;
+          display: flex;
+          flex-direction: column; 
         }
         .test-error-summary h4 { 
           color: #ef4444; 
@@ -3758,6 +4331,40 @@ function generateHTML(reportData, trendData = null) {
             font-size: 0.9em;
             border: 1px solid var(--border-light);
         }
+        .failed-step-highlight { 
+          border-left: 4px solid var(--danger-color) !important; 
+          background-color: rgba(244,67,54,0.03); 
+        }
+        .failed-step-highlight .step-header { 
+          background-color: rgba(244,67,54,0.05); 
+          border-color: rgba(244,67,54,0.3); 
+        }
+        .failed-step-marker { 
+          display: inline-block; 
+          margin-left: 10px; 
+          padding: 2px 8px; 
+          background-color: var(--danger-color); 
+          color: white; 
+          border-radius: 4px; 
+          font-size: 0.85em; 
+          font-weight: 600; 
+        }
+        .code-snippet-section { 
+          margin: 12px 0; 
+        }
+        .code-snippet { 
+          background-color: #f8f9fa; 
+          border: 1px solid #e1e4e8; 
+          border-radius: 6px; 
+          padding: 12px; 
+          font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+          font-size: 0.9em; 
+          line-height: 1.5; 
+          overflow-x: auto; 
+          color: #24292e; 
+          margin: 0; 
+          white-space: pre; 
+        }
         .nested-steps { 
           margin-top: 12px; 
         }
@@ -3940,6 +4547,10 @@ function generateHTML(reportData, trendData = null) {
         }
         .status-badge-small.status-skipped { 
           background-color: #f59e0b; 
+        }
+        .status-badge-small.status-flaky { 
+          background-color: #00ccd3; 
+          color: #fff;
         }
         .status-badge-small.status-unknown { 
           background-color: var(--dark-gray-color); 
@@ -5166,8 +5777,17 @@ function generateHTML(reportData, trendData = null) {
           color: #f9fafb;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
+          color: #9ca3af;
+          white-space: nowrap;
+          flex-shrink: 0;
           color: #9ca3af;
           font-weight: 700;
           font-size: 0.95em;
@@ -5632,31 +6252,33 @@ function generateHTML(reportData, trendData = null) {
                 <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
                   runSummary.skipped || 0
                 }</div><div class="trend-percentage">${skipPercentage}%</div></div>
-                <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
+                <div class="summary-card flaky-status"><h3>Flaky</h3><div class="value">${runSummary.flaky || 0}</div>
+                <div class="trend-percentage">${flakyPercentage}%</div></div>
                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
                   runSummary.duration,
-                )}</div></div>
+                )}</div><div class="trend-percentage">Avg. Test Duration ${avgTestDuration}</div></div>
                 <div class="summary-card">
-                  <h3>🔄 Retry Count</h3>
+                  <h3>Total Retry Count</h3>
                   <div class="value">${totalRetried}</div>
+                  <div class="trend-percentage">Test Retried ${retriedTestsCount}</div>
                 </div>
                 <div class="summary-card">
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
                     ${browserBreakdown
-                      .slice(0, 5)
+                      .slice(0, 3)
                       .map(
                         (b) =>
                           `<div class="browser-item">
-                        <span class="browser-name">${sanitizeHTML(b.browser)}</span>
+                        <span class="browser-name" title="${sanitizeHTML(b.browser)}">${sanitizeHTML(b.browser)}</span>
                         <span class="browser-stats">${b.percentage}% (${b.count})</span>
                       </div>`,
                       )
                       .join("")}
                     ${
-                      browserBreakdown.length > 5
+                      browserBreakdown.length > 3
                         ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid var(--border-light); margin-top: 8px; padding-top: 8px;">
-                      <span>+${browserBreakdown.length - 5} more browsers</span>
+                      <span>+${browserBreakdown.length - 3} more browsers</span>
                     </div>`
                         : ""
                     }
@@ -5669,17 +6291,13 @@ function generateHTML(reportData, trendData = null) {
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
+                    { label: "Flaky", value: runSummary.flaky || 0 },
                     { label: "Skipped", value: runSummary.skipped || 0 },
                   ],
                   400,
                   390,
                 )} 
-                ${
-                  runSummary.environment &&
-                  Object.keys(runSummary.environment).length > 0
-                    ? generateEnvironmentDashboard(runSummary.environment)
-                    : '<div class="no-data">Environment data not available.</div>'
-                }
+                ${generateEnvironmentSection(runSummary.environment)}
               </div> 
                 <div style="display: flex; flex-direction: column; gap: 28px;">
                   ${generateSuitesWidget(suitesData)}
@@ -5690,7 +6308,7 @@ function generateHTML(reportData, trendData = null) {
         <div id="test-runs" class="tab-content">
             <div class="filters" style="border-color: black; border-style: groove;">
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
+                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="flaky">Flaky</option><option value="skipped">Skipped</option></select>
                 <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
                   new Set(
                     (results || []).map((test) => test.browser || "unknown"),
@@ -5781,6 +6399,29 @@ function generateHTML(reportData, trendData = null) {
             return (ms / 1000).toFixed(1) + "s"; 
         }
     }
+    function switchRetryTab(event, tabId) {
+        // Find container
+        const container = event.target.closest('.retry-tabs-container');
+        
+        // Update tab buttons
+        const buttons = container.querySelectorAll('.retry-tab');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Update content
+        const contents = container.querySelectorAll('.retry-tab-content');
+        contents.forEach(content => {
+            content.style.display = 'none';
+            content.classList.remove('active');
+        });
+        
+        const activeContent = container.querySelector('#' + tabId);
+        if (activeContent) {
+            activeContent.style.display = 'block';
+            activeContent.classList.add('active');
+        }
+    }
+
     function copyLogContent(elementId, button) {
         const logElement = document.getElementById(elementId);
         if (!logElement) {
@@ -6437,6 +7078,8 @@ async function runScript(scriptPath, args = []) {
  * prepares the data, and then generates and writes the final HTML report file.
  */
 async function main() {
+  await animate();
+  
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
@@ -6605,6 +7248,7 @@ async function main() {
           passed: histRunReport.run.passed,
           failed: histRunReport.run.failed,
           skipped: histRunReport.run.skipped || 0,
+          flaky: histRunReport.run.flaky || (histRunReport.results ? histRunReport.results.filter(r => r.status === 'flaky' || r.outcome === 'flaky').length : 0),
         });
 
         if (histRunReport.results && Array.isArray(histRunReport.results)) {
@@ -6613,7 +7257,7 @@ async function main() {
             (test) => ({
               testName: test.name,
               duration: test.duration,
-              status: test.status,
+              status: test.final_status || test.status,
               timestamp: new Date(test.startTime),
             }),
           );
@@ -6631,7 +7275,7 @@ async function main() {
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`,
+        `Pulse report generated successfully at: ${reportHtmlPath}`,
       ),
     );
     console.log(chalk.gray(`(You can open this file in your browser)`));

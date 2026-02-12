@@ -73,6 +73,7 @@ function mergeReports(shardDirs) {
   let combinedResults = [];
   let latestTimestamp = "";
   let latestGeneratedAt = "";
+  let allEnvironments = [];
 
   for (const shardDir of shardDirs) {
     const jsonPath = path.join(shardDir, OUTPUT_FILE);
@@ -91,10 +92,11 @@ function mergeReports(shardDirs) {
       combinedRun.passed += run.passed || 0;
       combinedRun.failed += run.failed || 0;
       combinedRun.skipped += run.skipped || 0;
+      combinedRun.flaky = (combinedRun.flaky || 0) + (run.flaky || 0);
       combinedRun.duration += run.duration || 0;
 
       if (run.environment) {
-        combinedRun.environment = run.environment;
+        allEnvironments.push(run.environment);
       }
 
       if (json.results) {
@@ -109,6 +111,10 @@ function mergeReports(shardDirs) {
         `  Warning: Failed to process JSON in ${path.basename(shardDir)}: ${e.message}`,
       );
     }
+  }
+
+  if (allEnvironments.length > 0) {
+    combinedRun.environment = allEnvironments;
   }
 
   const finalJson = {
@@ -175,6 +181,9 @@ function cleanupShardDirectories(shardDirs) {
 
 // Main execution
 (async () => {
+  const { animate } = await import("./terminal-logo.mjs");
+  await animate();
+  
   const REPORT_DIR = await getReportDir();
 
   console.log(`\n🔄 Playwright Pulse - Merge Reports (Sharding Mode)\n`);
@@ -220,7 +229,7 @@ function cleanupShardDirectories(shardDirs) {
 
   console.log(`\n✅ Merged report saved as ${OUTPUT_FILE}`);
   console.log(`   Total tests: ${merged.run.totalTests}`);
-  console.log(`   Passed: ${merged.run.passed} | Failed: ${merged.run.failed} | Skipped: ${merged.run.skipped}`);
+  console.log(`   Passed: ${merged.run.passed} | Failed: ${merged.run.failed} | Skipped: ${merged.run.skipped} | Flaky: ${merged.run.flaky}`);
 
   // 5. Cleanup Shard Directories
   cleanupShardDirectories(shardDirs);

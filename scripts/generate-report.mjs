@@ -6,6 +6,7 @@ import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
 import { getOutputDir } from "./config-reader.mjs";
+import { animate } from "./terminal-logo.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -294,6 +295,12 @@ function generateTestTrendsChart(trendData) {
       color: "var(--warning-color)",
       marker: { symbol: "circle" },
     },
+    {
+      name: "Flaky",
+      data: runs.map((r) => r.flaky || 0),
+      color: "#00ccd3",
+      marker: { symbol: "circle" },
+    },
   ];
   const runsForTooltip = runs.map((r) => ({
     runId: r.runId,
@@ -480,6 +487,9 @@ function generateTestHistoryChart(history) {
       case "skipped":
         color = "var(--warning-color)";
         break;
+      case "flaky":
+        color = "var(--neutral-500)";
+        break;
       default:
         color = "var(--dark-gray-color)";
     }
@@ -589,6 +599,9 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
             case "Failed":
               color = "var(--danger-color)";
               break;
+            case "Flaky":
+              color = "#00ccd3";
+              break;
             case "Skipped":
               color = "var(--warning-color)";
               break;
@@ -688,21 +701,175 @@ function generatePieChart(data, chartWidth = 300, chartHeight = 300) {
       </div>
   `;
 }
-function generateEnvironmentDashboard(environment) {
-  // Format memory for display
-  const formattedMemory = environment.memory.replace(/(\d+\.\d{2})GB/, "$1 GB");
+function generateEnvironmentSection(environmentData) {
+  if (!environmentData) {
+    return '<div class="no-data">Environment data not available.</div>';
+  }
+  
+  if (Array.isArray(environmentData)) {
+    return `
+      <div class="sharded-env-section">
+        <div class="sharded-env-header">
+          <div class="sharded-env-title-row">
+            <div>
+              <div class="sharded-env-title">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                  <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                  <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                  <line x1="6" x2="6.01" y1="18" y2="18"></line>
+                </svg>
+                System Information
+              </div>
+              <div class="sharded-env-subtitle">Test execution environment details - ${environmentData.length} shard${environmentData.length > 1 ? "s" : ""}</div>
+            </div>
+            <div class="env-icon-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="sharded-environments-container">
+          <div class="sharded-environments-wrapper">
+            ${environmentData
+              .map(
+                (env, index) => `
+              <div class="env-card-wrapper">
+                <div class="env-card-badge">Shard ${index + 1}</div>
+                ${generateEnvironmentDashboard(env, true)}
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>
+      </div>
+      <style>
+        .sharded-env-section {
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          background: #fafbfc;
+          overflow: hidden;
+        }
+        .sharded-env-header {
+          position: sticky;
+          top: 0;
+          z-index: 20;
+          background: linear-gradient(to bottom right, #ffffff 0%, #fafafa 100%);
+          border-bottom: 1px solid #e2e8f0;
+          padding: 24px 24px 16px;
+        }
+        .sharded-env-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .sharded-env-title {
+          display: flex;
+          align-items: center;
+          font-size: 18px;
+          font-weight: 600;
+          color: #0f172a;
+        }
+        .sharded-env-title svg {
+          width: 18px;
+          height: 18px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }
+        .sharded-env-subtitle {
+          font-size: 13px;
+          color: #64748b;
+          margin-top: 4px;
+        }
+        .sharded-environments-container {
+          max-height: 520px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          padding: 16px;
+        }
+        .sharded-environments-container::-webkit-scrollbar {
+          width: 8px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-thumb {
+          background: #cbd5e0;
+          border-radius: 4px;
+        }
+        .sharded-environments-container::-webkit-scrollbar-thumb:hover {
+          background: #a0aec0;
+        }
+        .sharded-environments-wrapper {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+          gap: 24px;
+        }
+        @media (max-width: 768px) {
+          .sharded-environments-wrapper {
+            grid-template-columns: 1fr;
+          }
+        }
+        .env-card-wrapper {
+          position: relative;
+        }
+        .env-card-badge {
+          position: absolute;
+          top: -10px;
+          right: 16px;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          color: white;
+          padding: 6px 14px;
+          border-radius: 20px;
+          font-size: 0.75em;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          z-index: 10;
+          box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+        }
+      </style>
+    `;
+  }
+  
+  return generateEnvironmentDashboard(environmentData);
+}
 
-  // Generate a unique ID for the dashboard
-  const dashboardId = `envDashboard-${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(2, 7)}`;
-
-  // Logic for Run Context
+function generateEnvironmentDashboard(environment, hideHeader = false) {
+  const cpuModel = environment.cpu && environment.cpu.model ? environment.cpu.model : "N/A";
+  const cpuCores = environment.cpu && environment.cpu.cores ? environment.cpu.cores : "N/A";
+  const cpuInfo = `model: ${cpuModel}, cores: ${cpuCores}`;
+  const osInfo = environment.os || "N/A";
+  const nodeInfo = environment.node || "N/A";
+  const v8Info = environment.v8 || "N/A";
+  const cwdInfo = environment.cwd || "N/A";
+  const formattedMemory = environment.memory || "N/A";
   const runContext = process.env.CI ? "CI" : "Local Test";
 
   return `
-    <div class="environment-dashboard-wrapper" id="${dashboardId}">
+    <div class="env-modern-card${hideHeader ? " no-header" : ""}">
       <style>
+        .env-modern-card {
+          background: linear-gradient(to bottom right, #ffffff 0%, #fafafa 100%);
+          border: 0;
+          border-radius: 12px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          margin-top: 24px;
+          transition: all 0.3s ease;
+          font-family: var(--font-family);
+          overflow: hidden;
+        }
+        .env-modern-card:hover {
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .env-modern-card {
+          margin-bottom: 0;
+        }
+
         .environment-dashboard-wrapper *,
         .environment-dashboard-wrapper *::before,
         .environment-dashboard-wrapper *::after {
@@ -726,279 +893,269 @@ function generateEnvironmentDashboard(environment) {
           transform: translateZ(0);
         }
 
-        @media (max-width: 768px) {
-            .environment-dashboard-wrapper {
-                grid-template-columns: 1fr;
-                padding: 32px 24px;
-            }
-        }
-        @media (max-width: 480px) {
-            .environment-dashboard-wrapper {
-                padding: 24px;
-            }
-        }
-        
-        .env-dashboard-header {
-          grid-column: 1 / -1;
-          margin-bottom: 24px;
-        }
-        
-        .env-dashboard-title {
-          font-size: 2em;
-          font-weight: 900;
-          color: #0f172a;
-          letter-spacing: -0.02em;
-          margin: 0 0 8px 0;
-        }
-        
-        .env-dashboard-subtitle {
-          font-size: 1.05em;
-          color: #64748b;
-          margin: 0;
-          font-weight: 400;
-        }
-        
-        .env-card {
-          background: white;
-          border: none;
-          border-left: 4px solid #e2e8f0;
-          padding: 28px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          transition: all 0.12s ease;
-          transform: translateZ(0);
-        }
-        
-        .env-card:hover {
-          border-left-color: var(--primary-color);
-          background: #fafbfc;
-        }
-        
         .env-card-header {
-          font-weight: 700;
-          font-size: 1.05em;
-          color: #0f172a;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        
-        .env-card-header svg {
-          width: 18px;
-          height: 18px;
-          fill: #6366f1;
-        }
-
-        .env-card-content {
           display: flex;
           flex-direction: column;
-          gap: 16px;
+          padding: 24px 24px 12px;
         }
-        
-        .env-detail-row {
+        .env-modern-card.no-header .env-card-header {
+          display: none;
+        }
+        .env-modern-card.no-header {
+          margin-top: 0;
+        }
+        .env-modern-card.no-header .env-card-content {
+          padding-top: 24px;
+        }
+        .env-card-title-row {
           display: flex;
           justify-content: space-between;
-          align-items: flex-start;
-          gap: 16px;
-          font-size: 1em;
-          padding: 8px 0;
-        }
-        
-        .env-detail-label {
-          color: #64748b;
-          font-weight: 600;
-          font-size: 0.9em;
-          text-transform: uppercase;
-          letter-spacing: 0.3px;
-          flex-shrink: 0;
-        }
-        
-        .env-detail-value {
-          color: #0f172a;
-          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-          font-size: 0.95em;
-          text-align: right;
-          word-break: break-word;
-          margin-left: auto;
-        }
-        
-        .env-chip {
-          display: inline-flex;
           align-items: center;
-          padding: 6px 14px;
-          border-radius: 6px;
-          font-size: 0.85em;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
         }
-        
-        .env-chip-primary {
-          background-color: #ede9fe;
-          color: #6366f1;
-        }
-        
-        .env-chip-success {
-          background-color: #d1fae5;
-          color: #10b981;
-        }
-        
-        .env-chip-warning {
-          background-color: #fef3c7;
-          color: #f59e0b;
-        }
-        
-        .env-cpu-cores {
+        .env-card-title {
           display: flex;
           align-items: center;
-          gap: 6px; 
+          font-size: 16px;
+          font-weight: 600;
+          color: #0f172a;
+          transition: color 0.3s;
         }
-        
-        .env-core-indicator {
-          width: 12px; 
-          height: 12px;
+        .env-modern-card:hover .env-card-title {
+          color: #6366f1;
+        }
+        .env-card-title svg {
+          width: 16px;
+          height: 16px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }
+        .env-card-subtitle {
+          font-size: 12px;
+          color: #64748b;
+          margin-top: 4px;
+        }
+        .env-icon-badge {
+          width: 36px;
+          height: 36px;
           border-radius: 50%;
-          background-color: var(--success-color);
-          border: 1px solid rgba(0,0,0,0.1); 
+          background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        
-        .env-core-indicator.inactive {
-          background-color: var(--border-light-color);
-          opacity: 0.7; 
-          border-color: var(--border-color);
+        .env-icon-badge svg {
+          width: 16px;
+          height: 16px;
+          stroke: #6366f1;
+          fill: none;
+        }
+        .env-card-content {
+          padding: 0 24px 24px;
+        }
+        .env-items-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }
+        @media (min-width: 768px) {
+          .env-items-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+        .env-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          transition: background-color 0.2s;
+          min-height: 48px;
+        }
+        .env-item:hover {
+          background-color: rgba(100, 116, 139, 0.05);
+        }
+        .env-item-icon {
+          flex-shrink: 0;
+        }
+        .env-item-icon svg {
+          width: 16px;
+          height: 16px;
+          stroke: #6366f1;
+          fill: none;
+        }
+        .env-item-content {
+          flex-grow: 1;
+          min-width: 0;
+        }
+        .env-item-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: #64748b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .env-item-value {
+          font-size: 12px;
+          font-weight: 600;
+          color: #0f172a;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.4;
         }
       </style>
       
-      <div class="env-dashboard-header">
-        <div>
-          <h3 class="env-dashboard-title">System Environment</h3>
-          <p class="env-dashboard-subtitle">Snapshot of the execution environment</p>
-        </div>
-        <span class="env-chip env-chip-primary">${environment.host}</span>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M4 6h16V4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8h-2v10H4V6zm18-2h-4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2H6a2 2 0 0 0-2 2v2h20V6a2 2 0 0 0-2-2zM8 12h8v2H8v-2zm0 4h8v2H8v-2z"/></svg>
-          Hardware
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">CPU Model</span>
-            <span class="env-detail-value">${environment.cpu.model}</span>
+      <div class="env-card-header">
+        <div class="env-card-title-row">
+          <div>
+            <div class="env-card-title">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="8" x="2" y="2" rx="2" ry="2"></rect>
+                <rect width="20" height="8" x="2" y="14" rx="2" ry="2"></rect>
+                <line x1="6" x2="6.01" y1="6" y2="6"></line>
+                <line x1="6" x2="6.01" y1="18" y2="18"></line>
+              </svg>
+              System Information
+            </div>
+            <div class="env-card-subtitle">Test execution environment details</div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">CPU Cores</span>
-            <span class="env-detail-value">
-              <div class="env-cpu-cores">
-                <span>${environment.cpu.cores || "N/A"} core${environment.cpu.cores !== 1 ? "s" : ""}</span>
-              </div>
-            </span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Memory</span>
-            <span class="env-detail-value">${formattedMemory}</span>
+          <div class="env-icon-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+            </svg>
           </div>
         </div>
       </div>
       
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-0.01 18c-2.76 0-5.26-1.12-7.07-2.93A7.973 7.973 0 0 1 4 12c0-2.21.9-4.21 2.36-5.64A7.994 7.994 0 0 1 11.99 4c4.41 0 8 3.59 8 8 0 2.76-1.12 5.26-2.93 7.07A7.973 7.973 0 0 1 11.99 20zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg>
-          Operating System
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">OS Type</span>
-            <span class="env-detail-value">${
-              environment.os.split(" ")[0] === "darwin"
-                ? "darwin (macOS)"
-                : environment.os.split(" ")[0] || "Unknown"
-            }</span>
+      <div class="env-card-content">
+        <div class="env-items-grid">
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Host</p>
+              <div class="env-item-value" title="${environment.host}">${environment.host}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">OS Version</span>
-            <span class="env-detail-value">${
-              environment.os.split(" ")[1] || "N/A"
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Os</p>
+              <div class="env-item-value" title="${environment.os}">${environment.os}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Hostname</span>
-            <span class="env-detail-value" title="${environment.host}">${
-              environment.host
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="16" height="16" x="4" y="4" rx="2"></rect>
+                <rect width="6" height="6" x="9" y="9" rx="1"></rect>
+                <path d="M15 2v2"></path>
+                <path d="M15 20v2"></path>
+                <path d="M2 15h2"></path>
+                <path d="M2 9h2"></path>
+                <path d="M20 15h2"></path>
+                <path d="M20 9h2"></path>
+                <path d="M9 2v2"></path>
+                <path d="M9 20v2"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Cpu</p>
+              <div class="env-item-value" title='${JSON.stringify(environment.cpu)}'>${cpuInfo}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z"/></svg>
-          Node.js Runtime
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">Node Version</span>
-            <span class="env-detail-value">${environment.node}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 19v-3"></path>
+                <path d="M10 19v-3"></path>
+                <path d="M14 19v-3"></path>
+                <path d="M18 19v-3"></path>
+                <path d="M8 11V9"></path>
+                <path d="M16 11V9"></path>
+                <path d="M12 11V9"></path>
+                <path d="M2 15h20"></path>
+                <path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Memory</p>
+              <div class="env-item-value" title="${environment.memory}">${environment.memory}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">V8 Engine</span>
-            <span class="env-detail-value">${environment.v8}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Node</p>
+              <div class="env-item-value" title="${environment.node}">${environment.node}</div>
+            </div>
           </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Working Dir</span>
-            <span class="env-detail-value" title="${environment.cwd}">${
-              environment.cwd.length > 25
-                ? "..." + environment.cwd.slice(-22)
-                : environment.cwd
-            }</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">V8</p>
+              <div class="env-item-value" title="${environment.v8}">${environment.v8}</div>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      <div class="env-card">
-        <div class="env-card-header">
-          <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4s1.79-4 4-4h.71C7.37 8.69 9.48 7 12 7c2.76 0 5 2.24 5 5v1h2c1.66 0 3 1.34 3 3s-1.34 3-3 3z"/></svg>
-          System Summary
-        </div>
-        <div class="env-card-content">
-          <div class="env-detail-row">
-            <span class="env-detail-label">Platform Arch</span>
-            <span class="env-detail-value">
-              <span class="env-chip ${
-                environment.os.includes("darwin") &&
-                environment.cpu.model.toLowerCase().includes("apple")
-                  ? "env-chip-success"
-                  : "env-chip-warning"
-              }">
-                ${
-                  environment.os.includes("darwin") &&
-                  environment.cpu.model.toLowerCase().includes("apple")
-                    ? "Apple Silicon"
-                    : environment.cpu.model.toLowerCase().includes("arm") ||
-                        environment.cpu.model.toLowerCase().includes("aarch64")
-                      ? "ARM-based"
-                      : "x86/Other"
-                }
-              </span>
-            </span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Memory per Core</span>
-            <span class="env-detail-value">${
-              environment.cpu.cores > 0
-                ? (
-                    parseFloat(environment.memory) / environment.cpu.cores
-                  ).toFixed(2) + " GB"
-                : "N/A"
-            }</span>
-          </div>
-          <div class="env-detail-row">
-            <span class="env-detail-label">Run Context</span>
-            <span class="env-detail-value">${runContext}</span>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Working Dir</p>
+              <div class="env-item-value" title="${cwdInfo}">${cwdInfo.length > 30 ? "..." + cwdInfo.slice(-27) : cwdInfo}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1021,11 +1178,11 @@ function generateWorkerDistributionChart(results) {
     const workerId =
       typeof test.workerId !== "undefined" ? test.workerId : "N/A";
     if (!acc[workerId]) {
-      acc[workerId] = { passed: 0, failed: 0, skipped: 0, tests: [] };
+      acc[workerId] = { passed: 0, failed: 0, skipped: 0, flaky: 0, tests: [] };
     }
 
     const status = String(test.status).toLowerCase();
-    if (status === "passed" || status === "failed" || status === "skipped") {
+    if (status === "passed" || status === "failed" || status === "skipped" || status === "flaky") {
       acc[workerId][status]++;
     }
 
@@ -1070,12 +1227,14 @@ function generateWorkerDistributionChart(results) {
   const passedData = workerIds.map((id) => workerData[id].passed);
   const failedData = workerIds.map((id) => workerData[id].failed);
   const skippedData = workerIds.map((id) => workerData[id].skipped);
+  const flakyData = workerIds.map((id) => workerData[id].flaky);
 
   const categoriesString = JSON.stringify(categories);
   const fullDataString = JSON.stringify(fullWorkerData);
   const seriesString = JSON.stringify([
     { name: "Passed", data: passedData, color: "var(--success-color)" },
     { name: "Failed", data: failedData, color: "var(--danger-color)" },
+    { name: "Flaky", data: flakyData, color: "#00ccd3" },
     { name: "Skipped", data: skippedData, color: "var(--warning-color)" },
   ]);
 
@@ -1168,6 +1327,7 @@ function generateWorkerDistributionChart(results) {
                 if (test.status === 'passed') color = 'var(--success-color)';
                 else if (test.status === 'failed') color = 'var(--danger-color)';
                 else if (test.status === 'skipped') color = 'var(--warning-color)';
+                else if (test.status === 'flaky') color = '#00ccd3';
 
                 const escapedName = test.name.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
                 testListHtml += \`<li style="color: \${color};"><span style="color: \${color}">[\${test.status.toUpperCase()}]</span> \${escapedName}</li>\`;
@@ -1333,6 +1493,7 @@ function generateTestHistoryContent(trendData) {
         <option value="">All Statuses</option>
         <option value="passed">Passed</option>
         <option value="failed">Failed</option>
+        <option value="flaky">Flaky</option>
         <option value="skipped">Skipped</option>
     </select>
     <button id="clear-history-filters" class="clear-filters-btn">Clear Filters</button>
@@ -1400,6 +1561,8 @@ function getStatusClass(status) {
       return "status-failed";
     case "skipped":
       return "status-skipped";
+    case "flaky":
+      return "status-flaky";
     default:
       return "status-unknown";
   }
@@ -1412,6 +1575,8 @@ function getStatusIcon(status) {
       return "❌";
     case "skipped":
       return "⏭️";
+    case "flaky":
+      return "⚠️";
     default:
       return "❓";
   }
@@ -1447,6 +1612,7 @@ function getSuitesData(results) {
         browser: browser,
         passed: 0,
         failed: 0,
+        flaky: 0,
         skipped: 0,
         count: 0,
         statusOverall: "passed",
@@ -1454,12 +1620,15 @@ function getSuitesData(results) {
     }
     const suite = suitesMap.get(key);
     suite.count++;
-    const currentStatus = String(test.status).toLowerCase();
+    let currentStatus = String(test.status).toLowerCase();
+    if (test.outcome === 'flaky') currentStatus = 'flaky';
     if (currentStatus && suite[currentStatus] !== undefined) {
       suite[currentStatus]++;
     }
     if (currentStatus === "failed") suite.statusOverall = "failed";
-    else if (currentStatus === "skipped" && suite.statusOverall !== "failed")
+    else if (currentStatus === "flaky" && suite.statusOverall !== "failed")
+        suite.statusOverall = "flaky";
+    else if (currentStatus === "skipped" && suite.statusOverall !== "failed" && suite.statusOverall !== "flaky")
       suite.statusOverall = "skipped";
   });
   return Array.from(suitesMap.values());
@@ -1470,10 +1639,10 @@ function generateSuitesWidget(suitesData) {
     return `<div class="suites-widget" style="height: 450px;"><div class="suites-header"><h2>Test Suites</h2></div><div class="no-data">No suite data available.</div></div>`;
   }
 
-  // Added inline styles for height consistency with Pie Chart (approx 450px) and scrolling
+  // Uses CSS classes for responsiveness instead of inline styles
   return `
-<div class="suites-widget" style="height: 450px; display: flex; flex-direction: column;">
-  <div class="suites-header" style="flex-shrink: 0;">
+<div class="suites-widget fixed-height-widget">
+  <div class="suites-header">
     <h2>Test Suites</h2>
     <span class="summary-badge">${
       suitesData.length
@@ -1483,40 +1652,40 @@ function generateSuitesWidget(suitesData) {
     )} tests</span>
   </div>
   
-  <div class="suites-grid-container" style="flex-grow: 1; overflow-y: auto; padding-right: 5px;">
+  <div class="suites-grid-container">
       <div class="suites-grid">
         ${suitesData
           .map(
             (suite) => `
         <div class="suite-card status-${suite.statusOverall}">
           <div class="suite-card-header">
-        <h3 class="suite-name" title="${sanitizeHTML(
-          suite.name,
-        )} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
-      </div>
-      <div style="margin-bottom: 12px;"><span class="browser-tag" title="🌐 ${sanitizeHTML(suite.browser)}">🌐 ${sanitizeHTML(
-        suite.browser,
-      )}</span></div>
-      <div class="suite-card-body">
-            <span class="test-count">${suite.count} test${
-              suite.count !== 1 ? "s" : ""
-            }</span>
+            <h3 class="suite-name" title="${sanitizeHTML(suite.name)} (${sanitizeHTML(suite.browser)})">${sanitizeHTML(suite.name)}</h3>
+            <div class="status-indicator-dot status-${suite.statusOverall}" title="${suite.statusOverall.charAt(0).toUpperCase() + suite.statusOverall.slice(1)}"></div>
+          </div>
+          
+          <div class="browser-tag" title="🌐Browser: ${sanitizeHTML(suite.browser)}">
+            <span style="font-size: 1.1em;">🌐</span> ${sanitizeHTML(suite.browser)}
+          </div>
+          
+          <div class="suite-card-body">
+            <span class="test-count-label">${suite.count} Test${suite.count !== 1 ? "s" : ""}</span>
             <div class="suite-stats">
-                ${
-                  suite.passed > 0
-                    ? `<span class="stat-passed" title="Passed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-check-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg> ${suite.passed}</span>`
-                    : ""
-                }
-                ${
-                  suite.failed > 0
-                    ? `<span class="stat-failed" title="Failed"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg> ${suite.failed}</span>`
-                    : ""
-                }
-                ${
-                  suite.skipped > 0
-                    ? `<span class="stat-skipped" title="Skipped"><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg> ${suite.skipped}</span>`
-                    : ""
-                }
+              <span class="stat-pill passed" title="Passed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/></svg>
+                ${suite.passed}
+              </span>
+              <span class="stat-pill failed" title="Failed">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+                ${suite.failed}
+              </span>
+              <span class="stat-pill flaky" title="Flaky">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                  ${suite.flaky || 0}
+              </span>
+              <span class="stat-pill skipped" title="Skipped">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 16 16"><path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/></svg>
+                 ${suite.skipped}
+              </span>
             </div>
           </div>
         </div>`,
@@ -1917,6 +2086,7 @@ function generateSeverityDistributionChart(results) {
   const data = {
     passed: [0, 0, 0, 0, 0],
     failed: [0, 0, 0, 0, 0],
+    flaky: [0, 0, 0, 0, 0],
     skipped: [0, 0, 0, 0, 0],
   };
 
@@ -1935,6 +2105,8 @@ function generateSeverityDistributionChart(results) {
       status === "interrupted"
     ) {
       data.failed[index]++;
+    } else if (status === "flaky") {
+        data.flaky[index]++;
     } else {
       data.skipped[index]++;
     }
@@ -1948,6 +2120,7 @@ function generateSeverityDistributionChart(results) {
   const seriesData = [
     { name: "Passed", data: data.passed, color: "var(--success-color)" },
     { name: "Failed", data: data.failed, color: "var(--danger-color)" },
+    { name: "Flaky", data: data.flaky, color: "#00ccd3" },
     { name: "Skipped", data: data.skipped, color: "var(--warning-color)" },
   ];
 
@@ -2061,32 +2234,85 @@ function generateHTML(reportData, trendData = null) {
     return p.replace(new RegExp(`^${DEFAULT_OUTPUT_DIR}[\\\\/]`), "");
   };
 
+
+  const avgTestDuration =
+    runSummary.totalTests > 0
+      ? formatDuration(runSummary.duration / runSummary.totalTests)
+      : "0.0s";
+
+  const flakyCount = (results || []).filter(r => r.outcome === 'flaky').length;
+
+  // Calculate retry statistics
+  let retriedTestsCount = 0;
+  const totalRetried = (results || []).reduce((acc, test) => {
+    if (test.retryHistory && test.retryHistory.length > 0) {
+      // Filter out any "passed" or "skipped" entries in the history
+      // We only count attempts that actually failed or timed out, triggering a retry.
+      const unsuccessfulRetries = test.retryHistory.filter(attempt => 
+        attempt.status === 'failed' || attempt.status === 'timedout' || attempt.status === 'flaky'
+      );
+      if (unsuccessfulRetries.length > 0) {
+        retriedTestsCount++;
+      }
+      return acc + unsuccessfulRetries.length;
+    }
+    return acc;
+  }, 0);
+
+  // --- RECALCULATE KPI METRICS BASED ON FINAL_STATUS ---
+  let calculatedPassed = 0;
+  let calculatedFailed = 0;
+  let calculatedSkipped = 0;
+  let calculatedFlaky = 0;
+  let calculatedTotal = 0;
+
+  (results || []).forEach(test => {
+      calculatedTotal++;
+      // New Logic: If outcome is 'flaky', it overrides everything.
+      let statusToUse = test.status;
+      if (test.outcome === 'flaky') {
+        statusToUse = 'flaky';
+      } else if (test.status === 'flaky') { 
+         // Just in case outcome wasn't set but status was (unlikely with new reporter)
+         statusToUse = 'flaky';
+      } else if (test.retryHistory && test.retryHistory.length > 0 && test.final_status) {
+        statusToUse = test.final_status;
+      }
+      
+      // Update test status in place for charts
+      test.status = statusToUse;
+      
+      const s = String(statusToUse).toLowerCase();
+      if (s === 'passed') calculatedPassed++;
+      else if (s === 'skipped') calculatedSkipped++;
+      else if (s === 'flaky') calculatedFlaky++;
+      else calculatedFailed++; // failed, timedout, interrupted
+  });
+
+  // Override runSummary counts with our calculated ones if results exist
+  if (results && results.length > 0) {
+      runSummary.passed = calculatedPassed;
+      runSummary.failed = calculatedFailed;
+      runSummary.skipped = calculatedSkipped;
+      runSummary.flaky = calculatedFlaky;
+      runSummary.totalTests = calculatedTotal;
+  }
+
   const totalTestsOr1 = runSummary.totalTests || 1;
   const passPercentage = Math.round((runSummary.passed / totalTestsOr1) * 100);
   const failPercentage = Math.round((runSummary.failed / totalTestsOr1) * 100);
   const skipPercentage = Math.round(
     ((runSummary.skipped || 0) / totalTestsOr1) * 100,
   );
-  const avgTestDuration =
-    runSummary.totalTests > 0
-      ? formatDuration(runSummary.duration / runSummary.totalTests)
-      : "0.0s";
+  const flakyPercentage = Math.round(((runSummary.flaky || 0) / totalTestsOr1) * 100);
 
-  // Calculate retry statistics
-  const totalRetried = (results || []).reduce((acc, test) => {
-    if (test.retries && test.retries > 0) {
-      return acc + 1;
-    }
-    return acc;
-  }, 0);
 
   // Calculate browser distribution
   const browserStats = (results || []).reduce((acc, test) => {
     let browserName = "unknown";
     if (test.browser) {
-      // Extract browser name from strings like "Chrome v143 on Windows 10"
-      const match = test.browser.match(/^(\w+)/);
-      browserName = match ? match[1] : test.browser;
+      // Use full browser name
+      browserName = test.browser;
     }
     acc[browserName] = (acc[browserName] || 0) + 1;
     return acc;
@@ -2112,6 +2338,10 @@ function generateHTML(reportData, trendData = null) {
         // --- Simplified Severity Badge ---
         const severity = test.severity || "Medium";
         const severityBadge = `<span class="severity-badge" data-severity="${severity.toLowerCase()}">${severity}</span>`;
+        
+        // --- Retry Count Badge (only show if retries occurred) ---
+        const retryCount = (test.retryHistory && test.retryHistory.length > 0) ? test.retryHistory.length : 0;
+        const retryBadge = (test.retryHistory && test.retryHistory.length > 0) ? `<span class="retry-badge">Retry Count: ${retryCount}</span>` : '';
         const generateStepsHTML = (steps, depth = 0) => {
           if (!steps || steps.length === 0)
             return "<div class='no-steps'>No steps recorded for this test.</div>";
@@ -2119,17 +2349,20 @@ function generateHTML(reportData, trendData = null) {
             .map((step) => {
               const hasNestedSteps = step.steps && step.steps.length > 0;
               const isHook = step.hookType;
+              const isFailedStep = step.isFailedStep === true;
               const stepClass = isHook
                 ? `step-hook step-hook-${step.hookType}`
                 : "";
+              const failedStepClass = isFailedStep ? " failed-step-highlight" : "";
               const hookIndicator = isHook ? ` (${step.hookType} hook)` : "";
+              const failedStepIndicator = isFailedStep ? ` <span class="failed-step-marker">⚠️ Failed at this step</span>` : "";
               return `
-          <div class="step-item" style="--depth: ${depth};">
+          <div class="step-item${failedStepClass}" style="--depth: ${depth};">
             <div class="step-header ${stepClass}" role="button" aria-expanded="false">
               <span class="step-icon">${getStatusIcon(step.status)}</span>
               <span class="step-title">${sanitizeHTML(
                 step.title,
-              )}${hookIndicator}</span>
+              )}${hookIndicator}${failedStepIndicator}</span>
               <span class="step-duration">${formatDuration(
                 step.duration,
               )}</span>
@@ -2140,6 +2373,13 @@ function generateHTML(reportData, trendData = null) {
                   ? `<div class="step-info code-section"><strong>Location:</strong> ${sanitizeHTML(
                       step.codeLocation,
                     )}</div>`
+                  : ""
+              }
+              ${
+                step.codeSnippet
+                  ? `<div class="code-snippet-section"><pre class="code-snippet">${sanitizeHTML(
+                      step.codeSnippet,
+                    )}</pre></div>`
                   : ""
               }
               ${
@@ -2157,7 +2397,7 @@ function generateHTML(reportData, trendData = null) {
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
+                          padding: 6px 12px;
                           background: #f0f0f0;
                           border: 2px solid #ccc;
                           border-radius: 4px;
@@ -2165,6 +2405,8 @@ function generateHTML(reportData, trendData = null) {
                           font-size: 12px;
                           border-color: #8B0000;
                           color: #8B0000;
+                          align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2188,43 +2430,36 @@ function generateHTML(reportData, trendData = null) {
             .join("");
         };
 
-        return `
-      <div class="test-case" data-status="${
-        test.status
-      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
-        .join(",")
-        .toLowerCase()}">
-        <div class="test-case-header" role="button" aria-expanded="false">
-          <div class="test-case-summary">
-            <span class="test-case-title" title="${sanitizeHTML(
-              test.name,
-            )}">${sanitizeHTML(testTitle)}</span>
-            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
-          </div>
-          <div class="test-case-meta">
-            ${severityBadge}
-            ${
-              test.tags && test.tags.length > 0
-                ? test.tags
-                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
-                    .join(" ")
-                : ""
-            }
-          </div>
-          <div class="test-case-status-duration">
-            <span class="status-badge ${getStatusClass(test.status)}">${String(
-              test.status,
-            ).toUpperCase()}</span>
-            <span class="test-duration">${formatDuration(test.duration)}</span>
-          </div>
-        </div>
-        <div class="test-case-content" style="display: none;">
-          <p><strong>Full Path:</strong> ${sanitizeHTML(test.name)}</p>
+        // Helper for Tab Badges
+        const getSmallStatusBadge = (status) => {
+            const s = String(status).toLowerCase();
+            let colorVar = 'var(--text-tertiary)';
+            if(s === 'passed') colorVar = 'var(--success-color)';
+            else if(s === 'failed') colorVar = 'var(--danger-color)';
+            else if(s === 'skipped') colorVar = 'var(--warning-color)';
+            else if(s === 'flaky') colorVar = '#00ccd3';
+            
+            return `<span style="
+                display: inline-block; 
+                width: 8px; 
+                height: 8px; 
+                border-radius: 50%; 
+                background-color: ${colorVar}; 
+                margin-left: 6px;
+                vertical-align: middle;
+            " title="${s}"></span>`;
+        };
+        
+        // Function to generate test content HTML (used for base run and retry tabs)
+        const getTestContentHTML = (testData, runSuffix) => {
+          const logId = `stdout-log-${test.id || index}-${runSuffix}`;
+          return `
+          <p><strong>Full Path:</strong> ${sanitizeHTML(testData.name)}</p>
           ${
-            test.annotations && test.annotations.length > 0
+            testData.annotations && testData.annotations.length > 0
               ? `<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;">
                   <h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>
-                  ${test.annotations
+                  ${testData.annotations
                     .map((annotation, idx) => {
                       const isIssueOrBug =
                         annotation.type === "issue" ||
@@ -2232,7 +2467,7 @@ function generateHTML(reportData, trendData = null) {
                       const descriptionText = annotation.description || "";
                       const typeLabel = sanitizeHTML(annotation.type);
                       const descriptionHtml =
-                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\d+$/)
+                        isIssueOrBug && descriptionText.match(/^[A-Z]+-\\d+$/)
                           ? `<a href="#" class="annotation-link" data-annotation="${sanitizeHTML(
                               descriptionText,
                             )}" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">${sanitizeHTML(
@@ -2247,7 +2482,7 @@ function generateHTML(reportData, trendData = null) {
                           }</div>`
                         : "";
                       return `<div style="margin-bottom: ${
-                        idx < test.annotations.length - 1 ? "10px" : "0"
+                        idx < testData.annotations.length - 1 ? "10px" : "0"
                       };">
                       <strong style="color: #8b5cf6;">Type:</strong> <span style="background-color: rgba(139, 92, 246, 0.2); padding: 2px 8px; border-radius: 4px; font-size: 0.9em;">${typeLabel}</span>
                       ${
@@ -2263,21 +2498,21 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           <p><strong>Test run Worker ID:</strong> ${sanitizeHTML(
-            test.workerId,
+            testData.workerId,
           )} [<strong>Total No. of Workers:</strong> ${sanitizeHTML(
-            test.totalWorkers,
+            testData.totalWorkers,
           )}]</p>
           ${
-            test.errorMessage
-              ? `<div class="test-error-summary">${formatPlaywrightError(
-                  test.errorMessage,
-                )}
+            testData.errorMessage
+              ? `<div class="test-error-summary"><div class="stack-trace">${formatPlaywrightError(
+                  testData.errorMessage,
+                )}</div>
                 <button 
                         class="copy-error-btn" 
                         onclick="copyErrorToClipboard(this)"
                         style="
                           margin-top: 8px;
-                          padding: 4px 8px;
+                          padding: 6px 12px;
                           background: #f0f0f0;
                           border: 2px solid #ccc;
                           border-radius: 4px;
@@ -2285,6 +2520,8 @@ function generateHTML(reportData, trendData = null) {
                           font-size: 12px;
                           border-color: #8B0000;
                           color: #8B0000;
+                          align-self: flex-end;
+                          width: auto;
                           "
                             onmouseover="this.style.background='#e0e0e0'"
                             onmouseout="this.style.background='#f0f0f0'"
@@ -2295,50 +2532,48 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.snippet
+            testData.snippet
               ? `<div class="code-section"><h4>Error Snippet</h4><pre><code>${formatPlaywrightError(
-                  test.snippet,
+                  testData.snippet,
                 )}</code></pre></div>`
               : ""
           }
           <h4>Steps</h4>
-          <div class="steps-list">${generateStepsHTML(test.steps)}</div>
+          <div class="steps-list">${generateStepsHTML(testData.steps)}</div>
           ${(() => {
-            if (!test.stdout || test.stdout.length === 0) return "";
-            // Create a unique ID for the <pre> element to target it for copying
-            const logId = `stdout-log-${test.id || index}`;
+            if (!testData.stdout || testData.stdout.length === 0) return "";
             return `<div class="console-output-section">
                           <h4>Console Output (stdout)
-                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</button>
+                          <button class="copy-btn" onclick="copyLogContent('${logId}', this)">Copy</ button>
                           </h4>
                           <div class="log-wrapper">
                               <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                                test.stdout
+                                testData.stdout
                                   .map((line) => sanitizeHTML(line))
-                                  .join("\n"),
+                                  .join("\\n"),
                               )}</pre>
                           </div>
                       </div>`;
           })()}
           ${
-            test.stderr && test.stderr.length > 0
+            testData.stderr && testData.stderr.length > 0
               ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                  test.stderr.map((line) => sanitizeHTML(line)).join("\n"),
+                  testData.stderr.map((line) => sanitizeHTML(line)).join("\\n"),
                 )}</pre></div>`
               : ""
           }
           ${
-            test.screenshots && test.screenshots.length > 0
+            testData.screenshots && testData.screenshots.length > 0
               ? `
             <div class="attachments-section">
                 <h4>Screenshots</h4>
                 <div class="attachments-grid">
-                ${test.screenshots
+                ${testData.screenshots
                   .map(
-                    (screenshot, index) => `
+                    (screenshot, screenshotIndex) => `
                     <div class="attachment-item">
                     <img src="${fixPath(screenshot)}" alt="Screenshot ${
-                      index + 1
+                      screenshotIndex + 1
                     }">
                     <div class="attachment-info">
                         <div class="trace-actions">
@@ -2347,7 +2582,7 @@ function generateHTML(reportData, trendData = null) {
                         )}" target="_blank" class="view-full">View Full Image</a>
                         <a href="${fixPath(
                           screenshot,
-                        )}" target="_blank" download="screenshot-${Date.now()}-${index}.png">Download</a>
+                        )}" target="_blank" download="screenshot-${Date.now()}-${screenshotIndex}.png">Download</a>
                         </div>
                     </div>
                     </div>
@@ -2360,9 +2595,9 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.videoPath && test.videoPath.length > 0
-              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${test.videoPath
-                  .map((videoUrl, index) => {
+            testData.videoPath && testData.videoPath.length > 0
+              ? `<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">${testData.videoPath
+                  .map((videoUrl, videoIndex) => {
                     const fixedVideoUrl = fixPath(videoUrl);
                     const fileExtension = String(fixedVideoUrl)
                       .split(".")
@@ -2378,7 +2613,7 @@ function generateHTML(reportData, trendData = null) {
                       }[fileExtension] || "video/mp4";
                     return `<div class="attachment-item video-item">
                             <video controls width="100%" height="auto" title="Video ${
-                              index + 1
+                              videoIndex + 1
                             }">
                                 <source src="${sanitizeHTML(
                                   fixedVideoUrl,
@@ -2389,7 +2624,7 @@ function generateHTML(reportData, trendData = null) {
                                 <div class="trace-actions">
                                 <a href="${sanitizeHTML(
                                   fixedVideoUrl,
-                                )}" target="_blank" download="video-${Date.now()}-${index}.${fileExtension}">Download</a>
+                                )}" target="_blank" download="video-${Date.now()}-${videoIndex}.${fileExtension}">Download</a>
                                 </div>
                             </div>
                         </div>`;
@@ -2398,7 +2633,7 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.tracePath
+            testData.tracePath
               ? `
             <div class="attachments-section">
                 <h4>Trace Files</h4>
@@ -2407,15 +2642,15 @@ function generateHTML(reportData, trendData = null) {
                         <div class="trace-preview">
                         <span class="trace-icon">📄</span>
                         <span class="trace-name">${sanitizeHTML(
-                          path.basename(test.tracePath),
+                          path.basename(testData.tracePath),
                         )}</span>
                         </div>
                         <div class="attachment-info">
                         <div class="trace-actions">
                             <a href="${sanitizeHTML(
-                              fixPath(test.tracePath),
+                              fixPath(testData.tracePath),
                             )}" target="_blank" download="${sanitizeHTML(
-                              path.basename(test.tracePath),
+                              path.basename(testData.tracePath),
                             )}" class="download-trace">Download Trace</a>
                         </div>
                         </div>
@@ -2426,12 +2661,12 @@ function generateHTML(reportData, trendData = null) {
               : ""
           }
           ${
-            test.attachments && test.attachments.length > 0
+            testData.attachments && testData.attachments.length > 0
               ? `
             <div class="attachments-section">
                 <h4>Other Attachments</h4>
                 <div class="attachments-grid">
-                ${test.attachments
+                ${testData.attachments
                   .map(
                     (attachment) => `
                     <div class="attachment-item generic-attachment">
@@ -2467,13 +2702,76 @@ function generateHTML(reportData, trendData = null) {
             `
               : ""
           }
-          ${
-            test.codeSnippet
-              ? `<div class="code-section"><h4>Code Snippet</h4><pre><code>${formatPlaywrightError(
-                  sanitizeHTML(test.codeSnippet),
-                )}</code></pre></div>`
-              : ""
-          }
+          
+        `;
+        };
+
+       // Determine header status: use final_status if retried, else normal status
+       const headerStatus = (test.retryHistory && test.retryHistory.length > 0 && test.final_status) 
+          ? test.final_status 
+          : test.status;
+
+       const outcomeBadge = (test.outcome && test.outcome !== 'flaky') 
+          ? `<span class="outcome-badge ${test.outcome}">${test.outcome}</span>` 
+          : '';
+
+        return `
+      <div class="test-case" data-status="${
+        headerStatus
+      }" data-browser="${sanitizeHTML(browser)}" data-tags="${(test.tags || [])
+        .join(",")
+        .toLowerCase()}">
+        <div class="test-case-header" role="button" aria-expanded="false">
+          <div class="test-case-summary">
+            <span class="test-case-title" title="${sanitizeHTML(
+              test.name,
+            )}">${sanitizeHTML(testTitle)}</span>
+            <span class="test-case-browser">(${sanitizeHTML(browser)})</span>
+          </div>
+          <div class="test-case-meta">
+            ${severityBadge}
+            ${retryBadge}
+            ${outcomeBadge}
+            ${
+              test.tags && test.tags.length > 0
+                ? test.tags
+                    .map((t) => `<span class="tag">${sanitizeHTML(t)}</span>`)
+                    .join(" ")
+                : ""
+            }
+          </div>
+          <div class="test-case-status-duration">
+            <span class="status-badge ${getStatusClass(headerStatus)}">${String(
+              headerStatus,
+            ).toUpperCase()}</span>
+            <span class="test-duration">${formatDuration(test.duration)}</span>
+          </div>
+        </div>
+        <div class="test-case-content" style="display: none;">
+          ${test.retryHistory && test.retryHistory.length > 0 ? `
+            <div class="retry-tabs-container">
+              <div class="retry-tabs-header">
+                <button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-${test.id}')">
+                   Base Run ${getSmallStatusBadge(test.final_status || test.status)}
+                </button>
+                ${test.retryHistory.map((retry, idx) => `
+                  <button class="retry-tab" onclick="switchRetryTab(event, 'retry-${idx + 1}-${test.id}')">
+                    Retry ${idx + 1} ${getSmallStatusBadge(retry.final_status || retry.status)}
+                  </button>
+                `).join('')}
+              </div>
+              
+              <div id="base-run-${test.id}" class="retry-tab-content active">
+                ${getTestContentHTML(test, 'base')}
+              </div>
+              
+              ${test.retryHistory.map((retry, idx) => `
+                <div id="retry-${idx + 1}-${test.id}" class="retry-tab-content" style="display: none;">
+                  ${getTestContentHTML(retry, `retry-${idx + 1}`)}
+                </div>
+              `).join('')}
+            </div>
+          ` : getTestContentHTML(test, 'single')}
         </div>
       </div>`;
       })
@@ -2506,7 +2804,8 @@ function generateHTML(reportData, trendData = null) {
           --success-color: #10b981; --success-dark: #059669; --success-light: #34d399;
           --danger-color: #ef4444; --danger-dark: #dc2626; --danger-light: #f87171;
           --warning-color: #f59e0b; --warning-dark: #d97706; --warning-light: #fbbf24;
-          --info-color: #3b82f6; 
+          --info-color: #3b82f6;
+          --flaky-color: #00ccd3; 
           --neutral-50: #fafafa; --neutral-100: #f5f5f5; --neutral-200: #e5e5e5; --neutral-300: #d4d4d4;
           --neutral-400: #a3a3a3; --neutral-500: #737373; --neutral-600: #525252; --neutral-700: #404040;
           --neutral-800: #262626; --neutral-900: #171717;
@@ -2524,7 +2823,9 @@ function generateHTML(reportData, trendData = null) {
           --glow-primary: 0 0 20px rgba(99, 102, 241, 0.4), 0 0 40px rgba(99, 102, 241, 0.2);
           --glow-success: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2);
           --glow-danger: 0 0 20px rgba(239, 68, 68, 0.4), 0 0 40px rgba(239, 68, 68, 0.2);
-        }
+          --bg-card: #ffffff; --bg-card-hover: #f8fafc;
+          --gradient-card: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+          --border-medium: #cbd5e1;
         * { margin: 0; padding: 0; box-sizing: border-box; }
         ::selection { background: var(--primary-color); color: white; }
         ::-webkit-scrollbar { width: 0; height: 0; display: none; }
@@ -2596,11 +2897,11 @@ function generateHTML(reportData, trendData = null) {
           display: flex;
           gap: 16px;
           align-items: stretch;
-          background: #ffffff;
+          background: transparent;
           border-radius: 12px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
+          padding: 0;
+          box-shadow: var(--shadow-md); /* Inherited from base static style */
+          overflow: hidden; /* Inherited */
         }
         .run-info-item {
           display: flex;
@@ -2609,54 +2910,61 @@ function generateHTML(reportData, trendData = null) {
           padding: 16px 28px;
           position: relative;
           flex: 1;
-          min-width: 0;
-          max-width: 100%;
-          overflow-wrap: break-word;
-          word-break: break-word;
+          min-width: fit-content;
         }
-        .run-info-item:not(:last-child)::after {
-          content: '';
-          position: absolute;
-          right: 0;
-          top: 20%;
-          bottom: 20%;
-          width: 1px;
-          background: linear-gradient(to bottom, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
-        }
+
         .run-info-item:first-child {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 50%, rgba(217, 119, 6, 0.1) 100%);
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(251, 191, 36, 0.25), 0 0 40px rgba(251, 191, 36, 0.08);
+        }
+        .run-info-item:first-child:hover {
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.22) 50%, rgba(217, 119, 6, 0.15) 100%);
+          border-color: rgba(251, 191, 36, 0.4);
+          box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(251, 191, 36, 0.35), 0 0 50px rgba(251, 191, 36, 0.15);
         }
         .run-info-item:last-child {
-          background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(124, 58, 237, 0.12) 50%, rgba(109, 40, 217, 0.08) 100%);
+          border: 1px solid rgba(139, 92, 246, 0.3);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.08);
+        }
+        .run-info-item:last-child:hover {
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(124, 58, 237, 0.18) 50%, rgba(109, 40, 217, 0.12) 100%);
+          border-color: rgba(139, 92, 246, 0.4);
+          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(139, 92, 246, 0.35), 0 0 50px rgba(139, 92, 246, 0.15);
         }
         .run-info strong { 
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           font-size: 0.7em;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          color: #64748b;
+          letter-spacing: 1.2px;
+          color: #9ca3af;
           margin: 0;
           font-weight: 700;
         }
         .run-info strong::before {
           content: '';
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           background: currentColor;
-          opacity: 0.6;
+          opacity: 0.7;
+          box-shadow: 0 0 8px currentColor;
         }
         .run-info-item:first-child strong {
-          color: #92400e;
+          color: var(--warning-light);
         }
         .run-info-item:last-child strong {
-          color: #5b21b6;
+          color: var(--secondary-light);
         }
         .run-info span {
+          font-size: 1.5em;
           font-weight: 800;
-          color: #0f172a;
+          color: #0f172a; /* Adjusted for light theme consistency, static uses #f9fafb */
           font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
           letter-spacing: -0.02em;
           line-height: 1.2;
@@ -2720,12 +3028,17 @@ function generateHTML(reportData, trendData = null) {
           }
         }
         
+        
+        .stat-pill.flaky { color: #4b5563; }
+
         .dashboard-grid { 
           display: grid; 
           grid-template-columns: repeat(4, 1fr); 
           gap: 0;
           margin: 0 0 40px 0;
         }
+        .stats-pill.failed { color: var(--danger-dark); }
+        .stats-pill.flaky { color: #4b5563; }
         .browser-breakdown {
           display: flex;
           flex-direction: column;
@@ -2766,9 +3079,17 @@ function generateHTML(reportData, trendData = null) {
           color: #0f172a;
           text-transform: capitalize;
           font-size: 1.05em;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 1;
+          min-width: 0;
+          margin-right: 8px;
         }
         .browser-stats {
           color: #64748b;
+          white-space: nowrap;
+          flex-shrink: 0;
           font-weight: 700;
           font-size: 0.95em;
         }
@@ -2812,9 +3133,11 @@ function generateHTML(reportData, trendData = null) {
             align-items: flex-start;
           }
           .run-info { 
+            flex-direction: column;
+            gap: 0;
             width: 100%;
-            justify-content: flex-start;
-            gap: 24px;
+            border-radius: 14px;
+            overflow: hidden;
           }
           .dashboard-grid { 
             grid-template-columns: repeat(2, 1fr);
@@ -2823,11 +3146,23 @@ function generateHTML(reportData, trendData = null) {
           .summary-card:nth-child(n+7) { border-bottom: none; }
           .filters { 
             padding: 24px;
-            flex-direction: column;
+            flex-wrap: wrap;
+            gap: 12px;
           }
-          .filters input { min-width: 100%; }
-          .filters select { min-width: 100%; }
-          .filters button { width: 100%; }
+          .filters input { 
+            flex: 1 1 auto;
+            min-width: 0; 
+            width: auto;
+          }
+          .filters select { 
+            flex: 0 0 auto;
+            min-width: 0;
+            width: auto; 
+          }
+          .filters button { 
+            width: auto;
+            flex: 0 0 auto;
+          }
           .copy-btn {
             font-size: 0.75em;
             padding: 8px 16px;
@@ -3026,16 +3361,13 @@ function generateHTML(reportData, trendData = null) {
             display: none;
           }
           .run-info-item:not(:last-child) {
-            border-bottom: 1px solid var(--light-gray-color);
+            border-bottom: 1px solid var(--border-medium);
           }
-          .run-info strong {
-            font-size: 0.65em;
+          .run-info strong { 
+            font-size: 0.65em; 
           }
-          .run-info span {
-            font-size: 1.1em;
-            white-space: normal;
-            word-break: break-word;
-            overflow-wrap: break-word;
+          .run-info span { 
+            font-size: 1.1em; 
           }
           .tabs {
             flex-wrap: wrap;
@@ -3151,12 +3483,19 @@ function generateHTML(reportData, trendData = null) {
           box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
         }
         .summary-card.status-failed .value { color: #ef4444; }
+        .summary-card.status-flaky::before { background: #00ccd3; }
         .summary-card.status-skipped { background: rgba(245, 158, 11, 0.02); }
         .summary-card.status-skipped:hover { 
           background: rgba(245, 158, 11, 0.15); 
           box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
         }
         .summary-card.status-skipped .value { color: #f59e0b; }
+        .summary-card.flaky-status { background: rgba(0, 204, 211, 0.05); }
+        .summary-card.flaky-status:hover { 
+          background: rgba(0, 204, 211, 0.15); 
+          box-shadow: 0 4px 12px rgba(0, 204, 211, 0.2);
+        }
+        .summary-card.flaky-status .value { color: #00ccd3; }
         .summary-card:not([class*='status-']) .value { color: #0f172a; }
         .dashboard-bottom-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: start; }
         .dashboard-column { 
@@ -3197,58 +3536,167 @@ function generateHTML(reportData, trendData = null) {
         .status-badge-small-tooltip.status-failed { background-color: var(--danger-color); }
         .status-badge-small-tooltip.status-skipped { background-color: var(--warning-color); }
         .status-badge-small-tooltip.status-unknown { background-color: var(--dark-gray-color); }
-        .suites-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .suites-header {
+            flex-shrink: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
         .summary-badge { background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }
         .suites-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .suite-card { 
-          border: none;
-          border-left: 4px solid #e2e8f0;
-          padding: 24px; 
-          background: white;
-          transition: all 0.15s ease;
+        .suites-widget {
+          display: flex;
+          flex-direction: column;
         }
-        .suite-card:hover { 
-          background: #fafbfc;
-          border-left-color: #6366f1;
+        .fixed-height-widget {
+          height: 450px;
         }
-        .suite-card.status-passed { border-left-color: #10b981; }
-        .suite-card.status-passed:hover { background: rgba(16, 185, 129, 0.02); }
-        .suite-card.status-failed { border-left-color: #ef4444; }
-        .suite-card.status-failed:hover { background: rgba(239, 68, 68, 0.02); }
-        .suite-card.status-skipped { border-left-color: #f59e0b; }
-        .suite-card.status-skipped:hover { background: rgba(245, 158, 11, 0.02); }
-        .suite-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-        .suite-name { font-weight: 600; font-size: 1.05em; color: var(--text-color); margin-right: 10px; word-break: break-word;}
+        .suites-grid-container {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .fixed-height-widget {
+                height: auto;
+                max-height: 600px;
+            }
+        }
+        .suite-card {
+          background: #ffffff;
+          border: 1px solid var(--border-light);
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+          overflow: hidden;
+        }
+        .suite-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          border-color: var(--primary-light);
+        }
+        .suite-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 4px;
+          background: var(--neutral-200);
+          opacity: 0.8;
+          transition: background 0.3s ease;
+        }
+        .suite-card.status-passed::before { background: var(--success-color); }
+        .suite-card.status-failed::before { background: var(--danger-color); }
+        .suite-card.status-flaky::before { background: #00ccd3; }
+        .suite-card.status-skipped::before { background: var(--warning-color); }
+        
+        /* Outcome Badge */
+        .outcome-badge {
+            background-color: var(--secondary-color); 
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-right: 8px;
+            letter-spacing: 0.5px;
+        }
+        .outcome-badge.flaky {
+            background-color: #00ccd3;
+            color: #fff;
+        }
+
+        .suite-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 16px;
+        }
+        .suite-name {
+          font-size: 1.15em;
+          font-weight: 700;
+          color: var(--text-primary);
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-right: 12px;
+        }
+        .status-indicator-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          flex-shrink: 0;
+          margin-top: 6px;
+        }
+        .status-indicator-dot.status-passed { background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }
+        .status-indicator-dot.status-failed { background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+        .status-indicator-dot.status-flaky { background-color: #00ccd3; box-shadow: 0 0 0 4px rgba(0, 204, 211, 0.15); }
+        .status-indicator-dot.status-skipped { background-color: rgba(245, 158, 11, 0.1); color: var(--warning-dark); border: 1px solid rgba(245, 158, 11, 0.2); }
+        .status-flaky { background-color: rgba(0, 204, 211, 0.1); color: #00ccd3; border: 1px solid #00ccd3; }
+
         .browser-tag {
+          font-size: 0.8em;
+          font-weight: 600;
+          background: var(--bg-secondary);
+          color: var(--text-secondary);
+          padding: 4px 10px;
+          border-radius: 20px;
+          border: 1px solid var(--border-light);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 20px;
+          align-self: flex-start;
+          box-shadow: none;
+          text-shadow: none;
+        }
+        
+        .suite-card-body {
+          margin-top: auto;
+        }
+        
+        .test-count-label {
           font-size: 0.85em;
           font-weight: 600;
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(59, 130, 246, 0.15) 100%);
-          padding: 6px 12px;
-          border-radius: var(--radius-sm);
-          border: 1px solid rgba(96, 165, 250, 0.3);
-          display: inline-block;
-          box-shadow: 0 2px 8px rgba(96, 165, 250, 0.15), inset 0 1px 0 rgba(96, 165, 250, 0.2);
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-          letter-spacing: 0.3px;
-          max-width: 200px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-          vertical-align: middle;
-          cursor: help;
-          transition: all 0.2s ease;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 8px;
+          display: block;
         }
-        .browser-tag:hover {
-          background: linear-gradient(135deg, rgba(96, 165, 250, 0.3) 0%, rgba(59, 130, 246, 0.25) 100%);
-          border-color: rgba(96, 165, 250, 0.5);
+
+        .suite-stats {
+          display: flex;
+          gap: 8px;
+          background: var(--bg-secondary);
+          padding: 10px 14px;
+          border-radius: 10px;
+          justify-content: space-between;
         }
-        .suite-card-body .test-count { font-size: 0.95em; color: var(--text-color-secondary); display: block; margin-bottom: 10px; }
-        .suite-stats { display: flex; gap: 14px; font-size: 0.95em; align-items: center; }
-        .suite-stats span { display: flex; align-items: center; gap: 6px; }
-        .suite-stats svg { vertical-align: middle; font-size: 1.15em; }
-        .suite-stats .stat-passed { color: #10b981; }
-        .suite-stats .stat-failed { color: #ef4444; }
-        .suite-stats .stat-skipped { color: #f59e0b; }
+        
+        .stat-pill {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 0.9em;
+          font-weight: 600;
+        }
+        .stat-pill svg { width: 14px; height: 14px; }
+        .stat-pill.passed { color: var(--success-dark); }
+        .stat-pill.failed { color: var(--danger-dark); }
+        .stat-pill.flaky { color: #00ccd3; }
+        .stat-pill.skipped { color: var(--warning-dark); }
         .filters {
           display: flex;
           flex-wrap: wrap;
@@ -3280,6 +3728,7 @@ function generateHTML(reportData, trendData = null) {
           min-width: 180px;
           background: white;
           cursor: pointer;
+          width: 100%;
         }
         .filters select:focus { 
           outline: none;
@@ -3411,7 +3860,7 @@ function generateHTML(reportData, trendData = null) {
           border-radius: 0;
           font-size: 0.7em;
           font-weight: 800;
-          color: white;
+          color: black;
           text-transform: uppercase;
           min-width: 100px;
           text-align: center;
@@ -3473,6 +3922,65 @@ function generateHTML(reportData, trendData = null) {
           border-color: rgba(148, 163, 184, 0.25);
         }
 
+        /* --- RETRY COUNT BADGE --- */
+        .retry-badge {
+          display: inline-flex;
+          align-items: center;
+          padding: 5px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          background: rgba(147, 51, 234, 0.15);
+          color: #a855f7;
+          border: 1px solid rgba(147, 51, 234, 0.3);
+          margin-left: 8px;
+        }
+
+        /* --- RETRY TABS --- */
+        .retry-tabs-container {
+          margin-top: 16px;
+        }
+
+        .retry-tabs-header {
+          display: flex;
+          gap: 8px;
+          border-bottom: 2px solid var(--border-medium);
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .retry-tab {
+          padding: 10px 20px;
+          background: transparent;
+          border: none;
+          border-bottom: 3px solid transparent;
+          cursor: pointer;
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--text-color-secondary);
+          transition: all 0.2s ease;
+        }
+
+        .retry-tab:hover {
+          color: var(--primary-color);
+          background: rgba(147, 51, 234, 0.05);
+        }
+
+        .retry-tab.active {
+          color: #a855f7;
+          border-bottom-color: #a855f7;
+          background: rgba(147, 51, 234, 0.1);
+        }
+
+        .retry-tab-content {
+          animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
         .tag { 
           display: inline-flex;
           align-items: center;
@@ -3503,7 +4011,16 @@ function generateHTML(reportData, trendData = null) {
         }
         .test-case-content h4 { margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }
         .test-case-content p { margin-bottom: 10px; font-size: 1em; }
-        .test-error-summary { margin-bottom: 20px; padding: 14px; background-color: rgba(244,67,54,0.05); border: 1px solid rgba(244,67,54,0.2); border-left: 4px solid var(--danger-color); border-radius: 4px; }
+        .test-error-summary { 
+          margin-bottom: 20px; 
+          padding: 14px; 
+          background-color: rgba(244,67,54,0.05); 
+          border: 1px solid rgba(244,67,54,0.2); 
+          border-left: 4px solid var(--danger-color); 
+          border-radius: 4px; 
+          display: flex;
+          flex-direction: column;
+        }
         .test-error-summary h4 { color: var(--danger-color); margin-top:0;}
         .test-error-summary pre { white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}
         .steps-list { margin: 18px 0; }
@@ -3515,10 +4032,15 @@ function generateHTML(reportData, trendData = null) {
         .step-duration { color: var(--dark-gray-color); font-size: 0.9em; }
         .step-details { display: none; padding: 14px; margin-top: 8px; background: #fdfdfd; border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }
         .step-info { margin-bottom: 8px; }
+        .code-snippet-section { margin: 12px 0; }
+        .code-snippet { background-color: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9em; line-height: 1.5; overflow-x: auto; color: #24292e; margin: 0; white-space: pre; }
         .test-error-summary { color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }
         .test-error-summary pre.stack-trace { margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
         .step-hook { background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; } 
         .step-hook .step-title { font-style: italic; color: var(--info-color)}
+        .failed-step-highlight { border-left: 4px solid var(--danger-color) !important; background-color: rgba(244,67,54,0.03); }
+        .failed-step-highlight .step-header { background-color: rgba(244,67,54,0.05); border-color: rgba(244,67,54,0.3); }
+        .failed-step-marker { display: inline-block; margin-left: 10px; padding: 2px 8px; background-color: var(--danger-color); color: white; border-radius: 4px; font-size: 0.85em; font-weight: 600; }
         .nested-steps { margin-top: 12px; }
         .attachments-section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }
         .attachments-section h4 { margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }
@@ -3651,6 +4173,7 @@ function generateHTML(reportData, trendData = null) {
           color: var(--text-color); 
           pointer-events: auto;
           cursor: pointer;
+          width: 100%;
         }
         .filters button.clear-filters-btn:active,
         .filters button.clear-filters-btn:focus {
@@ -4046,31 +4569,33 @@ function generateHTML(reportData, trendData = null) {
                 <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">${
                   runSummary.skipped || 0
                 }</div><div class="trend-percentage">${skipPercentage}%</div></div>
-                <div class="summary-card"><h3>Avg. Test Time</h3><div class="value">${avgTestDuration}</div></div>
-                <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
-                  runSummary.duration,
-                )}</div></div>
-                <div class="summary-card">
-                  <h3>🔄 Retry Count</h3>
-                  <div class="value">${totalRetried}</div>
-                </div>
+                <div class="summary-card flaky-status"><h3>Flaky</h3><div class="value">${runSummary.flaky || 0}</div>
+                <div class="trend-percentage">${flakyPercentage}%</div></div>
+                 <div class="summary-card"><h3>Run Duration</h3><div class="value">${formatDuration(
+                   runSummary.duration,
+                 )}</div><div class="trend-percentage">Avg. Test Duration ${avgTestDuration}</div></div>
+                 <div class="summary-card">
+                   <h3>Total Retry Count</h3>
+                   <div class="value">${totalRetried}</div>
+                   <div class="trend-percentage">Test Retried ${retriedTestsCount}</div>
+                 </div>
                 <div class="summary-card">
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">(${browserBreakdown.length} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
                     ${browserBreakdown
-                      .slice(0, 5)
+                      .slice(0, 3)
                       .map(
                         (b) =>
                           `<div class="browser-item">
-                        <span class="browser-name">${sanitizeHTML(b.browser)}</span>
+                        <span class="browser-name" title="${sanitizeHTML(b.browser)}">${sanitizeHTML(b.browser)}</span>
                         <span class="browser-stats">${b.percentage}% (${b.count})</span>
                       </div>`,
                       )
                       .join("")}
                     ${
-                      browserBreakdown.length > 5
+                      browserBreakdown.length > 3
                         ? `<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
-                      <span>+${browserBreakdown.length - 5} more browsers</span>
+                      <span>+${browserBreakdown.length - 3} more browsers</span>
                     </div>`
                         : ""
                     }
@@ -4083,17 +4608,13 @@ function generateHTML(reportData, trendData = null) {
                   [
                     { label: "Passed", value: runSummary.passed },
                     { label: "Failed", value: runSummary.failed },
+                    { label: "Flaky", value: runSummary.flaky || 0 },
                     { label: "Skipped", value: runSummary.skipped || 0 },
                   ],
                   400,
                   390,
                 )} 
-                ${
-                  runSummary.environment &&
-                  Object.keys(runSummary.environment).length > 0
-                    ? generateEnvironmentDashboard(runSummary.environment)
-                    : '<div class="no-data">Environment data not available.</div>'
-                }
+                ${generateEnvironmentSection(runSummary.environment)}
               </div> 
               
               <div class="dashboard-column">
@@ -4105,7 +4626,7 @@ function generateHTML(reportData, trendData = null) {
         <div id="test-runs" class="tab-content">
             <div class="filters">
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
-                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="skipped">Skipped</option></select>
+                <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="flaky">Flaky</option><option value="skipped">Skipped</option></select>
                 <select id="filter-browser"><option value="">All Browsers</option>${Array.from(
                   new Set(
                     (results || []).map((test) => test.browser || "unknown"),
@@ -4200,6 +4721,33 @@ function generateHTML(reportData, trendData = null) {
             button.textContent = 'Failed';
              setTimeout(() => { button.textContent = originalText; }, 2000);
         });
+    }
+    
+    // --- Retry Tab Switching Function ---
+    function switchRetryTab(event, tabId) {
+      const tabButton = event.currentTarget;
+      const tabsContainer = tabButton.closest('.retry-tabs-container');
+      
+      // Hide all tab contents in this container
+      const allTabContents = tabsContainer.querySelectorAll('.retry-tab-content');
+      allTabContents.forEach(content => {
+        content.style.display = 'none';
+        content.classList.remove('active');
+      });
+      
+      // Remove active class from all tabs
+      const allTabs = tabsContainer.querySelectorAll('.retry-tab');
+      allTabs.forEach(tab => tab.classList.remove('active'));
+      
+      // Show selected tab content
+      const selectedContent = document.getElementById(tabId);
+      if (selectedContent) {
+        selectedContent.style.display = 'block';
+        selectedContent.classList.add('active');
+      }
+      
+      // Add active class to clicked tab
+      tabButton.classList.add('active');
     }
     
     // --- AI Failure Analyzer Functions ---
@@ -4669,6 +5217,8 @@ async function runScript(scriptPath, args = []) {
   });
 }
 async function main() {
+  await animate();
+  
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = path.dirname(__filename);
 
@@ -4834,6 +5384,7 @@ async function main() {
           passed: histRunReport.run.passed,
           failed: histRunReport.run.failed,
           skipped: histRunReport.run.skipped || 0,
+          flaky: histRunReport.run.flaky || (histRunReport.results ? histRunReport.results.filter(r => r.status === 'flaky' || r.outcome === 'flaky').length : 0),
         });
 
         if (histRunReport.results && Array.isArray(histRunReport.results)) {
@@ -4842,7 +5393,7 @@ async function main() {
             (test) => ({
               testName: test.name,
               duration: test.duration,
-              status: test.status,
+              status: test.final_status || test.status,
               timestamp: new Date(test.startTime),
             }),
           );
@@ -4860,7 +5411,7 @@ async function main() {
     await fs.writeFile(reportHtmlPath, htmlContent, "utf-8");
     console.log(
       chalk.green.bold(
-        `🎉 Pulse report generated successfully at: ${reportHtmlPath}`,
+        `Pulse report generated successfully at: ${reportHtmlPath}`,
       ),
     );
     console.log(chalk.gray(`(You can open this file in your browser)`));

@@ -19,7 +19,7 @@
     }
   },
   // Include all necessary source files relative to the new rootDir ('src')
-  "include": ["src/reporter/**/*", "src/types/**/*", "src/lib/report-types.ts"],
+  "include": ["src/reporter/**/*", "src/types/**/*", "src/lib/report-types.ts", "src/pulse.ts"],
   "exclude": [
     "node_modules",
     "src/app",

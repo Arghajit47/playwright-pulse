@@ -21,6 +21,8 @@ import type {
 import { randomUUID } from "crypto";
 import UAParser from "ua-parser-js";
 import * as os from "os";
+import { compressAttachment } from "../utils/compression-utils";
+
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -131,6 +133,30 @@ export class PlaywrightPulseReporter implements Reporter {
     return severityAnnotation?.description || "Medium";
   }
 
+  private extractCodeSnippet(
+    filePath: string,
+    targetLine: number,
+    targetColumn: number
+  ): string {
+    try {
+      const fsSync = require('fs');
+      if (!fsSync.existsSync(filePath)) {
+        return '';
+      }
+      
+      const content = fsSync.readFileSync(filePath, 'utf8');
+      const lines = content.split('\n');
+      
+      if (targetLine < 1 || targetLine > lines.length) {
+        return '';
+      }
+      
+      return lines[targetLine - 1]?.trim() || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   private getBrowserDetails(test: TestCase): string {
     const project = test.parent?.project();
     const projectConfig = project?.use;
@@ -202,11 +228,19 @@ export class PlaywrightPulseReporter implements Reporter {
     const startTime = new Date(step.startTime);
     const endTime = new Date(startTime.getTime() + Math.max(0, duration));
     let codeLocation = "";
+    let codeSnippet: string = '';
+    
     if (step.location) {
       codeLocation = `${path.relative(
         this.config.rootDir,
         step.location.file
       )}:${step.location.line}:${step.location.column}`;
+      
+      codeSnippet = this.extractCodeSnippet(
+        step.location.file,
+        step.location.line,
+        step.location.column
+      );
     }
 
     return {
@@ -220,6 +254,7 @@ export class PlaywrightPulseReporter implements Reporter {
       errorMessage: errorMessage,
       stackTrace: step.error?.stack || undefined,
       codeLocation: codeLocation || undefined,
+      codeSnippet: codeSnippet,
       isHook: step.category === "hook",
       hookType:
         step.category === "hook"
@@ -234,7 +269,23 @@ export class PlaywrightPulseReporter implements Reporter {
   async onTestEnd(test: TestCase, result: PwTestResult): Promise<void> {
     const project = test.parent?.project();
     const browserDetails = this.getBrowserDetails(test);
-    const testStatus = convertStatus(result.status, test);
+    
+    // Captured outcome from Playwright
+    const outcome = test.outcome();
+
+    // Calculate final status based on the last result (Last-Run-Wins)
+    // result.status in onTestEnd is typically the status of the test run (passed if flaky passed)
+    // But we double check the last result in test.results just to be sure/consistent
+    const lastResult = test.results[test.results.length - 1];
+    const finalStatus = convertStatus(lastResult ? lastResult.status : result.status, test);
+    
+    // Existing behavior: fail if flaky (implied by user request "existing status field should remain failed")
+    // If outcome is flaky, status should be 'failed' to indicate initial failure, but final_status is 'passed'
+    let testStatus = finalStatus;
+    if (outcome === 'flaky') {
+      testStatus = 'flaky';
+    }
+
     const startTime = new Date(result.startTime);
     const endTime = new Date(startTime.getTime() + result.duration);
 
@@ -242,6 +293,7 @@ export class PlaywrightPulseReporter implements Reporter {
       steps: PwStep[]
     ): Promise<PulseTestStep[]> => {
       let processed: PulseTestStep[] = [];
+      
       for (const step of steps) {
         const processedStep = await this.processStep(
           step,
@@ -250,6 +302,7 @@ export class PlaywrightPulseReporter implements Reporter {
           test
         );
         processed.push(processedStep);
+        
         if (step.steps && step.steps.length > 0) {
           processedStep.steps = await processAllSteps(step.steps);
         }
@@ -257,19 +310,12 @@ export class PlaywrightPulseReporter implements Reporter {
       return processed;
     };
 
-    let codeSnippet: string | undefined = undefined;
-    try {
-      if (test.location?.file && test.location?.line && test.location?.column) {
-        const relativePath = path.relative(
-          this.config.rootDir,
-          test.location.file
-        );
-        codeSnippet = `Test defined at: ${relativePath}:${test.location.line}:${test.location.column}`;
-      }
-    } catch (e) {
-      console.warn(
-        `Pulse Reporter: Could not extract code snippet for ${test.title}`,
-        e
+    let codeSnippet: string = '';
+    if (test.location?.file && test.location?.line && test.location?.column) {
+      codeSnippet = this.extractCodeSnippet(
+        test.location.file,
+        test.location.line,
+        test.location.column
       );
     }
     // 1. Get Spec File Name
@@ -315,12 +361,14 @@ export class PlaywrightPulseReporter implements Reporter {
       suiteName:
         project?.name || this.config.projects[0]?.name || "Default Suite",
       status: testStatus,
+      outcome: outcome === 'flaky' ? outcome : undefined, // Only Include if flaky
+      final_status: finalStatus, // New Field
       duration: result.duration,
       startTime: startTime,
       endTime: endTime,
       browser: browserDetails,
       retries: result.retry,
-      steps: result.steps?.length ? await processAllSteps(result.steps) : [],
+      steps: result.steps ? await processAllSteps(result.steps) : [],
       errorMessage: result.error?.message,
       stackTrace: result.error?.stack,
       snippet: result.error?.snippet,
@@ -355,7 +403,12 @@ export class PlaywrightPulseReporter implements Reporter {
         );
         const absoluteDestPath = path.join(this.outputDir, relativeDestPath);
         await this._ensureDirExists(path.dirname(absoluteDestPath));
+        
+        // Copy file first
         await fs.copyFile(attachment.path, absoluteDestPath);
+        
+        // Compress in-place (preserves path/name)
+        await compressAttachment(absoluteDestPath, attachment.contentType);
 
         if (attachment.contentType.startsWith("image/")) {
           pulseResult.screenshots?.push(relativeDestPath);
@@ -381,15 +434,52 @@ export class PlaywrightPulseReporter implements Reporter {
   }
 
   private _getFinalizedResults(allResults: TestResult[]): TestResult[] {
-    const finalResultsMap = new Map<string, TestResult>();
+    const resultsMap = new Map<string, TestResult[]>();
+    
     for (const result of allResults) {
-      const existing = finalResultsMap.get(result.id);
-      // Keep the result with the highest retry attempt for each test ID
-      if (!existing || result.retries >= existing.retries) {
-        finalResultsMap.set(result.id, result);
+      if (!resultsMap.has(result.id)) {
+        resultsMap.set(result.id, []);
       }
+      resultsMap.get(result.id)!.push(result);
     }
-    return Array.from(finalResultsMap.values());
+    
+    const finalResults: TestResult[] = [];
+    
+    for (const [testId, attempts] of resultsMap.entries()) {
+      attempts.sort((a, b) => a.retries - b.retries);
+      
+      const firstAttempt = attempts[0];
+      const retryAttempts = attempts.slice(1);
+      
+      
+      // Only populate retryHistory if there were actual failures that triggered retries
+      // If all attempts passed, we don't need to show retry history
+      const hasActualRetries = retryAttempts.length > 0 && retryAttempts.some(attempt => 
+        attempt.status === 'failed' || attempt.status === 'flaky' || firstAttempt.status === 'failed' || firstAttempt.status === 'flaky'
+      );
+      
+      if (hasActualRetries) {
+        firstAttempt.retryHistory = retryAttempts;
+        
+        // Calculate final status and outcome from the last attempt if retries exist
+        const lastAttempt = attempts[attempts.length - 1];
+        firstAttempt.final_status = lastAttempt.status;
+        
+        // If the last attempt was flaky, ensure outcome is set on the main result
+        if (lastAttempt.outcome === 'flaky' || lastAttempt.status === 'flaky') {
+            firstAttempt.outcome = 'flaky';
+            firstAttempt.status = 'flaky';
+        }
+      } else {
+        // If no actual retries (all attempts passed), ensure final_status and retryHistory are removed
+        delete firstAttempt.final_status;
+        delete firstAttempt.retryHistory;
+      }
+      
+      finalResults.push(firstAttempt);
+    }
+    
+    return finalResults;
   }
 
   onError(error: any): void {
@@ -488,6 +578,9 @@ export class PlaywrightPulseReporter implements Reporter {
     finalRunData.skipped = finalResultsList.filter(
       (r) => r.status === "skipped"
     ).length;
+    finalRunData.flaky = finalResultsList.filter(
+      (r) => r.status === "flaky"
+    ).length;
     finalRunData.totalTests = finalResultsList.length;
 
     const reviveDates = (key: string, value: any): any => {
@@ -567,6 +660,7 @@ export class PlaywrightPulseReporter implements Reporter {
       passed: finalResults.filter((r) => r.status === "passed").length,
       failed: finalResults.filter((r) => r.status === "failed").length,
       skipped: finalResults.filter((r) => r.status === "skipped").length,
+      flaky: finalResults.filter((r) => r.status === "flaky").length,
       duration,
       environment: environmentDetails,
     };
