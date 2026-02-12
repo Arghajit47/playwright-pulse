@@ -42,6 +42,7 @@ const path = __importStar(require("path"));
 const crypto_1 = require("crypto");
 const ua_parser_js_1 = __importDefault(require("ua-parser-js"));
 const os = __importStar(require("os"));
+const compression_utils_1 = require("../utils/compression-utils");
 const convertStatus = (status, testCase) => {
     if ((testCase === null || testCase === void 0 ? void 0 : testCase.expectedStatus) === "failed") {
         return "failed";
@@ -325,7 +326,10 @@ class PlaywrightPulseReporter {
                 const relativeDestPath = path.join(ATTACHMENTS_SUBDIR, testSubfolder, uniqueFileName);
                 const absoluteDestPath = path.join(this.outputDir, relativeDestPath);
                 await this._ensureDirExists(path.dirname(absoluteDestPath));
+                // Copy file first
                 await fs.copyFile(attachment.path, absoluteDestPath);
+                // Compress in-place (preserves path/name)
+                await (0, compression_utils_1.compressAttachment)(absoluteDestPath, attachment.contentType);
                 if (attachment.contentType.startsWith("image/")) {
                     (_m = pulseResult.screenshots) === null || _m === void 0 ? void 0 : _m.push(relativeDestPath);
                 }
