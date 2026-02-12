@@ -42,23 +42,26 @@ export async function compressImage(
       compressedBuffer = await sharp(imageBuffer)
         .webp({ quality })
         .toBuffer();
+    } else if (ext === '.gif') {
+      // Compress GIF
+      compressedBuffer = await sharp(imageBuffer)
+        .gif()
+        .toBuffer();
+    } else if (ext === '.tiff' || ext === '.tif') {
+      // Compress TIFF
+      compressedBuffer = await sharp(imageBuffer)
+        .tiff({ quality, compression: 'lzw' })
+        .toBuffer();
     } else {
       // Unsupported format, skip compression
-      console.log(`Compression skipped for unsupported format: ${ext}`);
       return;
     }
     
     // Only overwrite if compression actually reduced size
     if (compressedBuffer.length < imageBuffer.length) {
       await fs.writeFile(filePath, compressedBuffer);
-      const savedBytes = imageBuffer.length - compressedBuffer.length;
-      const savedPercent = ((savedBytes / imageBuffer.length) * 100).toFixed(1);
-      console.log(`Compressed ${path.basename(filePath)}: ${savedPercent}% smaller`);
-    } else {
-      console.log(`Skipped ${path.basename(filePath)}: compression didn't reduce size`);
     }
   } catch (error: any) {
-    console.warn(`Failed to compress image ${filePath}:`, error.message);
     // File remains unchanged
   }
 }
