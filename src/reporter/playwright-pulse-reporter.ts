@@ -21,6 +21,8 @@ import type {
 import { randomUUID } from "crypto";
 import UAParser from "ua-parser-js";
 import * as os from "os";
+import { compressAttachment } from "../utils/compression-utils";
+
 
 const convertStatus = (
   status: "passed" | "failed" | "timedOut" | "skipped" | "interrupted",
@@ -401,7 +403,12 @@ export class PlaywrightPulseReporter implements Reporter {
         );
         const absoluteDestPath = path.join(this.outputDir, relativeDestPath);
         await this._ensureDirExists(path.dirname(absoluteDestPath));
+        
+        // Copy file first
         await fs.copyFile(attachment.path, absoluteDestPath);
+        
+        // Compress in-place (preserves path/name)
+        await compressAttachment(absoluteDestPath, attachment.contentType);
 
         if (attachment.contentType.startsWith("image/")) {
           pulseResult.screenshots?.push(relativeDestPath);
