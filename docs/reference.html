@@ -93,6 +93,29 @@
       <main class="main-content">
         <h1>Changelog</h1>
         <section id="changelog">
+          <h2>Version 0.3.5</h2>
+          <ul>
+            <li>
+              <strong>Improved:</strong>
+              <b>Inline Highcharts script</b>: Inlined the Highcharts library from node_modules into HTML reports to eliminate external CDN dependencies and resolve 429 errors.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Security Fixes</b>: Resolved high-severity vulnerabilities in ajv and minimatch by forcing modern, secure versions through global package.json overrides.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Dependency Optimization</b>: Consolidated duplicate versions of utility modules like readable-stream and isarray across the dependency tree to reduce project bloat.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Package Pruning</b>: Removed the unused lucide-react dependency and cleaned up associated type definitions to keep the codebase lean.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Log Formatting</b>: Fixed a display bug where stdout and stderr logs in the report were showing literal `\n` characters instead of real line breaks.
+            </li>
+          </ul>
           <h2>Version 0.3.4</h2>
           <ul>
             <li>

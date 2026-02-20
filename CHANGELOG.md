@@ -1,5 +1,16 @@
 # 📜 Changelog
 
+## **Version 0.3.5**
+
+**🚀 Update Highlights**
+
+* **🔧 Improvements**:
+  * **Inline Highcharts script**: Inlined the Highcharts library from node_modules into HTML reports to eliminate external CDN dependencies and resolve 429 errors.
+  * **Security Fixes**: Resolved high-severity vulnerabilities in ajv and minimatch by forcing modern, secure versions through global package.json overrides.
+  * **Dependency Optimization**: Consolidated duplicate versions of utility modules like readable-stream and isarray across the dependency tree to reduce project bloat.
+  * **Package Pruning**: Removed the unused lucide-react dependency and cleaned up associated type definitions to keep the codebase lean.
+  * **Log Formatting**: Fixed a display bug where stdout and stderr logs in the report were showing literal `\n` characters instead of real line breaks.
+
 ## **Version 0.3.4**
 
 **🚀 Update Highlights**

@@ -8,6 +8,31 @@ import { fileURLToPath } from "url";
 import { getOutputDir } from "./config-reader.mjs";
 import { animate } from "./terminal-logo.mjs";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load Highcharts content from node_modules for inlining
+const highchartsPath = path.resolve(
+  process.cwd(),
+  "node_modules/highcharts/highcharts.js",
+);
+let highchartsContent = "";
+try {
+  highchartsContent = readFileSync(highchartsPath, "utf8");
+} catch (e) {
+  // If not found in process.cwd(), try relative to the script
+  try {
+    highchartsContent = readFileSync(
+      path.resolve(__dirname, "../node_modules/highcharts/highcharts.js"),
+      "utf8",
+    );
+  } catch (e2) {
+    console.warn(
+      "Highcharts could not be loaded from node_modules. Falling back to CDN.",
+    );
+  }
+}
+
 /**
  * Dynamically imports the 'chalk' library for terminal string styling.
  * This is necessary because chalk is an ESM-only module.
@@ -2772,7 +2797,7 @@ function generateHTML(reportData, trendData = null) {
                               <pre id="${logId}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
                                 testData.stdout
                                   .map((line) => sanitizeHTML(line))
-                                  .join("\\n"),
+                                  .join("\n"),
                               )}</pre>
                           </div>
                       </div>`;
@@ -2780,7 +2805,7 @@ function generateHTML(reportData, trendData = null) {
           ${
             testData.stderr && testData.stderr.length > 0
               ? `<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">${formatPlaywrightError(
-                  testData.stderr.map((line) => sanitizeHTML(line)).join("\\n"),
+                  testData.stderr.map((line) => sanitizeHTML(line)).join("\n"),
                 )}</pre></div>`
               : ""
           }
@@ -3010,13 +3035,13 @@ function generateHTML(reportData, trendData = null) {
     <!-- Preconnect to external domains -->
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://code.highcharts.com">
     
     <!-- Preload critical font -->
+
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"></noscript>
     
-    <script src="https://code.highcharts.com/highcharts.js" defer></script>
+    ${highchartsContent ? `<script>${highchartsContent}</script>` : '<script src="https://code.highcharts.com/highcharts.js" defer></script>'}
     <title>Pulse Static Report</title>
     
 <style>

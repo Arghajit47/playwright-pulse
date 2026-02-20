@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 export type TestStatus =
   | "passed"
   | "failed"
@@ -100,13 +98,6 @@ export interface TrendDataPoint {
   failed: number;
   skipped: number;
   flaky?: number;
-}
-
-export interface SummaryMetric {
-  label: string;
-  value: string | number;
-  icon: LucideIcon;
-  color?: string; // Tailwind color class
 }
 
 // Options for the reporter

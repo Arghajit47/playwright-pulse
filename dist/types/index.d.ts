@@ -1,4 +1,3 @@
-import type { LucideIcon } from "lucide-react";
 export type TestStatus = "passed" | "failed" | "skipped" | "expected-failure" | "unexpected-success" | "explicitly-skipped" | "flaky";
 export interface TestStep {
     id: string;
@@ -80,12 +79,6 @@ export interface TrendDataPoint {
     failed: number;
     skipped: number;
     flaky?: number;
-}
-export interface SummaryMetric {
-    label: string;
-    value: string | number;
-    icon: LucideIcon;
-    color?: string;
 }
 export interface PlaywrightPulseReporterOptions {
     outputFile?: string;
