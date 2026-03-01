@@ -740,7 +740,9 @@ function generateMinifiedHTML(reportData) {
   `;
 }
 async function main() {
-  await animate();
+  if (process.env.SKIP_LOGO !== "true") {
+    await animate();
+  }
   
   const outputDir = await getOutputDir(customOutputDir);
   const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);

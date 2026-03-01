@@ -12,6 +12,9 @@
   * **Log Formatting**: Fixed a display bug where stdout and stderr logs in the report were showing literal `\n` characters instead of real line breaks.
   * **Refined Email Flow**: The default Send Report flow is now more refined, uses **Brevo SMTP Service** to send emails to the recipients. The custom configuration functionality remains the same.
 
+* **🐛 Bug Fixes**:
+  * **Skip Logo Animation**: Skip logo animation during email report generation by send report functionality.
+
 ## **Version 0.3.4**
 
 **🚀 Update Highlights**

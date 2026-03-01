@@ -230,9 +230,13 @@ const archiveRunScriptPath = path.resolve(
   "generate-email-report.mjs",
 );
 
-async function runScript(scriptPath, args = []) {
+async function runScript(scriptPath, args = [], options = {}) {
   return new Promise((resolve, reject) => {
-    const childProcess = fork(scriptPath, args, { stdio: "inherit" });
+    const childProcess = fork(scriptPath, args, {
+      stdio: "inherit",
+      ...options,
+      env: { ...process.env, ...options.env },
+    });
     childProcess.on("error", (err) => {
       console.error(chalk.red(`Failed to start script: ${scriptPath}`), err);
       reject(err);
@@ -246,7 +250,9 @@ async function runScript(scriptPath, args = []) {
 
 const sendEmail = async (credentials, reportDir) => {
   const archiveArgs = customOutputDir ? ["--outputDir", customOutputDir] : [];
-  await runScript(archiveRunScriptPath, archiveArgs);
+  await runScript(archiveRunScriptPath, archiveArgs, {
+    env: { SKIP_LOGO: "true" },
+  });
 
   try {
     console.log("Starting the sendEmail function...");
