@@ -121,7 +121,19 @@
             </li>
             <li>
               <strong>fix:</strong>
+              <b>Test Case Consistency</b>: Resolved a critical issue where test cases were sometimes deduplicated or "dropped" during report merging due to ID collisions or stale history. Improved ID uniqueness and summary tallying logic to ensure 100% accurate test counts.
+            </li>
+            <li>
+              <strong>fix:</strong>
               <b>Skip Logo Animation</b>: Skip logo animation during email report generation by send report functionality.
+            </li>
+            <li>
+              <strong>fix:</strong>
+              <b>Missing test with multiple <code>test.only</code></b>: Fixed a race condition where <code>onEnd()</code> could read results before an in-flight <code>onTestEnd()</code> finished its async attachment I/O, causing one or more tests to be silently dropped from the report. All pending <code>onTestEnd</code> calls are now awaited via <code>Promise.allSettled</code> before results are processed.
+            </li>
+            <li>
+              <strong>fix:</strong>
+              <b><code>totalTests</code> lower than expected when <code>resetOnEachRun: false</code></b>: Fixed cross-run de-duplication caused by stale <code>pulse-results/</code> files from previous sessions. The reporter now clears old individual run files at the start of each new run, ensuring each session starts with a clean slate.
             </li>
           </ul>
           <h2>Version 0.3.4</h2>

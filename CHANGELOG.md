@@ -14,6 +14,9 @@
 
 * **🐛 Bug Fixes**:
   * **Skip Logo Animation**: Skip logo animation during email report generation by send report functionality.
+  * **Test Case Consistency**: Resolved a critical issue where test cases were sometimes deduplicated or "dropped" during report merging due to ID collisions or stale history. Improved ID uniqueness and summary tallying logic to ensure 100% accurate test counts.
+  * **Missing test in pulse report with multiple `test.only`**: Fixed a race condition where `onEnd()` could read `this.results` before an in-flight `onTestEnd()` finished its async attachment I/O, causing one or more tests to be silently dropped from the report. All pending `onTestEnd` calls are now awaited via `Promise.allSettled` before `onEnd()` processes results.
+  * **`totalTests` lower than expected when `resetOnEachRun: false`**: Fixed cross-run de-duplication caused by stale `pulse-results/` files from previous sessions. The reporter now clears old individual run files at the start of each new run (`onBegin`), ensuring each session starts with a clean slate.
 
 ## **Version 0.3.4**
 
