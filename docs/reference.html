@@ -96,6 +96,10 @@
           <h2>Version 0.3.5</h2>
           <ul>
             <li>
+              <strong>feat:</strong>
+              <b>Custom Report Description</b>: Added a new optional <code>reportDescription</code> string option in the reporter config. This description appears elegantly below the header in all generated HTML reports, supporting automatic 130-character truncation with full-text hover.
+            </li>
+            <li>
               <strong>Improved:</strong>
               <b>Inline Highcharts script</b>: Inlined the Highcharts library from node_modules into HTML reports to eliminate external CDN dependencies and resolve 429 errors.
             </li>
@@ -118,6 +122,10 @@
             <li>
               <strong>Improved:</strong>
               <b>Refined Email Flow</b>: The default Send Report flow is now more refined, uses <b>Brevo SMTP Service</b> to send emails to the recipients. The custom configuration functionality remains the same.
+            </li>
+            <li>
+              <strong>fix:</strong>
+              <b>WebKit layout bug</b>: Fixed layout bug in WebKit browsers where the indivudual worker test list was not displayed correctly, when clicked on "Test Distribution by Worker" chart.
             </li>
             <li>
               <strong>fix:</strong>

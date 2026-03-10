@@ -635,7 +635,10 @@ export class PlaywrightPulseReporter implements Reporter {
     return {
       run: finalRunData,
       results: properlyTypedResults,
-      metadata: { generatedAt: new Date().toISOString() },
+      metadata: {
+        generatedAt: new Date().toISOString(),
+        reportDescription: this.options.reportDescription,
+      },
     };
   }
 
@@ -772,7 +775,10 @@ export class PlaywrightPulseReporter implements Reporter {
         run: runData,
         // Use the de-duplicated results
         results: finalResults,
-        metadata: { generatedAt: new Date().toISOString() },
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          reportDescription: this.options.reportDescription,
+        },
       };
     }
 

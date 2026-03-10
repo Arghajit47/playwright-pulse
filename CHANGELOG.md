@@ -4,6 +4,9 @@
 
 **🚀 Update Highlights**
 
+* **✨ New Features**:
+  * **Custom Report Description**: Added a new optional `reportDescription` string option in the reporter config. This description appears elegantly below the header in all generated HTML reports, supporting automatic 130-character truncation with full-text hover.
+
 * **🔧 Improvements**:
   * **Inline Highcharts script**: Inlined the Highcharts library from node_modules into HTML reports to eliminate external CDN dependencies and resolve 429 errors.
   * **Security Fixes**: Resolved high-severity vulnerabilities in ajv and minimatch by forcing modern, secure versions through global package.json overrides.
@@ -13,10 +16,11 @@
   * **Refined Email Flow**: The default Send Report flow is now more refined, uses **Brevo SMTP Service** to send emails to the recipients. The custom configuration functionality remains the same.
 
 * **🐛 Bug Fixes**:
-  * **Skip Logo Animation**: Skip logo animation during email report generation by send report functionality.
+  * **WebKit layout bug**: Fixed layout bug in WebKit browsers where the indivudual worker test list was not displayed correctly, when clicked on "Test Distribution by Worker" chart.
   * **Test Case Consistency**: Resolved a critical issue where test cases were sometimes deduplicated or "dropped" during report merging due to ID collisions or stale history. Improved ID uniqueness and summary tallying logic to ensure 100% accurate test counts.
   * **Missing test in pulse report with multiple `test.only`**: Fixed a race condition where `onEnd()` could read `this.results` before an in-flight `onTestEnd()` finished its async attachment I/O, causing one or more tests to be silently dropped from the report. All pending `onTestEnd` calls are now awaited via `Promise.allSettled` before `onEnd()` processes results.
   * **`totalTests` lower than expected when `resetOnEachRun: false`**: Fixed cross-run de-duplication caused by stale `pulse-results/` files from previous sessions. The reporter now clears old individual run files at the start of each new run (`onBegin`), ensuring each session starts with a clean slate.
+  * **Skip Logo Animation**: Skip logo animation during email report generation by send report functionality.
 
 ## **Version 0.3.4**
 

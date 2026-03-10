@@ -564,6 +564,17 @@ function generateMinifiedHTML(reportData) {
                 )}
             </div>
         </header>
+        ${
+          reportData.metadata?.reportDescription
+            ? `<div class="report-description" title="${sanitizeHTML(reportData.metadata.reportDescription)}" style="margin: 0 0 24px 0; padding: 18px 24px; background-color: var(--bg-card, var(--card-bg, #ffffff)); border: 1px solid var(--border-color, var(--border-medium, #e5e7eb)); border-left: 4px solid #764ba2; border-radius: 8px; display: flex; align-items: flex-start; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#764ba2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div style="flex: 1; min-width: 0;">
+              <h4 style="margin: 0 0 6px 0; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; color: #764ba2; font-weight: 700;">Report Description</h4>
+              <p style="margin: 0; font-size: 0.95em; color: var(--text-color, #1f2937); line-height: 1.6; font-weight: 400; overflow-wrap: break-word;">${sanitizeHTML(reportData.metadata.reportDescription.length > 130 ? reportData.metadata.reportDescription.substring(0, 130) + "..." : reportData.metadata.reportDescription)}</p>
+            </div>
+        </div>`
+            : ""
+        }
         
         <section class="summary-section">
             <div class="summary-stats">

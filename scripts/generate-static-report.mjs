@@ -1430,33 +1430,39 @@ function generateWorkerDistributionChart(results) {
 <style>
       .worker-modal-overlay {
         position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%;
-        overflow: auto; background-color: rgba(0,0,0,0.92);
+        overflow: auto; background-color: rgba(0,0,0,0.85);
         display: none; align-items: center; justify-content: center;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
       }
       .worker-modal-content {
-        background-color: var(--bg-card);
-        color: var(--card-background-color);
-        margin: auto; padding: 20px; border: 1px solid var(--border-color, #888);
-        width: 80%; max-width: 700px; border-radius: 8px;
-        position: relative; box-shadow: var(--shadow-2xl);
+        background-color: var(--bg-card, #ffffff);
+        color: var(--text-color, #1f2937);
+        padding: 30px; border: 1px solid var(--border-color, #e5e7eb);
+        width: 80%; max-width: 700px; border-radius: 12px;
+        position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        flex-shrink: 0; margin: 20px;
+        z-index: 1051;
+        transform: translateZ(0); /* Force hardware acceleration/composite layer in safari */
+        -webkit-transform: translateZ(0);
       }
       .worker-modal-close {
         position: absolute; 
-        top: 15px; 
+        top: 20px; 
         right: 25px;
-        font-size: 32px; 
-        font-weight: bold; 
+        font-size: 28px; 
+        font-weight: 400; 
         cursor: pointer;
         line-height: 1;
         z-index: 10;
-        color: #fff;
-        transition: color 0.2s ease;
+        color: var(--text-color-secondary, #6b7280);
+        transition: color 0.2s ease, transform 0.2s ease;
         user-select: none;
         -webkit-user-select: none;
       }
       .worker-modal-close:hover, .worker-modal-close:focus {
-        color: var(--danger-color);
-        transform: scale(1.1);
+        color: var(--danger-color, #ef4444);
+        transform: scale(1.15);
       }
       #worker-modal-body-${chartId} ul {
         list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
@@ -1484,18 +1490,21 @@ function generateWorkerDistributionChart(results) {
     <div id="worker-modal-${chartId}" class="worker-modal-overlay">
       <div class="worker-modal-content">
         <span class="worker-modal-close" onclick="window.${modalJsNamespace}.close()">×</span>
-        <h3 id="worker-modal-title-${chartId}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: #fff"></h3>
+        <h3 id="worker-modal-title-${chartId}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color, #1f2937)"></h3>
         <div id="worker-modal-body-${chartId}"></div>
       </div>
     </div>
 
     <script>
       // Namespace for modal functions to avoid global scope pollution
-      window.${modalJsNamespace} = {};
+      if (!window.${modalJsNamespace}) window.${modalJsNamespace} = {};
 
 window.${renderFunctionName} = function() {
   const chartContainer = document.getElementById('${chartId}');
   if (!chartContainer) { console.error("Chart container ${chartId} not found."); return; }
+
+  // Ensure namespace exists when rendering
+  if (!window.${modalJsNamespace}) window.${modalJsNamespace} = {};
 
   // --- Modal Setup ---
   const modal = document.getElementById('worker-modal-${chartId}');
@@ -1514,6 +1523,7 @@ window.${renderFunctionName} = function() {
           if (test.status === 'passed') color = 'var(--success-color)';
           else if (test.status === 'failed') color = 'var(--danger-color)';
           else if (test.status === 'skipped') color = 'var(--warning-color)';
+          else if (test.status === 'flaky') color = '#00ccd3';
 
           // Updated escaping logic
           const escapedName = test.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -1607,20 +1617,31 @@ window.${renderFunctionName} = function() {
  * @type {string}
  */
 const infoTooltip = `
-  <span class="info-tooltip" style="display: inline-block; margin-left: 8px;">
+  <span class="info-tooltip" style="display: inline-flex; align-items: center; justify-content: center; margin-left: 8px; vertical-align: middle;">
     <span class="info-icon" 
-          style="cursor: pointer; font-size: 1.25rem;"
-          onclick="window.workerInfoPrompt()">ℹ️</span>
+          style="cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-color-secondary, #6b7280); transition: color 0.2s ease, transform 0.2s ease;"
+          onmouseover="this.style.color='var(--accent-color, #764ba2)'; this.style.transform='scale(1.1)';"
+          onmouseout="this.style.color='var(--text-color-secondary, #6b7280)'; this.style.transform='scale(1)';"
+          onclick="window.workerInfoPrompt()"
+          title="Click to understand Worker -1">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+      </svg>
+    </span>
   </span>
   <script>
-    window.workerInfoPrompt = function() {
-      const message = 'Why is worker -1 special?\\n\\n' +
-                     'Playwright assigns skipped tests to worker -1 because:\\n' +
-                     '1. They don\\'t require browser execution\\n' +
-                     '2. This keeps real workers focused on actual tests\\n' +
-                     '3. Maintains clean reporting\\n\\n' +
-                     'This is an intentional optimization by Playwright.';
-      alert(message);
+    if (!window.workerInfoPrompt) {
+      window.workerInfoPrompt = function() {
+        const message = 'Why is worker -1 special?\\n\\n' +
+                       'Playwright assigns skipped tests to worker -1 because:\\n' +
+                       '1. They don\\'t require browser execution\\n' +
+                       '2. This keeps real workers focused on actual tests\\n' +
+                       '3. Maintains clean reporting\\n\\n' +
+                       'This is an intentional optimization by Playwright.';
+        alert(message);
+      }
     }
   </script>
 `;
@@ -6259,6 +6280,17 @@ function generateHTML(reportData, trendData = null) {
                 </div>
             </div>
         </header>
+        ${
+          reportData.metadata?.reportDescription
+            ? `<div class="report-description" title="${sanitizeHTML(reportData.metadata.reportDescription)}" style="margin: 0 0 24px 0; padding: 18px 24px; background-color: var(--bg-card, var(--card-bg, #ffffff)); border: 1px solid var(--border-color, var(--border-medium, #e5e7eb)); border-left: 4px solid #764ba2; border-radius: 8px; display: flex; align-items: flex-start; gap: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#764ba2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 1px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <div style="flex: 1; min-width: 0;">
+              <h4 style="margin: 0 0 6px 0; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.5px; color: #764ba2; font-weight: 700;">Report Description</h4>
+              <p style="margin: 0; font-size: 0.95em; color: var(--text-color, #1f2937); line-height: 1.6; font-weight: 400; overflow-wrap: break-word;">${sanitizeHTML(reportData.metadata.reportDescription.length > 130 ? reportData.metadata.reportDescription.substring(0, 130) + "..." : reportData.metadata.reportDescription)}</p>
+            </div>
+        </div>`
+            : ""
+        }
         <div class="tabs">
             <button class="tab-button active" data-tab="dashboard">Dashboard</button>
             <button class="tab-button" data-tab="test-runs">Test Run Summary</button>
