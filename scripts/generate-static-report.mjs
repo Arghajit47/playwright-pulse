@@ -1635,7 +1635,7 @@ const infoTooltip = `
     if (!window.workerInfoPrompt) {
       window.workerInfoPrompt = function() {
         const message = 'Why is worker -1 special?\\n\\n' +
-                       'Playwright assigns skipped tests to worker -1 because:\\n' +
+                       'Playwright assigns all pre-skipped tests/test.skip() to worker -1 because:\\n' +
                        '1. They don\\'t require browser execution\\n' +
                        '2. This keeps real workers focused on actual tests\\n' +
                        '3. Maintains clean reporting\\n\\n' +
