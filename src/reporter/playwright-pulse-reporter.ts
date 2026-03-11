@@ -638,6 +638,7 @@ export class PlaywrightPulseReporter implements Reporter {
       metadata: {
         generatedAt: new Date().toISOString(),
         reportDescription: this.options.reportDescription,
+        logo: this.options.logo,
       },
     };
   }
@@ -778,6 +779,7 @@ export class PlaywrightPulseReporter implements Reporter {
         metadata: {
           generatedAt: new Date().toISOString(),
           reportDescription: this.options.reportDescription,
+          logo: this.options.logo,
         },
       };
     }

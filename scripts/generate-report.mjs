@@ -4735,7 +4735,7 @@ function generateHTML(reportData, trendData = null) {
                 ${generateWorkerDistributionChart(results)}
              </div>
           </div>
-          <div class="trend-chart test-history-trend-section" style="border-bottom: none;">
+          <div class="trend-chart test-history-trend-section" style="border-bottom: none; background: none !important; box-shadow: none !important; border: none !important; border-radius: none !important;">
              <h3 class="chart-title-header">Individual Test History</h3>
           </div>
           ${
@@ -4752,6 +4752,7 @@ function generateHTML(reportData, trendData = null) {
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
             <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
                 <span>Created by</span>
+                <img id="report-logo" src=${logo} alt="Pulse Report Logo" style="height: 20px;">
                 <a href="https://www.npmjs.com/package/@arghajit/playwright-pulse-report" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Pulse Report</a>
             </div>
             <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #666;">Crafted with precision</div>
@@ -5335,6 +5336,32 @@ async function main() {
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
     currentRunReportData = JSON.parse(jsonData);
+
+    // Process custom logo if provided in metadata
+    if (currentRunReportData.metadata?.logo) {
+      const logoPath = path.resolve(
+        process.cwd(),
+        currentRunReportData.metadata.logo,
+      );
+      try {
+        const ext = path.extname(logoPath).toLowerCase();
+        let mimeType = "image/png";
+        if (ext === ".svg") mimeType = "image/svg+xml";
+        else if (ext === ".jpg" || ext === ".jpeg") mimeType = "image/jpeg";
+        else if (ext === ".gif") mimeType = "image/gif";
+        else if (ext === ".webp") mimeType = "image/webp";
+
+        const logoData = await fs.readFile(logoPath, "base64");
+        logo = `data:${mimeType};base64,${logoData}`;
+      } catch (error) {
+        console.warn(
+          chalk.yellow(
+            `Warning: Could not read custom logo file at ${logoPath}. Falling back to default logo. Error: ${error.message}`,
+          ),
+        );
+      }
+    }
+
     if (
       !currentRunReportData ||
       typeof currentRunReportData !== "object" ||

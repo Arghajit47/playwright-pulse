@@ -107,6 +107,7 @@ export interface PlaywrightPulseReporterOptions {
   base64Images?: boolean;
   resetOnEachRun?: boolean;
   reportDescription?: string;
+  logo?: string;
 }
 
 // Add this new interface

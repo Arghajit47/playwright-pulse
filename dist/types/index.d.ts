@@ -86,6 +86,7 @@ export interface PlaywrightPulseReporterOptions {
     base64Images?: boolean;
     resetOnEachRun?: boolean;
     reportDescription?: string;
+    logo?: string;
 }
 export interface EnvDetails {
     host: string;

@@ -73,6 +73,34 @@ const getPulseReportSummary = (reportDir) => {
   }
 
   const content = JSON.parse(fsReadFileSync(reportPath, "utf-8"));
+  
+  if (content.metadata?.logo) {
+    try {
+      const logoPath = path.resolve(process.cwd(), content.metadata.logo);
+      const ext = path.extname(logoPath).toLowerCase();
+      let mimeType = "image/png";
+      if (ext === ".svg") mimeType = "image/svg+xml";
+      else if (ext === ".jpg" || ext === ".jpeg") mimeType = "image/jpeg";
+      else if (ext === ".gif") mimeType = "image/gif";
+      else if (ext === ".webp") mimeType = "image/webp";
+
+      const logoData = fsReadFileSync(logoPath, "base64");
+      logo = `data:${mimeType};base64,${logoData}`;
+    } catch (e) {
+      if (chalk && typeof chalk.yellow === "function") {
+        console.warn(
+          chalk.yellow(
+            `Warning: Could not read custom logo file at ${content.metadata.logo}. Using default logo.`,
+          ),
+        );
+      } else {
+        console.warn(
+          `Warning: Could not read custom logo file at ${content.metadata.logo}. Using default logo.`,
+        );
+      }
+    }
+  }
+
   const run = content.run;
 
   const total = run.totalTests || 0;

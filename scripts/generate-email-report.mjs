@@ -776,21 +776,47 @@ async function main() {
   try {
     const jsonData = await fs.readFile(reportJsonPath, "utf-8");
     currentRunReportData = JSON.parse(jsonData);
+
+    // Process custom logo if provided in metadata
+    if (currentRunReportData.metadata?.logo) {
+      const logoPath = path.resolve(
+        process.cwd(),
+        currentRunReportData.metadata.logo,
+      );
+      try {
+        const ext = path.extname(logoPath).toLowerCase();
+        let mimeType = "image/png";
+        if (ext === ".svg") mimeType = "image/svg+xml";
+        else if (ext === ".jpg" || ext === ".jpeg") mimeType = "image/jpeg";
+        else if (ext === ".gif") mimeType = "image/gif";
+        else if (ext === ".webp") mimeType = "image/webp";
+
+        const logoData = await fs.readFile(logoPath, "base64");
+        logo = `data:${mimeType};base64,${logoData}`;
+      } catch (error) {
+        console.warn(
+          chalk.yellow(
+            `Warning: Could not read custom logo file at ${logoPath}. Falling back to default logo. Error: ${error.message}`,
+          ),
+        );
+      }
+    }
+
     if (
       !currentRunReportData ||
       typeof currentRunReportData !== "object" ||
       !currentRunReportData.results
     ) {
       throw new Error(
-        "Invalid report JSON structure. 'results' field is missing or invalid."
+        "Invalid report JSON structure. 'results' field is missing or invalid.",
       );
     }
     if (!Array.isArray(currentRunReportData.results)) {
       currentRunReportData.results = [];
       console.warn(
         chalk.yellow(
-          "Warning: 'results' field in current run JSON was not an array. Treated as empty."
-        )
+          "Warning: 'results' field in current run JSON was not an array. Treated as empty.",
+        ),
       );
     }
   } catch (error) {

@@ -491,6 +491,7 @@ class PlaywrightPulseReporter {
             metadata: {
                 generatedAt: new Date().toISOString(),
                 reportDescription: this.options.reportDescription,
+                logo: this.options.logo,
             },
         };
     }
@@ -594,6 +595,7 @@ class PlaywrightPulseReporter {
                 metadata: {
                     generatedAt: new Date().toISOString(),
                     reportDescription: this.options.reportDescription,
+                    logo: this.options.logo,
                 },
             };
         }

@@ -8,5 +8,6 @@ export interface PlaywrightPulseReport {
   metadata: {
     generatedAt: string;
     reportDescription?: string;
+    logo?: string;
   };
 }
