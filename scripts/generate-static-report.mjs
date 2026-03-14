@@ -6462,11 +6462,13 @@ function generateHTML(reportData, trendData = null) {
     function switchRetryTab(event, tabId) {
         // Find container
         const container = event.target.closest('.retry-tabs-container');
+        if (!container) return;
         
         // Update tab buttons
         const buttons = container.querySelectorAll('.retry-tab');
         buttons.forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        const activeBtn = event.target.closest('.retry-tab') || event.target;
+        activeBtn.classList.add('active');
         
         // Update content
         const contents = container.querySelectorAll('.retry-tab-content');
@@ -6475,10 +6477,12 @@ function generateHTML(reportData, trendData = null) {
             content.classList.remove('active');
         });
         
-        const activeContent = container.querySelector('#' + tabId);
+        const activeContent = document.getElementById(tabId);
         if (activeContent) {
             activeContent.style.display = 'block';
             activeContent.classList.add('active');
+        } else {
+            console.error('Failed to find retry tab content for id:', tabId);
         }
     }
 
