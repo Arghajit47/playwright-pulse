@@ -1,5 +1,3 @@
-import type { LucideIcon } from "lucide-react";
-
 export type TestStatus =
   | "passed"
   | "failed"
@@ -102,19 +100,14 @@ export interface TrendDataPoint {
   flaky?: number;
 }
 
-export interface SummaryMetric {
-  label: string;
-  value: string | number;
-  icon: LucideIcon;
-  color?: string; // Tailwind color class
-}
-
 // Options for the reporter
 export interface PlaywrightPulseReporterOptions {
   outputFile?: string;
   outputDir?: string;
   base64Images?: boolean;
   resetOnEachRun?: boolean;
+  reportDescription?: string;
+  logo?: string;
 }
 
 // Add this new interface

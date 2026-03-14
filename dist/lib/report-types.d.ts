@@ -4,5 +4,7 @@ export interface PlaywrightPulseReport {
     results: TestResult[];
     metadata: {
         generatedAt: string;
+        reportDescription?: string;
+        logo?: string;
     };
 }

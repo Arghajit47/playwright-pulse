@@ -69,6 +69,7 @@ class PlaywrightPulseReporter {
     constructor(options = {}) {
         var _a, _b, _c;
         this.results = [];
+        this._pendingTestEnds = [];
         this.baseOutputFile = "playwright-pulse-report.json";
         this.isSharded = false;
         this.shardIndex = undefined;
@@ -99,13 +100,20 @@ class PlaywrightPulseReporter {
             ? this.config.shard.current - 1
             : undefined;
         this._ensureDirExists(this.outputDir)
-            .then(() => {
+            .then(async () => {
             if (this.printsToStdio()) {
                 console.log(`PlaywrightPulseReporter: Starting test run with ${suite.allTests().length} tests${this.isSharded ? ` across ${totalShards} shards` : ""}. Pulse outputting to ${this.outputDir}`);
                 if (this.shardIndex === undefined ||
                     (this.isSharded && this.shardIndex === 0)) {
-                    return this._cleanupTemporaryFiles();
+                    await this._cleanupTemporaryFiles();
                 }
+            }
+            // When not resetting on each run, clear stale individual run files
+            // from previous sessions. Without this, _mergeAllRunReports() reads
+            // ALL accumulated files and de-duplicates by test.id, which collapses
+            // results from different sessions into fewer entries than expected.
+            if (!this.resetOnEachRun) {
+                await this._cleanupStaleRunReports();
             }
         })
             .catch((err) => console.error("Pulse Reporter: Error during initialization:", err));
@@ -120,19 +128,19 @@ class PlaywrightPulseReporter {
     extractCodeSnippet(filePath, targetLine, targetColumn) {
         var _a;
         try {
-            const fsSync = require('fs');
+            const fsSync = require("fs");
             if (!fsSync.existsSync(filePath)) {
-                return '';
+                return "";
             }
-            const content = fsSync.readFileSync(filePath, 'utf8');
-            const lines = content.split('\n');
+            const content = fsSync.readFileSync(filePath, "utf8");
+            const lines = content.split("\n");
             if (targetLine < 1 || targetLine > lines.length) {
-                return '';
+                return "";
             }
-            return ((_a = lines[targetLine - 1]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
+            return ((_a = lines[targetLine - 1]) === null || _a === void 0 ? void 0 : _a.trim()) || "";
         }
         catch (e) {
-            return '';
+            return "";
         }
     }
     getBrowserDetails(test) {
@@ -199,7 +207,7 @@ class PlaywrightPulseReporter {
         const startTime = new Date(step.startTime);
         const endTime = new Date(startTime.getTime() + Math.max(0, duration));
         let codeLocation = "";
-        let codeSnippet = '';
+        let codeSnippet = "";
         if (step.location) {
             codeLocation = `${path.relative(this.config.rootDir, step.location.file)}:${step.location.line}:${step.location.column}`;
             codeSnippet = this.extractCodeSnippet(step.location.file, step.location.line, step.location.column);
@@ -226,9 +234,19 @@ class PlaywrightPulseReporter {
         };
     }
     async onTestEnd(test, result) {
+        // Track this async call so onEnd() can wait for all in-flight processing
+        // before it reads this.results. This prevents the race condition where
+        // onEnd() fires before an interrupted test's onTestEnd() has finished
+        // its async attachment I/O and pushed to this.results.
+        const p = this._processTestEnd(test, result);
+        this._pendingTestEnds.push(p);
+        await p;
+    }
+    async _processTestEnd(test, result) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         const project = (_a = test.parent) === null || _a === void 0 ? void 0 : _a.project();
         const browserDetails = this.getBrowserDetails(test);
+        const uniqueTestId = `${(project === null || project === void 0 ? void 0 : project.name) || "default"}-${test.id}`;
         // Captured outcome from Playwright
         const outcome = test.outcome();
         // Calculate final status based on the last result (Last-Run-Wins)
@@ -239,15 +257,15 @@ class PlaywrightPulseReporter {
         // Existing behavior: fail if flaky (implied by user request "existing status field should remain failed")
         // If outcome is flaky, status should be 'failed' to indicate initial failure, but final_status is 'passed'
         let testStatus = finalStatus;
-        if (outcome === 'flaky') {
-            testStatus = 'flaky';
+        if (outcome === "flaky") {
+            testStatus = "flaky";
         }
         const startTime = new Date(result.startTime);
         const endTime = new Date(startTime.getTime() + result.duration);
         const processAllSteps = async (steps) => {
             let processed = [];
             for (const step of steps) {
-                const processedStep = await this.processStep(step, test.id, browserDetails, test);
+                const processedStep = await this.processStep(step, uniqueTestId, browserDetails, test);
                 processed.push(processedStep);
                 if (step.steps && step.steps.length > 0) {
                     processedStep.steps = await processAllSteps(step.steps);
@@ -255,7 +273,7 @@ class PlaywrightPulseReporter {
             }
             return processed;
         };
-        let codeSnippet = '';
+        let codeSnippet = "";
         if (((_b = test.location) === null || _b === void 0 ? void 0 : _b.file) && ((_c = test.location) === null || _c === void 0 ? void 0 : _c.line) && ((_d = test.location) === null || _d === void 0 ? void 0 : _d.column)) {
             codeSnippet = this.extractCodeSnippet(test.location.file, test.location.line, test.location.column);
         }
@@ -284,14 +302,14 @@ class PlaywrightPulseReporter {
                 : undefined,
         };
         const pulseResult = {
-            id: test.id,
+            id: uniqueTestId,
             runId: "TBD",
             describe: describeBlockName,
             spec_file: specFileName,
             name: test.titlePath().join(" > "),
             suiteName: (project === null || project === void 0 ? void 0 : project.name) || ((_g = this.config.projects[0]) === null || _g === void 0 ? void 0 : _g.name) || "Default Suite",
             status: testStatus,
-            outcome: outcome === 'flaky' ? outcome : undefined, // Only Include if flaky
+            outcome: outcome === "flaky" ? outcome : undefined, // Only Include if flaky
             final_status: finalStatus, // New Field
             duration: result.duration,
             startTime: startTime,
@@ -318,7 +336,7 @@ class PlaywrightPulseReporter {
             if (!attachment.path)
                 continue;
             try {
-                const testSubfolder = test.id.replace(/[^a-zA-Z0-9_-]/g, "_");
+                const testSubfolder = uniqueTestId.replace(/[^a-zA-Z0-9_-]/g, "_");
                 const safeAttachmentName = path
                     .basename(attachment.path)
                     .replace(/[^a-zA-Z0-9_.-]/g, "_");
@@ -363,21 +381,30 @@ class PlaywrightPulseReporter {
         }
         const finalResults = [];
         for (const [testId, attempts] of resultsMap.entries()) {
-            attempts.sort((a, b) => a.retries - b.retries);
+            // Sort by retry count (ASC) then timestamp (DESC) to ensure stable resolution
+            attempts.sort((a, b) => {
+                if (a.retries !== b.retries)
+                    return a.retries - b.retries;
+                return (new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+            });
             const firstAttempt = attempts[0];
             const retryAttempts = attempts.slice(1);
             // Only populate retryHistory if there were actual failures that triggered retries
             // If all attempts passed, we don't need to show retry history
-            const hasActualRetries = retryAttempts.length > 0 && retryAttempts.some(attempt => attempt.status === 'failed' || attempt.status === 'flaky' || firstAttempt.status === 'failed' || firstAttempt.status === 'flaky');
+            const hasActualRetries = retryAttempts.length > 0 &&
+                retryAttempts.some((attempt) => attempt.status === "failed" ||
+                    attempt.status === "flaky" ||
+                    firstAttempt.status === "failed" ||
+                    firstAttempt.status === "flaky");
             if (hasActualRetries) {
                 firstAttempt.retryHistory = retryAttempts;
                 // Calculate final status and outcome from the last attempt if retries exist
                 const lastAttempt = attempts[attempts.length - 1];
                 firstAttempt.final_status = lastAttempt.status;
                 // If the last attempt was flaky, ensure outcome is set on the main result
-                if (lastAttempt.outcome === 'flaky' || lastAttempt.status === 'flaky') {
-                    firstAttempt.outcome = 'flaky';
-                    firstAttempt.status = 'flaky';
+                if (lastAttempt.outcome === "flaky" || lastAttempt.status === "flaky") {
+                    firstAttempt.outcome = "flaky";
+                    firstAttempt.status = "flaky";
                 }
             }
             else {
@@ -444,10 +471,10 @@ class PlaywrightPulseReporter {
         }
         const finalResultsList = this._getFinalizedResults(allShardProcessedResults);
         finalResultsList.forEach((r) => (r.runId = finalRunData.id));
-        finalRunData.passed = finalResultsList.filter((r) => r.status === "passed").length;
-        finalRunData.failed = finalResultsList.filter((r) => r.status === "failed").length;
-        finalRunData.skipped = finalResultsList.filter((r) => r.status === "skipped").length;
-        finalRunData.flaky = finalResultsList.filter((r) => r.status === "flaky").length;
+        finalRunData.passed = finalResultsList.filter((r) => (r.final_status || r.status) === "passed").length;
+        finalRunData.failed = finalResultsList.filter((r) => (r.final_status || r.status) === "failed").length;
+        finalRunData.skipped = finalResultsList.filter((r) => (r.final_status || r.status) === "skipped").length;
+        finalRunData.flaky = finalResultsList.filter((r) => (r.final_status || r.status) === "flaky").length;
         finalRunData.totalTests = finalResultsList.length;
         const reviveDates = (key, value) => {
             const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -461,7 +488,11 @@ class PlaywrightPulseReporter {
         return {
             run: finalRunData,
             results: properlyTypedResults,
-            metadata: { generatedAt: new Date().toISOString() },
+            metadata: {
+                generatedAt: new Date().toISOString(),
+                reportDescription: this.options.reportDescription,
+                logo: this.options.logo,
+            },
         };
     }
     async _cleanupTemporaryFiles() {
@@ -478,6 +509,39 @@ class PlaywrightPulseReporter {
             }
         }
     }
+    /**
+     * Removes all individual run JSON files from the `pulse-results/` directory
+     * that were left over from previous test sessions.
+     *
+     * When `resetOnEachRun: false`, each run writes its own timestamped JSON to
+     * `pulse-results/` and then `_mergeAllRunReports()` merges them all. However,
+     * if files from *older* sessions accumulate there (e.g. because a previous run
+     * was interrupted before the post-merge cleanup, or because the user ran tests
+     * on a previous day), `_getFinalizedResults()` de-duplicates by `test.id` and
+     * collapses results from both sessions into a single entry — producing a
+     * `totalTests` count lower than the actual number of tests that ran.
+     *
+     * Cleaning up at `onBegin` time guarantees each run starts with a fresh slate.
+     */
+    async _cleanupStaleRunReports() {
+        const pulseResultsDir = path.join(this.outputDir, INDIVIDUAL_REPORTS_SUBDIR);
+        try {
+            const files = await fs.readdir(pulseResultsDir);
+            const staleFiles = files.filter((f) => f.startsWith("playwright-pulse-report-") && f.endsWith(".json"));
+            if (staleFiles.length > 0) {
+                await Promise.all(staleFiles.map((f) => fs.unlink(path.join(pulseResultsDir, f))));
+                if (this.printsToStdio()) {
+                    console.log(`PlaywrightPulseReporter: Cleaned up ${staleFiles.length} stale run report(s) from ${pulseResultsDir}`);
+                }
+            }
+        }
+        catch (error) {
+            // ENOENT simply means no previous runs exist — that's fine
+            if ((error === null || error === void 0 ? void 0 : error.code) !== "ENOENT") {
+                console.warn("Pulse Reporter: Warning during cleanup of stale run reports:", error.message);
+            }
+        }
+    }
     async _ensureDirExists(dirPath) {
         try {
             await fs.mkdir(dirPath, { recursive: true });
@@ -490,6 +554,11 @@ class PlaywrightPulseReporter {
         }
     }
     async onEnd(result) {
+        // Wait for ALL in-flight onTestEnd calls to finish before reading this.results.
+        // This guards against Playwright calling onEnd() concurrently with (or just
+        // before) the last onTestEnd() finishing its async attachment I/O — which
+        // would cause that test to be silently dropped from the report.
+        await Promise.allSettled(this._pendingTestEnds);
         if (this.shardIndex !== undefined) {
             await this._writeShardResults();
             return;
@@ -505,10 +574,10 @@ class PlaywrightPulseReporter {
             timestamp: new Date(this.runStartTime),
             // Use the length of the de-duplicated array for all counts
             totalTests: finalResults.length,
-            passed: finalResults.filter((r) => r.status === "passed").length,
-            failed: finalResults.filter((r) => r.status === "failed").length,
-            skipped: finalResults.filter((r) => r.status === "skipped").length,
-            flaky: finalResults.filter((r) => r.status === "flaky").length,
+            passed: finalResults.filter((r) => (r.final_status || r.status) === "passed").length,
+            failed: finalResults.filter((r) => (r.final_status || r.status) === "failed").length,
+            skipped: finalResults.filter((r) => (r.final_status || r.status) === "skipped").length,
+            flaky: finalResults.filter((r) => (r.final_status || r.status) === "flaky").length,
             duration,
             environment: environmentDetails,
         };
@@ -523,7 +592,11 @@ class PlaywrightPulseReporter {
                 run: runData,
                 // Use the de-duplicated results
                 results: finalResults,
-                metadata: { generatedAt: new Date().toISOString() },
+                metadata: {
+                    generatedAt: new Date().toISOString(),
+                    reportDescription: this.options.reportDescription,
+                    logo: this.options.logo,
+                },
             };
         }
         if (!finalReport) {
@@ -628,9 +701,10 @@ class PlaywrightPulseReporter {
             environment: lastRunEnvironment,
             // Recalculate counts based on the truly final, de-duplicated list
             totalTests: finalMergedResults.length,
-            passed: finalMergedResults.filter((r) => r.status === "passed").length,
-            failed: finalMergedResults.filter((r) => r.status === "failed").length,
-            skipped: finalMergedResults.filter((r) => r.status === "skipped").length,
+            passed: finalMergedResults.filter((r) => (r.final_status || r.status) === "passed").length,
+            failed: finalMergedResults.filter((r) => (r.final_status || r.status) === "failed").length,
+            skipped: finalMergedResults.filter((r) => (r.final_status || r.status) === "skipped").length,
+            flaky: finalMergedResults.filter((r) => (r.final_status || r.status) === "flaky").length,
             duration: totalDuration,
         };
         const finalReport = {
@@ -648,6 +722,16 @@ class PlaywrightPulseReporter {
             }, 2));
             if (this.printsToStdio()) {
                 console.log(`PlaywrightPulseReporter: ✅ Merged report with ${finalMergedResults.length} total results saved to ${finalOutputPath}`);
+            }
+            // Clean up the pulse-results directory after a successful merge
+            try {
+                await fs.rm(pulseResultsDir, { recursive: true, force: true });
+                if (this.printsToStdio()) {
+                    console.log(`PlaywrightPulseReporter: Cleaned up individual reports directory at ${pulseResultsDir}`);
+                }
+            }
+            catch (cleanupErr) {
+                console.warn(`Pulse Reporter: Could not clean up individual reports directory. Error: ${cleanupErr.message}`);
             }
         }
         catch (err) {

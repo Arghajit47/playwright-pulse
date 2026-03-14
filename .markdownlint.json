@@ -7,5 +7,6 @@
   "hr-style": false,
   "no-emphasis-as-heading": false,
   "blanks-around-lists": false,
-  "table-column-style": false
+  "table-column-style": false,
+  "MD041": false
 }
