@@ -98,7 +98,7 @@
           <h2>Version 0.3.5</h2>
           <ul>
             <li>
-              <strong>feat:</strong>
+              <strong>New Feature:</strong>
               <b>Custom Report Description</b>: Added a new optional
               <code>reportDescription</code> string option in the reporter
               config. This description appears elegantly below the header in all
@@ -106,7 +106,7 @@
               truncation with full-text hover.
             </li>
             <li>
-              <strong>feat:</strong>
+              <strong>New Feature:</strong>
               <b>Custom Logo</b>: Added a new optional <code>logo</code> string
               option in the reporter config. Users can provide a local image
               path to override the default Playwright Pulse logo, favicon, in
@@ -150,13 +150,13 @@
               same.
             </li>
             <li>
-              <strong>fix:</strong>
+              <strong>Fix:</strong>
               <b>WebKit layout bug</b>: Fixed layout bug in WebKit browsers
               where the indivudual worker test list was not displayed correctly,
               when clicked on "Test Distribution by Worker" chart.
             </li>
             <li>
-              <strong>fix:</strong>
+              <strong>Fix:</strong>
               <b>Test Case Consistency</b>: Resolved a critical issue where test
               cases were sometimes deduplicated or "dropped" during report
               merging due to ID collisions or stale history. Improved ID
@@ -164,12 +164,12 @@
               counts.
             </li>
             <li>
-              <strong>fix:</strong>
+              <strong>Fix:</strong>
               <b>Skip Logo Animation</b>: Skip logo animation during email
               report generation by send report functionality.
             </li>
             <li>
-              <strong>fix:</strong>
+              <strong>Fix:</strong>
               <b>Missing test with multiple <code>test.only</code></b
               >: Fixed a race condition where <code>onEnd()</code> could read
               results before an in-flight <code>onTestEnd()</code> finished its
@@ -179,7 +179,7 @@
               are processed.
             </li>
             <li>
-              <strong>fix:</strong>
+              <strong>Fix:</strong>
               <b
                 ><code>totalTests</code> lower than expected when
                 <code>resetOnEachRun: false</code></b
@@ -189,9 +189,19 @@
               new run, ensuring each session starts with a clean slate.
             </li>
             <li>
-              <strong>fix:</strong>
+              <strong>Fix:</strong>
               <b>Retry tabs not showing</b>: Fixed the retry tabs not showing in
               the report, when clicked on "Test Run Summary" tab.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Enhanced Merging for Sequential Runs</b>: Re-architected the
+              merging logic for `resetOnEachRun: false` to be deferred until
+              report generation. This prevents reports from being overwritten
+              during multiple sequential test suite executions and ensures data
+              integrity across all reporting channels (generate-report,
+              generate-static, send-report, merge-pulse-report,
+              generate-email-report).
             </li>
           </ul>
           <h2>Version 0.3.4</h2>

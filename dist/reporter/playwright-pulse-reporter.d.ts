@@ -10,6 +10,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
     private outputDir;
     private attachmentsDir;
     private baseOutputFile;
+    private individualReportsSubDir;
     private isSharded;
     private shardIndex;
     private resetOnEachRun;
@@ -43,9 +44,7 @@ export declare class PlaywrightPulseReporter implements Reporter {
      *
      * Cleaning up at `onBegin` time guarantees each run starts with a fresh slate.
      */
-    private _cleanupStaleRunReports;
     private _ensureDirExists;
     onEnd(result: FullResult): Promise<void>;
-    private _mergeAllRunReports;
 }
 export default PlaywrightPulseReporter;

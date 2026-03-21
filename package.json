@@ -1,7 +1,7 @@
 {
-  "name": "@arghajit/playwright-pulse-report",
+  "name": "@arghajit/dummy",
   "author": "Arghajit Singha",
-  "version": "0.3.5",
+  "version": "0.3.43",
   "description": "A Playwright reporter and dashboard for visualizing test results.",
   "homepage": "https://arghajit47.github.io/playwright-pulse/",
   "repository": {
@@ -35,13 +35,13 @@
   ],
   "license": "MIT",
   "bin": {
-    "logo": "node scripts/terminal-logo.mjs",
+    "logo": "scripts/terminal-logo.mjs",
     "generate-pulse-report": "scripts/generate-static-report.mjs",
     "generate-report": "scripts/generate-report.mjs",
-    "merge-pulse-report": "scripts/merge-pulse-report.js",
+    "merge-pulse-report": "scripts/merge-pulse-report.mjs",
     "send-email": "scripts/sendReport.mjs",
-    "generate-trend": "scripts/generate-trend.mjs",
     "generate-email-report": "scripts/generate-email-report.mjs",
+    "generate-trend": "scripts/generate-trend.mjs",
     "pulse-logo": "scripts/terminal-logo.mjs"
   },
   "exports": {
@@ -56,7 +56,7 @@
     "prepublishOnly": "npm run build:reporter",
     "report:static": "node ./scripts/generate-static-report.mjs",
     "report:generate": "node ./scripts/generate-report.mjs",
-    "report:merge": "node ./scripts/merge-pulse-report.js",
+    "report:merge": "node ./scripts/merge-pulse-report.mjs",
     "report:email": "node ./scripts/sendReport.mjs",
     "report:minify": "node ./scripts/generate-email-report.mjs",
     "generate-trend": "node ./scripts/generate-trend.mjs"

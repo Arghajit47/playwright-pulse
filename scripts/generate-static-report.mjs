@@ -5,8 +5,9 @@ import { readFileSync, existsSync as fsExistsSync } from "fs";
 import path from "path";
 import { fork } from "child_process";
 import { fileURLToPath } from "url";
-import { getOutputDir } from "./config-reader.mjs";
+import { getReporterConfig } from "./config-reader.mjs";
 import { animate } from "./terminal-logo.mjs";
+import { mergeSequentialReportsIfNeeded } from "./merge-sequential-reports.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,17 +56,7 @@ try {
   };
 }
 
-/**
- * @constant {string} DEFAULT_OUTPUT_DIR
- * The default directory where the report will be generated.
- */
 const DEFAULT_OUTPUT_DIR = "pulse-report";
-
-/**
- * @constant {string} DEFAULT_JSON_FILE
- * The default name for the JSON file containing the test data.
- */
-const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 
 /**
  * @constant {string} DEFAULT_HTML_FILE
@@ -7162,8 +7153,12 @@ async function main() {
     "generate-trend.mjs", // Keeping the filename as per your request
   );
 
-  const outputDir = await getOutputDir(customOutputDir);
-  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE); // Current run's main JSON
+  const config = await getReporterConfig(customOutputDir);
+  const outputDir = config.outputDir;
+  const outputFile = config.outputFile;
+
+  await mergeSequentialReportsIfNeeded(outputDir);
+  const reportJsonPath = path.resolve(outputDir, outputFile); // Current run's main JSON
   const reportHtmlPath = path.resolve(outputDir, DEFAULT_HTML_FILE);
 
   const historyDir = path.join(outputDir, "history"); // Directory for historical JSON files
