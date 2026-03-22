@@ -127,6 +127,28 @@
                   </td>
                 </tr>
                 <tr>
+                  <td><code>logo</code></td>
+                  <td><code>string</code></td>
+                  <td><code>undefined</code></td>
+                  <td>
+                    <span style="color: #2196f3; font-weight: 500"
+                      >✨ Available in v0.3.5 and later:</span
+                    >
+                    A local file path to an image to be used as the report logo instead of the default Pulse logo.
+                  </td>
+                </tr>
+                <tr>
+                  <td><code>reportDescription</code></td>
+                  <td><code>string</code></td>
+                  <td><code>undefined</code></td>
+                  <td>
+                    <span style="color: #2196f3; font-weight: 500"
+                      >✨ Available in v0.3.5 and later:</span
+                    >
+                    A description of the report to be displayed in the report header.
+                  </td>
+                </tr>
+                <tr>
                   <td><code>resetOnEachRun</code></td>
                   <td><code>boolean</code></td>
                   <td><code>true</code></td>
@@ -138,6 +160,12 @@
               </tbody>
             </table>
           </div>
+          <h2>Config customizations</h2>
+          <img
+            src="./asset/config.png"
+            alt="Config customizations"
+            style="width: 100%; margin-bottom: 1.5rem; border-radius: 8px"
+          />
         </section>
 
         <section id="advanced-ci">
@@ -331,6 +359,30 @@ export default defineConfig({
               all sequential test runs.</i
             ></strong
           >
+        </section>
+
+        <section id="severity-level">
+          <h2>Test Severity Levels</h2>
+          <span style="color: #2196f3; font-weight: 500"
+            >✨ Available in v0.3.1 and later:</span
+          >
+          <span
+            >By default, pulse report marks all the test cases as "Medium"
+            severity, but user can add custom severity level to the test cases
+            by using the pulse.severity() [Available severity levels: <b>Minor</b>,
+            <b>Low</b>, <b>Medium</b>, <b>High</b>, <b>Critical</b>], like below:</span
+          >
+          <div id="run-execution" class="code-container">
+            <pre><code class="language-javascript">// example.spec.ts/js file
+
+import { pulse } from "@arghajit/playwright-pulse-report"; // Add this import statement in the test file
+
+
+test("test case name", async ({ page }) => {
+  pulse.severity("High"); // Add this line before the test case
+  // Add your test case code here
+});</code><button class="copy-button">Copy</button></pre>
+          </div>
         </section>
       </main>
     </div>

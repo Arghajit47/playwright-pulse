@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -75,7 +75,9 @@
           <li><a href="comparison.html">Comparison</a></li>
           <li><a href="reference.html" class="active">Changelog</a></li>
           <li><a href="view.html">View Reporter Images</a></li>
-          <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
+          <li>
+            <a href="demo.html" target="_blank">Live Report Demonstration</a>
+          </li>
           <li>
             <a
               href="https://arghajit47.github.io/playwright-pulse-dashboard/"
@@ -93,74 +95,205 @@
       <main class="main-content">
         <h1>Changelog</h1>
         <section id="changelog">
+          <h2>Version 0.3.5</h2>
+          <ul>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Custom Report Description</b>: Added a new optional
+              <code>reportDescription</code> string option in the reporter
+              config. This description appears elegantly below the header in all
+              generated HTML reports, supporting automatic 130-character
+              truncation with full-text hover.
+            </li>
+            <li>
+              <strong>New Feature:</strong>
+              <b>Custom Logo</b>: Added a new optional <code>logo</code> string
+              option in the reporter config. Users can provide a local image
+              path to override the default Playwright Pulse logo, favicon, in
+              all generated HTML reports and email templates.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Inline Highcharts script</b>: Inlined the Highcharts library
+              from node_modules into HTML reports to eliminate external CDN
+              dependencies and resolve 429 errors.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Security Fixes</b>: Resolved high-severity vulnerabilities in
+              ajv and minimatch by forcing modern, secure versions through
+              global package.json overrides.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Dependency Optimization</b>: Consolidated duplicate versions of
+              utility modules like readable-stream and isarray across the
+              dependency tree to reduce project bloat.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Package Pruning</b>: Removed the unused lucide-react dependency
+              and cleaned up associated type definitions to keep the codebase
+              lean.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Log Formatting</b>: Fixed a display bug where stdout and stderr
+              logs in the report were showing literal `\n` characters instead of
+              real line breaks.
+            </li>
+            <li>
+              <strong>Improved:</strong>
+              <b>Refined Email Flow</b>: The default Send Report flow is now
+              more refined, uses <b>Brevo SMTP Service</b> to send emails to the
+              recipients. The custom configuration functionality remains the
+              same.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>WebKit layout bug</b>: Fixed layout bug in WebKit browsers
+              where the indivudual worker test list was not displayed correctly,
+              when clicked on "Test Distribution by Worker" chart.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Test Case Consistency</b>: Resolved a critical issue where test
+              cases were sometimes deduplicated or "dropped" during report
+              merging due to ID collisions or stale history. Improved ID
+              uniqueness and summary tallying logic to ensure 100% accurate test
+              counts.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Skip Logo Animation</b>: Skip logo animation during email
+              report generation by send report functionality.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Missing test with multiple <code>test.only</code></b
+              >: Fixed a race condition where <code>onEnd()</code> could read
+              results before an in-flight <code>onTestEnd()</code> finished its
+              async attachment I/O, causing one or more tests to be silently
+              dropped from the report. All pending <code>onTestEnd</code> calls
+              are now awaited via <code>Promise.allSettled</code> before results
+              are processed.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b
+                ><code>totalTests</code> lower than expected when
+                <code>resetOnEachRun: false</code></b
+              >: Fixed cross-run de-duplication caused by stale
+              <code>pulse-results/</code> files from previous sessions. The
+              reporter now clears old individual run files at the start of each
+              new run, ensuring each session starts with a clean slate.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Retry tabs not showing</b>: Fixed the retry tabs not showing in
+              the report, when clicked on "Test Run Summary" tab.
+            </li>
+            <li>
+              <strong>Fix:</strong>
+              <b>Enhanced Merging for Sequential Runs</b>: Re-architected the
+              merging logic for `resetOnEachRun: false` to be deferred until
+              report generation. This prevents reports from being overwritten
+              during multiple sequential test suite executions and ensures data
+              integrity across all reporting channels (generate-report,
+              generate-static, send-report, merge-pulse-report,
+              generate-email-report).
+            </li>
+          </ul>
           <h2>Version 0.3.4</h2>
           <ul>
             <li>
               <strong>New Feature:</strong>
-              <b>Sharded Environment Preservation:</b> Complete tracking of all shard environments in merged reports.
+              <b>Sharded Environment Preservation:</b> Complete tracking of all
+              shard environments in merged reports.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Modern Environment Dashboard Redesign:</b> A visually appealing and user-friendly
-              redesign of the environment section of dashboard, with detailed bullet points.
+              <strong>Improved:</strong>
+              <b>Modern Environment Dashboard Redesign:</b> A visually appealing
+              and user-friendly redesign of the environment section of
+              dashboard, with detailed bullet points.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Test skipped steps display:</b> Complete step visibility for all test outcomes
-              (passed, failed, skipped), Clear identification of failure/skip points in test execution & Better debugging
+              <strong>Improved:</strong>
+              <b>Test skipped steps display:</b> Complete step visibility for
+              all test outcomes (passed, failed, skipped), Clear identification
+              of failure/skip points in test execution & Better debugging
               experience with full execution context.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Retry History:</b> Added retry history to the JSON report, which will show the retry
-              history of individual tests.
+              <strong>Improved:</strong> <b>Retry History:</b> Added retry
+              history to the JSON report, which will show the retry history of
+              individual tests.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Retry Count:</b> Added retry count to the HTML report(s), which will show the retry
-              count of individual tests, in Test Run Summary Tab.
+              <strong>Improved:</strong> <b>Retry Count:</b> Added retry count
+              to the HTML report(s), which will show the retry count of
+              individual tests, in Test Run Summary Tab.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Failed Test pointer:</b> Added failed test pointer to the HTML report(s), which will
-              show the exact code snippet at which the test failed.
+              <strong>Improved:</strong> <b>Failed Test pointer:</b> Added
+              failed test pointer to the HTML report(s), which will show the
+              exact code snippet at which the test failed.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Test Step Code Snippet:</b> Added test step code snippet to the HTML report(s), which
-              will show the exact code snippet of individual test step.
+              <strong>Improved:</strong> <b>Test Step Code Snippet:</b> Added
+              test step code snippet to the HTML report(s), which will show the
+              exact code snippet of individual test step.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Enhanced CLI experience:</b> Added new "logo" in CLI command execution and
-              "pulse-logo" binary to package.json for direct logo display. Remove emoji from success messages for cleaner output.
+              <strong>Improved:</strong> <b>Enhanced CLI experience:</b> Added
+              new "logo" in CLI command execution and "pulse-logo" binary to
+              package.json for direct logo display. Remove emoji from success
+              messages for cleaner output.
             </li>
-            <li><strong>Improved:</strong><b>Flaky Test Card:</b>Added flaky test card to the HTML report(s), which will show the
-              flaky test count
+            <li>
+              <strong>Improved:</strong><b>Flaky Test Card:</b>Added flaky test
+              card to the HTML report(s), which will show the flaky test count
               in the Dashboard Tab.
             </li>
-            <li><strong>Improved:</strong><b>Added Flaky test in charts:</b>Added flaky test in charts present everywhere in the
-              HTML report(s),
+            <li>
+              <strong>Improved:</strong><b>Added Flaky test in charts:</b>Added
+              flaky test in charts present everywhere in the HTML report(s),
               which now considers the flaky test count in the all tabs.
             </li>
-            <li><strong>Improved:</strong><b>Added Image compression:</b>Added compression to the HTML report(s), which will
-              compress the images in the report, so that 1000+ failed test cases with attached screenshots in attachments folder,
-              will not make the report size too large.
+            <li>
+              <strong>Improved:</strong><b>Added Image compression:</b>Added
+              compression to the HTML report(s), which will compress the images
+              in the report, so that 1000+ failed test cases with attached
+              screenshots in attachments folder, will not make the report size
+              too large.
             </li>
             <li>
               <strong>Fix:</strong>
-              <b>Fixed Browser Distribution chart:</b> Fixed the browser distribution chart to show the correct/full name in
-              distribution of browsers. Also, max 3 browsers will be shown in the chart, if more than 3 browsers are used, then
-              the chart will show the top 3 browsers and the rest will be shown as "+X more browsers" format.
+              <b>Fixed Browser Distribution chart:</b> Fixed the browser
+              distribution chart to show the correct/full name in distribution
+              of browsers. Also, max 3 browsers will be shown in the chart, if
+              more than 3 browsers are used, then the chart will show the top 3
+              browsers and the rest will be shown as "+X more browsers" format.
             </li>
             <li>
               <strong>Fix:</strong>
-              <b>Minor fixes in Documentation:</b> "View Reporter Images" tab addition in the documentation.
+              <b>Minor fixes in Documentation:</b> "View Reporter Images" tab
+              addition in the documentation.
             </li>
             <li>
               <strong>Fix:</strong>
-              <b>Removed "unknown" test status:</b> Removed "❓ unknown" test status option from the email HTML report, replaced with
-              "⚠ flaky" based on the test outcome.
+              <b>Removed "unknown" test status:</b> Removed "❓ unknown" test
+              status option from the email HTML report, replaced with "⚠ flaky"
+              based on the test outcome.
             </li>
           </ul>
           <h2>Version 0.3.3</h2>
           <ul>
             <li>
               <strong>New Feature:</strong>
-              <b>New cards:</b> Added 2 new cards to the report dashboard, "Retry Count" and "Browser Distribution" for better visualization of the test results.
+              <b>New cards:</b> Added 2 new cards to the report dashboard,
+              "Retry Count" and "Browser Distribution" for better visualization
+              of the test results.
             </li>
             <li>
               <strong>Improved:</strong> <b>Email Template:</b> Modernized the
@@ -168,16 +301,33 @@
               layout.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Enhanced UI update:</b> Refined the user interface of both the report templates for better user experience and ease of navigation.
+              <strong>Improved:</strong> <b>Enhanced UI update:</b> Refined the
+              user interface of both the report templates for better user
+              experience and ease of navigation.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Eliminated `Expand All` and `Collapse All` buttons:</b> Removed the expand all and collapse all buttons from the report's Test Run Summary tab to simplify the user interface and reduce confusion.
+              <strong>Improved:</strong>
+              <b>Eliminated `Expand All` and `Collapse All` buttons:</b> Removed
+              the expand all and collapse all buttons from the report's Test Run
+              Summary tab to simplify the user interface and reduce confusion.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Easy Sharding:</b> Resolving the complex sharding technique to make it easier for users to understand and implement. Now, just keep all the shard generated reports in a single directory and run the merge command to get the final merged json report.
+              <strong>Improved:</strong> <b>Easy Sharding:</b> Resolving the
+              complex sharding technique to make it easier for users to
+              understand and implement. Now, just keep all the shard generated
+              reports in a single directory and run the merge command to get the
+              final merged json report.
             </li>
             <li>
-              <strong>Improved:</strong> <b>Significantly improved Documentation:</b> Enhanced the documentation to provide clear instructions and examples for using the sharding feature, making it easier for users to implement and manage their test suites, in CI/CD or, local. Visit <a href="https://arghajit47.github.io/playwright-pulse/">Documentation Website</a> for more details.
+              <strong>Improved:</strong>
+              <b>Significantly improved Documentation:</b> Enhanced the
+              documentation to provide clear instructions and examples for using
+              the sharding feature, making it easier for users to implement and
+              manage their test suites, in CI/CD or, local. Visit
+              <a href="https://arghajit47.github.io/playwright-pulse/"
+                >Documentation Website</a
+              >
+              for more details.
             </li>
             <li>
               <strong>Fix:</strong>
@@ -187,14 +337,20 @@
             </li>
             <li>
               <strong>Fix:</strong>
-              <b>Fixed all kind of vulnerabilities:</b> Addresses security concerns by updating dependencies to their latest versions, removing deprecated packages, and following best practices for secure coding. <b>No Open Source Security Issue</b>, <b>No Code Security Issue</b>, <b>No Configuration Issue</b>.
+              <b>Fixed all kind of vulnerabilities:</b> Addresses security
+              concerns by updating dependencies to their latest versions,
+              removing deprecated packages, and following best practices for
+              secure coding. <b>No Open Source Security Issue</b>,
+              <b>No Code Security Issue</b>, <b>No Configuration Issue</b>.
             </li>
           </ul>
           <h2>Version 0.3.2</h2>
           <ul>
             <li>
               <strong>Repository Update:</strong>
-              Repository is public now, [Arghajit47/playwright-pulse](https://github.com/Arghajit47/playwright-pulse). Go ahead, take a look and contribute!
+              Repository is public now,
+              [Arghajit47/playwright-pulse](https://github.com/Arghajit47/playwright-pulse).
+              Go ahead, take a look and contribute!
             </li>
             <li>
               <strong>Fix:</strong>
