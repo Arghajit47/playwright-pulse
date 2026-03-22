@@ -2,8 +2,9 @@
 
 import * as fs from "fs/promises";
 import path from "path";
-import { getOutputDir } from "./config-reader.mjs";
+import { getReporterConfig } from "./config-reader.mjs";
 import { animate } from "./terminal-logo.mjs";
+import { mergeSequentialReportsIfNeeded } from "./merge-sequential-reports.mjs";
 
 // Use dynamic import for chalk as it's ESM only
 let chalk;
@@ -24,7 +25,6 @@ try {
 }
 
 const DEFAULT_OUTPUT_DIR = "pulse-report";
-const DEFAULT_JSON_FILE = "playwright-pulse-report.json";
 const MINIFIED_HTML_FILE = "pulse-email-summary.html"; // New minified report
 
 const args = process.argv.slice(2);
@@ -757,8 +757,12 @@ async function main() {
     await animate();
   }
   
-  const outputDir = await getOutputDir(customOutputDir);
-  const reportJsonPath = path.resolve(outputDir, DEFAULT_JSON_FILE);
+  const config = await getReporterConfig(customOutputDir);
+  const outputDir = config.outputDir;
+  const outputFile = config.outputFile;
+  
+  await mergeSequentialReportsIfNeeded(outputDir);
+  const reportJsonPath = path.resolve(outputDir, outputFile);
   const minifiedReportHtmlPath = path.resolve(outputDir, MINIFIED_HTML_FILE); // Path for the new minified HTML
 
   console.log(chalk.blue(`Generating email report...`));

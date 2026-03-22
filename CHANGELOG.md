@@ -18,6 +18,7 @@
 
 - **🐛 Bug Fixes**:
   - **WebKit layout bug**: Fixed layout bug in WebKit browsers where the indivudual worker test list was not displayed correctly, when clicked on "Test Distribution by Worker" chart.
+  - **Enhanced Merging for Sequential Runs**: Re-architected the merging logic for `resetOnEachRun: false` to be deferred until report generation. This prevents reports from being overwritten during multiple sequential test suite executions and ensures data integrity across all reporting channels (generate-report, generate-static, send-report, merge-pulse-report, generate-email-report).
   - **Test Case Consistency**: Resolved a critical issue where test cases were sometimes deduplicated or "dropped" during report merging due to ID collisions or stale history. Improved ID uniqueness and summary tallying logic to ensure 100% accurate test counts.
   - **Missing test in pulse report with multiple `test.only`**: Fixed a race condition where `onEnd()` could read `this.results` before an in-flight `onTestEnd()` finished its async attachment I/O, causing one or more tests to be silently dropped from the report. All pending `onTestEnd` calls are now awaited via `Promise.allSettled` before `onEnd()` processes results.
   - **`totalTests` lower than expected when `resetOnEachRun: false`**: Fixed cross-run de-duplication caused by stale `pulse-results/` files from previous sessions. The reporter now clears old individual run files at the start of each new run (`onBegin`), ensuring each session starts with a clean slate.

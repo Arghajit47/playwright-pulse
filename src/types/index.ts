@@ -102,12 +102,61 @@ export interface TrendDataPoint {
 
 // Options for the reporter
 export interface PlaywrightPulseReporterOptions {
+  /**
+   * The name of the output JSON file. Kindly do not change.
+   * @default "playwright-pulse-report.json"
+   */
   outputFile?: string;
+
+  /**
+   * The directory where the report files will be generated.
+   *
+   * Mostly useful while using sharding
+   *
+   * @default "pulse-report"
+   */
   outputDir?: string;
+
+  /**
+   * Whether to embed images directly as base64 strings in the report.
+   * @default false
+   */
   base64Images?: boolean;
+
+  /**
+   * Whether to reset the output directory before each run.
+   *
+   * Mostly useful while running multiple test suites in a single run with `&&` operator.
+   *
+   * example: `npx playwright test test1.spec.ts && npx playwright test test2.spec.ts`
+   *
+   * If `resetOnEachRun` is set to `false`, then the report of `test2.spec.ts` will be merged with `test1.spec.ts` report.
+   *
+   * @default true
+   */
   resetOnEachRun?: boolean;
+
+  /**
+   * A custom description to embed or display in the report.
+   *
+   * If not added, the component will not appear in the html reports
+   */
   reportDescription?: string;
+
+  /**
+   * Path to a custom logo image file to use in the report, which will be displayed in the header of the html report's logo and favicon.
+   *
+   * If not added, the default logo will be used.
+   */
   logo?: string;
+
+  /**
+   * The subdirectory within `outputDir` where individual run reports are stored.
+   * Only used when `resetOnEachRun` is `false`.
+   *
+   * @default "pulse-results"
+   */
+  individualReportsSubDir?: string;
 }
 
 // Add this new interface

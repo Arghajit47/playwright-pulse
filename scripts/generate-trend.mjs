@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import * as fs from "fs/promises";
 import path from "path";
-import { getOutputDir } from "./config-reader.mjs";
+import { getReporterConfig } from "./config-reader.mjs";
+import { mergeSequentialReportsIfNeeded } from "./merge-sequential-reports.mjs";
 
 // Use dynamic import for chalk as it's ESM only for prettier console logs
 let chalk;
@@ -18,7 +19,6 @@ try {
 }
 
 const DEFAULT_OUTPUT_DIR = "pulse-report";
-const CURRENT_RUN_JSON_FILE = "playwright-pulse-report.json"; // Source of the current run data
 const HISTORY_SUBDIR = "history"; // Subdirectory for historical JSON files
 const HISTORY_FILE_PREFIX = "trend-";
 const MAX_HISTORY_FILES = 15; // Store last 15 runs
@@ -33,8 +33,12 @@ for (let i = 0; i < args.length; i++) {
 }
 
 async function archiveCurrentRunData() {
-  const outputDir = await getOutputDir(customOutputDir);
-  const currentRunJsonPath = path.join(outputDir, CURRENT_RUN_JSON_FILE);
+  const config = await getReporterConfig(customOutputDir);
+  const outputDir = config.outputDir;
+  const outputFile = config.outputFile;
+  
+  await mergeSequentialReportsIfNeeded(outputDir);
+  const currentRunJsonPath = path.join(outputDir, outputFile);
   const historyDir = path.join(outputDir, HISTORY_SUBDIR);
 
   try {

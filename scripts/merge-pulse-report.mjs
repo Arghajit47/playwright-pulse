@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import path from "path";
+import { getReporterConfig } from "./config-reader.mjs";
+import { animate } from "./terminal-logo.mjs";
+import { mergeSequentialReportsIfNeeded } from "./merge-sequential-reports.mjs";
 
 const args = process.argv.slice(2);
 let customOutputDir = null;
@@ -13,61 +16,63 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-const OUTPUT_FILE = "playwright-pulse-report.json";
-
 /**
- * Securely resolves the report directory.
- * Prevents Path Traversal by ensuring the output directory
- * is contained within the current working directory.
+ * Securely resolves the report directory and config.
  */
-async function getReportDir() {
+async function getFullConfig() {
+  const config = await getReporterConfig(customOutputDir);
+  
   if (customOutputDir) {
     const resolvedPath = path.resolve(process.cwd(), customOutputDir);
-
     if (!resolvedPath.startsWith(process.cwd())) {
       console.error(
         "⛔ Security Error: Custom output directory must be within the current project root.",
       );
       process.exit(1);
     }
-
-    return resolvedPath;
   }
 
-  try {
-    const { getOutputDir } = await import("./config-reader.mjs");
-    return await getOutputDir();
-  } catch (error) {
-    return path.resolve(process.cwd(), "pulse-report");
-  }
+  return config;
 }
 
 /**
  * Scans the report directory for subdirectories (shards).
  * Returns an array of absolute paths to these subdirectories.
- * Excludes the 'attachments' folder itself.
+ * Excludes the 'attachments' folder and non-shard directories.
  */
-function getShardDirectories(dir) {
+function getShardDirectories(dir, outputFile, individualReportsSubDir) {
   if (!fs.existsSync(dir)) {
     return [];
   }
 
   return fs
     .readdirSync(dir, { withFileTypes: true })
-    .filter((dirent) => dirent.isDirectory() && dirent.name !== "attachments")
+    .filter((dirent) => {
+      if (!dirent.isDirectory() || dirent.name === "attachments" || dirent.name === individualReportsSubDir) {
+        return false;
+      }
+      
+      const shardPath = path.join(dir, dirent.name);
+      const hasDirectReport = fs.existsSync(path.join(shardPath, outputFile));
+      const hasSequentialResults = fs.existsSync(path.join(shardPath, individualReportsSubDir));
+      
+      // Scenario 3: Only consider directories that have either a report or sequential results
+      return hasDirectReport || hasSequentialResults;
+    })
     .map((dirent) => path.join(dir, dirent.name));
 }
 
 /**
  * Merges JSON reports from all shard directories.
  */
-function mergeReports(shardDirs) {
+function mergeReports(shardDirs, outputFile) {
   let combinedRun = {
     totalTests: 0,
     passed: 0,
     failed: 0,
     skipped: 0,
     duration: 0,
+    flaky: 0
   };
 
   let combinedResults = [];
@@ -76,10 +81,10 @@ function mergeReports(shardDirs) {
   let allEnvironments = [];
 
   for (const shardDir of shardDirs) {
-    const jsonPath = path.join(shardDir, OUTPUT_FILE);
+    const jsonPath = path.join(shardDir, outputFile);
 
     if (!fs.existsSync(jsonPath)) {
-      console.warn(`  Warning: No ${OUTPUT_FILE} found in ${path.basename(shardDir)}`);
+      console.warn(`  Warning: No ${outputFile} found in ${path.basename(shardDir)} after pre-merge attempt.`);
       continue;
     }
 
@@ -92,7 +97,7 @@ function mergeReports(shardDirs) {
       combinedRun.passed += run.passed || 0;
       combinedRun.failed += run.failed || 0;
       combinedRun.skipped += run.skipped || 0;
-      combinedRun.flaky = (combinedRun.flaky || 0) + (run.flaky || 0);
+      combinedRun.flaky += run.flaky || 0;
       combinedRun.duration += run.duration || 0;
 
       if (run.environment) {
@@ -181,13 +186,16 @@ function cleanupShardDirectories(shardDirs) {
 
 // Main execution
 (async () => {
-  const { animate } = await import("./terminal-logo.mjs");
   await animate();
   
-  const REPORT_DIR = await getReportDir();
+  const config = await getFullConfig();
+  const REPORT_DIR = config.outputDir;
+  const OUTPUT_FILE = config.outputFile;
+  const INDIVIDUAL_SUBDIR = config.individualReportsSubDir;
 
   console.log(`\n🔄 Playwright Pulse - Merge Reports (Sharding Mode)\n`);
   console.log(`  Report directory: ${REPORT_DIR}`);
+  console.log(`  Output file: ${OUTPUT_FILE}`);
   if (customOutputDir) {
     console.log(`  (from CLI argument)`);
   } else {
@@ -195,13 +203,13 @@ function cleanupShardDirectories(shardDirs) {
   }
   console.log();
 
-  // 1. Get Shard Directories
-  const shardDirs = getShardDirectories(REPORT_DIR);
+  // 1. Get initial Shard Directories (Scenario 3: filtering non-relevant folders)
+  const shardDirs = getShardDirectories(REPORT_DIR, OUTPUT_FILE, INDIVIDUAL_SUBDIR);
 
   if (shardDirs.length === 0) {
     console.log("❌ No shard directories found.");
     console.log(
-      "   Expected structure: <report-dir>/<shard-folder>/playwright-pulse-report.json",
+      `   Expected structure: <report-dir>/<shard-folder>/${OUTPUT_FILE} or <report-dir>/<shard-folder>/${INDIVIDUAL_SUBDIR}/`,
     );
     process.exit(0);
   }
@@ -212,18 +220,30 @@ function cleanupShardDirectories(shardDirs) {
   });
   console.log();
 
-  // 2. Merge JSON Reports
-  console.log(`🔀 Merging reports...`);
-  const merged = mergeReports(shardDirs);
+  // 2. Scenario 1: Pre-merge sequential results for EACH shard if needed
+  console.log(`⚙️  Checking for sequential results in shards...`);
+  for (const shardDir of shardDirs) {
+    const hasSequential = fs.existsSync(path.join(shardDir, INDIVIDUAL_SUBDIR));
+    if (hasSequential) {
+      console.log(`  - ${path.basename(shardDir)}: Merging sequential results...`);
+      // Force merge because individual shard dirs might not have playwright.config.ts resolving to resetOnEachRun=false
+      await mergeSequentialReportsIfNeeded(shardDir, true);
+    }
+  }
+  console.log();
+
+  // 3. Merge JSON Reports
+  console.log(`🔀 Merging reports across shards...`);
+  const merged = mergeReports(shardDirs, OUTPUT_FILE);
   console.log(`  ✓ Merged ${shardDirs.length} report(s)`);
   console.log();
 
-  // 3. Copy Attachments
+  // 4. Copy Attachments
   console.log(`📎 Merging attachments...`);
   mergeAttachments(shardDirs, REPORT_DIR);
   console.log(`  ✓ Attachments merged`);
 
-  // 4. Write Final Merged JSON
+  // 5. Write Final Merged JSON
   const finalReportPath = path.join(REPORT_DIR, OUTPUT_FILE);
   fs.writeFileSync(finalReportPath, JSON.stringify(merged, null, 2));
 
@@ -231,7 +251,7 @@ function cleanupShardDirectories(shardDirs) {
   console.log(`   Total tests: ${merged.run.totalTests}`);
   console.log(`   Passed: ${merged.run.passed} | Failed: ${merged.run.failed} | Skipped: ${merged.run.skipped} | Flaky: ${merged.run.flaky}`);
 
-  // 5. Cleanup Shard Directories
+  // 6. Cleanup Shard Directories
   cleanupShardDirectories(shardDirs);
 
   console.log();

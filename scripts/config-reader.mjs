@@ -22,159 +22,149 @@ async function findPlaywrightConfig() {
   return { path: null, exists: false };
 }
 
-async function extractOutputDirFromConfig(configPath) {
+async function extractReporterOptionsFromConfig(configPath) {
   let fileContent = "";
   try {
     fileContent = fs.readFileSync(configPath, "utf-8");
   } catch (e) {
-    // If we can't read the file, we can't parse or import it.
-    return null;
+    return {};
   }
+
+  const options = {};
 
   // 1. Strategy: Text Parsing (Safe & Fast)
-  // We try to read the file as text first. This finds the outputDir without
-  // triggering any Node.js warnings or errors.
   try {
-    // Regex matches: outputDir: "value" or outputDir: 'value'
-    const match = fileContent.match(/outputDir:\s*["']([^"']+)["']/);
+    // Find the Pulse/Dummy reporter block
+    // It usually looks like ["@arghajit/playwright-pulse-report", { ... }] or ["playwright-pulse-report", { ... }]
+    const reporterBlockRegex = /\[\s*["'](?:@arghajit\/)?(?:playwright-pulse-report|dummy)["']\s*,\s*(\{[\s\S]*?\})\s*,?\s*\]/g;
+    let match;
+    while ((match = reporterBlockRegex.exec(fileContent)) !== null) {
+      const block = match[1];
+      
+      const outputDirMatch = block.match(/outputDir:\s*["']([^"']+)["']/);
+      if (outputDirMatch && outputDirMatch[1]) options.outputDir = outputDirMatch[1];
 
-    if (match && match[1]) {
-      return path.resolve(process.cwd(), match[1]);
+      const outputFileMatch = block.match(/outputFile:\s*["']([^"']+)["']/);
+      if (outputFileMatch && outputFileMatch[1]) options.outputFile = outputFileMatch[1];
+
+      const resetOnEachRunMatch = block.match(/resetOnEachRun:\s*(true|false)/);
+      if (resetOnEachRunMatch) options.resetOnEachRun = resetOnEachRunMatch[1] === "true";
+
+      const individualReportsSubDirMatch = block.match(/individualReportsSubDir:\s*["']([^"']+)["']/);
+      if (individualReportsSubDirMatch && individualReportsSubDirMatch[1]) options.individualReportsSubDir = individualReportsSubDirMatch[1];
+      
+      // If we found any Pulse-specific options, we're likely in the right block
+      if (Object.keys(options).length > 0) break;
     }
-  } catch (e) {
-    // Ignore text reading errors
-  }
 
-  // 2. Safety Check: Detect ESM in CJS to Prevent Node Warnings
-  // The warning "To load an ES module..." happens when we try to import()
-  // a .js file containing ESM syntax (import/export) in a CJS package.
-  // We explicitly check for this and ABORT the import if found.
-  if (configPath.endsWith(".js")) {
-    let isModulePackage = false;
-    try {
-      const pkgPath = path.resolve(process.cwd(), "package.json");
-      if (fs.existsSync(pkgPath)) {
-        const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
-        isModulePackage = pkg.type === "module";
-      }
-    } catch (e) {}
-
-    if (!isModulePackage) {
-      // Heuristic: Check for ESM syntax (import/export at start of lines)
-      const hasEsmSyntax =
-        /^\s*import\s+/m.test(fileContent) ||
-        /^\s*export\s+/m.test(fileContent);
-
-      if (hasEsmSyntax) {
-        // We found ESM syntax in a .js file within a CJS project.
-        // Attempting to import this WILL trigger the Node.js warning.
-        // Since regex failed to find outputDir, and we can't import safely, we abort now.
-        return null;
-      }
+    // Fallback for global outputDir if not found in reporter block
+    if (!options.outputDir) {
+      const globalOutputDirMatch = fileContent.match(/outputDir:\s*["']([^"']+)["']/);
+      if (globalOutputDirMatch && globalOutputDirMatch[1]) options.outputDir = globalOutputDirMatch[1];
     }
-  }
+  } catch (e) { }
 
-  // 3. Strategy: Dynamic Import
-  // If we passed the safety check, we try to import the config.
-  try {
-    let config;
-    const configDir = dirname(configPath);
-    const originalDirname = global.__dirname;
-    const originalFilename = global.__filename;
-
-    try {
-      global.__dirname = configDir;
-      global.__filename = configPath;
-
-      if (configPath.endsWith(".ts")) {
-        try {
-          const { register } = await import("node:module");
-          const { pathToFileURL } = await import("node:url");
-          register("ts-node/esm", pathToFileURL("./"));
-          config = await import(pathToFileURL(configPath).href);
-        } catch (tsError) {
-          const tsNode = await import("ts-node");
-          tsNode.register({
-            transpileOnly: true,
-            compilerOptions: { module: "commonjs" },
-          });
-          config = require(configPath);
+  // 2. Safety Check and Dynamic Import
+  if (Object.keys(options).length < 3) {
+    // Check if we can safely import()
+    let canImport = true;
+    if (configPath.endsWith(".js")) {
+      let isModulePackage = false;
+      try {
+        const pkgPath = path.resolve(process.cwd(), "package.json");
+        if (fs.existsSync(pkgPath)) {
+          const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+          isModulePackage = pkg.type === "module";
         }
-      } else {
-        // Try dynamic import for JS/MJS
-        config = await import(pathToFileURL(configPath).href);
+      } catch (e) {}
+
+      if (!isModulePackage) {
+        const hasEsmSyntax = /^\s*import\s+/m.test(fileContent) || /^\s*export\s+/m.test(fileContent);
+        if (hasEsmSyntax) canImport = false;
       }
+    }
 
-      // Handle Default Export
-      if (config && config.default) {
-        config = config.default;
-      }
+    if (canImport) {
+      try {
+        let config;
+        const configDir = dirname(configPath);
+        const originalDirname = global.__dirname;
+        const originalFilename = global.__filename;
 
-      if (config) {
-        // Check for Reporter Config
-        if (config.reporter) {
-          const reporters = Array.isArray(config.reporter)
-            ? config.reporter
-            : [config.reporter];
+        try {
+          global.__dirname = configDir;
+          global.__filename = configPath;
 
-          for (const reporter of reporters) {
-            const reporterName = Array.isArray(reporter)
-              ? reporter[0]
-              : reporter;
-            const reporterOptions = Array.isArray(reporter)
-              ? reporter[1]
-              : null;
+          if (configPath.endsWith(".ts")) {
+            try {
+              const { register } = await import("node:module");
+              const { pathToFileURL } = await import("node:url");
+              register("ts-node/esm", pathToFileURL("./"));
+              config = await import(pathToFileURL(configPath).href);
+            } catch (tsError) {
+              const tsNode = await import("ts-node");
+              tsNode.register({ transpileOnly: true, compilerOptions: { module: "commonjs" } });
+              config = require(configPath);
+            }
+          } else {
+            config = await import(pathToFileURL(configPath).href);
+          }
 
-            if (
-              typeof reporterName === "string" &&
-              (reporterName.includes("playwright-pulse-report") ||
-                reporterName.includes("@arghajit/playwright-pulse-report") ||
-                reporterName.includes("@arghajit/dummy"))
-            ) {
-              if (reporterOptions && reporterOptions.outputDir) {
-                return path.resolve(process.cwd(), reporterOptions.outputDir);
+          if (config && config.default) config = config.default;
+
+          if (config) {
+            if (config.reporter) {
+              const reporters = Array.isArray(config.reporter) ? config.reporter : [config.reporter];
+              for (const reporter of reporters) {
+                const reporterName = Array.isArray(reporter) ? reporter[0] : reporter;
+                const reporterOptions = Array.isArray(reporter) ? reporter[1] : null;
+
+                if (typeof reporterName === "string" && 
+                   (reporterName.includes("playwright-pulse-report") || 
+                    reporterName.includes("@arghajit/playwright-pulse-report") ||
+                    reporterName.includes("@arghajit/dummy"))) {
+                  if (reporterOptions) {
+                    if (reporterOptions.outputDir) options.outputDir = reporterOptions.outputDir;
+                    if (reporterOptions.outputFile) options.outputFile = reporterOptions.outputFile;
+                    if (reporterOptions.resetOnEachRun !== undefined) options.resetOnEachRun = reporterOptions.resetOnEachRun;
+                    if (reporterOptions.individualReportsSubDir) options.individualReportsSubDir = reporterOptions.individualReportsSubDir;
+                  }
+                }
               }
             }
+            if (config.outputDir && !options.outputDir) options.outputDir = config.outputDir;
           }
+        } finally {
+          global.__dirname = originalDirname;
+          global.__filename = originalFilename;
         }
-
-        // Check for Global outputDir
-        if (config.outputDir) {
-          return path.resolve(process.cwd(), config.outputDir);
-        }
-      }
-    } finally {
-      // Clean up globals
-      global.__dirname = originalDirname;
-      global.__filename = originalFilename;
+      } catch (error) {}
     }
-  } catch (error) {
-    // SILENT CATCH: Do NOT log anything here.
-    return null;
   }
 
-  return null;
+  return options;
+}
+
+export async function getReporterConfig(customOutputDirFromArgs = null) {
+  const { path: configPath, exists } = await findPlaywrightConfig();
+  let options = {};
+
+  if (exists) {
+    options = await extractReporterOptionsFromConfig(configPath);
+  }
+
+  const outputDir = customOutputDirFromArgs 
+    ? path.resolve(process.cwd(), customOutputDirFromArgs)
+    : path.resolve(process.cwd(), options.outputDir || DEFAULT_OUTPUT_DIR);
+
+  const outputFile = options.outputFile || "playwright-pulse-report.json";
+  const resetOnEachRun = options.resetOnEachRun !== undefined ? options.resetOnEachRun : true;
+  const individualReportsSubDir = options.individualReportsSubDir || "pulse-results";
+
+  return { outputDir, outputFile, resetOnEachRun, individualReportsSubDir };
 }
 
 export async function getOutputDir(customOutputDirFromArgs = null) {
-  if (customOutputDirFromArgs) {
-    console.log(`Using custom outputDir from CLI: ${customOutputDirFromArgs}`);
-    return path.resolve(process.cwd(), customOutputDirFromArgs);
-  }
-
-  const { path: configPath, exists } = await findPlaywrightConfig();
-  console.log(
-    `Config file search result: ${exists ? configPath : "not found"}`
-  );
-
-  if (exists) {
-    const outputDirFromConfig = await extractOutputDirFromConfig(configPath);
-    if (outputDirFromConfig) {
-      console.log(`Using outputDir from config: ${outputDirFromConfig}`);
-      return outputDirFromConfig;
-    }
-  }
-
-  console.log(`Using default outputDir: ${DEFAULT_OUTPUT_DIR}`);
-  return path.resolve(process.cwd(), DEFAULT_OUTPUT_DIR);
+  const config = await getReporterConfig(customOutputDirFromArgs);
+  return config.outputDir;
 }

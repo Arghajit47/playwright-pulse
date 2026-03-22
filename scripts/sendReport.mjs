@@ -11,7 +11,8 @@ import { fileURLToPath } from "url";
 import { animate } from "./terminal-logo.mjs";
 import { fork } from "child_process";
 import "dotenv/config";
-import { getOutputDir } from "./config-reader.mjs";
+import { getReporterConfig, getOutputDir } from "./config-reader.mjs";
+import { mergeSequentialReportsIfNeeded } from "./merge-sequential-reports.mjs";
 
 let chalk;
 let logo =
@@ -42,8 +43,10 @@ for (let i = 0; i < args.length; i++) {
 let fetch;
 let projectName;
 
-function getUUID(reportDir) {
-  const reportPath = path.join(reportDir, "playwright-pulse-report.json");
+async function getUUID(reportDir) {
+  const config = await getReporterConfig(customOutputDir);
+  const outputFile = config.outputFile;
+  const reportPath = path.join(reportDir, outputFile);
   console.log("Report path:", reportPath);
 
   if (!fsExistsSync(reportPath)) {
@@ -65,8 +68,10 @@ function formatDuration(ms) {
   return `${(ms / 3600000).toFixed(1)}h`;
 }
 
-const getPulseReportSummary = (reportDir) => {
-  const reportPath = path.join(reportDir, "playwright-pulse-report.json");
+const getPulseReportSummary = async (reportDir) => {
+  const config = await getReporterConfig(customOutputDir);
+  const outputFile = config.outputFile;
+  const reportPath = path.join(reportDir, outputFile);
 
   if (!fsExistsSync(reportPath)) {
     throw new Error("Pulse report file not found.");
@@ -286,8 +291,9 @@ const sendEmail = async (credentials, reportDir) => {
 
   try {
     console.log("Starting the sendEmail function...");
-    const reportData = getPulseReportSummary(reportDir);
-    const htmlContent = generateHtmlTable(reportData);
+    const uuid = await getUUID(reportDir);
+    const summary = await getPulseReportSummary(reportDir);
+    const htmlContent = generateHtmlTable(summary);
 
     const recipients = [
       process.env.RECIPIENT_EMAIL_1 || "",
@@ -404,7 +410,7 @@ async function fetchCredentials(reportDir, retries = 10) {
   }
 
   const timeout = 10000;
-  const key = getUUID(reportDir);
+  const key = await getUUID(reportDir);
 
   if (!key) {
     console.error(
@@ -460,6 +466,7 @@ const main = async () => {
   }
 
   const reportDir = await getOutputDir(customOutputDir);
+  await mergeSequentialReportsIfNeeded(reportDir);
   console.log(chalk.blue(`Preparing to send email report...`));
   console.log(chalk.blue(`Report directory set to: ${reportDir}`));
 

@@ -23,10 +23,11 @@
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <style>
-      /* Professional gradient background */
+      /* Professional background image */
       body {
         font-family: "Poppins", sans-serif;
-        background: linear-gradient(135deg, #2c3e50, #3498db);
+        background: url('./asset/background-image.png') no-repeat center center fixed;
+        background-size: cover;
         display: flex;
         justify-content: center;
         align-items: center;
@@ -43,7 +44,7 @@
         height: 932px;
         border: 16px solid #111;
         border-radius: 64px;
-        background: #f1cf5f; /* light grey wallpaper */
+        background: gray;
         box-sizing: content-box;
         overflow: hidden;
         transform-origin: center center;
@@ -257,6 +258,9 @@
       .report-link:nth-of-type(3) {
         animation-delay: 2.7s;
       }
+      .report-link:nth-of-type(4) {
+        animation-delay: 3s;
+      }
 
       /* Responsive adjustments */
       @media (max-width: 480px), (max-height: 720px) {
@@ -293,7 +297,7 @@
         <span class="notch-sensor sensor-right"></span>
       </div>
       <div class="container">
-        <h1>Pulse Report</h1>
+        <!-- <h1>Pulse Report</h1> -->
         <a
           class="report-link"
           href="./pulse-report/playwright-pulse-static-report.html"
@@ -320,6 +324,15 @@
           tabindex="0"
         >
           Pulse Email Report
+        </a>
+        <a
+          class="report-link"
+          href="https://playwright-pulse-dashboard.netlify.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          tabindex="0"
+        >
+          Pulse Dashboard (NextJS)
         </a>
       </div>
     </div>
