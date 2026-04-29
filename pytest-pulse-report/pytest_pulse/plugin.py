@@ -57,6 +57,9 @@ class _StepRecorder:
     browser: str
     steps: List[TestStep] = field(default_factory=list)
 
+    def reset_steps(self) -> None:
+        self.steps = []
+
     @contextmanager
     def step(self, title: str) -> Generator[None, None, None]:
         start = datetime.now(tz=timezone.utc)
@@ -187,7 +190,65 @@ class PulseReporter:
         state = self._states.get(nid)
         if state is None:
             return
+
+        # Detect start of a new rerun attempt: a fresh 'setup' phase when phases
+        # already has data means pytest-rerunfailures is starting another attempt.
+        if report.when == "setup" and state.phases:
+            retry_index = getattr(item, "execution_count", 2) - 2
+            self._save_attempt_result(item, state, retry_index=retry_index)
+            state.phases.clear()
+            state.start_time = datetime.now(tz=timezone.utc)
+            if state.recorder:
+                state.recorder.reset_steps()
+
         state.phases[report.when] = report
+
+    def _save_attempt_result(
+        self,
+        item: pytest.Item,
+        state: "_TestState",
+        retry_index: int,
+    ) -> None:
+        """Build and store a TestResult for one completed attempt (used for reruns)."""
+        setup_rep = state.phases.get("setup")
+        call_rep  = state.phases.get("call")
+        teardown_rep = state.phases.get("teardown")
+        status, error_msg, stack_trace = _determine_status(setup_rep, call_rep, teardown_rep)
+        end_time     = datetime.now(tz=timezone.utc)
+        duration_ms  = (end_time - state.start_time).total_seconds() * 1000
+        browser      = _detect_browser(item)
+        test_id      = _make_test_id(item)
+        steps        = list(state.recorder.steps) if state.recorder else []
+        result = TestResult(
+            id=test_id,
+            runId=self.run_id,
+            name=_get_title_path(item, _get_suite_name(item)),
+            describe=_get_describe(item),
+            spec_file=_get_spec_file(item),
+            status=status,
+            duration=duration_ms,
+            startTime=state.start_time,
+            endTime=end_time,
+            retries=retry_index,
+            steps=steps,
+            errorMessage=error_msg or None,
+            stackTrace=stack_trace or None,
+            tags=_get_tags(item),
+            severity=_get_severity(item),
+            suiteName=_get_suite_name(item),
+            browser=browser,
+            screenshots=[],
+            videoPath=[],
+            tracePath=None,
+            attachments=[],
+            stdout=None,
+            stderr=None,
+            workerId=self._worker_index() + 1 if self._is_worker() else 1,
+            totalWorkers=self._total_workers,
+            configFile=str(self.config.inipath) if self.config.inipath else None,
+            annotations=_get_annotations(item) or None,
+        )
+        self._results.append(result)
 
     def on_test_finish(self, item: pytest.Item) -> None:
         nid = item.nodeid

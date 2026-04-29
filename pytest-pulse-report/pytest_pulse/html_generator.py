@@ -119,6 +119,7 @@ def _build_html(data: dict, report_dir: str, embed_assets: bool) -> str:
 
     report_json = _j(data)
     description = (data.get("metadata") or {}).get("reportDescription") or ""
+    css_vars = _DARK_CSS if embed_assets else _LIGHT_CSS
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -133,7 +134,8 @@ def _build_html(data: dict, report_dir: str, embed_assets: bool) -> str:
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap">
 <script src="https://code.highcharts.com/highcharts.js"></script>
 <style>
-{_CSS}
+{css_vars}
+{_BASE_CSS}
 </style>
 </head>
 <body>
@@ -283,6 +285,8 @@ def _build_email_html(data: dict) -> str:
     passed = run.get("passed", 0)
     failed = run.get("failed", 0)
     skipped = run.get("skipped", 0)
+    flaky = run.get("flaky", 0)
+    results = data.get("results") or []
 
     def pct(n):
         return f"{round(n / total * 100)}%" if total else "0%"
@@ -298,101 +302,103 @@ def _build_email_html(data: dict) -> str:
     duration_str = _fmt_dur(dur_ms)
     logo = _DEFAULT_LOGO_B64
 
+    # Build test list HTML
+    test_items = []
+    for r in results[:50]: # Limit to 50 for email
+        st = r.get("final_status") or r.get("status") or "skipped"
+        icon = "✅" if st == "passed" else "❌" if st == "failed" else "⚡" if st == "flaky" else "⊘"
+        color = "#10b981" if st == "passed" else "#ef4444" if st == "failed" else "#00ccd3" if st == "flaky" else "#9ca3af"
+        test_items.append(f"""
+            <li style="display:flex;align-items:center;padding:10px;border-bottom:1px solid #f3f4f6;font-size:13px">
+              <span style="margin-right:10px">{icon}</span>
+              <span style="flex:1;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{_esc(r.get('name'))}</span>
+              <span style="margin-left:10px;padding:2px 8px;border-radius:4px;background-color:{color}22;color:{color};font-weight:600;font-size:11px">{st.upper()}</span>
+            </li>""")
+    
+    test_list_html = "".join(test_items)
+    if len(results) > 50:
+        test_list_html += f'<li style="padding:10px;text-align:center;color:#9ca3af;font-size:12px">... and {len(results)-50} more tests</li>'
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pulse Report Summary</title>
-<style>
-@keyframes slideUpFade{{0%{{opacity:0;transform:translateY(20px)}}100%{{opacity:1;transform:translateY(0)}}}}
-@keyframes gentlePulse{{0%,100%{{transform:scale(1)}}50%{{transform:scale(1.05)}}}}
-@keyframes popIn{{0%{{opacity:0;transform:scale(.5)}}80%{{transform:scale(1.1)}}100%{{opacity:1;transform:scale(1)}}}}
-.anim-card{{animation:slideUpFade .8s ease-out forwards}}
-.anim-logo{{animation:gentlePulse 3s infinite ease-in-out}}
-.anim-row-1{{animation:slideUpFade .5s ease-out .2s backwards}}
-.anim-row-2{{animation:slideUpFade .5s ease-out .3s backwards}}
-.anim-row-3{{animation:slideUpFade .5s ease-out .4s backwards}}
-.anim-row-4{{animation:slideUpFade .5s ease-out .5s backwards}}
-.anim-badge{{animation:popIn .6s cubic-bezier(.68,-.55,.265,1.55) .6s backwards}}
-</style>
 </head>
-<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f3f4f6;padding:40px 0">
+<body style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#f8fafc;padding:40px 10px">
   <tr><td align="center">
-    <table class="anim-card" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
-           style="max-width:600px;background-color:#ffffff;border-radius:12px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);overflow:hidden">
-      <tr><td height="6" style="background-color:#4f46e5"></td></tr>
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"
+           style="max-width:650px;background-color:#ffffff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.05);overflow:hidden;border:1px solid #e2e8f0">
+      <tr><td height="8" style="background:linear-gradient(90deg, #6366f1, #8b5cf6)"></td></tr>
       <tr>
-        <td style="padding:32px 32px 20px 32px">
+        <td style="padding:40px 40px 20px 40px">
           <table border="0" cellspacing="0" cellpadding="0" width="100%">
             <tr>
-              <td width="55" style="vertical-align:middle;padding-right:16px">
-                <img class="anim-logo" src="{logo}" alt="Pulse" height="40"
-                     style="display:block;border:0;border-radius:8px">
-              </td>
-              <td style="vertical-align:middle">
-                <h1 style="margin:0;font-size:24px;font-weight:700;color:#111827">Pulse Report</h1>
-                <p style="margin:4px 0 0;font-size:14px;color:#6b7280">Automated Execution Report</p>
+              <td style="vertical-align:middle;text-align:center">
+                <img src="{logo}" alt="Pulse" height="50" style="display:inline-block;border:0;border-radius:12px;margin-bottom:15px">
+                <h1 style="margin:0;font-size:28px;font-weight:800;color:#0f172a;letter-spacing:-0.025em">Pulse Report</h1>
+                <p style="margin:8px 0 0;font-size:15px;color:#64748b">Automated Execution Summary</p>
               </td>
             </tr>
           </table>
         </td>
       </tr>
       <tr>
-        <td style="padding:0 32px 20px 32px">
+        <td style="padding:0 40px 30px 40px">
           <table width="100%" border="0" cellspacing="0" cellpadding="0"
-                 style="background-color:#f9fafb;border-radius:8px;border:1px solid #e5e7eb">
+                 style="background-color:#f8fafc;border-radius:12px;border:1px solid #e2e8f0">
             <tr>
-              <td style="padding:16px;border-right:1px solid #e5e7eb;width:50%">
-                <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;font-weight:600">Start Time</p>
-                <p style="margin:0;font-size:14px;color:#374151;font-weight:500">{_esc(start_str)}</p>
+              <td style="padding:20px;border-right:1px solid #e2e8f0;width:50%">
+                <p style="margin:0 0 5px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;font-weight:700">Started At</p>
+                <p style="margin:0;font-size:14px;color:#334155;font-weight:600">{_esc(start_str)}</p>
               </td>
-              <td style="padding:16px;width:50%">
-                <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;font-weight:600">Duration</p>
-                <p style="margin:0;font-size:14px;color:#374151;font-weight:500">{_esc(duration_str)}</p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <tr>
-        <td style="padding:0 32px 32px 32px">
-          <table width="100%" border="0" cellspacing="0" cellpadding="0">
-            <tr class="anim-row-1">
-              <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#4b5563">Total Tests Executed</td>
-              <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;text-align:right;font-size:14px;font-weight:600;color:#111827">{total}</td>
-            </tr>
-            <tr class="anim-row-2">
-              <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#4b5563">Tests Passed</td>
-              <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;text-align:right">
-                <span class="anim-badge" style="background-color:#d1fae5;color:#065f46;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;display:inline-block;white-space:nowrap">
-                  {passed} ({pct(passed)})
-                </span>
-              </td>
-            </tr>
-            <tr class="anim-row-3">
-              <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;font-size:14px;color:#4b5563">Tests Failed</td>
-              <td style="padding:12px 0;border-bottom:1px solid #f3f4f6;text-align:right">
-                <span class="anim-badge" style="background-color:#fee2e2;color:#991b1b;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;display:inline-block;white-space:nowrap">
-                  {failed} ({pct(failed)})
-                </span>
-              </td>
-            </tr>
-            <tr class="anim-row-4">
-              <td style="padding:12px 0;font-size:14px;color:#4b5563">Tests Skipped</td>
-              <td style="padding:12px 0;text-align:right">
-                <span class="anim-badge" style="background-color:#fef3c7;color:#92400e;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600;display:inline-block;white-space:nowrap">
-                  {skipped} ({pct(skipped)})
-                </span>
+              <td style="padding:20px;width:50%">
+                <p style="margin:0 0 5px;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#94a3b8;font-weight:700">Duration</p>
+                <p style="margin:0;font-size:14px;color:#334155;font-weight:600">{_esc(duration_str)}</p>
               </td>
             </tr>
           </table>
         </td>
       </tr>
       <tr>
-        <td style="background-color:#f9fafb;padding:20px;text-align:center;border-top:1px solid #e5e7eb">
-          <p style="margin:0;font-size:12px;color:#9ca3af">Generated by Pulse Report (pytest-pulse-report)</p>
+        <td style="padding:0 40px 30px 40px">
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="text-align:center">
+            <tr>
+              <td style="padding:10px">
+                <div style="background-color:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:15px">
+                  <div style="font-size:11px;color:#166534;font-weight:700;text-transform:uppercase;margin-bottom:5px">Passed</div>
+                  <div style="font-size:22px;color:#15803d;font-weight:800">{passed}</div>
+                </div>
+              </td>
+              <td style="padding:10px">
+                <div style="background-color:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:15px">
+                  <div style="font-size:11px;color:#991b1b;font-weight:700;text-transform:uppercase;margin-bottom:5px">Failed</div>
+                  <div style="font-size:22px;color:#b91c1c;font-weight:800">{failed}</div>
+                </div>
+              </td>
+              <td style="padding:10px">
+                <div style="background-color:#fffbeb;border:1px solid #fef3c7;border-radius:10px;padding:15px">
+                  <div style="font-size:11px;color:#92400e;font-weight:700;text-transform:uppercase;margin-bottom:5px">Skipped</div>
+                  <div style="font-size:22px;color:#b45309;font-weight:800">{skipped}</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:0 40px 40px 40px">
+          <h3 style="margin:0 0 15px;font-size:14px;font-weight:700;color:#0f172a;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid #f1f5f9;padding-bottom:10px">Test Results Breakdown</h3>
+          <ul style="list-style:none;padding:0;margin:0;border:1px solid #f1f5f9;border-radius:10px;overflow:hidden">
+            {test_list_html}
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td style="background-color:#f8fafc;padding:25px;text-align:center;border-top:1px solid #e2e8f0">
+          <p style="margin:0;font-size:12px;color:#94a3b8;font-weight:500">Generated by Pulse Report • pytest-pulse-report</p>
         </td>
       </tr>
     </table>
@@ -413,15 +419,15 @@ def _fmt_dur(ms: float) -> str:
 
 
 # ── CSS ────────────────────────────────────────────────────────────────────────
-_CSS = """
+_DARK_CSS = """
 :root {
-  --primary-color:#f9fafb;--primary-dark:#e5e7eb;--primary-light:#ffffff;
-  --secondary-color:#d1d5db;--secondary-dark:#9ca3af;--secondary-light:#f3f4f6;
-  --accent-color:#ffffff;--accent-alt:#a3a3a3;
-  --success-color:#34d399;--success-dark:#10b981;--success-light:#6ee7b7;
-  --danger-color:#f87171;--danger-dark:#ef4444;--danger-light:#fca5a5;
-  --warning-color:#fbbf24;--warning-dark:#f59e0b;--warning-light:#fcd34d;
-  --info-color:#9ca3af;--flaky-color:#00ccd3;
+  --primary-color:#6366f1;--primary-dark:#4f46e5;--primary-light:#818cf8;
+  --secondary-color:#8b5cf6;--secondary-dark:#7c3aed;--secondary-light:#a78bfa;
+  --accent-color:#ec4899;--accent-alt:#06b6d4;
+  --success-color:#10b981;--success-dark:#059669;--success-light:#34d399;
+  --danger-color:#ef4444;--danger-dark:#dc2626;--danger-light:#f87171;
+  --warning-color:#f59e0b;--warning-dark:#d97706;--warning-light:#fbbf24;
+  --info-color:#3b82f6;--flaky-color:#00ccd3;
   --text-primary:#f9fafb;--text-secondary:#e5e7eb;--text-tertiary:#d1d5db;
   --bg-primary:#000000;--bg-secondary:#0a0a0a;--bg-tertiary:#050505;
   --bg-card:#0d0d0d;--bg-card-hover:#121212;
@@ -432,7 +438,32 @@ _CSS = """
   --neutral-100:#171717;--neutral-200:#262626;--neutral-300:#404040;
   --bg-hover:#171717;
   --font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --chart-text: #e5e7eb;
+  --chart-grid: #262626;
 }
+"""
+
+_LIGHT_CSS = """
+:root {
+  --primary-color: #6366f1; --primary-dark: #4f46e5; --primary-light: #818cf8;
+  --secondary-color: #8b5cf6; --secondary-dark: #7c3aed; --secondary-light: #a78bfa;
+  --accent-color: #ec4899; --accent-alt: #06b6d4;
+  --success-color: #10b981; --success-dark: #059669; --success-light: #34d399;
+  --danger-color: #ef4444; --danger-dark: #dc2626; --danger-light: #f87171;
+  --warning-color: #f59e0b; --warning-dark: #d97706; --warning-light: #fbbf24;
+  --info-color: #3b82f6; --flaky-color: #00ccd3; 
+  --text-primary: #0f172a; --text-secondary: #475569; --text-tertiary: #94a3b8;
+  --bg-primary: #ffffff; --bg-secondary: #f8fafc; --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff; --bg-card-hover: #f8fafc;
+  --border-light: #e2e8f0; --border-medium: #cbd5e1; --border-dark: #94a3b8;
+  --text-color: #0f172a; --text-color-secondary: #475569; --border-color: #cbd5e1;
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --chart-text: #475569;
+  --chart-grid: #e2e8f0;
+}
+"""
+
+_BASE_CSS = """
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg-primary);color:var(--text-color);font-family:var(--font-family);font-size:14px;line-height:1.5}
 .container{max-width:1600px;margin:0 auto;padding:24px}
@@ -674,17 +705,17 @@ _JS = r"""
       chart: { type: 'pie', backgroundColor: 'transparent', style:{fontFamily:"var(--font-family)"} },
       title: { text: null },
       tooltip: { pointFormat: '<b>{point.name}</b>: {point.y} ({point.percentage:.1f}%)' },
-      plotOptions: { pie: { dataLabels: { enabled: true, color: '#e5e7eb',
+      plotOptions: { pie: { dataLabels: { enabled: true, color: 'var(--chart-text)',
         format: '<b>{point.name}</b>: {point.percentage:.1f}%' },
         borderWidth: 0, shadow: false } },
       series: [{ name: 'Tests', colorByPoint: true, data: [
-        { name: 'Passed', y: passed, color: '#34d399' },
-        { name: 'Failed', y: failed, color: '#f87171' },
-        { name: 'Skipped', y: skipped, color: '#fbbf24' },
-        { name: 'Flaky', y: flaky, color: '#00ccd3' },
+        { name: 'Passed', y: passed, color: 'var(--success-color)' },
+        { name: 'Failed', y: failed, color: 'var(--danger-color)' },
+        { name: 'Skipped', y: skipped, color: 'var(--warning-color)' },
+        { name: 'Flaky', y: flaky, color: 'var(--flaky-color)' },
       ].filter(function(d){return d.y > 0;}) }],
       credits: { enabled: false },
-      legend: { itemStyle: { color: '#e5e7eb' } }
+      legend: { itemStyle: { color: 'var(--chart-text)' } }
     });
   })();
 
@@ -723,12 +754,15 @@ _JS = r"""
     var data = Object.entries(sevs).filter(function(e){return e[1]>0;})
       .map(function(e){ return {name:e[0], y:e[1], color:colors[e[0]]||'#9ca3af'}; });
     if (!data.length) return;
+    var textStyle = { color: 'var(--chart-text)' };
+    var gridStyle = { gridLineColor: 'var(--chart-grid)' };
+    
     Highcharts.chart('severity-chart', {
       chart:{type:'bar',backgroundColor:'transparent',style:{fontFamily:"var(--font-family)"}},
       title:{text:null},
-      xAxis:{categories:data.map(function(d){return d.name;}),labels:{style:{color:'#e5e7eb'}}},
-      yAxis:{title:{text:null},labels:{style:{color:'#e5e7eb'}},gridLineColor:'#262626'},
-      plotOptions:{bar:{dataLabels:{enabled:true,color:'#e5e7eb'},colorByPoint:true,borderWidth:0}},
+      xAxis:{categories:data.map(function(d){return d.name;}),labels:{style:textStyle}},
+      yAxis:Object.assign({title:{text:null},labels:{style:textStyle}}, gridStyle),
+      plotOptions:{bar:{dataLabels:{enabled:true,color:'var(--chart-text)'},colorByPoint:true,borderWidth:0}},
       series:[{name:'Tests',data:data,showInLegend:false}],
       credits:{enabled:false}
     });
@@ -747,10 +781,10 @@ _JS = r"""
     Highcharts.chart('spec-duration-chart', {
       chart:{type:'bar',backgroundColor:'transparent',style:{fontFamily:"var(--font-family)"}},
       title:{text:null},
-      xAxis:{categories:sorted.map(function(e){return e[0];}),labels:{style:{color:'#e5e7eb'},overflow:'justify'}},
-      yAxis:{title:{text:'Duration (ms)'},labels:{style:{color:'#e5e7eb'},formatter:function(){return fmtDur(this.value);}},gridLineColor:'#262626'},
+      xAxis:{categories:sorted.map(function(e){return e[0];}),labels:{style:{color:'var(--chart-text)'},overflow:'justify'}},
+      yAxis:{title:{text:'Duration (ms)',style:{color:'var(--chart-text)'}},labels:{style:{color:'var(--chart-text)'},formatter:function(){return fmtDur(this.value);}},gridLineColor:'var(--chart-grid)'},
       tooltip:{formatter:function(){return '<b>'+this.x+'</b><br>'+fmtDur(this.y);}},
-      plotOptions:{bar:{dataLabels:{enabled:true,formatter:function(){return fmtDur(this.y);},style:{color:'#e5e7eb'}},borderWidth:0,color:'#764ba2'}},
+      plotOptions:{bar:{dataLabels:{enabled:true,formatter:function(){return fmtDur(this.y);},style:{color:'var(--chart-text)'}},borderWidth:0,color:'var(--primary-color)'}},
       series:[{name:'Duration',data:sorted.map(function(e){return e[1];})}],
       credits:{enabled:false}
     });
@@ -769,10 +803,10 @@ _JS = r"""
     Highcharts.chart('describe-duration-chart', {
       chart:{type:'bar',backgroundColor:'transparent',style:{fontFamily:"var(--font-family)"}},
       title:{text:null},
-      xAxis:{categories:sorted.map(function(e){return e[0];}),labels:{style:{color:'#e5e7eb'}}},
-      yAxis:{title:{text:'Duration (ms)'},labels:{style:{color:'#e5e7eb'},formatter:function(){return fmtDur(this.value);}},gridLineColor:'#262626'},
+      xAxis:{categories:sorted.map(function(e){return e[0];}),labels:{style:{color:'var(--chart-text)'}}},
+      yAxis:{title:{text:'Duration (ms)',style:{color:'var(--chart-text)'}},labels:{style:{color:'var(--chart-text)'},formatter:function(){return fmtDur(this.value);}},gridLineColor:'var(--chart-grid)'},
       tooltip:{formatter:function(){return '<b>'+this.x+'</b><br>'+fmtDur(this.y);}},
-      plotOptions:{bar:{dataLabels:{enabled:true,formatter:function(){return fmtDur(this.y);},style:{color:'#e5e7eb'}},borderWidth:0,color:'#00ccd3'}},
+      plotOptions:{bar:{dataLabels:{enabled:true,formatter:function(){return fmtDur(this.y);},style:{color:'var(--chart-text)'}},borderWidth:0,color:'var(--flaky-color)'}},
       series:[{name:'Duration',data:sorted.map(function(e){return e[1];})}],
       credits:{enabled:false}
     });
@@ -791,9 +825,9 @@ _JS = r"""
     Highcharts.chart('worker-chart', {
       chart:{type:'column',backgroundColor:'transparent',style:{fontFamily:"var(--font-family)"}},
       title:{text:null},
-      xAxis:{categories:sorted.map(function(e){return e[0];}),labels:{style:{color:'#e5e7eb'}}},
-      yAxis:{title:{text:'Tests'},labels:{style:{color:'#e5e7eb'}},gridLineColor:'#262626'},
-      plotOptions:{column:{dataLabels:{enabled:true,style:{color:'#e5e7eb'}},borderWidth:0,color:'#764ba2'}},
+      xAxis:{categories:sorted.map(function(e){return e[0];}),labels:{style:{color:'var(--chart-text)'}}},
+      yAxis:{title:{text:'Tests',style:{color:'var(--chart-text)'}},labels:{style:{color:'var(--chart-text)'}},gridLineColor:'var(--chart-grid)'},
+      plotOptions:{column:{dataLabels:{enabled:true,style:{color:'var(--chart-text)'}},borderWidth:0,color:'var(--primary-color)'}},
       series:[{name:'Tests',data:sorted.map(function(e){return e[1];})}],
       credits:{enabled:false}
     });
