@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-pulse-report"
+version = "0.3.5"
+description = "A pytest reporter and dashboard for visualizing Playwright (pytest-playwright) test results — Python port of playwright-pulse"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Arghajit Singha" }]
+keywords = [
+    "pytest",
+    "playwright",
+    "pytest-playwright",
+    "reporter",
+    "dashboard",
+    "test",
+    "reporting",
+    "pulse",
+    "pulse-report",
+    "test-report",
+    "html-report",
+]
+classifiers = [
+    "Framework :: Pytest",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = [
+    "pytest>=7.0.0",
+]
+
+[project.optional-dependencies]
+email = ["secure-smtplib"]
+compression = ["Pillow>=9.0.0"]
+all = ["Pillow>=9.0.0"]
+
+[project.urls]
+Homepage     = "https://arghajit47.github.io/playwright-pulse/"
+Repository   = "https://github.com/Arghajit47/playwright-pulse"
+
+[project.entry-points."pytest11"]
+pulse-report = "pytest_pulse.plugin"
+
+[project.scripts]
+generate-pulse-report    = "pytest_pulse.cli:generate_static_report"
+generate-report          = "pytest_pulse.cli:generate_report"
+merge-pulse-report       = "pytest_pulse.cli:merge_reports_cli"
+send-email               = "pytest_pulse.cli:send_email_cli"
+generate-email-report    = "pytest_pulse.cli:generate_email_report_cli"
+generate-trend           = "pytest_pulse.cli:generate_trend_cli"
+
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["pytest_pulse*"]
