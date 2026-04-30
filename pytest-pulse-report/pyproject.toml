@@ -57,3 +57,6 @@ generate-trend           = "pytest_pulse.cli:generate_trend_cli"
 [tool.setuptools.packages.find]
 where   = ["."]
 include = ["pytest_pulse*"]
+
+[tool.setuptools.package-data]
+pytest_pulse = ["assets/*.js"]
