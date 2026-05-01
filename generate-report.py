@@ -16,25 +16,15 @@ DEFAULT_HTML_FILE = "playwright-pulse-report.html"
 # Dummy placeholder for logo as requested
 LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
-# --- Highcharts Loading ---
-# In Python, we can try to read it from a local node_modules if it exists, otherwise leave empty to fallback to CDN.
-highcharts_content = ""
-highcharts_path = Path.cwd() / "node_modules" / "highcharts" / "highcharts.js"
-if highcharts_path.exists():
-    try:
-        with open(highcharts_path, "r", encoding="utf-8") as f:
-            highcharts_content = f.read()
-    except Exception as e:
-        print(f"Warning: Highcharts could not be loaded from node_modules. Falling back to CDN. {e}")
-else:
-    # Try relative to the script directory
-    highcharts_path_alt = Path(__file__).parent / "../node_modules/highcharts/highcharts.js"
-    if highcharts_path_alt.exists():
-        try:
-            with open(highcharts_path_alt, "r", encoding="utf-8") as f:
-                highcharts_content = f.read()
-        except Exception:
-            pass
+# --- Plotly Loading ---
+plotly_content = ""
+try:
+    import plotly.offline
+    plotly_content = plotly.offline.get_plotlyjs()
+except ImportError:
+    print("Warning: Plotly package not found. Charts may not render.")
+except Exception as e:
+    print(f"Warning: Could not load Plotly JS from package: {e}")
 
 # --- Helper functions ---
 
@@ -261,48 +251,52 @@ def generate_test_trends_chart(trend_data):
     render_function_name = f"renderTestTrendsChart_{chart_id.replace('-', '_')}"
     runs = trend_data['overall']
 
-    series = [
-        {
-            "name": "Total",
-            "data": [r.get('totalTests', 0) for r in runs],
-            "color": "var(--primary-color)",
-            "marker": { "symbol": "circle" }
-        },
-        {
-            "name": "Passed",
-            "data": [r.get('passed', 0) for r in runs],
-            "color": "var(--success-color)",
-            "marker": { "symbol": "circle" }
-        },
-        {
-            "name": "Failed",
-            "data": [r.get('failed', 0) for r in runs],
-            "color": "var(--danger-color)",
-            "marker": { "symbol": "circle" }
-        },
-        {
-            "name": "Skipped",
-            "data": [r.get('skipped', 0) for r in runs],
-            "color": "var(--warning-color)",
-            "marker": { "symbol": "circle" }
-        },
-        {
-            "name": "Flaky",
-            "data": [r.get('flaky', 0) for r in runs],
-            "color": "#00ccd3",
-            "marker": { "symbol": "circle" }
-        }
-    ]
-    
-    runs_for_tooltip = [{
-        "runId": r.get('runId'),
-        "timestamp": r.get('timestamp'),
-        "duration": r.get('duration')
-    } for r in runs]
+    categories = [f"Run {i+1}" for i in range(len(runs))]
 
-    categories_string = json.dumps([f"Run {i+1}" for i in range(len(runs))])
-    series_string = json.dumps(series)
-    runs_for_tooltip_string = json.dumps(runs_for_tooltip)
+    def _fmt_ts(ts):
+        if ts is None: return "N/A"
+        try:
+            if isinstance(ts, (int, float)):
+                return datetime.fromtimestamp(ts / 1000).strftime("%m/%d/%y %I:%M %p")
+            return format_date(ts)
+        except Exception:
+            return str(ts)
+
+    runs_tooltip = [[
+        str(r.get('runId', str(i+1))),
+        _fmt_ts(r.get('timestamp')),
+        format_duration(r.get('duration'))
+    ] for i, r in enumerate(runs)]
+
+    series_configs = [
+        {"name": "Total",   "key": "totalTests", "color": "#6366f1"},
+        {"name": "Passed",  "key": "passed",     "color": "#10b981"},
+        {"name": "Failed",  "key": "failed",     "color": "#ef4444"},
+        {"name": "Skipped", "key": "skipped",    "color": "#f59e0b"},
+        {"name": "Flaky",   "key": "flaky",      "color": "#00ccd3"},
+    ]
+
+    traces = []
+    for i, s in enumerate(series_configs):
+        data = [r.get(s['key'], 0) for r in runs]
+        if i == 0:
+            ht = "Date: %{customdata[1]}<br>Duration: %{customdata[2]}<br><b>Total: %{y}</b><extra></extra>"
+        else:
+            ht = f"<b>{s['name']}: %{{y}}</b><extra></extra>"
+        traces.append({
+            "x": categories,
+            "y": data,
+            "name": s["name"],
+            "type": "scatter",
+            "mode": "lines+markers",
+            "line": {"color": s["color"], "width": 2.5},
+            "marker": {"color": s["color"], "size": 7, "symbol": "circle"},
+            "hovertemplate": ht
+        })
+
+    traces_json = json.dumps(traces)
+    runs_tooltip_json = json.dumps(runs_tooltip)
+    categories_json = json.dumps(categories)
 
     return f"""
       <div id="{chart_id}" class="trend-chart-container lazy-load-chart" data-render-function-name="{render_function_name}">
@@ -312,32 +306,34 @@ def generate_test_trends_chart(trend_data):
           window.{render_function_name} = function() {{
               const chartContainer = document.getElementById('{chart_id}');
               if (!chartContainer) {{ console.error("Chart container {chart_id} not found for lazy loading."); return; }}
-              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {{
+              if (typeof Plotly !== 'undefined') {{
                   try {{
-                      chartContainer.innerHTML = ''; // Clear placeholder
-                      const chartOptions = {{
-                          chart: {{ type: "line", height: 350, backgroundColor: "transparent" }},
-                          title: {{ text: null }},
-                          xAxis: {{ categories: {categories_string}, crosshair: true, labels: {{ style: {{ color: 'var(--text-color-secondary)', fontSize: '12px' }}}}}},
-                          yAxis: {{ title: {{ text: "Test Count", style: {{ color: 'var(--text-color)'}} }}, min: 0, labels: {{ style: {{ color: 'var(--text-color-secondary)', fontSize: '12px' }}}}}},
-                          legend: {{ layout: "horizontal", align: "center", verticalAlign: "bottom", itemStyle: {{ fontSize: "12px", color: 'var(--text-color)' }}}},
-                          plotOptions: {{ series: {{ marker: {{ radius: 4, states: {{ hover: {{ radius: 6 }}}}}}, states: {{ hover: {{ halo: {{ size: 5, opacity: 0.1 }}}}}}}}, line: {{ lineWidth: 2.5 }}}},
-                          tooltip: {{
-                              shared: true, useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: {{ color: '#f5f5f5' }},
-                              formatter: function () {{
-                                  const runsData = {runs_for_tooltip_string};
-                                  const pointIndex = this.points[0].point.x;
-                                  const run = runsData[pointIndex];
-                                  let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' + 'Date: ' + new Date(run.timestamp).toLocaleString() + '<br><br>';
-                                  this.points.forEach(point => {{ tooltip += '<span style="color:' + point.color + '">●</span> ' + point.series.name + ': <b>' + point.y + '</b><br>'; }});
-                                  tooltip += '<br>Duration: ' + formatDuration(run.duration);
-                                  return tooltip;
-                              }}
+                      chartContainer.innerHTML = '';
+                      const runsTooltip = {runs_tooltip_json};
+                      const traces = {traces_json};
+                      traces.forEach(function(t) {{ t.customdata = runsTooltip; }});
+                      const layout = {{
+                          height: 350,
+                          paper_bgcolor: 'rgba(0,0,0,0)',
+                          plot_bgcolor: 'rgba(0,0,0,0)',
+                          margin: {{t: 20, r: 20, b: 70, l: 55}},
+                          xaxis: {{
+                              tickvals: {categories_json},
+                              ticktext: {categories_json},
+                              tickfont: {{size: 12}},
+                              gridcolor: 'rgba(128,128,128,0.15)'
                           }},
-                          series: {series_string},
-                          credits: {{ enabled: false }}
+                          yaxis: {{
+                              title: {{text: 'Test Count'}},
+                              rangemode: 'tozero',
+                              tickfont: {{size: 12}},
+                              gridcolor: 'rgba(128,128,128,0.15)'
+                          }},
+                          legend: {{orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18}},
+                          hovermode: 'x unified',
+                          hoverlabel: {{bgcolor: 'rgba(10,10,10,0.92)', font: {{color: '#f5f5f5'}}}}
                       }};
-                      Highcharts.chart('{chart_id}', chartOptions);
+                      Plotly.newPlot('{chart_id}', traces, layout, {{responsive: true, displayModeBar: false}});
                   }} catch (e) {{
                       console.error("Error rendering chart {chart_id} (lazy):", e);
                       chartContainer.innerHTML = '<div class="no-data">Error rendering test trends chart.</div>';
@@ -352,33 +348,47 @@ def generate_test_trends_chart(trend_data):
 def generate_duration_trend_chart(trend_data):
     if not trend_data or not trend_data.get('overall') or len(trend_data['overall']) == 0:
         return '<div class="no-data">No overall trend data available for durations.</div>'
-        
+
     import random
     chart_id = f"durationTrendChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderDurationTrendChart_{chart_id.replace('-', '_')}"
     runs = trend_data['overall']
 
-    chart_data_string = json.dumps([r.get('duration', 0) for r in runs])
-    categories_string = json.dumps([f"Run {i+1}" for i in range(len(runs))])
-    runs_for_tooltip = [{
-        "runId": r.get('runId'),
-        "timestamp": r.get('timestamp'),
-        "duration": r.get('duration'),
-        "totalTests": r.get('totalTests')
-    } for r in runs]
-    runs_for_tooltip_string = json.dumps(runs_for_tooltip)
+    categories = [f"Run {i+1}" for i in range(len(runs))]
+    durations = [r.get('duration', 0) for r in runs]
 
-    accent_color_alt_rgb = "255, 152, 0"
+    def _fmt_ts(ts):
+        if ts is None: return "N/A"
+        try:
+            if isinstance(ts, (int, float)):
+                return datetime.fromtimestamp(ts / 1000).strftime("%m/%d/%y %I:%M %p")
+            return format_date(ts)
+        except Exception:
+            return str(ts)
 
-    series_string_for_render = f"""[{{
-      name: 'Duration',
-      data: {chart_data_string},
-      color: 'var(--accent-color-alt)',
-      type: 'area',
-      marker: {{ symbol: 'circle', enabled: true, radius: 4, states: {{ hover: {{ radius: 6, lineWidthPlus: 0 }} }} }},
-      fillColor: {{ linearGradient: {{ x1: 0, y1: 0, x2: 0, y2: 1 }}, stops: [[0, 'rgba({accent_color_alt_rgb}, 0.4)'], [1, 'rgba({accent_color_alt_rgb}, 0.05)']] }},
-      lineWidth: 2.5
-  }}]"""
+    runs_tooltip = [[
+        str(r.get('runId', str(i+1))),
+        _fmt_ts(r.get('timestamp')),
+        format_duration(r.get('duration')),
+        str(r.get('totalTests', 0))
+    ] for i, r in enumerate(runs)]
+
+    trace = {
+        "x": categories,
+        "y": durations,
+        "name": "Duration",
+        "type": "scatter",
+        "mode": "lines+markers",
+        "fill": "tozeroy",
+        "fillcolor": "rgba(255,152,0,0.35)",
+        "line": {"color": "#ff9800", "width": 2.5},
+        "marker": {"color": "#ff9800", "size": 7, "symbol": "circle"},
+        "hovertemplate": "Run %{customdata[0]}<br>Date: %{customdata[1]}<br><b>Duration: %{customdata[2]}</b><br>Tests: %{customdata[3]}<extra></extra>"
+    }
+
+    trace_json = json.dumps(trace)
+    runs_tooltip_json = json.dumps(runs_tooltip)
+    categories_json = json.dumps(categories)
 
     return f"""
       <div id="{chart_id}" class="trend-chart-container lazy-load-chart" data-render-function-name="{render_function_name}">
@@ -388,36 +398,34 @@ def generate_duration_trend_chart(trend_data):
           window.{render_function_name} = function() {{
               const chartContainer = document.getElementById('{chart_id}');
               if (!chartContainer) {{ console.error("Chart container {chart_id} not found for lazy loading."); return; }}
-              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {{
+              if (typeof Plotly !== 'undefined') {{
                   try {{
-                      chartContainer.innerHTML = ''; // Clear placeholder
-                      const chartOptions = {{
-                          chart: {{ type: 'area', height: 350, backgroundColor: 'transparent' }},
-                          title: {{ text: null }},
-                          xAxis: {{ categories: {categories_string}, crosshair: true, labels: {{ style: {{ color: 'var(--text-color-secondary)', fontSize: '12px' }}}}}},
-                          yAxis: {{
-                              title: {{ text: 'Duration', style: {{ color: 'var(--text-color)' }} }},
-                              labels: {{ formatter: function() {{ return formatDuration(this.value); }}, style: {{ color: 'var(--text-color-secondary)', fontSize: '12px' }}}},
-                              min: 0
+                      chartContainer.innerHTML = '';
+                      const runsTooltip = {runs_tooltip_json};
+                      const trace = {trace_json};
+                      trace.customdata = runsTooltip;
+                      const layout = {{
+                          height: 350,
+                          paper_bgcolor: 'rgba(0,0,0,0)',
+                          plot_bgcolor: 'rgba(0,0,0,0)',
+                          margin: {{t: 20, r: 20, b: 70, l: 80}},
+                          xaxis: {{
+                              tickvals: {categories_json},
+                              ticktext: {categories_json},
+                              tickfont: {{size: 12}},
+                              gridcolor: 'rgba(128,128,128,0.15)'
                           }},
-                          legend: {{ layout: 'horizontal', align: 'center', verticalAlign: 'bottom', itemStyle: {{ fontSize: '12px', color: 'var(--text-color)' }}}},
-                          plotOptions: {{ area: {{ lineWidth: 2.5, states: {{ hover: {{ lineWidthPlus: 0 }} }}, threshold: null }}}},
-                          tooltip: {{
-                              shared: true, useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: {{ color: '#f5f5f5' }},
-                              formatter: function () {{
-                                  const runsData = {runs_for_tooltip_string};
-                                  const pointIndex = this.points[0].point.x;
-                                  const run = runsData[pointIndex];
-                                  let tooltip = '<strong>Run ' + (run.runId || pointIndex + 1) + '</strong><br>' + 'Date: ' + new Date(run.timestamp).toLocaleString() + '<br>';
-                                  this.points.forEach(point => {{ tooltip += '<span style="color:' + point.series.color + '">●</span> ' + point.series.name + ': <b>' + formatDuration(point.y) + '</b><br>'; }});
-                                  tooltip += '<br>Tests: ' + run.totalTests;
-                                  return tooltip;
-                              }}
+                          yaxis: {{
+                              title: {{text: 'Duration (ms)'}},
+                              rangemode: 'tozero',
+                              tickfont: {{size: 12}},
+                              gridcolor: 'rgba(128,128,128,0.15)'
                           }},
-                          series: {series_string_for_render},
-                          credits: {{ enabled: false }}
+                          legend: {{orientation: 'h', x: 0.5, xanchor: 'center', y: -0.18}},
+                          hovermode: 'x',
+                          hoverlabel: {{bgcolor: 'rgba(10,10,10,0.92)', font: {{color: '#f5f5f5'}}}}
                       }};
-                      Highcharts.chart('{chart_id}', chartOptions);
+                      Plotly.newPlot('{chart_id}', [trace], layout, {{responsive: true, displayModeBar: false}});
                   }} catch (e) {{
                       console.error("Error rendering chart {chart_id} (lazy):", e);
                       chartContainer.innerHTML = '<div class="no-data">Error rendering duration trend chart.</div>';
@@ -451,7 +459,7 @@ def format_date(date_str_or_date):
 def generate_test_history_chart(history):
     if not history or len(history) == 0:
         return '<div class="no-data-chart">No data for chart</div>'
-        
+
     valid_history = [h for h in history if h and isinstance(h.get('duration'), (int, float)) and h['duration'] >= 0]
     if len(valid_history) == 0:
         return '<div class="no-data-chart">No valid data for chart</div>'
@@ -460,36 +468,41 @@ def generate_test_history_chart(history):
     chart_id = f"testHistoryChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderTestHistoryChart_{chart_id.replace('-', '_')}"
 
-    series_data_points = []
-    for run in valid_history:
-        status_lower = str(run.get('status', '')).lower()
-        if status_lower == "passed":
-            color = "var(--success-color)"
-        elif status_lower == "failed":
-            color = "var(--danger-color)"
-        elif status_lower == "skipped":
-            color = "var(--warning-color)"
-        elif status_lower == "flaky":
-            color = "var(--neutral-500)"
-        else:
-            color = "var(--dark-gray-color)"
-            
-        series_data_points.append({
-            "y": run.get('duration', 0),
-            "marker": {
-                "fillColor": color,
-                "symbol": "circle",
-                "radius": 3.5,
-                "states": { "hover": { "radius": 5 } }
-            },
-            "status": run.get('status'),
-            "runId": run.get('runId')
-        })
+    STATUS_COLORS = {
+        "passed": "#10b981",
+        "failed": "#ef4444",
+        "skipped": "#f59e0b",
+        "flaky": "#00ccd3",
+    }
 
-    accent_color_rgb = "103, 58, 183"
+    categories = [f"R{i+1}" for i in range(len(valid_history))]
+    y_vals = [r.get('duration', 0) for r in valid_history]
+    marker_colors = [
+        STATUS_COLORS.get(str(r.get('status', '')).lower(), "#9ca3af")
+        for r in valid_history
+    ]
+    custom_data = [[
+        str(r.get('runId', str(i+1))),
+        str(r.get('status', 'unknown')).upper(),
+        format_duration(r.get('duration'))
+    ] for i, r in enumerate(valid_history)]
 
-    categories_string = json.dumps([f"R{i+1}" for i in range(len(valid_history))])
-    series_data_points_string = json.dumps(series_data_points)
+    trace = {
+        "x": categories,
+        "y": y_vals,
+        "type": "scatter",
+        "mode": "lines+markers",
+        "fill": "tozeroy",
+        "fillcolor": "rgba(103,58,183,0.25)",
+        "line": {"color": "#673ab7", "width": 2},
+        "marker": {"color": marker_colors, "size": 7, "symbol": "circle"},
+        "showlegend": False,
+        "hovertemplate": "Run %{customdata[0]}<br>Status: %{customdata[1]}<br>Duration: %{customdata[2]}<extra></extra>"
+    }
+
+    trace_json = json.dumps(trace)
+    custom_data_json = json.dumps(custom_data)
+    categories_json = json.dumps(categories)
 
     return f"""
       <div id="{chart_id}" style="width: 100%; max-width: 320px; height: 100px;" class="lazy-load-chart" data-render-function-name="{render_function_name}">
@@ -499,45 +512,33 @@ def generate_test_history_chart(history):
           window.{render_function_name} = function() {{
               const chartContainer = document.getElementById('{chart_id}');
               if (!chartContainer) {{ console.error("Chart container {chart_id} not found for lazy loading."); return; }}
-              if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {{
+              if (typeof Plotly !== 'undefined') {{
                   try {{
-                      chartContainer.innerHTML = ''; // Clear placeholder
-                      const chartOptions = {{
-                          chart: {{ type: 'area', height: 100, width: 320, backgroundColor: 'transparent', spacing: [10,10,15,35] }},
-                          title: {{ text: null }},
-                          xAxis: {{ categories: {categories_string}, labels: {{ style: {{ fontSize: '10px', color: 'var(--text-color-secondary)' }}}}}},
-                          yAxis: {{
-                              title: {{ text: null }},
-                              labels: {{ formatter: function() {{ return formatDuration(this.value); }}, style: {{ fontSize: '10px', color: 'var(--text-color-secondary)' }}, align: 'left', x: -35, y: 3 }},
-                              min: 0, gridLineWidth: 0, tickAmount: 4
+                      chartContainer.innerHTML = '';
+                      const trace = {trace_json};
+                      trace.customdata = {custom_data_json};
+                      const layout = {{
+                          height: 100,
+                          paper_bgcolor: 'rgba(0,0,0,0)',
+                          plot_bgcolor: 'rgba(0,0,0,0)',
+                          margin: {{t: 8, r: 8, b: 28, l: 42}},
+                          xaxis: {{
+                              tickvals: {categories_json},
+                              ticktext: {categories_json},
+                              tickfont: {{size: 10}},
+                              gridcolor: 'rgba(0,0,0,0)'
                           }},
-                          legend: {{ enabled: false }},
-                          plotOptions: {{
-                              area: {{
-                                  lineWidth: 2, lineColor: 'var(--accent-color)',
-                                  fillColor: {{ linearGradient: {{ x1: 0, y1: 0, x2: 0, y2: 1 }}, stops: [[0, 'rgba({accent_color_rgb}, 0.4)'],[1, 'rgba({accent_color_rgb}, 0)']]}},
-                                  marker: {{ enabled: true }}, threshold: null
-                              }}
+                          yaxis: {{
+                              rangemode: 'tozero',
+                              tickfont: {{size: 10}},
+                              gridcolor: 'rgba(0,0,0,0)',
+                              nticks: 4
                           }},
-                          tooltip: {{
-                              useHTML: true, backgroundColor: 'rgba(10,10,10,0.92)', borderColor: 'rgba(10,10,10,0.92)', style: {{ color: '#f5f5f5', padding: '8px' }},
-                              formatter: function() {{
-                                  const pointData = this.point;
-                                  let statusBadgeHtml = '<span style="padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; background-color: ';
-                                  switch(String(pointData.status).toLowerCase()) {{
-                                      case 'passed': statusBadgeHtml += 'var(--success-color)'; break;
-                                      case 'failed': statusBadgeHtml += 'var(--danger-color)'; break;
-                                      case 'skipped': statusBadgeHtml += 'var(--warning-color)'; break;
-                                      default: statusBadgeHtml += 'var(--dark-gray-color)';
-                                  }}
-                                  statusBadgeHtml += ';">' + String(pointData.status).toUpperCase() + '</span>';
-                                  return '<strong>Run ' + (pointData.runId || (this.point.index + 1)) + '</strong><br>' + 'Status: ' + statusBadgeHtml + '<br>' + 'Duration: ' + formatDuration(pointData.y);
-                              }}
-                          }},
-                          series: [{{ data: {series_data_points_string}, showInLegend: false }}],
-                          credits: {{ enabled: false }}
+                          showlegend: false,
+                          hovermode: 'closest',
+                          hoverlabel: {{bgcolor: 'rgba(10,10,10,0.92)', font: {{color: '#f5f5f5', size: 11}}}}
                       }};
-                      Highcharts.chart('{chart_id}', chartOptions);
+                      Plotly.newPlot('{chart_id}', [trace], layout, {{responsive: false, displayModeBar: false}});
                   }} catch (e) {{
                       console.error("Error rendering chart {chart_id} (lazy):", e);
                       chartContainer.innerHTML = '<div class="no-data-chart">Error rendering history chart.</div>';
@@ -553,108 +554,74 @@ def generate_pie_chart(data, chart_width=300, chart_height=300):
     total = sum(d.get('value', 0) for d in data)
     if total == 0:
         return '<div class="pie-chart-wrapper"><h3>Test Distribution</h3><div class="no-data">No data for Test Distribution chart.</div></div>'
-        
+
     passed_entry = next((d for d in data if d.get('label') == "Passed"), None)
     passed_percentage = round(((passed_entry['value'] if passed_entry else 0) / total) * 100)
 
     import random
     chart_id = f"pieChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
 
-    series_data_points = []
+    LABEL_COLORS = {
+        "Passed": "#10b981",
+        "Failed": "#ef4444",
+        "Flaky":  "#00ccd3",
+        "Skipped": "#f59e0b",
+    }
+
+    labels = []
+    values = []
+    colors = []
     for d in data:
         if d.get('value', 0) > 0:
-            label = d.get('label')
-            if label == "Passed":
-                color = "var(--success-color)"
-            elif label == "Failed":
-                color = "var(--danger-color)"
-            elif label == "Flaky":
-                color = "#00ccd3"
-            elif label == "Skipped":
-                color = "var(--warning-color)"
-            else:
-                color = "#CCCCCC"
-            series_data_points.append({
-                "name": label,
-                "y": d.get('value'),
-                "color": color
-            })
+            lbl = d.get('label', '')
+            labels.append(lbl)
+            values.append(d['value'])
+            colors.append(LABEL_COLORS.get(lbl, "#CCCCCC"))
 
-    series_data = [{
-        "name": "Tests",
-        "data": series_data_points,
-        "size": "100%",
-        "innerSize": "55%",
-        "dataLabels": { "enabled": False },
-        "showInLegend": True
-    }]
+    inner_h = chart_height - 40
+    center_font_size = max(12, min(chart_width, chart_height) // 12)
 
-    center_title_font_size = f"{max(12, min(chart_width, chart_height) / 12)}px"
-    center_subtitle_font_size = f"{max(10, min(chart_width, chart_height) / 18)}px"
+    trace_json = json.dumps({
+        "labels": labels,
+        "values": values,
+        "type": "pie",
+        "hole": 0.55,
+        "marker": {"colors": colors, "line": {"color": "#ffffff", "width": 2}},
+        "textinfo": "none",
+        "hovertemplate": "%{label}: <b>%{value}</b> (%{percent})<extra></extra>",
+        "showlegend": True
+    })
 
-    options_object_string = f"""
-  {{
-      chart: {{
-          type: 'pie',
-          width: null,
-          height: {chart_height - 40},
-          backgroundColor: 'transparent',
-          plotShadow: false,
-          spacingBottom: 40
-      }},
-      title: {{
-          text: '{passed_percentage}%',
-          align: 'center',
-          verticalAlign: 'middle',
-          y: 5, 
-          style: {{ fontSize: '{center_title_font_size}', fontWeight: 'bold', color: 'var(--primary-color)' }}
-      }},
-      subtitle: {{
-          text: 'Passed',
-          align: 'center',
-          verticalAlign: 'middle',
-          y: 25, 
-          style: {{ fontSize: '{center_subtitle_font_size}', color: 'var(--text-color-secondary)' }}
-      }},
-      tooltip: {{
-          pointFormat: '{{series.name}}: <b>{{point.percentage:.1f}}%</b> ({{point.y}})',
-          backgroundColor: 'rgba(10,10,10,0.92)',
-          borderColor: 'rgba(10,10,10,0.92)',
-          style: {{ color: '#f5f5f5' }}
-      }},
-      legend: {{
-          layout: 'horizontal',
-          align: 'center',
-          verticalAlign: 'bottom',
-          itemStyle: {{ color: 'var(--text-color)', fontWeight: 'normal', fontSize: '12px' }}
-      }},
-      plotOptions: {{
-          pie: {{
-              allowPointSelect: true,
-              cursor: 'pointer',
-              borderWidth: 3,
-              borderColor: 'var(--card-background-color)', 
-              states: {{
-                  hover: {{
-                  }}
-              }}
-          }}
-      }},
-      series: {json.dumps(series_data)},
-      credits: {{ enabled: false }}
-  }}
-  """
+    annotation_json = json.dumps([{
+        "text": f"<b>{passed_percentage}%</b><br><span style='font-size:{max(10, center_font_size - 4)}px'>Passed</span>",
+        "x": 0.5, "y": 0.5,
+        "xref": "paper", "yref": "paper",
+        "xanchor": "center", "yanchor": "middle",
+        "showarrow": False,
+        "font": {"size": center_font_size, "color": "#6366f1"}
+    }])
+
+    layout_json = json.dumps({
+        "height": inner_h,
+        "width": chart_width,
+        "paper_bgcolor": "rgba(0,0,0,0)",
+        "margin": {"t": 10, "r": 120, "b": 10, "l": 10},
+        "legend": {"orientation": "v", "x": 1.02, "xanchor": "left", "y": 1, "font": {"size": 12}},
+        "showlegend": True
+    })
 
     return f"""
       <div class="pie-chart-wrapper" style="align-items: center; max-height: 450px">
           <div style="display: flex; align-items: start; width: 100%;"><h3>Test Distribution</h3></div>
-          <div id="{chart_id}" style="width: {chart_width}px; height: {chart_height - 40}px;"></div>
+          <div id="{chart_id}" style="width: {chart_width}px; height: {inner_h}px;"></div>
           <script>
               document.addEventListener('DOMContentLoaded', function() {{
-                  if (typeof Highcharts !== 'undefined') {{
+                  if (typeof Plotly !== 'undefined') {{
                       try {{
-                          const chartOptions = {options_object_string};
-                          Highcharts.chart('{chart_id}', chartOptions);
+                          const trace = {trace_json};
+                          const layout = {layout_json};
+                          layout.annotations = {annotation_json};
+                          Plotly.newPlot('{chart_id}', [trace], layout, {{responsive: false, displayModeBar: false}});
                       }} catch (e) {{
                           console.error("Error rendering chart {chart_id}:", e);
                           document.getElementById('{chart_id}').innerHTML = '<div class="no-data">Error rendering pie chart.</div>';
@@ -1132,35 +1099,30 @@ def generate_worker_distribution_chart(results):
     if not results or len(results) == 0:
         return '<div class="no-data">No test results data available to display worker distribution.</div>'
 
-    # Sort results by startTime
     def get_start_time(test):
         try:
             return datetime.fromisoformat(test.get('startTime', '').replace('Z', '+00:00')).timestamp()
         except:
             return 0
-            
+
     sorted_results = sorted(results, key=get_start_time)
 
     worker_data = {}
     for test in sorted_results:
-        worker_id = test.get('workerId', 'N/A')
+        worker_id = str(test.get('workerId', 'N/A'))
         if worker_id not in worker_data:
-            worker_data[worker_id] = { 'passed': 0, 'failed': 0, 'skipped': 0, 'flaky': 0, 'tests': [] }
-
+            worker_data[worker_id] = {'passed': 0, 'failed': 0, 'skipped': 0, 'flaky': 0, 'tests': []}
         status = str(test.get('status', '')).lower()
         if status in ["passed", "failed", "skipped", "flaky"]:
             worker_data[worker_id][status] += 1
-
         test_title_parts = test.get('name', '').split(" > ")
         test_title = test_title_parts[-1] if test_title_parts else "Unnamed Test"
-        worker_data[worker_id]['tests'].append({ 'name': test_title, 'status': status })
+        worker_data[worker_id]['tests'].append({'name': test_title, 'status': status})
 
     def sort_worker_ids(k):
-        if k == "N/A": return 999999 # Push N/A to end
-        try:
-            return int(k)
-        except ValueError:
-            return 0
+        if k == "N/A": return 999999
+        try: return int(k)
+        except ValueError: return 0
 
     worker_ids = sorted(worker_data.keys(), key=sort_worker_ids)
 
@@ -1172,83 +1134,45 @@ def generate_worker_distribution_chart(results):
     render_function_name = f"renderWorkerDistChart_{chart_id.replace('-', '_')}"
     modal_js_namespace = f"modal_funcs_{chart_id.replace('-', '_')}"
 
-    categories = [f"Worker {id}" for id in worker_ids]
+    categories = [f"Worker {wid}" for wid in worker_ids]
+    full_worker_data = [{"id": wid, "name": f"Worker {wid}", "tests": worker_data[wid]['tests']} for wid in worker_ids]
 
-    full_worker_data = [{
-        "id": id,
-        "name": f"Worker {id}",
-        "tests": worker_data[id]['tests']
-    } for id in worker_ids]
+    series = [
+        {"name": "Passed",  "data": [worker_data[wid]['passed']  for wid in worker_ids], "color": "#10b981"},
+        {"name": "Failed",  "data": [worker_data[wid]['failed']  for wid in worker_ids], "color": "#ef4444"},
+        {"name": "Flaky",   "data": [worker_data[wid]['flaky']   for wid in worker_ids], "color": "#00ccd3"},
+        {"name": "Skipped", "data": [worker_data[wid]['skipped'] for wid in worker_ids], "color": "#f59e0b"},
+    ]
 
-    passed_data = [worker_data[id]['passed'] for id in worker_ids]
-    failed_data = [worker_data[id]['failed'] for id in worker_ids]
-    skipped_data = [worker_data[id]['skipped'] for id in worker_ids]
-    flaky_data = [worker_data[id]['flaky'] for id in worker_ids]
+    # Build Plotly traces (horizontal stacked bar)
+    plotly_traces = []
+    for s in series:
+        plotly_traces.append({
+            "x": s["data"],
+            "y": categories,
+            "name": s["name"],
+            "type": "bar",
+            "orientation": "h",
+            "marker": {"color": s["color"]},
+            "hovertemplate": f"<b>%{{y}}</b><br>{s['name']}: %{{x}}<extra></extra>"
+        })
 
-    categories_string = json.dumps(categories)
-    full_data_string = json.dumps(full_worker_data)
-    series_string = json.dumps([
-        { "name": "Passed", "data": passed_data, "color": "var(--success-color)" },
-        { "name": "Failed", "data": failed_data, "color": "var(--danger-color)" },
-        { "name": "Flaky", "data": flaky_data, "color": "#00ccd3" },
-        { "name": "Skipped", "data": skipped_data, "color": "var(--warning-color)" },
-    ])
+    traces_json = json.dumps(plotly_traces)
+    full_data_json = json.dumps(full_worker_data)
+    categories_json = json.dumps(categories)
+
+    modal_style = """.worker-modal-overlay { position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+      .worker-modal-content { background-color: var(--bg-card, #ffffff); color: var(--text-color, #1f2937); padding: 30px; border: 1px solid var(--border-color, #e5e7eb); width: 80%; max-width: 700px; border-radius: 12px; position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); flex-shrink: 0; margin: 20px; z-index: 1051; transform: translateZ(0); -webkit-transform: translateZ(0); }
+      .worker-modal-close { position: absolute; top: 20px; right: 25px; font-size: 28px; font-weight: 400; cursor: pointer; line-height: 1; z-index: 10; color: var(--text-color-secondary, #6b7280); transition: color 0.2s ease, transform 0.2s ease; user-select: none; -webkit-user-select: none; }
+      .worker-modal-close:hover, .worker-modal-close:focus { color: var(--danger-color, #ef4444); transform: scale(1.15); }"""
 
     return f"""
     <style>
-      .worker-modal-overlay {{
-        position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%;
-        overflow: auto; background-color: rgba(0,0,0,0.85);
-        display: none; align-items: center; justify-content: center;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-      }}
-      .worker-modal-content {{
-        background-color: var(--bg-card, #ffffff);
-        color: var(--text-color, #1f2937);
-        padding: 30px; border: 1px solid var(--border-color, #e5e7eb);
-        width: 80%; max-width: 700px; border-radius: 12px;
-        position: relative; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-        flex-shrink: 0; margin: 20px;
-        z-index: 1051;
-        transform: translateZ(0); 
-        -webkit-transform: translateZ(0);
-      }}
-      .worker-modal-close {{
-        position: absolute; 
-        top: 20px; 
-        right: 25px;
-        font-size: 28px; 
-        font-weight: 400; 
-        cursor: pointer;
-        line-height: 1;
-        z-index: 10;
-        color: var(--text-color-secondary, #6b7280);
-        transition: color 0.2s ease, transform 0.2s ease;
-        user-select: none;
-        -webkit-user-select: none;
-      }}
-      .worker-modal-close:hover, .worker-modal-close:focus {{
-        color: var(--danger-color, #ef4444);
-        transform: scale(1.15);
-      }}
-      #worker-modal-body-{chart_id} ul {{
-        list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto;
-      }}
-       #worker-modal-body-{chart_id} li {{
-         padding: 8px 5px; border-bottom: 1px solid var(--border-color, #eee);
-         font-size: 0.9em;
-      }}
-       #worker-modal-body-{chart_id} li:last-child {{
-         border-bottom: none;
-      }}
-       #worker-modal-body-{chart_id} li > span {{
-         display: inline-block;
-         width: 70px;
-         font-weight: bold;
-         text-align: right;
-         margin-right: 10px;
-      }}
+      {modal_style}
+      #worker-modal-body-{chart_id} ul {{ list-style-type: none; padding-left: 0; margin-top: 15px; max-height: 45vh; overflow-y: auto; }}
+      #worker-modal-body-{chart_id} li {{ padding: 8px 5px; border-bottom: 1px solid var(--border-color, #eee); font-size: 0.9em; }}
+      #worker-modal-body-{chart_id} li:last-child {{ border-bottom: none; }}
+      #worker-modal-body-{chart_id} li > span {{ display: inline-block; width: 70px; font-weight: bold; text-align: right; margin-right: 10px; }}
     </style>
 
     <div id="{chart_id}" class="trend-chart-container lazy-load-chart" data-render-function-name="{render_function_name}" style="min-height: 350px;">
@@ -1257,7 +1181,7 @@ def generate_worker_distribution_chart(results):
 
     <div id="worker-modal-{chart_id}" class="worker-modal-overlay">
       <div class="worker-modal-content">
-        <span class="worker-modal-close" onclick="window.{modal_js_namespace}.close?.()">×</span>
+        <span class="worker-modal-close" onclick="window.{modal_js_namespace}.close()">×</span>
         <h3 id="worker-modal-title-{chart_id}" style="text-align: center; margin-top: 0; margin-bottom: 25px; font-size: 1.25em; font-weight: 600; color: var(--text-color, #1f2937)"></h3>
         <div id="worker-modal-body-{chart_id}"></div>
       </div>
@@ -1269,7 +1193,6 @@ def generate_worker_distribution_chart(results):
       window.{render_function_name} = function() {{
         const chartContainer = document.getElementById('{chart_id}');
         if (!chartContainer) {{ console.error("Chart container {chart_id} not found."); return; }}
-        
         if (!window.{modal_js_namespace}) window.{modal_js_namespace} = {{}};
 
         const modal = document.getElementById('worker-modal-{chart_id}');
@@ -1280,88 +1203,66 @@ def generate_worker_distribution_chart(results):
         window.{modal_js_namespace}.open = function(worker) {{
           if (!worker) return;
           modalTitle.textContent = 'Test Details for ' + worker.name;
-
           let testListHtml = '<ul>';
           if (worker.tests && worker.tests.length > 0) {{
-            worker.tests.forEach(test => {{
-                let color = 'inherit';
-                if (test.status === 'passed') color = 'var(--success-color)';
-                else if (test.status === 'failed') color = 'var(--danger-color)';
-                else if (test.status === 'skipped') color = 'var(--warning-color)';
-                else if (test.status === 'flaky') color = '#00ccd3';
-
-                const escapedName = test.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-                testListHtml += `<li style="color: ${{color}}"><span style="color: ${{color}}">[${{test.status.toUpperCase()}}]</span> ${{escapedName}}</li>`;
+            worker.tests.forEach(function(test) {{
+              let color = 'inherit';
+              if (test.status === 'passed') color = '#10b981';
+              else if (test.status === 'failed') color = '#ef4444';
+              else if (test.status === 'skipped') color = '#f59e0b';
+              else if (test.status === 'flaky') color = '#00ccd3';
+              const escapedName = test.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+              testListHtml += '<li style="color:' + color + '"><span style="color:' + color + '">[' + test.status.toUpperCase() + ']</span> ' + escapedName + '</li>';
             }});
           }} else {{
             testListHtml += '<li>No detailed test data available for this worker.</li>';
           }}
           testListHtml += '</ul>';
-
           modalBody.innerHTML = testListHtml;
           modal.style.display = 'flex';
         }};
 
-        const closeModal = function() {{
-          modal.style.display = 'none';
-        }};
-        
+        const closeModal = function() {{ modal.style.display = 'none'; }};
         window.{modal_js_namespace}.close = closeModal;
+        if (closeModalBtn) closeModalBtn.onclick = closeModal;
+        modal.onclick = function(event) {{ if (event.target === modal) closeModal(); }};
 
-        if (closeModalBtn) {{
-          closeModalBtn.onclick = closeModal;
-        }}
-        
-        modal.onclick = function(event) {{
-          if (event.target == modal) {{
-            closeModal();
-          }}
-        }};
-
-        if (typeof Highcharts !== 'undefined') {{
+        if (typeof Plotly !== 'undefined') {{
           try {{
             chartContainer.innerHTML = '';
-            const fullData = {full_data_string};
-
-            const chartOptions = {{
-              chart: {{ type: 'bar', height: 350, backgroundColor: 'transparent' }},
-              title: {{ text: null }},
-              xAxis: {{
-                categories: {categories_string},
-                title: {{ text: 'Worker ID' }},
-                labels: {{ style: {{ color: 'var(--text-color-secondary)' }} }}
+            const fullData = {full_data_json};
+            const traces = {traces_json};
+            const layout = {{
+              barmode: 'stack',
+              height: 350,
+              paper_bgcolor: 'rgba(0,0,0,0)',
+              plot_bgcolor: 'rgba(0,0,0,0)',
+              margin: {{t: 20, r: 140, b: 40, l: 80}},
+              xaxis: {{
+                title: {{text: 'Number of Tests'}},
+                tickfont: {{size: 12}},
+                gridcolor: 'rgba(128,128,128,0.15)'
               }},
-              yAxis: {{
-                min: 0,
-                title: {{ text: 'Number of Tests' }},
-                labels: {{ style: {{ color: 'var(--text-color-secondary)' }} }},
-                stackLabels: {{ enabled: true, style: {{ fontWeight: 'bold', color: 'var(--text-color)' }} }}
+              yaxis: {{
+                title: {{text: 'Worker ID'}},
+                tickfont: {{size: 12}},
+                gridcolor: 'rgba(128,128,128,0.15)',
+                automargin: true
               }},
-              legend: {{ reversed: true, itemStyle: {{ fontSize: "12px", color: 'var(--text-color)' }} }},
-              plotOptions: {{
-                series: {{
-                  stacking: 'normal',
-                  cursor: 'pointer',
-                  point: {{
-                    events: {{
-                      click: function () {{
-                        const workerData = fullData[this.x];
-                        window.{modal_js_namespace}.open(workerData);
-                      }}
-                    }}
-                  }}
-                }}
-              }},
-              tooltip: {{
-                shared: true,
-                headerFormat: '<b>{{point.key}}</b> (Click for details)<br/>',
-                pointFormat: '<span style="color:{{series.color}}">●</span> {{series.name}}: <b>{{point.y}}</b><br/>',
-                footerFormat: 'Total: <b>{{point.total}}</b>'
-              }},
-              series: {series_string},
-              credits: {{ enabled: false }}
+              legend: {{orientation: 'v', x: 1.02, xanchor: 'left', y: 1}},
+              hovermode: 'y unified',
+              hoverlabel: {{bgcolor: 'rgba(10,10,10,0.92)', font: {{color: '#f5f5f5'}}}}
             }};
-            Highcharts.chart('{chart_id}', chartOptions);
+            Plotly.newPlot('{chart_id}', traces, layout, {{responsive: true, displayModeBar: false}}).then(function() {{
+              document.getElementById('{chart_id}').on('plotly_click', function(data) {{
+                if (!data.points || !data.points.length) return;
+                const pt = data.points[0];
+                const workerIndex = {categories_json}.indexOf(pt.y);
+                if (workerIndex >= 0 && fullData[workerIndex]) {{
+                  window.{modal_js_namespace}.open(fullData[workerIndex]);
+                }}
+              }});
+            }});
           }} catch (e) {{
             console.error("Error rendering chart {chart_id}:", e);
             chartContainer.innerHTML = '<div class="no-data">Error rendering worker distribution chart.</div>';
@@ -1724,222 +1625,6 @@ def generate_ai_failure_analyzer_tab(results):
     </div>
   """
 
-def generate_spec_duration_chart(results):
-    if not results or len(results) == 0:
-        return '<div class="no-data">No results available.</div>'
-
-    spec_durations = {}
-    for test in results:
-        file_name = test.get('spec_file', 'Unknown File')
-        spec_durations[file_name] = spec_durations.get(file_name, 0) + test.get('duration', 0)
-
-    categories = list(spec_durations.keys())
-    data = [{"y": spec_durations[cat], "name": cat} for cat in categories]
-
-    if len(categories) == 0:
-        return '<div class="no-data">No spec data found.</div>'
-
-    import random
-    chart_id = f"specDurChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
-    render_function_name = f"renderSpecDurChart_{chart_id.replace('-', '_')}"
-
-    categories_str = json.dumps(categories)
-    data_str = json.dumps(data)
-    accent_color_alt_rgb = "255, 152, 0"
-
-    return f"""
-    <div id="{chart_id}" class="trend-chart-container lazy-load-chart" data-render-function-name="{render_function_name}">
-        <div class="no-data">Loading Spec Duration Chart...</div>
-    </div>
-    <script>
-        window.{render_function_name} = function() {{
-            const chartContainer = document.getElementById('{chart_id}');
-            if (!chartContainer) return;
-            if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {{
-                try {{
-                    chartContainer.innerHTML = '';
-                    Highcharts.chart('{chart_id}', {{
-                        chart: {{ type: 'area', height: 350, backgroundColor: 'transparent' }},
-                        title: {{ text: null }},
-                        xAxis: {{ 
-                            categories: {categories_str}, 
-                            visible: false, 
-                            title: {{ text: null }},
-                            crosshair: true
-                        }},
-                        yAxis: {{ 
-                            min: 0, 
-                            title: {{ text: 'Total Duration', style: {{ color: 'var(--text-color)' }} }},
-                            labels: {{ formatter: function() {{ return formatDuration(this.value); }}, style: {{ color: 'var(--text-color-secondary)' }} }}
-                        }},
-                        legend: {{ layout: 'horizontal', align: 'center', verticalAlign: 'bottom', itemStyle: {{ fontSize: '12px', color: 'var(--text-color)' }}}},
-                          plotOptions: {{ area: {{ lineWidth: 2.5, states: {{ hover: {{ lineWidthPlus: 0 }} }}, threshold: null }}}},
-                        tooltip: {{
-                            shared: true,
-                            useHTML: true,
-                            backgroundColor: 'rgba(10,10,10,0.92)',
-                            borderColor: 'rgba(10,10,10,0.92)',
-                            style: {{ color: '#f5f5f5' }},
-                            formatter: function() {{
-                                const point = this.points ? this.points[0].point : this.point;
-                                const color = point.color || point.series.color;
-                                
-                                return '<span style="color:' + color + '">●</span> <b>File: ' + point.name + '</b><br/>' + 
-                                       'Duration: <b>' + formatDuration(this.y) + '</b>';
-                            }}
-                        }},
-                        series: [{{
-                            name: 'Duration',
-                            data: {data_str},
-                            color: 'var(--accent-color-alt)',
-                            type: 'area',
-                            marker: {{ symbol: 'circle', enabled: true, radius: 4, states: {{ hover: {{ radius: 6, lineWidthPlus: 0 }} }} }},
-                            fillColor: {{ linearGradient: {{ x1: 0, y1: 0, x2: 0, y2: 1 }}, stops: [[0, 'rgba({accent_color_alt_rgb}, 0.4)'], [1, 'rgba({accent_color_alt_rgb}, 0.05)']] }},
-                            lineWidth: 2.5
-                        }}],
-                        credits: {{ enabled: false }}
-                    }});
-                }} catch (e) {{ console.error("Error rendering spec chart:", e); }}
-            }}
-        }};
-    </script>
-  """
-
-def generate_describe_duration_chart(results):
-    if not results or len(results) == 0:
-        return '<div class="no-data">Seems like there is test describe block available in the executed test suite.</div>'
-
-    describe_map = {}
-    found_any_describe = False
-
-    for test in results:
-        describe_name = test.get('describe')
-        if describe_name:
-            if not describe_name or describe_name.strip().lower() == "n/a" or describe_name.strip() == "":
-                continue
-
-            found_any_describe = True
-            file_name = test.get('spec_file', 'Unknown File')
-            key = f"{file_name}::{describe_name}"
-
-            if key not in describe_map:
-                describe_map[key] = {
-                    "duration": 0,
-                    "file": file_name,
-                    "describe": describe_name
-                }
-            describe_map[key]['duration'] += test.get('duration', 0)
-
-    if not found_any_describe:
-        return '<div class="no-data">No valid test describe blocks found.</div>'
-
-    categories = []
-    data = []
-
-    for val in describe_map.values():
-        categories.append(val['describe'])
-        data.append({
-            "y": val['duration'],
-            "name": val['describe'],
-            "custom": {
-                "fileName": val['file'],
-                "describeName": val['describe']
-            }
-        })
-
-    import random
-    chart_id = f"descDurChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
-    render_function_name = f"renderDescDurChart_{chart_id.replace('-', '_')}"
-
-    categories_str = json.dumps(categories)
-    data_str = json.dumps(data)
-
-    return f"""
-    <div id="{chart_id}" class="trend-chart-container lazy-load-chart" data-render-function-name="{render_function_name}">
-        <div class="no-data">Loading Describe Duration Chart...</div>
-    </div>
-    <script>
-        window.{render_function_name} = function() {{
-            const chartContainer = document.getElementById('{chart_id}');
-            if (!chartContainer) return;
-            if (typeof Highcharts !== 'undefined' && typeof formatDuration !== 'undefined') {{
-                try {{
-                    chartContainer.innerHTML = '';
-                    Highcharts.chart('{chart_id}', {{
-                        chart: {{ 
-                            type: 'column',
-                            height: 400,   
-                            backgroundColor: 'transparent' 
-                        }},
-                        title: {{ text: null }},
-                        xAxis: {{ 
-                            categories: {categories_str}, 
-                            visible: false,
-                            title: {{ text: null }},
-                            crosshair: true
-                        }},
-                        yAxis: {{ 
-                            min: 0, 
-                            title: {{ text: 'Total Duration', style: {{ color: 'var(--text-color)' }} }},
-                            labels: {{ formatter: function() {{ return formatDuration(this.value); }}, style: {{ color: 'var(--text-color-secondary)' }} }}
-                        }},
-                        legend: {{ enabled: false }},
-                        plotOptions: {{ 
-                            series: {{ 
-                                borderRadius: 4, 
-                                borderWidth: 0,
-                                states: {{ hover: {{ brightness: 0.1 }}}} 
-                            }},
-                            column: {{ pointPadding: 0.2, groupPadding: 0.1 }}
-                        }},
-                        tooltip: {{
-                            shared: true, 
-                            useHTML: true, 
-                            backgroundColor: 'rgba(10,10,10,0.92)', 
-                            borderColor: 'rgba(10,10,10,0.92)', 
-                            style: {{ color: '#f5f5f5' }},
-                            formatter: function() {{
-                                const point = this.points ? this.points[0].point : this.point;
-                                const file = (point.custom && point.custom.fileName) ? point.custom.fileName : 'Unknown';
-                                const desc = point.name || 'Unknown'; 
-                                const color = point.color || point.series.color;
-                                
-                                return '<span style="color:' + color + '">●</span> <b>Describe: ' + desc + '</b><br/>' +
-                                  '<span style="opacity: 0.8; font-size: 0.9em; color: #ddd;">File: ' + file + '</span><br/>' +
-                                  'Duration: <b>' + formatDuration(point.y) + '</b>';
-                            }}
-                        }},
-                        series: [{{
-                            name: 'Duration',
-                            data: {data_str},
-                            colorByPoint: true,
-                            colors: [
-                                '#9333ea',
-                                '#6366f1',
-                                '#0ea5e9',
-                                '#10b981',
-                                '#84cc16',
-                                '#eab308',
-                                '#f97316',
-                                '#ef4444',
-                                '#ec4899',
-                                '#8b5cf6',
-                                '#06b6d4',
-                                '#14b8a6',
-                                '#a3e635',
-                                '#fbbf24',
-                                '#fb923c',
-                                '#f87171'
-                            ],
-                        }}],
-                        credits: {{ enabled: false }}
-                    }});
-                }} catch (e) {{ console.error("Error rendering describe chart:", e); }}
-            }}
-        }};
-    </script>
-  """
-
 def generate_severity_distribution_chart(results):
     if not results or len(results) == 0:
         return '<div class="trend-chart" style="height: 600px;"><div class="no-data">No results available for severity distribution.</div></div>'
@@ -1974,15 +1659,29 @@ def generate_severity_distribution_chart(results):
     chart_id = f"sevDistChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderSevDistChart_{chart_id.replace('-', '_')}"
 
-    series_data = [
-        { "name": "Passed", "data": data['passed'], "color": "var(--success-color)" },
-        { "name": "Failed", "data": data['failed'], "color": "var(--danger-color)" },
-        { "name": "Flaky", "data": data['flaky'], "color": "#00ccd3" },
-        { "name": "Skipped", "data": data['skipped'], "color": "var(--warning-color)" },
+    SEV_SERIES = [
+        {"name": "Passed",  "key": "passed",  "color": "#10b981"},
+        {"name": "Failed",  "key": "failed",  "color": "#ef4444"},
+        {"name": "Flaky",   "key": "flaky",   "color": "#00ccd3"},
+        {"name": "Skipped", "key": "skipped", "color": "#f59e0b"},
     ]
+    traces = []
+    for s in SEV_SERIES:
+        vals = data[s['key']]
+        traces.append({
+            "x": severity_levels,
+            "y": vals,
+            "name": s["name"],
+            "type": "bar",
+            "marker": {"color": s["color"]},
+            "text": [str(v) if v > 0 else "" for v in vals],
+            "textposition": "inside",
+            "textfont": {"color": "white"},
+            "hovertemplate": f"<b>%{{x}}</b><br>{s['name']}: %{{y}}<extra></extra>"
+        })
 
-    series_data_str = json.dumps(series_data)
-    categories_str = json.dumps(severity_levels)
+    traces_json = json.dumps(traces)
+    categories_json = json.dumps(severity_levels)
 
     return f"""
     <div class="trend-chart" style="height: 600px; padding: 28px; box-sizing: border-box;">
@@ -1994,67 +1693,32 @@ def generate_severity_distribution_chart(results):
             window.{render_function_name} = function() {{
                 const chartContainer = document.getElementById('{chart_id}');
                 if (!chartContainer) return;
-
-                if (typeof Highcharts !== 'undefined') {{
+                if (typeof Plotly !== 'undefined') {{
                     try {{
                         chartContainer.innerHTML = '';
-                        Highcharts.chart('{chart_id}', {{
-                            chart: {{ type: 'column', backgroundColor: 'transparent' }},
-                            title: {{ text: null }},
-                            xAxis: {{
-                                categories: {categories_str},
-                                crosshair: true,
-                                labels: {{ style: {{ color: 'var(--text-color-secondary)' }} }}
+                        const layout = {{
+                            barmode: 'stack',
+                            height: 480,
+                            paper_bgcolor: 'rgba(0,0,0,0)',
+                            plot_bgcolor: 'rgba(0,0,0,0)',
+                            margin: {{t: 20, r: 20, b: 60, l: 60}},
+                            xaxis: {{
+                                tickvals: {categories_json},
+                                ticktext: {categories_json},
+                                tickfont: {{size: 12}},
+                                gridcolor: 'rgba(128,128,128,0.15)'
                             }},
-                            yAxis: {{
-                                min: 0,
-                                title: {{ text: 'Test Count', style: {{ color: 'var(--text-color)' }} }},
-                                stackLabels: {{ enabled: true, style: {{ fontWeight: 'bold', color: 'var(--text-color)' }} }},
-                                labels: {{ style: {{ color: 'var(--text-color-secondary)' }} }}
+                            yaxis: {{
+                                title: {{text: 'Test Count'}},
+                                rangemode: 'tozero',
+                                tickfont: {{size: 12}},
+                                gridcolor: 'rgba(128,128,128,0.15)'
                             }},
-                            legend: {{
-                                 itemStyle: {{ color: 'var(--text-color)' }}
-                            }},
-                            tooltip: {{
-                                shared: true,
-                                useHTML: true,
-                                backgroundColor: 'rgba(10,10,10,0.92)',
-                                style: {{ color: '#f5f5f5' }},
-                                formatter: function() {{
-                                    let tooltip = '';
-                                    let hasItems = false;
-                                    
-                                    this.points.forEach(point => {{
-                                        if (point.y > 0) {{
-                                            tooltip += '<span style="color:' + point.series.color + '">●</span> ' + 
-                                                      point.series.name + ': <b>' + point.y + '</b><br/>';
-                                            hasItems = true;
-                                        }}
-                                    }});
-                                    
-                                    if (!hasItems) return false;
-                                    
-                                    tooltip += 'Total: ' + this.points[0].total;
-                                    return tooltip;
-                                }}
-                            }},
-                            plotOptions: {{
-                                column: {{
-                                    stacking: 'normal',
-                                    dataLabels: {{ 
-                                        enabled: true, 
-                                        color: '#fff', 
-                                        style: {{ textOutline: 'none' }},
-                                        formatter: function() {{
-                                            return (this.y > 0) ? this.y : null;
-                                        }}
-                                    }},
-                                    borderRadius: 3
-                                }}
-                            }},
-                            series: {series_data_str},
-                            credits: {{ enabled: false }}
-                        }});
+                            legend: {{orientation: 'h', x: 0.5, xanchor: 'center', y: -0.15}},
+                            hovermode: 'x unified',
+                            hoverlabel: {{bgcolor: 'rgba(10,10,10,0.92)', font: {{color: '#f5f5f5'}}}}
+                        }};
+                        Plotly.newPlot('{chart_id}', {traces_json}, layout, {{responsive: true, displayModeBar: false}});
                     }} catch(e) {{
                          console.error("Error rendering severity chart:", e);
                          chartContainer.innerHTML = '<div class="no-data">Error rendering chart.</div>';
@@ -2394,7 +2058,7 @@ def generate_html(report_data, trend_data=None):
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"></noscript>
     
-    {f'<script>{highcharts_content}</script>' if highcharts_content else '<script src="https://code.highcharts.com/highcharts.js" defer></script>'}
+    {f'<script>{plotly_content}</script>' if plotly_content else '<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>'}
     
     <title>Pulse Report</title>
     <style>
@@ -2437,11 +2101,7 @@ def generate_html(report_data, trend_data=None):
         * {{ scrollbar-width: none; -ms-overflow-style: none; }}
         .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] {{ min-height: 100px; }}
         .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart {{ display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }}
-        .highcharts-background {{ fill: transparent; }}
-        .highcharts-title, .highcharts-subtitle {{ font-family: var(--font-family); }}
-        .highcharts-axis-labels text, .highcharts-legend-item text {{ fill: var(--text-color-secondary) !important; font-size: 12px !important; }}
-        .highcharts-axis-title {{ fill: var(--text-color) !important; }}
-        .highcharts-tooltip > span {{ background-color: rgba(10,10,10,0.92) !important; border-color: rgba(10,10,10,0.92) !important; color: #f5f5f5 !important; padding: 10px !important; border-radius: 6px !important; }}
+        .js-plotly-plot .plotly {{ font-family: var(--font-family); }}
         html {{
           overflow-x: hidden;
         }}
@@ -4212,16 +3872,6 @@ def generate_html(report_data, trend_data=None):
             </div>
             <div class="trend-chart"><h3 class="chart-title-header">Execution Duration Trends</h3>
               {generate_duration_trend_chart(trend_data) if trend_data and trend_data.get('overall') else '<div class="no-data">Overall trend data not available for durations.</div>'}
-            </div>
-          </div>
-          <div class="trend-charts-row">
-            <div class="trend-chart">
-                <h3 class="chart-title-header">Duration by Spec files</h3>
-                {generate_spec_duration_chart(results)}
-            </div>
-            <div class="trend-chart">
-                <h3 class="chart-title-header">Duration by Test Describe</h3>
-                {generate_describe_duration_chart(results)}
             </div>
           </div>
           <div class="trend-charts-row">
