@@ -10,7 +10,7 @@
 ## Features
 
 | Feature | Description |
-|---------|-------------|
+| :--- | :--- |
 | **Same JSON format** | 100 % compatible with the JS reporter's output format |
 | **Interactive HTML report** | Dark-themed dashboard with Highcharts charts |
 | **Self-contained static report** | All assets embedded — share a single `.html` file |
@@ -56,7 +56,7 @@ generate-pulse-report
 ### Command-line options
 
 | Option | Default | Description |
-|--------|---------|-------------|
+| :--- | :--- | :--- |
 | `--pulse-output-dir` | `pulse-report` | Output directory |
 | `--pulse-output-file` | `playwright-pulse-report.json` | JSON filename |
 | `--pulse-no-reset` | — | Accumulate reports across runs |
@@ -69,6 +69,37 @@ generate-pulse-report
 ```ini
 [pytest]
 addopts = --pulse-output-dir=pulse-report --pulse-description="My CI Suite"
+```
+
+---
+
+## Implementation
+
+### Using `pulse_step`
+
+The `pulse_step` fixture allows you to record specific steps within your test cases, making your reports much more readable and professional.
+
+```python
+def test_example(page, pulse_step):
+    with pulse_step("Navigate to Home Page"):
+        page.goto("https://example.com")
+        
+    with pulse_step("Perform Search"):
+        page.fill("#search", "Playwright Pulse")
+        page.press("#search", "Enter")
+        
+    with pulse_step("Verify Results"):
+        assert page.is_visible(".results-count")
+```
+
+### Attaching Files with `pulse_attach`
+
+You can manually attach any file (logs, CSVs, custom screenshots) to the test result using the `pulse_attach` fixture.
+
+```python
+def test_export(page, pulse_attach):
+    page.click("#export-csv")
+    pulse_attach("/tmp/export.csv")
 ```
 
 ---
@@ -94,37 +125,10 @@ def test_checkout(page, pulse_step):
 
 ---
 
-## Fixtures
-
-### `pulse_step`
-
-Context manager for named test steps (appears in the report's step viewer).
-
-```python
-def test_login(page, pulse_step):
-    with pulse_step("Navigate to login"):
-        page.goto("/login")
-    with pulse_step("Submit credentials"):
-        page.fill("#username", "admin")
-        page.click("#submit")
-```
-
-### `pulse_attach`
-
-Manually attach any file to the report.
-
-```python
-def test_export(page, pulse_attach):
-    page.click("#export-csv")
-    pulse_attach("/tmp/export.csv")
-```
-
----
-
 ## CLI commands
 
 | Command | Description |
-|---------|-------------|
+| :--- | :--- |
 | `generate-pulse-report` | Self-contained static HTML (all assets embedded) |
 | `generate-report` | Dynamic HTML (references `attachments/` dir) |
 | `merge-pulse-report` | Merge sharded or sequential reports |
