@@ -61,8 +61,6 @@ def generate_static_report(argv=None) -> None:
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None,
                    help="Report output directory (default: pulse-report)")
-    p.add_argument("--outputFile", dest="output_file", default=None,
-                   help="Report JSON filename (default: playwright-pulse-report.json)")
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
@@ -92,7 +90,6 @@ def generate_report(argv=None) -> None:
         description="Generate a dynamic HTML pulse report (references attachments)",
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
-    p.add_argument("--outputFile", dest="output_file", default=None)
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
@@ -119,7 +116,6 @@ def merge_reports_cli(argv=None) -> None:
         description="Merge pulse reports (sharded or sequential runs)",
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
-    p.add_argument("--outputFile", dest="output_file", default=None)
     p.add_argument("--no-cleanup", dest="cleanup", action="store_false", default=True,
                    help="Keep shard directories after merging")
     args = p.parse_args(argv)
@@ -154,7 +150,6 @@ def generate_email_report_cli(argv=None) -> None:
         description="Generate a lightweight email summary HTML",
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
-    p.add_argument("--outputFile", dest="output_file", default=None)
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
@@ -177,7 +172,6 @@ def send_email_cli(argv=None) -> None:
         description="Send the pulse report via email (reads credentials from env)",
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
-    p.add_argument("--outputFile", dest="output_file", default=None)
     p.add_argument("--attach-html", dest="attach_html", action="store_true", default=False,
                    help="Attach the static HTML report file")
     args = p.parse_args(argv)
@@ -210,7 +204,6 @@ def generate_trend_cli(argv=None) -> None:
         description="Archive the current run JSON for trend history",
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
-    p.add_argument("--outputFile", dest="output_file", default=None)
     p.add_argument("--max-history", dest="max_history", type=int, default=15)
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
