@@ -603,7 +603,6 @@ def generate_environment_dashboard(environment, hide_header=False):
     cpu_info = f"model: {cpu_model}, cores: {cpu_cores}"
     os_info = environment.get('os', 'N/A')
     node_info = environment.get('node', 'N/A')
-    v8_info = environment.get('v8', 'N/A')
     cwd_info = environment.get('cwd', 'N/A')
     host_info = environment.get('host', 'N/A')
     formatted_memory = environment.get('memory', 'N/A')
@@ -669,10 +668,7 @@ def generate_environment_dashboard(environment, hide_header=False):
             <div class="env-item-content"><p class="env-item-label">Memory</p><div class="env-item-value" title="{formatted_memory}">{formatted_memory}</div></div>
           </div>
           <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="M11 10.27 7 3.34"></path><path d="m20.66 17-1.73-1"></path><path d="m3.34 7 1.73 1"></path><path d="M14 12h8"></path><path d="M2 12h2"></path><path d="m20.66 7-1.73 1"></path><path d="m3.34 17 1.73-1"></path><path d="m17 3.34-1 1.73"></path><path d="m11 13.73-4 6.93"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Node</p><div class="env-item-value" title="{node_info}">{node_info}</div></div>
-          </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="M11 10.27 7 3.34"></path><path d="m20.66 17-1.73-1"></path><path d="m3.34 7 1.73 1"></path><path d="M14 12h8"></path><path d="M2 12h2"></path><path d="m20.66 7-1.73 1"></path><path d="m3.34 17 1.73-1"></path><path d="m17 3.34-1 1.73"></path><path d="m11 13.73-4 6.93"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">V8</p><div class="env-item-value" title="{v8_info}">{v8_info}</div></div>
+            <div class="env-item-content"><p class="env-item-label">Python</p><div class="env-item-value" title="{node_info}">{node_info}</div></div>
           </div>
           <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>
             <div class="env-item-content"><p class="env-item-label">Working Dir</p><div class="env-item-value" title="{cwd_info}">{cwd_truncated}</div></div>

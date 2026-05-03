@@ -39,6 +39,5 @@ def get_env_details() -> EnvDetails:
         cpu=CpuInfo(model=cpu_model, cores=cpu_count),
         memory=memory_str,
         node=node_version,
-        v8="N/A",
         cwd=cwd,
     )

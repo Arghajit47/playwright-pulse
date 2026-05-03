@@ -69,7 +69,6 @@ class EnvDetails:
     cpu: CpuInfo
     memory: str
     node: str       # "python 3.11.0"
-    v8: str         # "N/A" for Python
     cwd: str
 
 

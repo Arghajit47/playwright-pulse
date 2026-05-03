@@ -643,7 +643,6 @@ def generate_environment_dashboard(environment, hide_header=False):
     
     os_info = environment.get('os', 'N/A')
     node_info = environment.get('node', 'N/A')
-    v8_info = environment.get('v8', 'N/A')
     cwd_info = environment.get('cwd', 'N/A')
     host_info = environment.get('host', 'N/A')
     formatted_memory = environment.get('memory', 'N/A')
@@ -915,7 +914,7 @@ def generate_environment_dashboard(environment, hide_header=False):
               </svg>
             </div>
             <div class="env-item-content">
-              <p class="env-item-label">Node</p>
+              <p class="env-item-label">Python</p>
               <div class="env-item-value" title="{node_info}">{node_info}</div>
             </div>
           </div>
@@ -938,10 +937,6 @@ def generate_environment_dashboard(environment, hide_header=False):
                 <path d="m17 3.34-1 1.73"></path>
                 <path d="m11 13.73-4 6.93"></path>
               </svg>
-            </div>
-            <div class="env-item-content">
-              <p class="env-item-label">V8</p>
-              <div class="env-item-value" title="{v8_info}">{v8_info}</div>
             </div>
           </div>
           
