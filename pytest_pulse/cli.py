@@ -76,7 +76,7 @@ def generate_static_report(argv=None) -> None:
     print(f"  Source : {json_path}")
     print(f"  Output : {html_path}\n")
 
-    from .html_generator import generate_static_html
+    from .static_generator import generate_static_html
     generate_static_html(json_path, html_path)
 
     print(f"✓ Static report generated → {html_path}")
@@ -103,7 +103,7 @@ def generate_report(argv=None) -> None:
     html_path = os.path.join(output_dir, "playwright-pulse-report.html")
 
     print(f"\n⚡ Pulse Report — Generating Dynamic HTML\n")
-    from .html_generator import generate_dynamic_html
+    from .dynamic_generator import generate_dynamic_html
     generate_dynamic_html(json_path, html_path)
 
     print(f"✓ Dynamic report generated → {html_path}")
@@ -161,7 +161,7 @@ def generate_email_report_cli(argv=None) -> None:
     json_path = _find_report_json(output_dir, output_file)
     email_path = os.path.join(output_dir, "pulse-email-summary.html")
 
-    from .html_generator import generate_email_html
+    from .email_generator import generate_email_html
     html = generate_email_html(json_path)
     with open(email_path, "w", encoding="utf-8") as fh:
         fh.write(html)
@@ -189,7 +189,7 @@ def send_email_cli(argv=None) -> None:
         html_path = os.path.join(output_dir, "playwright-pulse-static-report.html")
         if not os.path.isfile(html_path):
             print("  Static HTML not found, generating it first …")
-            from .html_generator import generate_static_html
+            from .static_generator import generate_static_html
             generate_static_html(json_path, html_path)
         attachment = html_path
 

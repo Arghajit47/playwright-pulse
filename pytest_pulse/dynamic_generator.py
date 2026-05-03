@@ -1,20 +1,17 @@
-#!/usr/bin/env python3
-
 import os
-import sys
 import json
-import base64
-import time
-import math
 import subprocess
 import re
-import random
 from pathlib import Path
 from datetime import datetime
+import sys
+import math
+import time
+import base64
 
 # --- Constants & Configuration ---
 DEFAULT_OUTPUT_DIR = "pulse-report"
-DEFAULT_HTML_FILE = "playwright-pulse-static-report.html"
+DEFAULT_HTML_FILE = "playwright-pulse-report.html"
 
 # Dummy placeholder for logo as requested
 LOGO_BASE64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
@@ -29,8 +26,7 @@ except ImportError:
 except Exception as e:
     print(f"Warning: Could not load Plotly JS from package: {e}")
 
-
-# --- Helper Functions ---
+# --- Helper functions ---
 
 def ansi_to_html(text):
     if not text:
@@ -79,6 +75,7 @@ def ansi_to_html(text):
         if open_span:
             html += "</span>"
             open_span = False
+        
         valid_styles = [s for s in current_styles_array if s]
         if valid_styles:
             style_string = ";".join(valid_styles)
@@ -89,13 +86,16 @@ def ansi_to_html(text):
     def reset_and_apply_new_codes(new_codes_str):
         nonlocal current_styles_array
         new_codes = new_codes_str.split(";")
+        
         if "0" in new_codes:
             current_styles_array = []
             if "0" in codes:
                 current_styles_array.append(codes["0"])
+                
         for code in new_codes:
             if code == "0":
                 continue
+            
             if code in codes:
                 if code == "39":
                     current_styles_array = [s for s in current_styles_array if not s.startswith("color:")]
@@ -111,12 +111,15 @@ def ansi_to_html(text):
                 if len(parts) == 5:
                     current_styles_array = [s for s in current_styles_array if not s.startswith(type_str + ":")]
                     current_styles_array.append(f"{type_str}:rgb({parts[2]},{parts[3]},{parts[4]})")
+        
         apply_styles()
 
     segments = re.split(r'(\x1b\[[0-9;]*m)', text)
+    
     for segment in segments:
         if not segment:
             continue
+            
         if segment.startswith("\x1b[") and segment.endswith("m"):
             command = segment[2:-1]
             reset_and_apply_new_codes(command)
@@ -126,12 +129,20 @@ def ansi_to_html(text):
             
     if open_span:
         html += "</span>"
+        
     return html
 
 def sanitize_html(str_val):
     if str_val is None:
         return ""
-    replacements = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"}
+    replacements = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }
+    # Create a regex to match any of the keys in replacements
     pattern = re.compile('|'.join(re.escape(key) for key in replacements.keys()))
     return pattern.sub(lambda match: replacements[match.group(0)], str(str_val))
 
@@ -143,6 +154,8 @@ def capitalize(str_val):
 def convert_playwright_error_to_html(str_val):
     if not str_val:
         return ""
+    
+    # Python equivalent of replacing starting spaces
     lines = str_val.split('\n')
     new_lines = []
     for line in lines:
@@ -153,6 +166,7 @@ def convert_playwright_error_to_html(str_val):
             new_lines.append(new_spaces + line[len(spaces):])
         else:
             new_lines.append(line)
+            
     res = '\n'.join(new_lines)
     res = res.replace("<red>", '<span style="color: red;">')
     res = res.replace("<green>", '<span style="color: green;">')
@@ -164,25 +178,33 @@ def convert_playwright_error_to_html(str_val):
     return res
 
 def format_playwright_error(error):
-    error_text = error.get('message') if isinstance(error, dict) and 'message' in error else str(error)
+    if isinstance(error, dict) and 'message' in error:
+        error_text = error['message']
+    else:
+        error_text = str(error)
     command_output = ansi_to_html(error_text)
     return convert_playwright_error_to_html(command_output)
 
 def format_duration(ms, precision=1, invalid_input_return="N/A", default_for_null_undefined_negative=None):
     valid_precision = max(0, int(precision))
     zero_with_precision = f"0.{'0' * valid_precision}s" if valid_precision > 0 else "0s"
+    
     resolved_null_undef_neg_return = zero_with_precision if default_for_null_undefined_negative is None else default_for_null_undefined_negative
 
     if ms is None:
         return resolved_null_undef_neg_return
+
     try:
         num_ms = float(ms)
     except (ValueError, TypeError):
         return invalid_input_return
+
     if math.isnan(num_ms) or math.isinf(num_ms):
         return invalid_input_return
+
     if num_ms < 0:
         return resolved_null_undef_neg_return
+
     if num_ms == 0:
         return zero_with_precision
 
@@ -190,32 +212,41 @@ def format_duration(ms, precision=1, invalid_input_return="N/A", default_for_nul
     seconds_per_minute = 60
     minutes_per_hour = 60
     seconds_per_hour = seconds_per_minute * minutes_per_hour
+
     total_raw_seconds = num_ms / ms_per_second
 
     if total_raw_seconds < seconds_per_minute and math.ceil(total_raw_seconds) < seconds_per_minute:
-        if valid_precision == 0: return f"{int(round(total_raw_seconds))}s"
+        if valid_precision == 0:
+            return f"{int(round(total_raw_seconds))}s"
         return f"{total_raw_seconds:.{valid_precision}f}s"
     else:
         total_ms_rounded_up_to_second = math.ceil(num_ms / ms_per_second) * ms_per_second
         remaining_ms = total_ms_rounded_up_to_second
+
         h = int(remaining_ms // (ms_per_second * seconds_per_hour))
         remaining_ms %= (ms_per_second * seconds_per_hour)
+
         m = int(remaining_ms // (ms_per_second * seconds_per_minute))
         remaining_ms %= (ms_per_second * seconds_per_minute)
+
         s = int(remaining_ms // ms_per_second)
+
         parts = []
-        if h > 0: parts.append(f"{h}h")
-        if h > 0 or m > 0 or num_ms >= ms_per_second * seconds_per_minute: parts.append(f"{m}m")
+        if h > 0:
+            parts.append(f"{h}h")
+        if h > 0 or m > 0 or num_ms >= ms_per_second * seconds_per_minute:
+            parts.append(f"{m}m")
         parts.append(f"{s}s")
+
         return " ".join(parts)
 
-
-# --- Chart & Component Generation Functions ---
+# --- Chart Generation Functions ---
 
 def generate_test_trends_chart(trend_data):
     if not trend_data or not trend_data.get('overall') or len(trend_data['overall']) == 0:
         return '<div class="no-data">No overall trend data available for test counts.</div>'
 
+    import random
     chart_id = f"testTrendsChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderTestTrendsChart_{chart_id.replace('-', '_')}"
     runs = trend_data['overall']
@@ -318,6 +349,7 @@ def generate_duration_trend_chart(trend_data):
     if not trend_data or not trend_data.get('overall') or len(trend_data['overall']) == 0:
         return '<div class="no-data">No overall trend data available for durations.</div>'
 
+    import random
     chart_id = f"durationTrendChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderDurationTrendChart_{chart_id.replace('-', '_')}"
     runs = trend_data['overall']
@@ -410,14 +442,18 @@ def format_date(date_str_or_date):
         return "N/A"
     try:
         if isinstance(date_str_or_date, str):
+            # Try parsing standard ISO formats
             if "Z" in date_str_or_date or "T" in date_str_or_date:
+                # remove Z for fromisoformat if needed, depending on Python version
                 date_obj = datetime.fromisoformat(date_str_or_date.replace("Z", "+00:00"))
             else:
                 date_obj = datetime.strptime(date_str_or_date, "%Y-%m-%d %H:%M:%S")
         else:
             date_obj = date_str_or_date
+            
         return date_obj.strftime("%m/%d/%y %I:%M %p")
     except Exception:
+        # Fallback to JS standard output style roughly
         return str(date_str_or_date)
 
 def generate_test_history_chart(history):
@@ -428,6 +464,7 @@ def generate_test_history_chart(history):
     if len(valid_history) == 0:
         return '<div class="no-data-chart">No valid data for chart</div>'
 
+    import random
     chart_id = f"testHistoryChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderTestHistoryChart_{chart_id.replace('-', '_')}"
 
@@ -521,6 +558,7 @@ def generate_pie_chart(data, chart_width=300, chart_height=300):
     passed_entry = next((d for d in data if d.get('label') == "Passed"), None)
     passed_percentage = round(((passed_entry['value'] if passed_entry else 0) / total) * 100)
 
+    import random
     chart_id = f"pieChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
 
     LABEL_COLORS = {
@@ -598,43 +636,174 @@ def generate_pie_chart(data, chart_width=300, chart_height=300):
 
 def generate_environment_dashboard(environment, hide_header=False):
     if not environment: environment = {}
+    
     cpu_model = environment.get('cpu', {}).get('model', 'N/A')
     cpu_cores = environment.get('cpu', {}).get('cores', 'N/A')
     cpu_info = f"model: {cpu_model}, cores: {cpu_cores}"
+    
     os_info = environment.get('os', 'N/A')
     node_info = environment.get('node', 'N/A')
     v8_info = environment.get('v8', 'N/A')
     cwd_info = environment.get('cwd', 'N/A')
     host_info = environment.get('host', 'N/A')
     formatted_memory = environment.get('memory', 'N/A')
+    
     no_header_class = " no-header" if hide_header else ""
-    cwd_truncated = f"...{cwd_info[-27:]}" if len(cwd_info) > 30 else cwd_info
     
     return f"""
     <div class="env-modern-card{no_header_class}">
       <style>
-        .env-modern-card {{ background: linear-gradient(to bottom right, var(--bg-primary) 0%, var(--bg-secondary) 100%); border: 0; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); margin-top: 24px; transition: all 0.3s ease; font-family: var(--font-family); overflow: hidden; }}
-        .env-modern-card:hover {{ box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }}
-        .env-modern-card {{ margin-bottom: 0; }}
-        .env-card-header {{ display: flex; flex-direction: column; padding: 24px 24px 12px; }}
-        .env-modern-card.no-header .env-card-header {{ display: none; }}
-        .env-modern-card.no-header {{ margin-top: 0; }}
-        .env-modern-card.no-header .env-card-content {{ padding-top: 24px; }}
-        .env-card-title-row {{ display: flex; justify-content: space-between; align-items: center; }}
-        .env-card-title {{ display: flex; align-items: center; font-size: 16px; font-weight: 600; color: var(--text-primary); transition: color 0.3s; }}
-        .env-modern-card:hover .env-card-title {{ color: var(--primary-dark, #6366f1); }}
-        .env-card-title svg {{ width: 16px; height: 16px; margin-right: 8px; stroke: currentColor; fill: none; }}
-        .env-card-subtitle {{ font-size: 12px; color: var(--text-secondary); margin-top: 4px; }}
-        .env-card-content {{ padding: 0 24px 24px; }}
-        .env-items-grid {{ display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }}
-        @media (min-width: 768px) {{ .env-items-grid {{ grid-template-columns: repeat(4, 1fr); }} }}
-        .env-item {{ display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 8px; transition: background-color 0.2s; min-height: 48px; }}
-        .env-item:hover {{ background-color: var(--bg-hover); }}
-        .env-item-icon {{ flex-shrink: 0; }}
-        .env-item-icon svg {{ width: 16px; height: 16px; stroke: var(--primary-dark, #6366f1); fill: none; }}
-        .env-item-content {{ flex-grow: 1; min-width: 0; }}
-        .env-item-label {{ font-size: 12px; font-weight: 500; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
-        .env-item-value {{ font-size: 12px; font-weight: 600; color: var(--text-primary); word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4; }}
+        .env-modern-card {{
+          background: linear-gradient(to bottom right, #ffffff 0%, #fafafa 100%);
+          border: 0;
+          border-radius: 12px;
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+          margin-top: 24px;
+          transition: all 0.3s ease;
+          font-family: var(--font-family);
+          overflow: hidden;
+        }}
+        .env-modern-card:hover {{
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }}
+        .env-modern-card {{
+          margin-bottom: 0;
+        }}
+
+        .environment-dashboard-wrapper *,
+        .environment-dashboard-wrapper *::before,
+        .environment-dashboard-wrapper *::after {{
+          box-sizing: border-box;
+        }}
+
+        .environment-dashboard-wrapper {{
+          --primary-color: #6366f1;
+          --success-color: #10b981;
+          --warning-color: #f59e0b;
+          
+          background-color: white;
+          padding: 48px; 
+          border-bottom: 1px solid #e2e8f0;
+          font-family: var(--font-family);
+          color: #0f172a;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 32px;
+          font-size: 15px;
+          transform: translateZ(0);
+        }}
+
+        .env-card-header {{
+          display: flex;
+          flex-direction: column;
+          padding: 24px 24px 12px;
+        }}
+        .env-modern-card.no-header .env-card-header {{
+          display: none;
+        }}
+        .env-modern-card.no-header {{
+          margin-top: 0;
+        }}
+        .env-modern-card.no-header .env-card-content {{
+          padding-top: 24px;
+        }}
+        .env-card-title-row {{
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }}
+        .env-card-title {{
+          display: flex;
+          align-items: center;
+          font-size: 16px;
+          font-weight: 600;
+          color: #0f172a;
+          transition: color 0.3s;
+        }}
+        .env-modern-card:hover .env-card-title {{
+          color: #6366f1;
+        }}
+        .env-card-title svg {{
+          width: 16px;
+          height: 16px;
+          margin-right: 8px;
+          stroke: currentColor;
+          fill: none;
+        }}
+        .env-card-subtitle {{
+          font-size: 12px;
+          color: #64748b;
+          margin-top: 4px;
+        }}
+        .env-icon-badge {{
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: linear-gradient(to bottom right, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.05));
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }}
+        .env-icon-badge svg {{
+          width: 16px;
+          height: 16px;
+          stroke: #6366f1;
+          fill: none;
+        }}
+        .env-card-content {{
+          padding: 0 24px 24px;
+        }}
+        .env-items-grid {{
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 10px;
+        }}
+        @media (min-width: 768px) {{
+          .env-items-grid {{
+            grid-template-columns: repeat(4, 1fr);
+          }}
+        }}
+        .env-item {{
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+          padding: 8px;
+          border-radius: 8px;
+          transition: background-color 0.2s;
+          min-height: 48px;
+        }}
+        .env-item:hover {{
+          background-color: rgba(100, 116, 139, 0.05);
+        }}
+        .env-item-icon {{
+          flex-shrink: 0;
+        }}
+        .env-item-icon svg {{
+          width: 16px;
+          height: 16px;
+          stroke: #6366f1;
+          fill: none;
+        }}
+        .env-item-content {{
+          flex-grow: 1;
+          min-width: 0;
+        }}
+        .env-item-label {{
+          font-size: 12px;
+          font-weight: 500;
+          color: #64748b;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }}
+        .env-item-value {{
+          font-size: 12px;
+          font-weight: 600;
+          color: #0f172a;
+          word-wrap: break-word;
+          overflow-wrap: break-word;
+          line-height: 1.4;
+        }}
       </style>
       
       <div class="env-card-header">
@@ -651,31 +820,142 @@ def generate_environment_dashboard(environment, hide_header=False):
             </div>
             <div class="env-card-subtitle">Test execution environment details</div>
           </div>
+          <div class="env-icon-badge">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+            </svg>
+          </div>
         </div>
       </div>
       
       <div class="env-card-content">
         <div class="env-items-grid">
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Host</p><div class="env-item-value" title="{host_info}">{host_info}</div></div>
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Host</p>
+              <div class="env-item-value" title="{host_info}">{host_info}</div>
+            </div>
           </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Os</p><div class="env-item-value" title="{os_info}">{os_info}</div></div>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Os</p>
+              <div class="env-item-value" title="{os_info}">{os_info}</div>
+            </div>
           </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"></rect><rect width="6" height="6" x="9" y="9" rx="1"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path><path d="M2 9h2"></path><path d="M20 15h2"></path><path d="M20 9h2"></path><path d="M9 2v2"></path><path d="M9 20v2"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Cpu</p><div class="env-item-value" title='{sanitize_html(json.dumps(environment.get("cpu", {})))}'>{cpu_info}</div></div>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="16" height="16" x="4" y="4" rx="2"></rect>
+                <rect width="6" height="6" x="9" y="9" rx="1"></rect>
+                <path d="M15 2v2"></path>
+                <path d="M15 20v2"></path>
+                <path d="M2 15h2"></path>
+                <path d="M2 9h2"></path>
+                <path d="M20 15h2"></path>
+                <path d="M20 9h2"></path>
+                <path d="M9 2v2"></path>
+                <path d="M9 20v2"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Cpu</p>
+              <div class="env-item-value" title='{sanitize_html(json.dumps(environment.get("cpu", {})))}'>{cpu_info}</div>
+            </div>
           </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 19v-3"></path><path d="M10 19v-3"></path><path d="M14 19v-3"></path><path d="M18 19v-3"></path><path d="M8 11V9"></path><path d="M16 11V9"></path><path d="M12 11V9"></path><path d="M2 15h20"></path><path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Memory</p><div class="env-item-value" title="{formatted_memory}">{formatted_memory}</div></div>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 19v-3"></path>
+                <path d="M10 19v-3"></path>
+                <path d="M14 19v-3"></path>
+                <path d="M18 19v-3"></path>
+                <path d="M8 11V9"></path>
+                <path d="M16 11V9"></path>
+                <path d="M12 11V9"></path>
+                <path d="M2 15h20"></path>
+                <path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.837Z"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Memory</p>
+              <div class="env-item-value" title="{formatted_memory}">{formatted_memory}</div>
+            </div>
           </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="M11 10.27 7 3.34"></path><path d="m20.66 17-1.73-1"></path><path d="m3.34 7 1.73 1"></path><path d="M14 12h8"></path><path d="M2 12h2"></path><path d="m20.66 7-1.73 1"></path><path d="m3.34 17 1.73-1"></path><path d="m17 3.34-1 1.73"></path><path d="m11 13.73-4 6.93"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Node</p><div class="env-item-value" title="{node_info}">{node_info}</div></div>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Node</p>
+              <div class="env-item-value" title="{node_info}">{node_info}</div>
+            </div>
           </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path><path d="M12 2v2"></path><path d="M12 22v-2"></path><path d="m17 20.66-1-1.73"></path><path d="M11 10.27 7 3.34"></path><path d="m20.66 17-1.73-1"></path><path d="m3.34 7 1.73 1"></path><path d="M14 12h8"></path><path d="M2 12h2"></path><path d="m20.66 7-1.73 1"></path><path d="m3.34 17 1.73-1"></path><path d="m17 3.34-1 1.73"></path><path d="m11 13.73-4 6.93"></path></svg></div>
-            <div class="env-item-content"><p class="env-item-label">V8</p><div class="env-item-value" title="{v8_info}">{v8_info}</div></div>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"></path>
+                <path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"></path>
+                <path d="M12 2v2"></path>
+                <path d="M12 22v-2"></path>
+                <path d="m17 20.66-1-1.73"></path>
+                <path d="M11 10.27 7 3.34"></path>
+                <path d="m20.66 17-1.73-1"></path>
+                <path d="m3.34 7 1.73 1"></path>
+                <path d="M14 12h8"></path>
+                <path d="M2 12h2"></path>
+                <path d="m20.66 7-1.73 1"></path>
+                <path d="m3.34 17 1.73-1"></path>
+                <path d="m17 3.34-1 1.73"></path>
+                <path d="m11 13.73-4 6.93"></path>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">V8</p>
+              <div class="env-item-value" title="{v8_info}">{v8_info}</div>
+            </div>
           </div>
-          <div class="env-item"><div class="env-item-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></div>
-            <div class="env-item-content"><p class="env-item-label">Working Dir</p><div class="env-item-value" title="{cwd_info}">{cwd_truncated}</div></div>
+          
+          <div class="env-item">
+            <div class="env-item-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+              </svg>
+            </div>
+            <div class="env-item-content">
+              <p class="env-item-label">Working Dir</p>
+              <div class="env-item-value" title="{cwd_info}">{("..." + cwd_info[-27:]) if len(cwd_info) > 30 else cwd_info}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -710,6 +990,11 @@ def generate_environment_section(environment_data):
                   </div>
                   <div class="sharded-env-subtitle">Test execution environment details - {len(environment_data)} shard{'s' if len(environment_data) > 1 else ''}</div>
                 </div>
+                <div class="env-icon-badge">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"></path>
+                  </svg>
+                </div>
               </div>
             </div>
             <div class="sharded-environments-container">
@@ -719,23 +1004,95 @@ def generate_environment_section(environment_data):
             </div>
           </div>
           <style>
-            .sharded-env-section {{ border: 1px solid var(--border-light); border-radius: 12px; background: var(--bg-secondary); overflow: hidden; }}
-            .sharded-env-header {{ position: sticky; top: 0; z-index: 20; background: linear-gradient(to bottom right, var(--bg-primary) 0%, var(--bg-secondary) 100%); border-bottom: 1px solid var(--border-light); padding: 24px 24px 16px; }}
-            .sharded-env-title-row {{ display: flex; justify-content: space-between; align-items: center; }}
-            .sharded-env-title {{ display: flex; align-items: center; font-size: 18px; font-weight: 600; color: var(--text-primary); }}
-            .sharded-env-title svg {{ width: 18px; height: 18px; margin-right: 8px; stroke: currentColor; fill: none; }}
-            .sharded-env-subtitle {{ font-size: 13px; color: var(--text-secondary); margin-top: 4px; }}
-            .sharded-environments-container {{ max-height: 520px; overflow-y: auto; overflow-x: hidden; padding: 16px; }}
-            .sharded-environments-container::-webkit-scrollbar {{ width: 8px; }}
-            .sharded-environments-container::-webkit-scrollbar-track {{ background: var(--bg-tertiary); border-radius: 4px; }}
-            .sharded-environments-container::-webkit-scrollbar-thumb {{ background: var(--border-medium); border-radius: 4px; }}
-            .sharded-environments-container::-webkit-scrollbar-thumb:hover {{ background: var(--border-color); }}
-            .sharded-environments-wrapper {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); gap: 24px; }}
-            @media (max-width: 768px) {{ .sharded-environments-wrapper {{ grid-template-columns: 1fr; }} }}
-            .env-card-wrapper {{ position: relative; }}
-            .env-card-badge {{ position: absolute; top: -10px; right: 16px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.75em; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; z-index: 10; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3); }}
+            .sharded-env-section {{
+              border: 1px solid #e2e8f0;
+              border-radius: 12px;
+              background: #fafbfc;
+              overflow: hidden;
+            }}
+            .sharded-env-header {{
+              position: sticky;
+              top: 0;
+              z-index: 20;
+              background: linear-gradient(to bottom right, #ffffff 0%, #fafafa 100%);
+              border-bottom: 1px solid #e2e8f0;
+              padding: 24px 24px 16px;
+            }}
+            .sharded-env-title-row {{
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }}
+            .sharded-env-title {{
+              display: flex;
+              align-items: center;
+              font-size: 18px;
+              font-weight: 600;
+              color: #0f172a;
+            }}
+            .sharded-env-title svg {{
+              width: 18px;
+              height: 18px;
+              margin-right: 8px;
+              stroke: currentColor;
+              fill: none;
+            }}
+            .sharded-env-subtitle {{
+              font-size: 13px;
+              color: #64748b;
+              margin-top: 4px;
+            }}
+            .sharded-environments-container {{
+              max-height: 520px;
+              overflow-y: auto;
+              overflow-x: hidden;
+              padding: 16px;
+            }}
+            .sharded-environments-container::-webkit-scrollbar {{
+              width: 8px;
+            }}
+            .sharded-environments-container::-webkit-scrollbar-track {{
+              background: #f1f1f1;
+              border-radius: 4px;
+            }}
+            .sharded-environments-container::-webkit-scrollbar-thumb {{
+              background: #cbd5e0;
+              border-radius: 4px;
+            }}
+            .sharded-environments-container::-webkit-scrollbar-thumb:hover {{
+              background: #a0aec0;
+            }}
+            .sharded-environments-wrapper {{
+              display: grid;
+              grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+              gap: 24px;
+            }}
+            @media (max-width: 768px) {{
+              .sharded-environments-wrapper {{
+                grid-template-columns: 1fr;
+              }}
+            }}
+            .env-card-wrapper {{
+              position: relative;
+            }}
+            .env-card-badge {{
+              position: absolute;
+              top: -10px;
+              right: 16px;
+              background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+              color: white;
+              padding: 6px 14px;
+              border-radius: 20px;
+              font-size: 0.75em;
+              font-weight: 700;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              z-index: 10;
+              box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
+            }}
           </style>
         """
+      
     return generate_environment_dashboard(environment_data)
 
 def generate_worker_distribution_chart(results):
@@ -772,6 +1129,7 @@ def generate_worker_distribution_chart(results):
     if len(worker_ids) == 0:
         return '<div class="no-data">Could not determine worker distribution from test data.</div>'
 
+    import random
     chart_id = f"workerDistChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderWorkerDistChart_{chart_id.replace('-', '_')}"
     modal_js_namespace = f"modal_funcs_{chart_id.replace('-', '_')}"
@@ -978,7 +1336,7 @@ def generate_test_history_content(trend_data):
                     "runId": run_id or (index + 1),
                     "status": test_run_for_this_overall_run.get('status', 'unknown'),
                     "duration": test_run_for_this_overall_run.get('duration', 0),
-                    "timestamp": test_run_for_this_overall_run.get('timestamp') or overall_run.get('timestamp') or datetime.now().isoformat()
+                    "timestamp": test_run_for_this_overall_run.get('timestamp') or overall_run.get('timestamp') or datetime.now()
                 })
                 
         if len(history) > 0:
@@ -1019,8 +1377,8 @@ def generate_test_history_content(trend_data):
 
     return f"""
     <div class="test-history-container">
-      <div class="filters">
-    <input type="text" id="history-filter-name" placeholder="Search by test title...">
+      <div class="filters" style="border-color: black; border-style: groove;">
+    <input type="text" id="history-filter-name" placeholder="Search by test title..." style="border-color: black; border-style: outset;">
     <select id="history-filter-status">
         <option value="">All Statuses</option>
         <option value="passed">Passed</option>
@@ -1064,6 +1422,7 @@ def get_suites_data(results):
         if len(suite_parts) > 2:
             suite_name_candidate = suite_parts[1]
         elif len(suite_parts) > 1:
+            # Equivalent to JS replace(/\.(spec|test)\.(ts|js|mjs|cjs)$/, "")
             pop_val = suite_parts[0].split(os.sep)[-1]
             suite_name_candidate = re.sub(r'\.(spec|test)\.(ts|js|mjs|cjs)$', '', pop_val)
         else:
@@ -1104,18 +1463,6 @@ def get_suites_data(results):
             suite['statusOverall'] = "skipped"
             
     return list(suites_map.values())
-
-def get_attachment_icon(content_type):
-    if not content_type: return "📎"
-    norm_type = content_type.lower()
-    
-    if "pdf" in norm_type: return "📄"
-    if "json" in norm_type: return "{ }"
-    if "html" in norm_type: return "🌐"
-    if "xml" in norm_type: return "<>"
-    if "csv" in norm_type: return "📊"
-    if norm_type.startswith("text/"): return "📝"
-    return "📎"
 
 def generate_suites_widget(suites_data):
     if not suites_data or len(suites_data) == 0:
@@ -1173,6 +1520,18 @@ def generate_suites_widget(suites_data):
   </div>
 </div>"""
 
+def get_attachment_icon(content_type):
+    if not content_type: return "📎"
+    norm_type = content_type.lower()
+    
+    if "pdf" in norm_type: return "📄"
+    if "json" in norm_type: return "{ }"
+    if "html" in norm_type: return "🌐"
+    if "xml" in norm_type: return "<>"
+    if "csv" in norm_type: return "📊"
+    if norm_type.startswith("text/"): return "📝"
+    return "📎"
+
 def generate_ai_failure_analyzer_tab(results):
     failed_tests = [test for test in (results or []) if test.get('status') == "failed"]
 
@@ -1223,6 +1582,7 @@ def generate_ai_failure_analyzer_tab(results):
             </div>
             <div class="ai-suggestion-container" style="display: none;">
                 <div class="ai-suggestion-content">
+                    <!-- AI suggestion will be injected here -->
                 </div>
             </div>
         </div>
@@ -1284,7 +1644,7 @@ def generate_severity_distribution_chart(results):
         try:
             index = severity_levels.index(sev)
         except ValueError:
-            index = 2 
+            index = 2
 
         if status == "passed":
             data['passed'][index] += 1
@@ -1295,6 +1655,7 @@ def generate_severity_distribution_chart(results):
         else:
             data['skipped'][index] += 1
 
+    import random
     chart_id = f"sevDistChart-{int(time.time() * 1000)}-{str(random.random())[2:7]}"
     render_function_name = f"renderSevDistChart_{chart_id.replace('-', '_')}"
 
@@ -1368,45 +1729,23 @@ def generate_severity_distribution_chart(results):
     </div>
   """
 
-def create_lazy_media(base64_data, mime_type, media_type, index, filename):
-    unique_id = f"media-{int(time.time() * 1000)}-{str(random.random())[2:11]}"
-    data_uri = f"data:{mime_type};base64,{base64_data}"
-    storage = f'<script type="text/plain" id="data-{unique_id}">{data_uri}</script>'
-
-    if media_type == "video":
-        media_tag = f'<video id="{unique_id}" controls style="display:none; width: 100%; aspect-ratio: 16/9; margin-bottom: 10px;"></video>'
-        btn_text = "▶ Load Video"
-    else:
-        media_tag = f'<img id="{unique_id}" alt="Screenshot {index}" style="display:none; width: 100%; aspect-ratio: 4/3; object-fit: cover; border-bottom: 1px solid var(--border-color);" />'
-        btn_text = "📷 Load Image"
-
-    return f"""
-  <div class="attachment-item {"video-item" if media_type == "video" else ""}">
-      {storage}
-      <div class="lazy-placeholder" style="padding: 2rem; text-align: center; background: var(--light-gray-color); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 180px;">
-          <button class="ai-fix-btn" onclick="loadMedia('{unique_id}', '{media_type}')" style="margin: 0 auto; font-size: 0.9rem;">{btn_text}</button>
-          <span style="font-size: 0.8rem; color: var(--text-color-secondary); margin-top: 8px;">(Click to view)</span>
-      </div>
-      {media_tag}
-      <div class="attachment-info">
-          <div class="trace-actions">
-              <a href="#" onclick="event.preventDefault(); downloadMedia('{unique_id}', '{filename}')" class="download-trace" style="width:100%; text-align:center;">Download</a>
-          </div>
-      </div>
-  </div>"""
-
 def generate_html(report_data, trend_data=None):
     run_info = report_data.get('run', {})
     results = report_data.get('results', [])
     suites_data = get_suites_data(results)
     
-    run_summary = run_info if run_info else {
-        "totalTests": 0, "passed": 0, "failed": 0, "skipped": 0, "duration": 0,
+    run_summary = run_info or {
+        "totalTests": 0,
+        "passed": 0,
+        "failed": 0,
+        "skipped": 0,
+        "duration": 0,
         "timestamp": datetime.now().isoformat()
     }
 
     def fix_path(p):
         if not p: return ""
+        # Handle path separators safely
         prefix = DEFAULT_OUTPUT_DIR + "/"
         prefix_win = DEFAULT_OUTPUT_DIR + "\\"
         if p.startswith(prefix): return p[len(prefix):]
@@ -1414,6 +1753,7 @@ def generate_html(report_data, trend_data=None):
         return p
 
     avg_test_duration = format_duration(run_summary.get('duration', 0) / run_summary.get('totalTests', 1)) if run_summary.get('totalTests', 0) > 0 else "0.0s"
+
     flaky_count = sum(1 for r in results if r.get('outcome') == 'flaky')
 
     retried_tests_count = 0
@@ -1475,14 +1815,12 @@ def generate_html(report_data, trend_data=None):
     ]
     browser_breakdown.sort(key=lambda x: x['count'], reverse=True)
 
-    def generate_test_cases_html(subset, offset=0):
-        data = subset if subset else results
-        if not data or len(data) == 0:
+    def generate_test_cases_html():
+        if not results:
             return '<div class="no-tests">No test results found in this run.</div>'
-
+            
         tests_html = ""
-        for i, test in enumerate(data):
-            test_index = offset + i
+        for index, test in enumerate(results):
             browser = test.get('browser', 'unknown')
             test_file_parts = test.get('name', '').split(" > ")
             test_title = test_file_parts[-1] if test_file_parts else "Unnamed Test"
@@ -1522,7 +1860,25 @@ def generate_html(report_data, trend_data=None):
                         steps_html += f"""
                         <div class="test-error-summary">
                             {f'<div class="stack-trace">{format_playwright_error(step.get("stackTrace"))}</div>' if step.get('stackTrace') else ""}
-                            <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: all 0.2s; align-self: flex-end; width: auto;" onmouseover="this.style.background='rgba(248, 113, 113, 0.25)'" onmouseout="this.style.background='rgba(248, 113, 113, 0.15)'">Copy Error Prompt</button>
+                            <button 
+                                class="copy-error-btn" 
+                                onclick="copyErrorToClipboard(this)"
+                                style="
+                                  margin-top: 8px;
+                                  padding: 6px 12px;
+                                  background: #f0f0f0;
+                                  border: 2px solid #ccc;
+                                  border-radius: 4px;
+                                  cursor: pointer;
+                                  font-size: 12px;
+                                  border-color: #8B0000;
+                                  color: #8B0000;
+                                  align-self: flex-end;
+                                  width: auto;
+                                  "
+                                onmouseover="this.style.background='#e0e0e0'"
+                                onmouseout="this.style.background='#f0f0f0'"
+                            >Copy Error Prompt</button>
                         </div>"""
                         
                     if has_nested:
@@ -1541,7 +1897,7 @@ def generate_html(report_data, trend_data=None):
                 return f'<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: {color_var}; margin-left: 6px; vertical-align: middle;" title="{s}"></span>'
 
             def get_test_content_html(test_data, run_suffix):
-                log_id = f"stdout-log-{test.get('id', test_index)}-{run_suffix}"
+                log_id = f"stdout-log-{test.get('id', index)}-{run_suffix}"
                 
                 annotations_html = ""
                 if test_data.get('annotations'):
@@ -1568,7 +1924,7 @@ def generate_html(report_data, trend_data=None):
                 error_html = ""
                 if test_data.get('errorMessage'):
                     error_html = f"""<div class="test-error-summary"><div class="stack-trace">{format_playwright_error(test_data['errorMessage'])}</div>
-                    <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: rgba(248, 113, 113, 0.15); border: 2px solid var(--danger-color); border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--danger-color); font-weight: 600; transition: 0.2s; align-self: flex-end; width: auto;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Copy Error Prompt</button></div>"""
+                    <button class="copy-error-btn" onclick="copyErrorToClipboard(this)" style="margin-top: 8px; padding: 6px 12px; background: #f0f0f0; border: 2px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 12px; border-color: #8B0000; color: #8B0000; align-self: flex-end; width: auto;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">Copy Error Prompt</button></div>"""
 
                 snippet_html = f'<div class="code-section"><h4>Error Snippet</h4><pre><code>{format_playwright_error(test_data["snippet"])}</code></pre></div>' if test_data.get('snippet') else ""
                 
@@ -1584,14 +1940,14 @@ def generate_html(report_data, trend_data=None):
                     screenshots_html = '<div class="attachments-section"><h4>Screenshots</h4><div class="attachments-grid">'
                     for s_idx, screenshot in enumerate(test_data['screenshots']):
                         fixed_path = fix_path(screenshot)
-                        screenshots_html += f"""<div class="attachment-item"><img src="{sanitize_html(fixed_path)}" alt="Screenshot {s_idx + 1}"><div class="attachment-info"><div class="trace-actions"><a href="{sanitize_html(fixed_path)}" target="_blank" class="view-full">View Full Image</a><a href="{sanitize_html(fixed_path)}" target="_blank" download="screenshot-{int(time.time())}-{s_idx}.png">Download</a></div></div></div>"""
+                        screenshots_html += f"""<div class="attachment-item"><img src="{fixed_path}" alt="Screenshot {s_idx + 1}"><div class="attachment-info"><div class="trace-actions"><a href="{fixed_path}" target="_blank" class="view-full">View Full Image</a><a href="{fixed_path}" target="_blank" download="screenshot-{int(time.time())}-{s_idx}.png">Download</a></div></div></div>"""
                     screenshots_html += '</div></div>'
 
                 videos_html = ""
                 if test_data.get('videoPath'):
                     videos_html = '<div class="attachments-section"><h4>Videos</h4><div class="attachments-grid">'
                     for v_idx, videoUrl in enumerate(test_data['videoPath']):
-                        fixed_path = sanitize_html(videoUrl)
+                        fixed_path = fix_path(videoUrl)
                         ext = fixed_path.split('.')[-1].lower()
                         mime = {"mp4": "video/mp4", "webm": "video/webm", "ogg": "video/ogg", "mov": "video/quicktime", "avi": "video/x-msvideo"}.get(ext, "video/mp4")
                         videos_html += f"""<div class="attachment-item video-item"><video controls width="100%" height="auto" title="Video {v_idx + 1}"><source src="{sanitize_html(fixed_path)}" type="{mime}">Your browser does not support the video tag.</video><div class="attachment-info"><div class="trace-actions"><a href="{sanitize_html(fixed_path)}" target="_blank" download="video-{int(time.time())}-{v_idx}.{ext}">Download</a></div></div></div>"""
@@ -1599,7 +1955,7 @@ def generate_html(report_data, trend_data=None):
 
                 trace_html = ""
                 if test_data.get('tracePath'):
-                    fixed_path = sanitize_html(test_data['tracePath'])
+                    fixed_path = fix_path(test_data['tracePath'])
                     basename = os.path.basename(test_data['tracePath'])
                     trace_html = f"""<div class="attachments-section"><h4>Trace Files</h4><div class="attachments-grid"><div class="attachment-item trace-item"><div class="trace-preview"><span class="trace-icon">📄</span><span class="trace-name">{sanitize_html(basename)}</span></div><div class="attachment-info"><div class="trace-actions"><a href="{sanitize_html(fixed_path)}" target="_blank" download="{sanitize_html(basename)}" class="download-trace">Download Trace</a></div></div></div></div></div>"""
 
@@ -1607,7 +1963,7 @@ def generate_html(report_data, trend_data=None):
                 if test_data.get('attachments'):
                     other_attachments_html = '<div class="attachments-section"><h4>Other Attachments</h4><div class="attachments-grid">'
                     for att in test_data['attachments']:
-                        fixed_path = sanitize_html(att.get('path', ''))
+                        fixed_path = fix_path(att.get('path', ''))
                         other_attachments_html += f"""<div class="attachment-item generic-attachment"><div class="attachment-icon">{get_attachment_icon(att.get('contentType'))}</div><div class="attachment-caption"><span class="attachment-name" title="{sanitize_html(att.get('name'))}">{sanitize_html(att.get('name'))}</span><span class="attachment-type">{sanitize_html(att.get('contentType'))}</span></div><div class="attachment-info"><div class="trace-actions"><a href="{sanitize_html(fixed_path)}" target="_blank" class="view-full">View</a><a href="{sanitize_html(fixed_path)}" target="_blank" download="{sanitize_html(att.get('name'))}" class="download-trace">Download</a></div></div></div>"""
                     other_attachments_html += '</div></div>'
 
@@ -1633,13 +1989,13 @@ def generate_html(report_data, trend_data=None):
             
             retry_tabs_html = ""
             if test.get('retryHistory'):
-                tabs_header = f"""<button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-{test.get('id', test_index)}')">Base Run {get_small_status_badge(test.get('final_status') or test.get('status'))}</button>"""
+                tabs_header = f"""<button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-{test.get('id', index)}')">Base Run {get_small_status_badge(test.get('final_status') or test.get('status'))}</button>"""
                 for idx, retry in enumerate(test['retryHistory']):
-                    tabs_header += f"""<button class="retry-tab" onclick="switchRetryTab(event, 'retry-{idx + 1}-{test.get('id', test_index)}')">Retry {idx + 1} {get_small_status_badge(retry.get('final_status') or retry.get('status'))}</button>"""
+                    tabs_header += f"""<button class="retry-tab" onclick="switchRetryTab(event, 'retry-{idx + 1}-{test.get('id', index)}')">Retry {idx + 1} {get_small_status_badge(retry.get('final_status') or retry.get('status'))}</button>"""
                     
-                tabs_content = f"""<div id="base-run-{test.get('id', test_index)}" class="retry-tab-content active">{get_test_content_html(test, 'base')}</div>"""
+                tabs_content = f"""<div id="base-run-{test.get('id', index)}" class="retry-tab-content active">{get_test_content_html(test, 'base')}</div>"""
                 for idx, retry in enumerate(test['retryHistory']):
-                    tabs_content += f"""<div id="retry-{idx + 1}-{test.get('id', test_index)}" class="retry-tab-content" style="display: none;">{get_test_content_html(retry, f"retry-{idx + 1}")}</div>"""
+                    tabs_content += f"""<div id="retry-{idx + 1}-{test.get('id', index)}" class="retry-tab-content" style="display: none;">{get_test_content_html(retry, f"retry-{idx + 1}")}</div>"""
                     
                 retry_tabs_html = f"""<div class="retry-tabs-container"><div class="retry-tabs-header">{tabs_header}</div>{tabs_content}</div>"""
             else:
@@ -1663,12 +2019,9 @@ def generate_html(report_data, trend_data=None):
                     <span class="test-duration">{format_duration(test.get('duration'))}</span>
                   </div>
                 </div>
-                <div class="test-case-content" style="display: none;" id="details-{test.get('id', test_index)}">
-                   <!-- Lazy Loaded Content -->
-                </div>
-                <script type="text/template" id="tmpl-{test.get('id', test_index)}">
+                <div class="test-case-content" style="display: none;">
                   {retry_tabs_html}
-                </script>
+                </div>
             </div>"""
             
         return tests_html
@@ -1691,14 +2044,7 @@ def generate_html(report_data, trend_data=None):
     for b in browser_breakdown[:3]:
         browser_breakdown_html += f"""<div class="browser-item"><span class="browser-name" title="{sanitize_html(b['browser'])}">{sanitize_html(b['browser'])}</span><span class="browser-stats">{b['percentage']}% ({b['count']})</span></div>"""
     if len(browser_breakdown) > 3:
-        browser_breakdown_html += f'<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid var(--border-light); margin-top: 8px; padding-top: 8px;"><span>+{len(browser_breakdown) - 3} more browsers</span></div>'
-
-    remaining_tests_html = ""
-    load_more_wrapper = ""
-    if len(results) > 50:
-        remaining_html = generate_test_cases_html(results[50:], 50)
-        encoded_remaining = base64.b64encode(remaining_html.encode('utf-8')).decode('utf-8')
-        load_more_wrapper = f'<div class="load-more-wrapper"><button id="load-more-tests">Load more</button></div><script type="application/json" id="remaining-tests-b64">{encoded_remaining}</script>'
+        browser_breakdown_html += f'<div class="browser-item" style="opacity: 0.6; font-style: italic; justify-content: center; border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;"><span>+{len(browser_breakdown) - 3} more browsers</span></div>'
 
     html_template = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1714,47 +2060,40 @@ def generate_html(report_data, trend_data=None):
     
     {f'<script>{plotly_content}</script>' if plotly_content else '<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>'}
     
-    <title>Pulse Static Report</title>
-    
-<style>
+    <title>Pulse Report</title>
+    <style>
         :root {{ 
-  --primary-color: #f9fafb; --primary-dark: #e5e7eb; --primary-light: #ffffff;
-  --secondary-color: #d1d5db; --secondary-dark: #9ca3af; --secondary-light: #f3f4f6;
-  --accent-color: #ffffff; --accent-alt: #a3a3a3;
-  --success-color: #34d399; --success-dark: #10b981; --success-light: #6ee7b7;
-  --danger-color: #f87171; --danger-dark: #ef4444; --danger-light: #fca5a5;
-  --warning-color: #fbbf24; --warning-dark: #f59e0b; --warning-light: #fcd34d;
-  --info-color: #9ca3af;
-  --flaky-color: #00ccd3; 
-  --text-primary: #f9fafb; --text-secondary: #e5e7eb; --text-tertiary: #d1d5db;
-  --bg-primary: #000000; --bg-secondary: #0a0a0a; --bg-tertiary: #050505;
-  --bg-card: #0d0d0d; --bg-card-hover: #121212;
-  --border-light: #1a1a1a; --border-medium: #262626; --border-dark: #333333;
-  --light-gray-color: #262626; --medium-gray-color: #333333; --dark-gray-color: #a3a3a3;
-  --text-color: #f9fafb; --text-color-secondary: #e5e7eb; --border-color: #262626;
-  --card-background-color: #0d0d0d;
-  --neutral-100: #171717; --neutral-200: #262626; --neutral-300: #404040;
-  --bg-hover: #171717;
-  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-2xl: 24px;
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.8);
-  --shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.9);
-  --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.9);
-  --shadow-lg: 0 8px 16px -2px rgba(0, 0, 0, 0.95);
-  --shadow-xl: 0 12px 24px -4px rgba(0, 0, 0, 0.95);
-  --shadow-2xl: 0 20px 40px -8px rgba(0, 0, 0, 1);
-  --box-shadow: 0 8px 20px rgba(0,0,0,0.8);
-  --box-shadow-light: 0 4px 12px rgba(0,0,0,0.7);
-  --box-shadow-inset: inset 0 1px 3px rgba(0,0,0,0.9);
-  --glow-primary: 0 0 20px rgba(255, 255, 255, 0.1);
-  --glow-success: 0 0 20px rgba(52, 211, 153, 0.2);
-  --glow-danger: 0 0 20px rgba(248, 113, 113, 0.2);
-  --gradient-primary: linear-gradient(135deg, #ffffff 0%, #a3a3a3 100%);
-  --gradient-card: linear-gradient(145deg, #0d0d0d 0%, #0a0a0a 100%);
-  --gradient-border: linear-gradient(145deg, #1a1a1a 0%, #262626 100%);
-}}
-* {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        ::selection {{ background: var(--primary-color); color: #000000; }}
+          --primary-color: #6366f1; --primary-dark: #4f46e5; --primary-light: #818cf8;
+          --secondary-color: #8b5cf6; --secondary-dark: #7c3aed; --secondary-light: #a78bfa;
+          --accent-color: #ec4899; --accent-alt: #06b6d4;
+          --success-color: #10b981; --success-dark: #059669; --success-light: #34d399;
+          --danger-color: #ef4444; --danger-dark: #dc2626; --danger-light: #f87171;
+          --warning-color: #f59e0b; --warning-dark: #d97706; --warning-light: #fbbf24;
+          --info-color: #3b82f6;
+          --flaky-color: #00ccd3; 
+          --neutral-50: #fafafa; --neutral-100: #f5f5f5; --neutral-200: #e5e5e5; --neutral-300: #d4d4d4;
+          --neutral-400: #a3a3a3; --neutral-500: #737373; --neutral-600: #525252; --neutral-700: #404040;
+          --neutral-800: #262626; --neutral-900: #171717;
+          --text-primary: #0f172a; --text-secondary: #475569; --text-tertiary: #94a3b8;
+          --bg-primary: #ffffff; --bg-secondary: #f8fafc; --bg-tertiary: #f1f5f9;
+          --border-light: #e2e8f0; --border-medium: #cbd5e1; --border-dark: #94a3b8;
+          --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          --radius-sm: 8px; --radius-md: 12px; --radius-lg: 16px; --radius-xl: 20px; --radius-2xl: 24px;
+          --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+          --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+          --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+          --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+          --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          --glow-primary: 0 0 20px rgba(99, 102, 241, 0.4), 0 0 40px rgba(99, 102, 241, 0.2);
+          --glow-success: 0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2);
+          --glow-danger: 0 0 20px rgba(239, 68, 68, 0.4), 0 0 40px rgba(239, 68, 68, 0.2);
+          --bg-card: #ffffff; --bg-card-hover: #f8fafc;
+          --gradient-card: linear-gradient(145deg, #ffffff 0%, #f9fafb 100%);
+          --border-medium: #cbd5e1;
+        }}
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        ::selection {{ background: var(--primary-color); color: white; }}
         ::-webkit-scrollbar {{ width: 0; height: 0; display: none; }}
         ::-webkit-scrollbar-track {{ display: none; }}
         ::-webkit-scrollbar-thumb {{ display: none; }}
@@ -1763,52 +2102,53 @@ def generate_html(report_data, trend_data=None):
         .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] {{ min-height: 100px; }}
         .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart {{ display: flex; align-items: center; justify-content: center; height: 100%; font-style: italic; color: var(--dark-gray-color); }}
         .js-plotly-plot .plotly {{ font-family: var(--font-family); }}
+        html {{
+          overflow-x: hidden;
+        }}
         body {{
           font-family: var(--font-family);
           margin: 0;
-          background: radial-gradient(ellipse at top, #0a0a0a 0%, #000000 50%, #000000 100%);
-          background-attachment: fixed;
+          background: #fafbfc;
           color: var(--text-primary);
           line-height: 1.6;
           font-size: 15px;
           min-height: 100vh;
+          overflow-x: hidden;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
           text-rendering: optimizeLegibility;
         }}
         * {{
           transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+          will-change: transform, opacity;
         }}
         *:not(input):not(select):not(textarea):not(button) {{
-          transition-duration: 0.2s;
+          transition-duration: 0.15s;
         }}
         .container {{
           padding: 0;
           margin: 0;
           max-width: 100%;
-          width: 100%;
+          overflow-x: hidden;
         }}
-.header {{ 
+        .header {{ 
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 32px 48px 28px 48px;
-          border-bottom: 1px solid var(--border-light);
-          background: var(--gradient-card);
-          backdrop-filter: blur(10px);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+          padding: 32px 40px 28px 40px;
+          border-bottom: 1px solid #e2e8f0;
+          background: rgba(255, 255, 255, 0.95);
         }}
-        .header-title {{
+        .header-title {{ 
           display: flex;
           align-items: center;
           gap: 20px;
-          flex-wrap: wrap;
         }}
         .header h1 {{ 
           margin: 0; 
           font-size: 2.5em; 
           font-weight: 900; 
-          color: #f9fafb;
+          color: #0f172a;
           line-height: 1;
           letter-spacing: -0.03em;
         }}
@@ -1817,67 +2157,65 @@ def generate_html(report_data, trend_data=None):
         }}
         .run-info {{ 
           display: flex;
-          gap: 0;
+          gap: 16px;
           align-items: stretch;
-          background: var(--gradient-card);
-          border-radius: 14px;
-          box-shadow: var(--shadow-md);
-          overflow: hidden;
+          background: transparent;
+          border-radius: 12px;
+          padding: 0;
+          box-shadow: var(--shadow-md); 
+          overflow: hidden; 
         }}
         .run-info-item {{
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          padding: 20px 32px;
+          gap: 8px;
+          padding: 16px 28px;
           position: relative;
           flex: 1;
-          min-width: 0;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          min-width: fit-content;
         }}
-        .run-info-item:hover {{
-          transform: translateY(-2px);
-        }}
-        .run-info-item:not(:last-child)::after {{
-          content: '';
-          position: absolute;
-          right: 0;
-          top: 20%;
-          bottom: 20%;
-          width: 1px;
-          background: linear-gradient(to bottom, transparent, var(--border-medium) 20%, var(--border-medium) 80%, transparent);
-        }}
+
         .run-info-item:first-child {{
-            background: var(--bg-card);
-            border: 1px solid var(--border-medium);
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 50%, rgba(217, 119, 6, 0.1) 100%);
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(251, 191, 36, 0.25), 0 0 40px rgba(251, 191, 36, 0.08);
+        }}
+        .run-info-item:first-child:hover {{
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.22) 50%, rgba(217, 119, 6, 0.15) 100%);
+          border-color: rgba(251, 191, 36, 0.4);
+          box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(251, 191, 36, 0.35), 0 0 50px rgba(251, 191, 36, 0.15);
         }}
         .run-info-item:last-child {{
-          background: var(--bg-card);
-          border: 1px solid var(--border-medium);
-          padding: 10px;
-          border-radius: 5px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(124, 58, 237, 0.12) 50%, rgba(109, 40, 217, 0.08) 100%);
+          border: 1px solid rgba(139, 92, 246, 0.3);
+          border-radius: var(--radius-md);
+          box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.08);
+        }}
+        .run-info-item:last-child:hover {{
+          background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(124, 58, 237, 0.18) 50%, rgba(109, 40, 217, 0.12) 100%);
+          border-color: rgba(139, 92, 246, 0.4);
+          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(139, 92, 246, 0.35), 0 0 50px rgba(139, 92, 246, 0.15);
         }}
         .run-info strong {{ 
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
           font-size: 0.7em;
           text-transform: uppercase;
-          letter-spacing: 1px;
-          color: var(--text-tertiary);
+          letter-spacing: 1.2px;
+          color: #9ca3af;
           margin: 0;
           font-weight: 700;
         }}
         .run-info strong::before {{
           content: '';
-          width: 8px;
-          height: 8px;
+          width: 10px;
+          height: 10px;
           border-radius: 50%;
           background: currentColor;
-          opacity: 0.6;
+          opacity: 0.7;
+          box-shadow: 0 0 8px currentColor;
         }}
         .run-info-item:first-child strong {{
           color: var(--warning-light);
@@ -1886,75 +2224,83 @@ def generate_html(report_data, trend_data=None):
           color: var(--secondary-light);
         }}
         .run-info span {{
-          font-size: 1.35em;
+          font-size: 1.5em;
           font-weight: 800;
-          color: #f9fafb;
+          color: #0f172a; 
           font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
           letter-spacing: -0.02em;
           line-height: 1.2;
           white-space: nowrap;
         }}
-        .tabs {{ 
+        .tabs {{
           display: flex;
-          background: #000000;
+          background: #0f172a;
           padding: 0;
           margin: 0;
           position: sticky;
           top: 0;
           z-index: 100;
-          border-bottom: 1px solid var(--border-light);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          max-width: 100vw;
+          width: 100%;
         }}
-        .tab-button {{ 
-          flex: 1;
-          padding: 24px 32px; 
-          background: transparent; 
-          border: none; 
-          cursor: pointer; 
-          font-size: 0.85em; 
-          font-weight: 700; 
-          color: var(--dark-gray-color); 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        .tab-button {{
+          flex: 1 1 auto;
+          padding: 24px 20px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          font-size: 0.85em;
+          font-weight: 700;
+          color: #64748b;
+          transition: all 0.2s ease;
           white-space: nowrap;
           text-transform: uppercase;
           letter-spacing: 1.2px;
-          border-right: 1px solid var(--border-light);
-          position: relative;
-        }}
-        .tab-button::after {{
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: var(--gradient-primary);
-          transform: scaleX(0);
-          transition: transform 0.3s ease;
+          border-right: 1px solid #1e293b;
+          min-width: 0;
         }}
         .tab-button:last-child {{ border-right: none; }}
         .tab-button:hover {{ 
-          background: var(--bg-card);
-          color: var(--text-primary); 
-        }}
-        .tab-button:hover::after {{
-          transform: scaleX(0.5);
+          background: #1e293b;
+          color: #ffffff; 
         }}
         .tab-button.active {{ 
-          background: var(--gradient-card);
-          color: var(--primary-color);
-          box-shadow: inset 0 -2px 0 var(--primary-color);
-          color: var(--text-primary);
+          background: #6366f1;
+          color: #ffffff;
         }}
-        .tab-content {{ display: none; animation: fadeIn 0.4s ease-out; }}
-        .tab-content.active {{ display: block; }}
+        .tab-content {{
+          display: none;
+          animation: fadeIn 0.4s ease-out;
+          overflow-x: hidden;
+          max-width: 100%;
+        }}
+        .tab-content.active {{
+          display: block;
+        }}
         @keyframes fadeIn {{ from {{ opacity: 0; transform: translateY(8px); }} to {{ opacity: 1; transform: translateY(0); }} }}
-.dashboard-grid {{ 
+        
+        @media (max-width: 1200px) {{
+          .trend-charts-row {{ 
+            grid-template-columns: 1fr; 
+          }}
+          .dashboard-bottom-row {{ 
+            grid-template-columns: 1fr; 
+          }}
+        }}
+        
+        
+        .stat-pill.flaky {{ color: #4b5563; }}
+
+        .dashboard-grid {{ 
           display: grid; 
           grid-template-columns: repeat(4, 1fr); 
           gap: 0;
           margin: 0 0 40px 0;
         }}
+        .stats-pill.failed {{ color: var(--danger-dark); }}
+        .stats-pill.flaky {{ color: #4b5563; }}
         .browser-breakdown {{
           display: flex;
           flex-direction: column;
@@ -1964,24 +2310,24 @@ def generate_html(report_data, trend_data=None):
           overflow-y: auto;
           padding-right: 4px;
           scrollbar-width: thin;
-          scrollbar-color: #374151 #1f2937;
+          scrollbar-color: #cbd5e1 #f1f5f9;
         }}
         .browser-breakdown::-webkit-scrollbar {{
           width: 6px;
           display: block;
         }}
         .browser-breakdown::-webkit-scrollbar-track {{
-          background: #1f2937;
+          background: #f1f5f9;
           border-radius: 3px;
           display: block;
         }}
         .browser-breakdown::-webkit-scrollbar-thumb {{
-          background: #374151;
+          background: #cbd5e1;
           border-radius: 3px;
           display: block;
         }}
         .browser-breakdown::-webkit-scrollbar-thumb:hover {{
-          background: #4b5563;
+          background: #94a3b8;
           display: block;
         }}
         .browser-item {{
@@ -1992,7 +2338,7 @@ def generate_html(report_data, trend_data=None):
         }}
         .browser-name {{
           font-weight: 700;
-          color: #f9fafb;
+          color: #0f172a;
           text-transform: capitalize;
           font-size: 1.05em;
           white-space: nowrap;
@@ -2003,183 +2349,428 @@ def generate_html(report_data, trend_data=None):
           margin-right: 8px;
         }}
         .browser-stats {{
-          color: #9ca3af;
+          color: #64748b;
           white-space: nowrap;
           flex-shrink: 0;
           font-weight: 700;
           font-size: 0.95em;
         }}
-        .trend-chart-container, .test-history-trend div[id^="testHistoryChart-"] {{ 
-          min-height: 100px; 
+        .summary-card {{ 
+          padding: 36px 32px; 
+          text-align: left;
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid #e2e8f0;
+          transition: background 0.2s ease;
+          border-right: 1px solid #e2e8f0;
+          border-bottom: 1px solid #e2e8f0;
         }}
-        .lazy-load-chart .no-data, .lazy-load-chart .no-data-chart {{ 
-          display: flex; 
-          align-items: center; 
-          justify-content: center; 
-          height: 100%; 
-          font-style: italic; 
-          color: #9ca3af; 
+        .summary-card:nth-child(4n) {{ border-right: none; }}
+        .summary-card h3 {{ 
+          margin: 0 0 12px; 
+          font-size: 0.7em; 
+          font-weight: 700; 
+          color: #94a3b8;
+          text-transform: uppercase;
+          letter-spacing: 1.2px;
         }}
-        .js-plotly-plot .plotly {{ font-family: var(--font-family); }}
-
-        .suites-widget {{
-          background: var(--bg-card);
-          border: 1px solid var(--border-light);
-          padding: 32px 48px;
-          border-radius: 8px;
+        .summary-card .value {{ 
+          font-size: 2.8em; 
+          font-weight: 900; 
+          margin: 0;
+          line-height: 1;
+          letter-spacing: -0.03em;
         }}
-        .suites-header h2 {{
-          font-size: 1.4em;
-          margin-bottom: 20px;
-          color: #f9fafb;
-          font-weight: 700;
-        }}
-        .suites-grid {{
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 20px;
-        }}
-        .suite-name {{
-          font-size: 1.1em;
-          font-weight: 700;
-          margin-bottom: 12px;
-          color: #f9fafb;
-        }}
-        .suite-stats {{
-          display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
-        }}
-        .suite-stat {{
+        .summary-card .trend-percentage {{
           font-size: 0.9em;
-          padding: 4px 10px;
-          border-radius: 4px;
+          color: #64748b;
+          margin-top: 8px;
           font-weight: 600;
         }}
-        .suite-stat.passed {{
-          background: rgba(52, 211, 153, 0.15);
-          color: var(--success-color);
+        
+        @media (max-width: 1024px) {{
+          .header {{ 
+            padding: 32px 24px;
+            flex-direction: column;
+            gap: 24px;
+            align-items: flex-start;
+          }}
+          .run-info {{ 
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+            border-radius: 14px;
+            overflow: hidden;
+          }}
+          .dashboard-grid {{ 
+            grid-template-columns: repeat(2, 1fr);
+          }}
+          .summary-card:nth-child(2n) {{ border-right: none; }}
+          .summary-card:nth-child(n+7) {{ border-bottom: none; }}
+          .filters {{ 
+            padding: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+          }}
+          .filters input {{ 
+            flex: 1 1 auto;
+            min-width: 0; 
+            width: auto;
+          }}
+          .filters select {{ 
+            flex: 0 0 auto;
+            min-width: 0;
+            width: auto; 
+          }}
+          .filters button {{ 
+            width: auto;
+            flex: 0 0 auto;
+          }}
+          .copy-btn {{
+            font-size: 0.75em;
+            padding: 8px 16px;
+            margin-left: 0;
+          }}
+          .console-output-section h4 {{
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }}
+          .log-wrapper {{
+            max-height: 300px;
+          }}
+          .tabs {{
+            overflow-x: auto;
+          }}
+          .tab-button {{
+            padding: 20px 24px;
+            font-size: 0.75em;
+            white-space: nowrap;
+          }}
+          .tag {{
+            font-size: 0.65em;
+            padding: 4px 10px;
+            margin-right: 4px;
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+          }}
+          .test-case-header {{
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto auto;
+            gap: 12px;
+            padding: 16px 20px;
+          }}
+          .test-case-summary {{
+            grid-column: 1;
+            grid-row: 1;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+          }}
+          .test-case-title {{
+            width: 100%;
+            max-width: 100%;
+          }}
+          .test-case-browser {{
+            width: 100%;
+            max-width: 100%;
+            white-space: normal;
+          }}
+          .test-case-meta {{
+            grid-column: 1;
+            grid-row: 2;
+            width: 100%;
+            gap: 6px;
+          }}
+          .test-case-status-duration {{
+            grid-column: 1;
+            grid-row: 3;
+            align-items: flex-start;
+          }}
+          .test-case {{
+            margin: 0 0 12px 0;
+            border-radius: 8px;
+          }}
+          .test-case-content {{
+            padding: 20px;
+          }}
+          .pie-chart-wrapper, .suites-widget, .trend-chart {{
+            padding: 32px 24px;
+          }}
+          .test-history-grid {{
+            grid-template-columns: 1fr;
+          }}
+          .ai-failure-cards-grid {{
+            grid-template-columns: 1fr;
+          }}
         }}
-        .suite-stat.failed {{
-          background: rgba(248, 113, 113, 0.15);
-          color: var(--danger-color);
+        
+        @media (max-width: 768px) {{
+          .header h1 {{ font-size: 1.8em; }}
+          #report-logo {{ height: 48px; }}
+          .tabs {{
+            flex-wrap: nowrap;
+            gap: 0;
+            overflow-x: auto;
+          }}
+          .tab-button {{
+            padding: 16px 20px;
+            font-size: 0.7em;
+            flex: 1 1 auto;
+            min-width: 100px;
+          }}
+          .dashboard-grid {{ 
+            grid-template-columns: 1fr;
+          }}
+          .summary-card {{ 
+            padding: 32px 24px !important;
+            border-right: none !important;
+          }}
+          .summary-card .value {{ font-size: 2.5em !important; }}
+          .dashboard-bottom-row {{ 
+            grid-template-columns: 1fr;
+            gap: 0;
+          }}
+          .dashboard-column {{ 
+            gap: 0; 
+          }}
+          .pie-chart-wrapper, .suites-widget, .trend-chart {{ 
+            padding: 28px 20px;
+          }}
+          .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .chart-title-header {{ 
+            font-size: 1.2em;
+            margin-bottom: 20px;
+          }}
+          .pie-chart-wrapper div[id^="pieChart-"] {{ 
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 280px;
+            overflow: visible !important;
+          }}
+          .pie-chart-wrapper {{
+            overflow: visible !important;
+          }}
+          .trend-chart-container {{ 
+            min-height: 280px;
+          }}
+          .suites-grid {{ 
+            grid-template-columns: 1fr;
+          }}
+          .test-case-summary {{
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+          }}
+          .test-case-title {{
+            width: 100%;
+          }}
+          .test-case-browser {{
+            width: 100%;
+          }}
+          .test-case-meta {{
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+          }}
+          .test-history-trend-section {{
+            padding: 0px 20px !important;
+          }}
+          .ai-failure-cards-grid {{
+            grid-template-columns: 1fr;
+          }}
+          .ai-analyzer-stats {{
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+          }}
+          .failure-header {{
+            flex-direction: column;
+            align-items: stretch;
+            gap: 15px;
+          }}
+          .failure-main-info {{
+            text-align: center;
+          }}
+          .failure-meta {{
+            justify-content: center;
+          }}
+          .ai-buttons-group {{
+            flex-direction: column;
+            width: 100%;
+          }}
+          .compact-ai-btn, .copy-prompt-btn {{
+            justify-content: center;
+            padding: 12px 20px;
+            width: 100%;
+          }}
         }}
-        .suite-stat.skipped {{
-          background: rgba(251, 191, 36, 0.15);
-          color: var(--warning-color);
+        
+        @media (max-width: 480px) {{
+          .header {{ padding: 24px 16px; }}
+          .header h1 {{ font-size: 1.5em; }}
+          #report-logo {{ height: 42px; }}
+          .run-info {{ 
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+          }}
+          .run-info-item {{
+            padding: 14px 20px;
+          }}
+          .run-info-item:not(:last-child)::after {{
+            display: none;
+          }}
+          .run-info-item:not(:last-child) {{
+            border-bottom: 1px solid var(--border-medium);
+          }}
+          .run-info strong {{ 
+            font-size: 0.65em; 
+          }}
+          .run-info span {{ 
+            font-size: 1.1em; 
+          }}
+          .tabs {{
+            flex-wrap: wrap;
+            gap: 4px;
+            padding: 8px;
+          }}
+          .tab-button {{
+            padding: 14px 10px;
+            font-size: 0.6em;
+            letter-spacing: 0.3px;
+            flex: 1 1 calc(50% - 4px);
+            min-width: 0;
+            text-align: center;
+          }}
+          .dashboard-grid {{ gap: 0; }}
+          .summary-card {{ padding: 28px 16px !important; }}
+          .summary-card h3 {{ font-size: 0.65em; }}
+          .summary-card .value {{ font-size: 2em !important; }}
+          .dashboard-bottom-row {{ gap: 0; }}
+          .dashboard-column {{ 
+            gap: 0; 
+          }}
+          .pie-chart-wrapper, .suites-widget, .trend-chart {{ 
+            padding: 20px 16px;
+          }}
+          .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .chart-title-header {{ 
+            font-size: 1em;
+            margin-bottom: 16px;
+            font-weight: 800;
+          }}
+          .env-dashboard-title {{ 
+            font-size: 1em;
+            margin-bottom: 6px;
+          }}
+          .env-dashboard-subtitle {{ 
+            font-size: 0.85em;
+          }}
+          .env-card-header {{ 
+            font-size: 0.85em;
+          }}
+          .pie-chart-wrapper div[id^="pieChart-"] {{ 
+            width: 100% !important;
+            max-width: 100% !important;
+            min-height: 250px;
+            overflow: visible !important;
+          }}
+          .pie-chart-wrapper {{
+            overflow: visible !important;
+            padding: 20px 12px;
+          }}
+          .trend-chart-container {{ 
+            min-height: 250px;
+          }}
+          .suites-grid {{ 
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }}
+          .suite-card {{ 
+            padding: 16px;
+          }}
+          .filters {{
+            padding: 16px;
+            gap: 8px;
+          }}
+          .test-history-trend-section {{
+            padding: 0px 16px !important;
+          }}
+          .test-case {{
+            margin: 0 0 10px 0;
+            border-radius: 6px;
+          }}
+          .test-case-header {{ 
+            padding: 14px 16px; 
+          }}
+          .test-case-content {{
+            padding: 16px;
+          }}
+          .stat-item .stat-number {{
+            font-size: 1.5em;
+          }}
+          .failure-header {{
+            padding: 15px;
+          }}
+          .failure-error-preview, .full-error-details {{
+            padding-left: 15px;
+            padding-right: 15px;
+          }}
+          .header h1 {{
+            word-break: break-word;
+            overflow-wrap: break-word;
+          }}
+          h2, h3, h4 {{
+            word-break: break-word;
+            overflow-wrap: break-word;
+          }}
+          .environment-dashboard-wrapper {{
+            padding: 24px 16px;
+            gap: 24px;
+          }}
+          .env-card {{
+            padding: 20px;
+          }}
         }}
-        .annotations-section {{
-          margin: 12px 0;
-          padding: 12px;
-          background-color: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-left: 4px solid var(--secondary-color);
-          border-radius: 4px;
-        }}
-        .annotations-section h4 {{
-          margin-top: 0;
-          margin-bottom: 10px;
-          color: var(--secondary-color);
-          font-size: 1.1em;
-        }}
-        .annotation-link {{
-          color: var(--info-color);
-          text-decoration: underline;
-          cursor: pointer;
-        }}
-        .annotation-link:hover {{
-          color: var(--info-color);
-        }}
-        .generic-attachment {{
-          text-align: center;
-          padding: 1rem;
-          justify-content: center;
-        }}
-        .attachment-icon {{
-          font-size: 2.5rem;
-          display: block;
-          margin-bottom: 0.75rem;
-        }}
-        .attachment-name {{
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          color: #f9fafb;
-        }}
-        .attachment-type {{
-          font-size: 0.8rem;
-          color: #9ca3af;
-        }}
-.status-passed .value, .stat-passed svg {{ 
-          color: #10b981; 
-        }}
-        .status-failed .value, .stat-failed svg {{ 
-          color: var(--danger-color); 
-        }}
-        .status-skipped .value, .stat-skipped svg {{ 
-          color: #f59e0b; 
-        }}
-        .summary-card.status-passed {{ 
-          background: rgba(16, 185, 129, 0.08); 
-        }}
+        .summary-card.status-passed {{ background: rgba(16, 185, 129, 0.02); }}
         .summary-card.status-passed:hover {{ 
           background: rgba(16, 185, 129, 0.15); 
           box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
         }}
-        .summary-card.status-passed .value {{ 
-          color: #10b981; 
-        }}
-        .summary-card.status-failed {{ 
-          background: rgba(239, 68, 68, 0.08); 
-        }}
+        .summary-card.status-passed .value {{ color: #10b981; }}
+        .summary-card.status-failed {{ background: rgba(239, 68, 68, 0.02); }}
         .summary-card.status-failed:hover {{ 
           background: rgba(239, 68, 68, 0.15); 
           box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
         }}
-        .summary-card.status-failed .value {{ 
-          color: var(--danger-color); 
-        }}
-        .summary-card.status-skipped {{ 
-          background: rgba(245, 158, 11, 0.08); 
-        }}
+        .summary-card.status-failed .value {{ color: #ef4444; }}
+        .summary-card.status-flaky::before {{ background: #00ccd3; }}
+        .summary-card.status-skipped {{ background: rgba(245, 158, 11, 0.02); }}
         .summary-card.status-skipped:hover {{ 
           background: rgba(245, 158, 11, 0.15); 
           box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
         }}
-        .summary-card.status-skipped .value {{ 
-          color: #f59e0b; 
-        }}
-        .summary-card.flaky-status {{ 
-          background: rgba(0, 204, 211, 0.05); 
-        }}
+        .summary-card.status-skipped .value {{ color: #f59e0b; }}
+        .summary-card.flaky-status {{ background: rgba(0, 204, 211, 0.05); }}
         .summary-card.flaky-status:hover {{ 
           background: rgba(0, 204, 211, 0.15); 
           box-shadow: 0 4px 12px rgba(0, 204, 211, 0.2);
         }}
-        .summary-card.flaky-status .value {{ 
-          color: #00ccd3; 
-        }}
-        .summary-card:not([class*='status-']) .value {{ 
-          color: #f9fafb; 
-        }}
-.dashboard-bottom-row {{ 
-          display: grid; 
-          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
-          gap: 28px; 
-          align-items: start; 
-        }}
+        .summary-card.flaky-status .value {{ color: #00ccd3; }}
+        .summary-card:not([class*='status-']) .value {{ color: #0f172a; }}
+        .dashboard-bottom-row {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 28px; align-items: start; }}
         .dashboard-column {{ 
           display: flex; 
           flex-direction: column; 
           gap: 28px; 
         }}
         .pie-chart-wrapper, .suites-widget, .trend-chart {{ 
-          background: rgba(31, 41, 55, 0.95);
+          background: rgba(255, 255, 255, 0.95);
           padding: 48px; 
-          border: 1px solid var(--border-light);
+          border: 1px solid #e2e8f0;
           border-radius: 16px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
           display: flex; 
           flex-direction: column;
           overflow: visible;
@@ -2193,7 +2784,7 @@ def generate_html(report_data, trend_data=None):
           margin: 0 0 40px 0; 
           font-size: 1.8em; 
           font-weight: 900; 
-          color: #f9fafb;
+          color: #0f172a;
           letter-spacing: -0.02em;
         }}
         .trend-chart-container, .pie-chart-wrapper div[id^="pieChart-"] {{ 
@@ -2202,26 +2793,11 @@ def generate_html(report_data, trend_data=None):
           width: 100%;
           overflow: visible;
         }}
-.status-badge-small-tooltip {{ 
-          padding: 2px 5px; 
-          border-radius: 3px; 
-          font-size: 0.9em; 
-          font-weight: 600; 
-          color: white; 
-          text-transform: uppercase; 
-        }}
-        .status-badge-small-tooltip.status-passed {{ 
-          background-color: var(--success-dark); 
-        }}
-        .status-badge-small-tooltip.status-failed {{ 
-          background-color: var(--danger-dark); 
-        }}
-        .status-badge-small-tooltip.status-skipped {{ 
-          background-color: var(--warning-dark); 
-        }}
-        .status-badge-small-tooltip.status-unknown {{ 
-          background-color: #9ca3af; 
-        }}
+        .status-badge-small-tooltip {{ padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-weight: 600; color: white; text-transform: uppercase; }}
+        .status-badge-small-tooltip.status-passed {{ background-color: var(--success-color); }}
+        .status-badge-small-tooltip.status-failed {{ background-color: var(--danger-color); }}
+        .status-badge-small-tooltip.status-skipped {{ background-color: var(--warning-color); }}
+        .status-badge-small-tooltip.status-unknown {{ background-color: var(--dark-gray-color); }}
         .suites-header {{
             flex-shrink: 0;
             display: flex;
@@ -2229,7 +2805,7 @@ def generate_html(report_data, trend_data=None):
             align-items: center;
             margin-bottom: 20px;
         }}
-        .summary-badge {{ background-color: var(--border-light); color: var(--text-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }}
+        .summary-badge {{ background-color: var(--light-gray-color); color: var(--text-color-secondary); padding: 7px 14px; border-radius: 16px; font-size: 0.9em; }}
         .suites-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }}
         .suites-widget {{
           display: flex;
@@ -2251,11 +2827,11 @@ def generate_html(report_data, trend_data=None):
             }}
         }}
         .suite-card {{
-          background: var(--bg-card); 
-          border: 1px solid var(--border-medium); 
+          background: #ffffff;
+          border: 1px solid var(--border-light);
           border-radius: 16px;
           padding: 24px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           display: flex;
           flex-direction: column;
@@ -2265,9 +2841,8 @@ def generate_html(report_data, trend_data=None):
         }}
         .suite-card:hover {{
           transform: translateY(-4px);
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
-          background: var(--bg-card-hover);
-          border-color: var(--primary-dark);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          border-color: var(--primary-light);
         }}
         .suite-card::before {{
           content: '';
@@ -2285,9 +2860,10 @@ def generate_html(report_data, trend_data=None):
         .suite-card.status-flaky::before {{ background: #00ccd3; }}
         .suite-card.status-skipped::before {{ background: var(--warning-color); }}
         
+        /* Outcome Badge */
         .outcome-badge {{
             background-color: var(--secondary-color); 
-            color: #000;
+            color: #fff;
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 0.75em;
@@ -2300,7 +2876,7 @@ def generate_html(report_data, trend_data=None):
             background-color: #00ccd3;
             color: #fff;
         }}
-        
+
         .suite-card-header {{
           display: flex;
           justify-content: space-between;
@@ -2318,7 +2894,7 @@ def generate_html(report_data, trend_data=None):
           overflow: hidden;
           margin-right: 12px;
         }}
-         .status-indicator-dot {{
+        .status-indicator-dot {{
           width: 10px;
           height: 10px;
           border-radius: 50%;
@@ -2328,7 +2904,8 @@ def generate_html(report_data, trend_data=None):
         .status-indicator-dot.status-passed {{ background-color: var(--success-color); box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15); }}
         .status-indicator-dot.status-failed {{ background-color: var(--danger-color); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }}
         .status-indicator-dot.status-flaky {{ background-color: #00ccd3; box-shadow: 0 0 0 4px rgba(0, 204, 211, 0.15); }}
-        .status-indicator-dot.status-skipped {{ background-color: var(--warning-color); box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }}
+        .status-indicator-dot.status-skipped {{ background-color: rgba(245, 158, 11, 0.1); color: var(--warning-dark); border: 1px solid rgba(245, 158, 11, 0.2); }}
+        .status-flaky {{ background-color: rgba(0, 204, 211, 0.1); color: #00ccd3; border: 1px solid #00ccd3; }}
 
         .browser-tag {{
           font-size: 0.8em;
@@ -2382,97 +2959,108 @@ def generate_html(report_data, trend_data=None):
         .stat-pill.failed {{ color: var(--danger-dark); }}
         .stat-pill.flaky {{ color: #00ccd3; }}
         .stat-pill.skipped {{ color: var(--warning-dark); }}
-
-        .suite-card-body .test-count {{ 
-          font-size: 0.95em; 
-          color: #d1d5db; 
-          display: block; 
-          margin-bottom: 10px; 
+        .filters {{
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin: 0;
+          padding: 24px 32px;
+          background: #f8fafc;
+          border-bottom: 1px solid #e2e8f0;
         }}
-        .suite-stats span {{ 
-          display: flex; 
-          align-items: center; 
-          gap: 6px; 
+        .filters input, .filters select, .filters button {{ 
+          padding: 14px 18px; 
+          border: 2px solid #e2e8f0; 
+          font-size: 0.9em;
+          font-family: var(--font-family);
+          font-weight: 600;
+          transition: all 0.15s ease;
         }}
-        .suite-stats svg {{ 
-          vertical-align: middle; 
-          font-size: 1.15em; 
+        .filters input {{ 
+          flex: 1 1 300px;
+          min-width: 0;
+          background: white;
         }}
-.test-case {{ 
-          margin: 0 0 20px 0;
+        .filters input:focus {{ 
+          outline: none;
+          border-color: #6366f1;
+        }}
+        .filters select {{ 
+          flex: 0 0 auto;
+          min-width: 180px;
+          background: white;
+          cursor: pointer;
+          width: 100%;
+        }}
+        .filters select:focus {{ 
+          outline: none;
+          border-color: #6366f1;
+        }}
+        .filters button {{ 
+          background: #0f172a; 
+          color: white; 
+          cursor: pointer; 
+          border: none;
+          font-weight: 700;
+          padding: 14px 32px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          font-size: 0.8em;
+          flex: 0 0 auto;
+        }}
+        .filters button:hover {{ 
+          background: #1e293b;
+          color: white;
+        }}
+        .test-case {{ 
+          margin: 0 0 16px 0;
           padding: 0;
-          border: 1px solid var(--border-light);
-          border-radius: 14px;
-          background: var(--gradient-card);
-          box-shadow: var(--shadow-sm);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+          transition: transform 0.2s ease;
           overflow: hidden;
-          content-visibility: auto;
-          contain-intrinsic-size: auto 100px;
-          position: relative;
-        }}
-        .test-case::before {{
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: 14px;
-          padding: 1px;
-          background: var(--gradient-border);
-          -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask-composite: exclude;
-          opacity: 0;
-          transition: opacity 0.3s ease;
         }}
         .test-case:hover {{
-          box-shadow: var(--shadow-lg), var(--glow-primary);
-          transform: translateY(-3px);
-          background: var(--bg-card-hover);
-        }}
-        .test-case:hover::before {{
-          opacity: 1;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          transform: translateY(-2px);
+          border-color: #cbd5e1;
         }}
         .test-case:last-child {{
           margin-bottom: 0;
         }}
-        .test-case-header {{  
-          padding: 22px 28px; 
-          background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+        .test-case-header {{ 
+          padding: 20px 24px; 
+          background: linear-gradient(to right, #ffffff 0%, #f8fafc 100%);
           cursor: pointer; 
           display: grid;
           grid-template-columns: 1fr auto;
           grid-template-rows: auto auto;
-          gap: 14px 20px; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          border-bottom: 1px solid var(--border-light);
+          gap: 12px 20px; 
+          transition: all 0.2s ease;
+          border-bottom: 2px solid #f1f5f9;
           position: relative;
-          will-change: transform;
-          transform: translateZ(0);
-          }}
+        }}
         .test-case-header::before {{
           content: '';
           position: absolute;
           left: 0;
           top: 0;
           bottom: 0;
-          width: 3px;
+          width: 4px;
           background: transparent;
-          transition: all 0.3s ease;
-          box-shadow: 0 0 0 rgba(129, 140, 248, 0);
+          transition: background 0.2s ease;
         }}
         .test-case-header:hover::before {{
-          background: var(--gradient-primary);
-          width: 4px;
-          box-shadow: 0 0 8px rgba(129, 140, 248, 0.4), 0 0 16px rgba(129, 140, 248, 0.2);
+          background: linear-gradient(to bottom, #6366f1 0%, #8b5cf6 100%);
         }}
         .test-case-header[aria-expanded="true"] {{ 
-          background: linear-gradient(135deg, var(--bg-tertiary) 0%, #000000 100%);
-          border-bottom-color: var(--border-medium);
+          background: linear-gradient(to right, #f8fafc 0%, #f1f5f9 100%);
+          border-bottom-color: #e2e8f0;
         }}
         .test-case-header[aria-expanded="true"]::before {{
-          background: var(--gradient-primary);
-          width: 4px;
-          box-shadow: 0 0 12px rgba(129, 140, 248, 0.5), 0 0 24px rgba(129, 140, 248, 0.3);
+          background: linear-gradient(to bottom, #6366f1 0%, #8b5cf6 100%);
         }}
         .test-case-summary {{ 
           display: flex; 
@@ -2485,7 +3073,7 @@ def generate_html(report_data, trend_data=None):
         }}
         .test-case-title {{
           font-weight: 600;
-          color: #f9fafb;
+          color: var(--text-color);
           font-size: 1em;
           word-break: break-word;
           overflow-wrap: break-word;
@@ -2494,17 +3082,17 @@ def generate_html(report_data, trend_data=None):
         }}
         .test-case-browser {{
           font-size: 0.9em;
-          color: #d1d5db;
+          color: var(--text-color-secondary);
           word-break: break-word;
           overflow-wrap: break-word;
           max-width: 100%;
         }}
-.test-case-meta {{ 
+        .test-case-meta {{ 
           display: flex; 
           align-items: center; 
           gap: 8px; 
           font-size: 0.9em; 
-          color: #d1d5db; 
+          color: var(--text-color-secondary); 
           flex-wrap: wrap;
           min-width: 0;
           grid-column: 1;
@@ -2520,42 +3108,30 @@ def generate_html(report_data, trend_data=None):
           align-self: center;
         }}
         .test-duration {{ 
-          background-color: var(--border-light); 
+          background-color: var(--light-gray-color); 
           padding: 6px 12px; 
           border-radius: 8px; 
           font-size: 0.9em;
           white-space: nowrap;
           flex-shrink: 0;
           font-weight: 700;
-          color: #f9fafb;
+          color: #0f172a;
         }}
         .status-badge {{
           padding: 8px 20px;
           border-radius: 0;
           font-size: 0.7em;
           font-weight: 800;
-          color: white;
+          color: black;
           text-transform: uppercase;
           min-width: 100px;
           text-align: center;
           letter-spacing: 1px;
         }}
-        .status-badge.status-passed {{
-          background: var(--success-color);
-        }}
-        .status-badge.status-failed {{
-          background: var(--danger-color);
-        }}
-        .status-badge.status-skipped {{
-          background: var(--warning-color);
-        }}
-        .status-badge.status-flaky {{
-          background-color: #00ccd3; 
-          color: #fff; 
-        }}
-        .status-badge.status-unknown {{
-          background: var(--dark-gray-color);
-        }}
+        .status-badge.status-passed {{ background: #10b981; }}
+        .status-badge.status-failed {{ background: #ef4444; }}
+        .status-badge.status-skipped {{ background: #f59e0b; }}
+        .status-badge.status-unknown {{ background: #64748b; }}
 
         /* --- NEON GLASS SEVERITY BADGES --- */
         .severity-badge {{
@@ -2667,11 +3243,11 @@ def generate_html(report_data, trend_data=None):
           to {{ opacity: 1; }}
         }}
 
-.tag {{ 
+        .tag {{ 
           display: inline-flex;
           align-items: center;
-          background: var(--gradient-primary);
-          color: #000000;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          color: #ffffff;
           padding: 6px 14px;
           border-radius: 6px;
           font-size: 0.8em;
@@ -2680,190 +3256,144 @@ def generate_html(report_data, trend_data=None):
           font-weight: 600;
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          box-shadow: var(--shadow-sm), 0 0 8px rgba(129, 140, 248, 0.3);
+          box-shadow: 0 2px 6px rgba(99, 102, 241, 0.25);
           transition: all 0.2s ease;
           flex-shrink: 0;
           white-space: nowrap;
         }}
         .tag:hover {{
-          box-shadow: var(--shadow-md), var(--glow-primary);
+          box-shadow: 0 4px 10px rgba(99, 102, 241, 0.35);
           transform: translateY(-1px);
         }}
-.test-case-content {{ 
+        .test-case-content {{ 
           display: none; 
-          padding: 28px; 
-          background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(13, 13, 13, 0.98) 100%); 
-          border-top: 2px solid rgba(99, 102, 241, 0.2); 
-          border-left: 1px solid var(--border-medium);
-          border-right: 1px solid var(--border-medium);
-          border-bottom: 1px solid var(--border-medium);
-          border-radius: 0 0 var(--radius-md) var(--radius-md);
-          box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4);
+          padding: 24px; 
+          background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+          border-top: 1px solid #e2e8f0;
         }}
-        .test-case-content h4 {{ 
-          margin-top: 22px; 
-          margin-bottom: 14px; 
-          font-size: 1.15em; 
-          color: var(--primary-dark); 
-        }}
-        .test-case-content p {{ 
-          margin-bottom: 10px; 
-          font-size: 1em; 
-        }}
+        .test-case-content h4 {{ margin-top: 22px; margin-bottom: 14px; font-size: 1.15em; color: var(--primary-color); }}
+        .test-case-content p {{ margin-bottom: 10px; font-size: 1em; }}
         .test-error-summary {{ 
           margin-bottom: 20px; 
           padding: 14px; 
-          background-color: rgba(248,113,113,0.08); 
-          border: 1px solid rgba(248,113,113,0.25); 
+          background-color: rgba(244,67,54,0.05); 
+          border: 1px solid rgba(244,67,54,0.2); 
           border-left: 4px solid var(--danger-color); 
-          border-radius: 4px;
+          border-radius: 4px; 
           display: flex;
-          flex-direction: column; 
+          flex-direction: column;
         }}
-        .test-error-summary h4 {{ 
-          color: #ef4444; 
-          margin-top: 0;
+        .test-error-summary h4 {{ color: var(--danger-color); margin-top:0;}}
+        .test-error-summary pre {{ white-space: pre-wrap; word-break: break-all; color: var(--danger-color); font-size: 0.95em;}}
+        .steps-list {{ margin: 18px 0; }}
+        .step-item {{ margin-bottom: 8px; padding-left: calc(var(--depth, 0) * 28px); }} 
+        .step-header {{ display: flex; align-items: center; cursor: pointer; padding: 10px 14px; border-radius: 6px; background-color: #fff; border: 1px solid var(--light-gray-color); transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }}
+        .step-header:hover {{ background-color: #f0f2f5; border-color: var(--medium-gray-color); box-shadow: var(--box-shadow-inset); }}
+        .step-icon {{ margin-right: 12px; width: 20px; text-align: center; font-size: 1.1em; }}
+        .step-title {{ flex: 1; font-size: 1em; }}
+        .step-duration {{ color: var(--dark-gray-color); font-size: 0.9em; }}
+        .step-details {{ display: none; padding: 14px; margin-top: 8px; background: #fdfdfd; border-radius: 6px; font-size: 0.95em; border: 1px solid var(--light-gray-color); }}
+        .step-info {{ margin-bottom: 8px; }}
+        .code-snippet-section {{ margin: 12px 0; }}
+        .code-snippet {{ background-color: #f8f9fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.9em; line-height: 1.5; overflow-x: auto; color: #24292e; margin: 0; white-space: pre; }}
+        .test-error-summary {{ color: var(--danger-color); margin-top: 12px; padding: 14px; background: rgba(244,67,54,0.05); border-radius: 4px; font-size: 0.95em; border-left: 3px solid var(--danger-color); }}
+        .test-error-summary pre.stack-trace {{ margin-top: 10px; padding: 12px; background-color: rgba(0,0,0,0.03); border-radius: 4px; font-size:0.9em; max-height: 280px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }}
+        .step-hook {{ background-color: rgba(33,150,243,0.04); border-left: 3px solid var(--info-color) !important; }} 
+        .step-hook .step-title {{ font-style: italic; color: var(--info-color)}}
+        .failed-step-highlight {{ border-left: 4px solid var(--danger-color) !important; background-color: rgba(244,67,54,0.03); }}
+        .failed-step-highlight .step-header {{ background-color: rgba(244,67,54,0.05); border-color: rgba(244,67,54,0.3); }}
+        .failed-step-marker {{ display: inline-block; margin-left: 10px; padding: 2px 8px; background-color: var(--danger-color); color: white; border-radius: 4px; font-size: 0.85em; font-weight: 600; }}
+        .nested-steps {{ margin-top: 12px; }}
+        .attachments-section {{ margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--light-gray-color); }}
+        .attachments-section h4 {{ margin-top: 0; margin-bottom: 20px; font-size: 1.1em; color: var(--text-color); }}
+        .attachments-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 22px; }}
+        .attachment-item {{ border: 1px solid var(--border-color); border-radius: var(--border-radius); background-color: #fff; box-shadow: var(--box-shadow-light); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease-out, box-shadow 0.2s ease-out; }}
+        .attachment-item:hover {{ transform: translateY(-4px); box-shadow: var(--box-shadow); }}
+        .attachment-item img {{ width: 100%; height: 180px; object-fit: cover; display: block; border-bottom: 1px solid var(--border-color); transition: opacity 0.3s ease; }}
+        .attachment-info {{ padding: 12px; margin-top: auto; background-color: #fafafa;}}
+        .attachment-item a:hover img {{ opacity: 0.85; }}
+        .attachment-caption {{ padding: 12px 15px; font-size: 0.9em; text-align: center; color: var(--text-color-secondary); word-break: break-word; background-color: var(--light-gray-color); }}
+        .video-item a, .trace-item a {{ display: block; margin-bottom: 8px; color: var(--primary-color); text-decoration: none; font-weight: 500; }}
+        .video-item a:hover, .trace-item a:hover {{ text-decoration: underline; }}
+        .code-section pre {{ background-color: #2d2d2d; color: #f0f0f0; padding: 20px; border-radius: 6px; overflow-x: auto; font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 0.95em; line-height:1.6;}}
+        .trace-actions {{ display: flex; justify-content: center; }}
+        .trace-actions a {{ text-decoration: none; color: var(--primary-color); font-weight: 500; font-size: 0.9em; }}
+        .generic-attachment {{ text-align: center; padding: 1rem; justify-content: center; }}
+        .attachment-icon {{ font-size: 2.5rem; display: block; margin-bottom: 0.75rem; }}
+        .attachment-caption {{ display: flex; flex-direction: column; }}
+        .attachment-name {{ font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .attachment-type {{ font-size: 0.8rem; color: var(--text-color-secondary); }}
+        .trend-charts-row {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 28px; margin-bottom: 35px; }}
+        .test-history-container h2.tab-main-title, .ai-analyzer-container h2.tab-main-title {{ font-size: 1.6em; margin-bottom: 18px; color: var(--primary-color); border-bottom: 1px solid var(--border-color); padding-bottom: 12px;}}
+        .test-history-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 22px; margin-top: 22px; }}
+        .test-history-card {{ background: var(--card-background-color); border: 1px solid var(--border-color); border-radius: var(--border-radius); padding: 22px; box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }}
+        .test-history-header {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--light-gray-color); }}
+        .test-history-header h3 {{ margin: 0; font-size: 1.15em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }} 
+        .test-history-header p {{ font-weight: 500 }} 
+        .test-history-trend {{ margin-bottom: 20px; min-height: 110px; }}
+        .test-history-trend-section {{
+          padding: 0px 48px !important;
         }}
-        .test-error-summary pre {{ 
-          white-space: pre-wrap; 
-          word-break: break-all; 
-          color: #ef4444; 
+        .test-history-trend-section .chart-title-header {{
+          margin: 0 0 20px 0 !important;
+        }}
+        .test-history-trend div[id^="testHistoryChart-"] {{ display: block; margin: 0 auto; max-width:100%; height: 100px; width: 320px; }}
+        .test-history-details-collapsible summary {{ cursor: pointer; font-size: 1em; color: var(--primary-color); margin-bottom: 10px; font-weight:500; }}
+        .test-history-details-collapsible summary:hover {{text-decoration: underline;}}
+        .test-history-details {{
+          overflow-x: auto;
+          max-width: 100%;
+        }}
+        .test-history-details table {{
+          width: 100%;
+          border-collapse: collapse;
           font-size: 0.95em;
         }}
-.steps-list {{ 
-          margin: 18px 0; 
-        }}
-        @supports (content-visibility: auto) {{
-          .tab-content,
-          #test-runs .test-case,
-          .attachments-section,
-          .test-history-card,
-          .trend-chart,
-          .suite-card {{
-            content-visibility: auto;
-            contain-intrinsic-size: 1px 600px;
-          }}
-        }}
-        .test-case,
-        .test-history-card,
-        .suite-card,
-        .attachments-section {{
-          contain: content;
-        }}
-        .attachments-grid .attachment-item img.lazy-load-image {{
-          width: 100%;
-          aspect-ratio: 4 / 3;
-          object-fit: cover;
-        }}
-        .attachments-grid .attachment-item.video-item {{
-          aspect-ratio: 16 / 9;
-        }}
-
-.step-item {{ 
-          margin-bottom: 8px; 
-          padding-left: calc(var(--depth, 0) * 28px); 
-        }}
-        .step-header {{ 
-          display: flex; 
-          align-items: center; 
-          cursor: pointer; 
-          padding: 10px 14px; 
-          border-radius: 6px; 
-          background-color: #1f2937; 
-          border: 1px solid #374151; 
-          transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; 
-        }}
-        .step-header:hover {{ 
-          background-color: #374151; 
-          border-color: var(--border-medium); 
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); 
-        }}
-        .step-icon {{ 
-          margin-right: 12px; 
-          width: 20px; 
-          text-align: center; 
-          font-size: 1.1em; 
-        }}
-        .step-title {{ 
-          flex: 1; 
-          font-size: 1em; 
-        }}
-        .step-duration {{ 
-          color: #9ca3af; 
-          font-size: 0.9em; 
-        }}
-        .step-details {{ 
-          display: none; 
-          padding: 14px; 
-          margin-top: 8px; 
-          background: var(--bg-secondary); 
-          border-radius: 6px; 
-          font-size: 0.95em; 
-          border: 1px solid #374151; 
-        }}
-        .step-info {{ 
-          margin-bottom: 8px; 
-        }}
-        .test-error-summary {{ 
-          color: #ef4444; 
-          margin-top: 12px; 
-          padding: 14px; 
-          background: rgba(248,113,113,0.08); 
-          border-radius: 4px; 
-          font-size: 0.95em; 
-          border-left: 3px solid var(--danger-color); 
-        }}
-        .test-error-summary pre.stack-trace {{ 
-          margin-top: 10px; 
-          padding: 12px; 
-          background-color: rgba(0,0,0,0.2); 
-          border-radius: 4px; 
-          font-size: 0.9em; 
-          max-height: 280px; 
-          overflow-y: auto; 
-          white-space: pre-wrap; 
-          word-break: break-all; 
-        }}
-        .step-hook {{ 
-          background-color: rgba(96, 165, 250, 0.08); 
-          border-left: 3px solid var(--info-color) !important; 
-        }}
-        .step-hook .step-title {{ 
-          font-style: italic; 
-          color: var(--info-color);
-        }}
+        .test-history-details th, .test-history-details td {{ padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--light-gray-color); }}
+        .test-history-details th {{ background-color: var(--light-gray-color); font-weight: 600; }}
+        .status-badge-small {{ padding: 3px 7px; border-radius: 4px; font-size: 0.8em; font-weight: 600; color: white; text-transform: uppercase; display: inline-block; }}
+        .status-badge-small.status-passed {{ background-color: var(--success-color); }}
+        .status-badge-small.status-failed {{ background-color: var(--danger-color); }}
+        .status-badge-small.status-skipped {{ background-color: var(--warning-color); }}
+        .status-badge-small.status-unknown {{ background-color: var(--dark-gray-color); }}
+        .badge-severity {{ display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; color: white; text-transform: uppercase; margin-right: 8px; vertical-align: middle; }}
+        .no-data, .no-tests, .no-steps, .no-data-chart {{ padding: 28px; text-align: center; color: var(--dark-gray-color); font-style: italic; font-size:1.1em; background-color: var(--light-gray-color); border-radius: var(--border-radius); margin: 18px 0; border: 1px dashed var(--medium-gray-color); }}
+        .no-data-chart {{font-size: 0.95em; padding: 18px;}}
+        .ai-failure-cards-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 22px; }}
+        .ai-failure-card {{ background: var(--card-background-color); border: 1px solid var(--border-color); border-left: 5px solid var(--danger-color); border-radius: var(--border-radius); box-shadow: var(--box-shadow-light); display: flex; flex-direction: column; }}
+        .ai-failure-card-header {{ padding: 15px 20px; border-bottom: 1px solid var(--light-gray-color); display: flex; align-items: center; justify-content: space-between; gap: 15px; }}
+        .ai-failure-card-header h3 {{ margin: 0; font-size: 1.1em; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .ai-failure-card-body {{ padding: 20px; }}
+        .ai-fix-btn {{ background-color: var(--primary-color); color: white; border: none; padding: 10px 18px; font-size: 1em; font-weight: 600; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }}
+        .ai-fix-btn:hover {{ background-color: var(--accent-color); transform: translateY(-2px); }}
         .ai-modal-overlay {{ 
           position: fixed; 
           top: 0; 
           left: 0; 
           width: 100%; 
           height: 100%; 
-          background-color: rgba(0,0,0,0.95); 
+          background-color: rgba(0,0,0,0.8); 
           display: none; 
           align-items: center; 
           justify-content: center; 
           z-index: 1050; 
           animation: fadeIn 0.3s;
         }}
-        @keyframes fadeIn {{
-          from {{ opacity: 0; }}
-          to {{ opacity: 1; }}
-        }}
         .ai-modal-content {{ 
-          background-color: #1f2937; 
-          color: #f9fafb; 
-          border-radius: 8px; 
+          background-color: var(--card-background-color); 
+          color: var(--text-color); 
+          border-radius: var(--border-radius); 
           width: 90%; 
           max-width: 800px; 
           max-height: 90vh;
-          box-shadow: var(--shadow-2xl); 
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
           display: flex; 
           flex-direction: column; 
           overflow: hidden;
         }}
         .ai-modal-header {{ 
           padding: 18px 25px; 
-          border-bottom: 1px solid var(--border-medium); 
+          border-bottom: 1px solid var(--border-color); 
           display: flex; 
           justify-content: space-between; 
           align-items: center;
@@ -2876,46 +3406,296 @@ def generate_html(report_data, trend_data=None):
           font-size: 2rem; 
           font-weight: 300; 
           cursor: pointer; 
-          color: #9ca3af; 
+          color: var(--dark-gray-color); 
           line-height: 1; 
           transition: color 0.2s;
-          background: none;
-          border: none;
-          padding: 0;
         }}
         .ai-modal-close:hover {{ 
-          color: #ef4444;
+          color: var(--danger-color);
         }}
         .ai-modal-body {{ 
           padding: 25px; 
           overflow-y: auto;
         }}
-        .ai-modal-body h4 {{ 
-          margin-top: 18px; 
-          margin-bottom: 10px; 
-          font-size: 1.1em; 
-          color: var(--primary-color); 
+        .ai-modal-body h4 {{ margin-top: 18px; margin-bottom: 10px; font-size: 1.1em; color: var(--primary-color); }}
+        .ai-modal-body p {{ margin-bottom: 15px; }}
+        .ai-loader {{ margin: 40px auto; border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }}
+        @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+        .trace-preview {{ padding: 1rem; text-align: center; background: #f5f5f5; border-bottom: 1px solid #e1e1e1; }}
+        .trace-icon {{ font-size: 2rem; display: block; margin-bottom: 0.5rem; }}
+        .trace-name {{ word-break: break-word; font-size: 0.9rem; }}
+        .trace-actions {{ display: flex; gap: 0.5rem; }}
+        .trace-actions a {{ flex: 1; text-align: center; padding: 0.25rem 0.5rem; font-size: 0.85rem; border-radius: 4px; text-decoration: none; background: cornflowerblue; color: aliceblue; }}
+        .view-trace {{ background: #3182ce; color: white; }}
+        .view-trace:hover {{ background: #2c5282; }}
+        .download-trace {{ background: #e2e8f0; color: #2d3748; }}
+        .download-trace:hover {{ background: #cbd5e0; }}
+        .filters button.clear-filters-btn {{ 
+          background-color: var(--medium-gray-color); 
+          color: var(--text-color); 
+          pointer-events: auto;
+          cursor: pointer;
+          width: 100%;
         }}
-        .ai-modal-body p {{ 
-          margin-bottom: 15px; 
+        .filters button.clear-filters-btn:active,
+        .filters button.clear-filters-btn:focus {{
+          background-color: var(--medium-gray-color);
+          color: var(--text-color);
+          transform: none;
+          box-shadow: none;
+          outline: none;
         }}
-        .ai-loader {{ 
-          margin: 40px auto; 
-          border: 5px solid var(--border-light); 
-          border-top: 5px solid var(--primary-color); 
-          border-radius: 50%; 
-          width: 50px; 
-          height: 50px; 
-          animation: spin 1s linear infinite; 
+        .copy-btn {{
+          color: #ffffff;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 0.85em;
+          font-weight: 600;
+          padding: 10px 20px;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-left: auto;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
         }}
-        @keyframes spin {{ 
-          0% {{ transform: rotate(0deg); }} 
-          100% {{ transform: rotate(360deg); }} 
+        .copy-btn:hover {{
+          background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+          transform: translateY(-1px);
+        }}
+        .copy-btn:active {{
+          transform: translateY(0);
+          box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+        }}
+        .log-wrapper {{
+          max-width: 100%;
+          overflow-x: auto;
+          overflow-y: auto;
+          max-height: 400px;
+          border-radius: 8px;
+          background: #2d2d2d;
+        }}
+        .log-wrapper pre {{
+          margin: 0;
+          white-space: pre;
+          word-wrap: normal;
+          overflow-wrap: normal;
+        }}
+        .console-output-section h4 {{
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 12px;
+        }}
+        /* Compact AI Failure Analyzer Styles */
+        .ai-analyzer-stats {{ 
+            display: flex; 
+            gap: 20px; 
+            margin-bottom: 25px; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            border-radius: var(--border-radius); 
+            justify-content: center;
+        }}
+        .stat-item {{ 
+            text-align: center; 
+            color: white; 
+        }}
+        .stat-number {{ 
+            display: block; 
+            font-size: 2em; 
+            font-weight: 700; 
+            line-height: 1;
+        }}
+        .stat-label {{ 
+            font-size: 0.9em; 
+            opacity: 0.9; 
+            font-weight: 500;
+        }}
+        .ai-analyzer-description {{ 
+            margin-bottom: 25px; 
+            font-size: 1em; 
+            color: var(--text-color-secondary); 
+            text-align: center; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto;
+        }}
+        .compact-failure-list {{ 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }}
+        .compact-failure-item {{ 
+            background: var(--card-background-color); 
+            border: 1px solid var(--border-color); 
+            border-left: 4px solid var(--danger-color); 
+            border-radius: var(--border-radius); 
+            box-shadow: var(--box-shadow-light); 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }}
+        .compact-failure-item:hover {{ 
+            transform: translateY(-2px); 
+            box-shadow: var(--box-shadow); 
+        }}
+        .failure-header {{ 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 18px 20px; 
+            gap: 15px;
+        }}
+        .failure-main-info {{ 
+            flex: 1; 
+            min-width: 0; 
+        }}
+        .failure-title {{ 
+            margin: 0 0 8px 0; 
+            font-size: 1.1em; 
+            font-weight: 600; 
+            color: var(--text-color); 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+        }}
+        .failure-meta {{ 
+            display: flex; 
+            gap: 12px; 
+            align-items: center;
+        }}
+        .browser-indicator, .duration-indicator {{ 
+            font-size: 0.85em; 
+            padding: 3px 8px; 
+            border-radius: 12px; 
+            font-weight: 500;
+        }}
+        .browser-indicator {{ 
+            background: var(--info-color); 
+            color: white; 
+        }}
+        .duration-indicator {{ 
+            background: var(--medium-gray-color); 
+            color: var(--text-color); 
+        }}
+        .compact-ai-btn {{ 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.3s ease; 
+            white-space: nowrap;
+        }}
+        .compact-ai-btn:hover {{ 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4); 
+        }}
+        .ai-icon {{ 
+            font-size: 1.2em; 
+        }}
+        .ai-text {{ 
+            font-size: 0.95em; 
+        }}
+        .ai-buttons-group {{ 
+            display: flex; 
+            gap: 10px; 
+            flex-wrap: wrap; 
+        }}
+        .copy-prompt-btn {{ 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: white; 
+            border: none; 
+            padding: 12px 18px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            transition: all 0.3s ease; 
+            white-space: nowrap;
+        }}
+        .copy-prompt-btn:hover {{ 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); 
+        }}
+        .copy-prompt-btn.copied {{ 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+        }}
+        .copy-prompt-text {{ 
+            font-size: 0.95em; 
+        }}
+        .failure-error-preview {{ 
+            padding: 0 20px 18px 20px; 
+            border-top: 1px solid var(--light-gray-color);
+        }}
+        .error-snippet {{ 
+            background: rgba(244, 67, 54, 0.05); 
+            border: 1px solid rgba(244, 67, 54, 0.2); 
+            border-radius: 6px; 
+            padding: 12px; 
+            margin-bottom: 12px; 
+            font-family: monospace; 
+            font-size: 0.9em; 
+            color: var(--danger-color); 
+            line-height: 1.4;
+        }}
+        .expand-error-btn {{ 
+            background: none; 
+            border: 1px solid var(--border-color); 
+            color: var(--text-color-secondary); 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 0.85em; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            transition: all 0.2s ease;
+        }}
+        .expand-error-btn:hover {{ 
+            background: var(--light-gray-color); 
+            border-color: var(--medium-gray-color); 
+        }}
+        .expand-icon {{ 
+            transition: transform 0.2s ease; 
+            font-size: 0.8em;
+        }}
+        .expand-error-btn.expanded .expand-icon {{ 
+            transform: rotate(180deg); 
+        }}
+        .full-error-details {{ 
+            padding: 0 20px 20px 20px; 
+            border-top: 1px solid var(--light-gray-color); 
+            margin-top: 0;
+        }}
+        .full-error-content {{ 
+            background: rgba(244, 67, 54, 0.05); 
+            border: 1px solid rgba(244, 67, 54, 0.2); 
+            border-radius: 6px; 
+            padding: 15px; 
+            font-family: monospace; 
+            font-size: 0.9em; 
+            color: var(--danger-color); 
+            line-height: 1.4; 
+            max-height: 300px; 
+            overflow-y: auto;
         }}
         .ai-suggestion-container {{
             margin-top: 15px;
-            border-top: 2px solid var(--border-light);
-            background: var(--gradient-card);
+            border-top: 2px solid #e2e8f0;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
             animation: slideDown 0.3s ease-out;
         }}
         @keyframes slideDown {{
@@ -2939,16 +3719,16 @@ def generate_html(report_data, trend_data=None):
             gap: 10px;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid var(--primary-color);
+            border-bottom: 2px solid #6366f1;
         }}
         .ai-suggestion-header h4 {{
             margin: 0;
-            color: var(--primary-color);
+            color: #6366f1;
             font-size: 1.1em;
             font-weight: 700;
         }}
         .ai-suggestion-body {{
-            color: #f9fafb;
+            color: #0f172a;
             line-height: 1.6;
         }}
         .ai-suggestion-body h4 {{
@@ -2961,1074 +3741,64 @@ def generate_html(report_data, trend_data=None):
             margin-bottom: 10px;
         }}
         .ai-suggestion-body pre {{
-            background: var(--bg-tertiary);
-            color: var(--text-secondary);
-            padding: 14px;
-            border-radius: 8px;
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 12px;
+            border-radius: 6px;
             overflow-x: auto;
             font-size: 0.9em;
-            border: 1px solid var(--border-light);
         }}
-        .failed-step-highlight {{ 
-          border-left: 4px solid var(--danger-color) !important; 
-          background-color: rgba(244,67,54,0.03); 
-        }}
-        .failed-step-highlight .step-header {{ 
-          background-color: rgba(244,67,54,0.05); 
-          border-color: rgba(244,67,54,0.3); 
-        }}
-        .failed-step-marker {{ 
-          display: inline-block; 
-          margin-left: 10px; 
-          padding: 2px 8px; 
-          background-color: var(--danger-color); 
-          color: white; 
-          border-radius: 4px; 
-          font-size: 0.85em; 
-          font-weight: 600; 
-        }}
-        .code-snippet-section {{ 
-          margin: 12px 0; 
-        }}
-        .code-snippet {{ 
-          background-color: #f8f9fa; 
-          border: 1px solid #e1e4e8; 
-          border-radius: 6px; 
-          padding: 12px; 
-          font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
-          font-size: 0.9em; 
-          line-height: 1.5; 
-          overflow-x: auto; 
-          color: #24292e; 
-          margin: 0; 
-          white-space: pre; 
-        }}
-        .nested-steps {{ 
-          margin-top: 12px; 
-        }}
-        .attachments-section {{ 
-          margin-top: 32px; 
-          padding-top: 24px; 
-          border-top: 1px solid var(--border-light); 
-        }}
-        .attachments-section h4 {{ 
-          margin-top: 0; 
-          margin-bottom: 20px; 
-          font-size: 1.1em; 
-          color: #f9fafb; 
-        }}
-        .attachments-grid {{ 
-          display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-          gap: 22px; 
-        }}
-.attachment-item {{ 
-          border: 1px solid var(--border-light); 
-          border-radius: 10px; 
-          background: var(--gradient-card); 
-          box-shadow: var(--shadow-sm); 
-          display: flex; 
-          flex-direction: column; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-          overflow: hidden;
-        }}
-        .attachment-item:hover {{ 
-          transform: translateY(-5px); 
-          box-shadow: var(--shadow-lg), var(--glow-primary);
-          border-color: var(--primary-color); 
-        }}
-        .attachment-item img, .attachment-item video {{ 
-          width: 100%; 
-          height: 180px; 
-          object-fit: cover; 
-          display: block; 
-          background-color: #6b7280; 
-          border-bottom: 1px solid var(--border-light); 
-          transition: opacity 0.3s ease; 
-        }}
-        .attachment-info {{ 
-          padding: 12px; 
-          margin-top: auto; 
-          background-color: #374151;
-        }}
-        .attachment-item a:hover img {{ 
-          opacity: 0.85; 
-        }}
-        .attachment-caption {{ 
-          padding: 12px 15px; 
-          font-size: 0.9em; 
-          text-align: center; 
-          color: #d1d5db; 
-          word-break: break-word; 
-          background-color: #374151; 
-        }}
-        .video-item a, .trace-item a {{ 
-          display: block; 
-          margin-bottom: 8px; 
-          color: #6366f1; 
-          text-decoration: none; 
-          font-weight: 500; 
-        }}
-        .video-item a:hover, .trace-item a:hover {{ 
-          text-decoration: underline; 
-        }}
-        .code-section pre {{ 
-          background-color: #111827; 
-          color: #f9fafb; 
-          padding: 20px; 
-          border-radius: 6px; 
-          overflow-x: auto; 
-          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; 
-          font-size: 0.95em; 
-          line-height: 1.6;
-        }}
-.trend-charts-row {{ 
-          display: grid; 
-          grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); 
-          gap: 28px; 
-          margin-bottom: 35px; 
-        }}
-        .test-history-container h2.tab-main-title, .ai-analyzer-container h2.tab-main-title {{ 
-          font-size: 1.6em; 
-          margin-bottom: 18px; 
-          color: #6366f1; 
-          border-bottom: 1px solid #4b5563; 
-          padding-bottom: 12px;
-        }}
-        .test-history-grid {{ 
-          display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); 
-          gap: 22px; 
-          margin-top: 22px; 
-        }}
-        .test-history-card {{ 
-          background: var(--bg-card); 
-          border: 1px solid var(--border-medium); 
-          border-radius: 8px; 
-          padding: 22px; 
-          box-shadow: 0 3px 8px rgba(0,0,0,0.3); 
-          display: flex; 
-          flex-direction: column; 
-        }}
-        .test-history-header {{ 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          margin-bottom: 20px; 
-          padding-bottom: 14px; 
-          border-bottom: 1px solid #374151; 
-        }}
-        .test-history-header h3 {{
-          margin: 0;
-          font-size: 1.15em;
-          word-break: break-word;
-          overflow-wrap: break-word;
-        }}
-        .test-history-header p {{ 
-          font-weight: 500; 
-        }}
-        .test-history-trend {{ 
-          margin-bottom: 20px; 
-          min-height: 110px; 
-        }}
-        .test-history-trend-section {{
-          padding: 0px 48px !important;
-        }}
-        .test-history-trend-section .chart-title-header {{
-          margin: 0 0 20px 0 !important;
-        }}
-        .test-history-trend div[id^="testHistoryChart-"] {{ 
-          display: block; 
-          margin: 0 auto; 
-          max-width: 100%; 
-          height: 100px; 
-          width: 320px; 
-        }}
-        .test-history-details-collapsible summary {{ 
-          cursor: pointer; 
-          font-size: 1em; 
-          color: #6366f1; 
-          margin-bottom: 10px; 
-          font-weight: 500; 
-        }}
-        .test-history-details-collapsible summary:hover {{
-          text-decoration: underline;
-        }}
-        .test-history-details table {{ 
-          width: 100%; 
-          border-collapse: collapse; 
-          font-size: 0.95em; 
-        }}
-        .test-history-details th, .test-history-details td {{ 
-          padding: 9px 12px; 
-          text-align: left; 
-          border-bottom: 1px solid #374151; 
-        }}
-        .test-history-details th {{ 
-          background-color: #374151; 
-          font-weight: 600; 
-        }}
-        .status-badge-small {{ 
-          padding: 3px 7px; 
-          border-radius: 4px; 
-          font-size: 0.8em; 
-          font-weight: 600; 
-          color: white; 
-          text-transform: uppercase; 
-          display: inline-block; 
-        }}
-        .status-badge-small.status-passed {{ 
-          background-color: #10b981; 
-        }}
-        .status-badge-small.status-failed {{ 
-          background-color: #ef4444; 
-        }}
-        .status-badge-small.status-skipped {{ 
-          background-color: #f59e0b; 
-        }}
-        .status-badge-small.status-flaky {{ 
-          background-color: #00ccd3; 
-          color: #fff;
-        }}
-        .status-badge-small.status-unknown {{ 
-          background-color: var(--dark-gray-color); 
-        }}
-.badge-severity {{ 
-          display: inline-block; 
-          padding: 4px 8px; 
-          border-radius: 4px; 
-          font-size: 11px; 
-          font-weight: 700; 
-          color: white; 
-          text-transform: uppercase; 
-          margin-right: 8px; 
-          vertical-align: middle; 
-        }}
-.badge-severity.critical {{
-          background: var(--danger-dark);
-        }}
-        .badge-severity.high {{
-          background: var(--danger-color);
-        }}
-        .badge-severity.medium {{
-          background: var(--warning-color);
-        }}
-        .badge-severity.low {{
-          background: var(--success-color);
-        }}
-.badge-severity.info {{
-          background: var(--info-color);
-        }}
-        #clear-run-summary-filters {{
-          background: var(--bg-tertiary);
-          color: white;
-          border: none;
-          padding: 14px 32px;
-          border-radius: 0;
-          cursor: pointer;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          font-size: 0.8em;
-          transition: all 0.15s ease;
-        }}
-        .code-section pre {{
-          background-color: var(--bg-tertiary);
-          color: #e2e8f0;
-          padding: 20px;
-          border-radius: 6px;
-          overflow-x: auto;
-          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-          font-size: 0.95em;
-          line-height: 1.6;
-          border: 1px solid #374151;
-        }}
-        .trace-actions {{
-          display: flex;
-          justify-content: center;
-          gap: 8px;
-        }}
-        .trace-actions a {{
-          text-decoration: none;
-          color: var(--info-color);
-          font-weight: 500;
-          font-size: 0.9em;
-          transition: color 0.2s ease;
-        }}
-.trace-actions a:hover {{
-          color: #3b82f6;
-          text-decoration: underline;
-        }}
-        .attachment-caption {{
-          display: flex;
-          flex-direction: column;
-          padding: 12px 15px;
-          background-color: #374151;
-          color: #d1d5db;
-        }}
-        .attachment-name {{
-          font-weight: 500;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          color: #f9fafb;
-        }}
-        .attachment-type {{
-          font-size: 0.8rem;
-          color: #9ca3af;
-          margin-top: 4px;
-        }}
-        .container {{ 
-          padding: 0; 
-          margin: 0;
-          max-width: 100%;
-        }}
-        .tab-content {{ 
-          display: none; 
-          animation: fadeIn 0.4s ease-out; 
-        }}
-        .tab-content.active {{ 
-          display: block; 
-        }}
-        @keyframes fadeIn {{
-          from {{ 
-            opacity: 0; 
-            transform: translateY(10px); 
-          }}
-          to {{
-            opacity: 1;
-            transform: translateY(0);
-          }}
-        }}
-        .header {{ 
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 32px 40px 28px 40px;
-          border-bottom: 1px solid var(--border-light);
-          background: var(--gradient-card);
-        }}
-        .header-title {{ 
-          display: flex;
-          align-items: center;
-          gap: 20px;
-        }}
-        .header h1 {{ 
-          margin: 0; 
-          font-size: 2.5em; 
-          font-weight: 900; 
-          color: #f9fafb;
-          line-height: 1;
-          letter-spacing: -0.03em;
-        }}
-        #report-logo {{ 
-          height: 60px; 
-        }}
-        .run-info {{ 
-          display: flex;
-          gap: 16px;
-          align-items: stretch;
-          background: transparent;
-          border-radius: 12px;
-          padding: 0;
-        }}
-        .run-info-item {{
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          padding: 16px 28px;
-          position: relative;
-          flex: 1;
-          min-width: fit-content;
-        }}
-
-        .run-info-item:first-child {{
-          background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 50%, rgba(217, 119, 6, 0.1) 100%);
-          border: 1px solid rgba(251, 191, 36, 0.3);
-          border-radius: var(--radius-md);
-          box-shadow: 0 4px 16px rgba(251, 191, 36, 0.2), inset 0 1px 0 rgba(251, 191, 36, 0.25), 0 0 40px rgba(251, 191, 36, 0.08);
-        }}
-        .run-info-item:first-child:hover {{
-          background: linear-gradient(135deg, rgba(251, 191, 36, 0.28) 0%, rgba(245, 158, 11, 0.22) 50%, rgba(217, 119, 6, 0.15) 100%);
-          border-color: rgba(251, 191, 36, 0.4);
-          box-shadow: 0 8px 24px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(251, 191, 36, 0.35), 0 0 50px rgba(251, 191, 36, 0.15);
-        }}
-        .run-info-item:last-child {{
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.18) 0%, rgba(124, 58, 237, 0.12) 50%, rgba(109, 40, 217, 0.08) 100%);
-          border: 1px solid rgba(139, 92, 246, 0.3);
-          border-radius: var(--radius-md);
-          box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(139, 92, 246, 0.25), 0 0 40px rgba(139, 92, 246, 0.08);
-        }}
-        .run-info-item:last-child:hover {{
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.25) 0%, rgba(124, 58, 237, 0.18) 50%, rgba(109, 40, 217, 0.12) 100%);
-          border-color: rgba(139, 92, 246, 0.4);
-          box-shadow: 0 8px 24px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(139, 92, 246, 0.35), 0 0 50px rgba(139, 92, 246, 0.15);
-        }}
-        .run-info strong {{ 
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 0.7em;
-          text-transform: uppercase;
-          letter-spacing: 1.2px;
-          color: #9ca3af;
-          margin: 0;
-          font-weight: 700;
-        }}
-        .run-info strong::before {{
-          content: '';
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: currentColor;
-          opacity: 0.7;
-          box-shadow: 0 0 8px currentColor;
-        }}
-        .run-info-item:first-child strong {{
-          color: var(--warning-light);
-        }}
-        .run-info-item:last-child strong {{
-          color: var(--secondary-light);
-        }}
-        .run-info span {{
-          font-size: 1.5em;
-          font-weight: 800;
-          color: #f9fafb;
-          font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-          letter-spacing: -0.02em;
-          line-height: 1.2;
-          white-space: nowrap;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }}
-        .tabs {{ 
-          display: flex;
-          background: #000000;
-          padding: 0;
-          margin: 0;
-          position: sticky;
-          top: 0;
-          z-index: 100;
-          border-bottom: 1px solid var(--border-light);
-        }}
-        .tab-button {{ 
-          flex: 1;
-          padding: 24px 32px; 
-          background: transparent; 
-          border: none; 
-          color: #6b7280; 
-          cursor: pointer; 
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          font-size: 0.85em;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          position: relative;
-        }}
-        .tab-button::after {{
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background: transparent;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          transform: scaleX(0);
-          transform-origin: center;
-        }}
-        .tab-button[data-tab="dashboard"]:hover {{
-          background: rgba(52, 211, 153, 0.08);
-          color: #34d399;
-        }}
-        .tab-button[data-tab="dashboard"].active {{
-          background: linear-gradient(180deg, rgba(52, 211, 153, 0.12) 0%, rgba(52, 211, 153, 0.05) 100%);
-          color: #34d399;
-          box-shadow: inset 0 -3px 0 0 #34d399;
-        }}
-        .tab-button[data-tab="dashboard"].active::after {{
-          background: linear-gradient(90deg, transparent, #34d399, transparent);
-          transform: scaleX(1);
-          box-shadow: 0 0 10px #34d399;
-        }}
-        .tab-button[data-tab="test-runs"]:hover {{
-          background: rgba(96, 165, 250, 0.08);
-          color: #60a5fa;
-        }}
-        .tab-button[data-tab="test-runs"].active {{
-          background: linear-gradient(180deg, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.05) 100%);
-          color: #60a5fa;
-          box-shadow: inset 0 -3px 0 0 #60a5fa;
-        }}
-        .tab-button[data-tab="test-runs"].active::after {{
-          background: linear-gradient(90deg, transparent, #60a5fa, transparent);
-          transform: scaleX(1);
-          box-shadow: 0 0 10px #60a5fa;
-        }}
-        .tab-button[data-tab="test-history"]:hover {{
-          background: rgba(251, 191, 36, 0.08);
-          color: #fbbf24;
-        }}
-        .tab-button[data-tab="test-history"].active {{
-          background: linear-gradient(180deg, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0.05) 100%);
-          color: #fbbf24;
-          box-shadow: inset 0 -3px 0 0 #fbbf24;
-        }}
-        .tab-button[data-tab="test-history"].active::after {{
-          background: linear-gradient(90deg, transparent, #fbbf24, transparent);
-          transform: scaleX(1);
-          box-shadow: 0 0 10px #fbbf24;
-        }}
-        .tab-button[data-tab="ai-failure-analyzer"]:hover {{
-          background: rgba(167, 139, 250, 0.08);
-          color: #a78bfa;
-        }}
-        .tab-button[data-tab="ai-failure-analyzer"].active {{
-          background: linear-gradient(180deg, rgba(167, 139, 250, 0.12) 0%, rgba(167, 139, 250, 0.05) 100%);
-          color: #a78bfa;
-          box-shadow: inset 0 -3px 0 0 #a78bfa;
-        }}
-        .tab-button[data-tab="ai-failure-analyzer"].active::after {{
-          background: linear-gradient(90deg, transparent, #a78bfa, transparent);
-          transform: scaleX(1);
-          box-shadow: 0 0 10px #a78bfa;
-        }}
-        .dashboard-grid {{ 
-          display: grid; 
-          grid-template-columns: repeat(4, 1fr); 
-          gap: 0;
-          margin: 0 0 40px 0;
-        }}
-        .summary-card {{ 
-          padding: 36px 32px; 
-          text-align: left;
-          background: rgba(31, 41, 55, 0.95);
-          border: 1px solid #374151;
-          transition: background 0.2s ease;
-          border-right: 1px solid #374151;
-          border-bottom: 1px solid #374151;
-        }}
-        .summary-card:nth-child(4n) {{ 
-          border-right: none; 
-        }}
-        .summary-card h3 {{ 
-          margin: 0 0 12px; 
-          font-size: 0.7em; 
-          font-weight: 700; 
-          color: #9ca3af;
-          text-transform: uppercase;
-          letter-spacing: 1.2px;
-        }}
-        .summary-card .value {{ 
-          font-size: 2.8em; 
-          font-weight: 900; 
-          margin: 0;
-          line-height: 1;
-          letter-spacing: -0.03em;
-        }}
-        .summary-card .trend-percentage {{
-          font-size: 0.9em;
-          color: #9ca3af;
-          margin-top: 8px;
-          font-weight: 600;
-        }}
-* {{
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }}
-        * {{
-          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-          will-change: transform, opacity;
-        }}
-        *:not(input):not(select):not(textarea):not(button) {{
-          transition-duration: 0.15s;
-        }}
-        ::selection {{ 
-          background: #52525b; 
-          color: white; 
-        }}
-        ::-webkit-scrollbar {{ 
-          width: 10px; 
-          height: 10px; 
-        }}
-        ::-webkit-scrollbar-track {{ 
-          background: #1f2937; 
-          border-radius: 10px; 
-        }}
-        ::-webkit-scrollbar-thumb {{ 
-          background: linear-gradient(180deg, #52525b, #71717a); 
-          border-radius: 10px; 
-        }}
-        ::-webkit-scrollbar-thumb:hover {{ 
-          background: linear-gradient(180deg, #71717a, #a1a1aa); 
-        }}
-        body {{ 
-          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
-          margin: 0; 
-          background: #111827;
-          color: #f9fafb; 
-          line-height: 1.6; 
-          font-size: 15px;
-          min-height: 100vh;
-          -webkit-font-smoothing: antialiased;
-          -moz-osx-font-smoothing: grayscale;
-          text-rendering: optimizeLegibility;
-        }}
-        footer {{
-          padding: 0.5rem;
-          box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-          text-align: center;
-          font-family: 'Segoe UI', system-ui, sans-serif;
-          background: #0f172a;
-          border-top: 1px solid var(--border-light);
-        }}
-.no-data, .no-tests, .no-steps, .no-data-chart {{ 
-          padding: 28px; 
-          text-align: center; 
-          color: #9ca3af; 
-          font-style: italic; 
-          font-size: 1.1em; 
-          background-color: #374151; 
-          border-radius: 8px; 
-          margin: 18px 0; 
-          border: 1px dashed #6b7280; 
-        }}
-        .no-data-chart {{
-          font-size: 0.95em; 
-          padding: 18px;
-        }}
-        .ai-failure-cards-grid {{ 
-          display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); 
-          gap: 22px; 
-        }}
-        .ai-failure-card {{ 
-          background: #1f2937; 
-          border: 1px solid var(--border-medium); 
-          border-left: 5px solid #ef4444; 
-          border-radius: 8px; 
-          box-shadow: 0 3px 8px rgba(0,0,0,0.3); 
-          display: flex; 
-          flex-direction: column; 
-        }}
-        .ai-failure-card-header {{ 
-          padding: 15px 20px; 
-          border-bottom: 1px solid #374151; 
-          display: flex; 
-          align-items: center; 
-          justify-content: space-between; 
-          gap: 15px; 
-        }}
-        .ai-failure-card-header h3 {{ 
-          margin: 0; 
-          font-size: 1.1em; 
-          color: #f9fafb; 
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis; 
-        }}
-        .ai-failure-card-body {{ 
-          padding: 20px; 
-        }}
-        .ai-fix-btn {{ 
-          background-color: #374151; 
-          color: white; 
-          border: 1px solid var(--border-medium); 
-          padding: 10px 18px; 
-          font-size: 1em; 
-          font-weight: 600; 
-          border-radius: 6px; 
-          cursor: pointer; 
-          transition: all 0.2s ease; 
-          display: inline-flex; 
-          align-items: center; 
-          gap: 8px; 
-        }}
-        .ai-fix-btn:hover {{ 
-          background-color: #4b5563; 
-          transform: translateY(-2px); 
-          box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }}
-.trace-preview {{ 
-          padding: 1rem; 
-          text-align: center; 
-          background: var(--border-light); 
-          border-bottom: 1px solid #4b5563; 
-        }}
-        .trace-icon {{ 
-          font-size: 2rem; 
-          display: block; 
-          margin-bottom: 0.5rem; 
-        }}
-        .trace-name {{ 
-          word-break: break-word; 
-          font-size: 0.9rem; 
-        }}
-        .trace-actions {{ 
-          display: flex; 
-          gap: 0.5rem; 
-        }}
-        .trace-actions a {{ 
-          flex: 1; 
-          text-align: center; 
-          padding: 0.25rem 0.5rem; 
-          font-size: 0.85rem; 
-          border-radius: 4px; 
-          text-decoration: none; 
-          background: #374151; 
-          color: white; 
-          border: 1px solid var(--border-medium);
-        }}
-        .view-trace {{ 
-          background: #374151; 
-          color: white; 
-        }}
-        .view-trace:hover {{ 
-          background: #4b5563; 
-        }}
-        .download-trace {{ 
-          background: #6b7280; 
-          color: #f9fafb; 
-        }}
-        .download-trace:hover {{ 
-          background: #9ca3af; 
-        }}
-        .filters button.clear-filters-btn {{ 
-          background-color: var(--medium-gray-color); 
-          color: var(--text-color); 
-          pointer-events: auto;
-          cursor: pointer;
-        }}
-        .filters button.clear-filters-btn:active,
-        .filters button.clear-filters-btn:focus {{
-          background-color: var(--medium-gray-color);
-          color: var(--text-color);
-          transform: none;
-          box-shadow: none;
-          outline: none;
-        }}
-        .copy-btn {{
-          color: #6366f1; 
-          background: #1f2937; 
-          border-radius: 8px; 
-          cursor: pointer; 
-          border-color: #6366f1; 
-          font-size: 1em; 
-          margin-left: 93%; 
-          font-weight: 600;
-        }}
-        .ai-analyzer-stats {{ 
-          display: flex; 
-          gap: 20px; 
-          margin-bottom: 25px; 
-          padding: 20px; 
-          background: linear-gradient(135deg, var(--border-light) 0%, var(--bg-card) 100%); 
-          border-radius: 8px; 
-          justify-content: center; 
-        }}
-        .stat-item {{ 
-          text-align: center; 
-          color: white; 
-        }}
-        .stat-number {{ 
-          display: block; 
-          font-size: 2em; 
-          font-weight: 700; 
-          line-height: 1;
-        }}
-        .stat-label {{ 
-          font-size: 0.9em; 
-          opacity: 0.9; 
-          font-weight: 500;
-        }}
-        .ai-analyzer-description {{ 
-          margin-bottom: 25px; 
-          font-size: 1em; 
-          color: #d1d5db; 
-          text-align: center; 
-          max-width: 600px; 
-          margin-left: auto; 
-          margin-right: auto;
-        }}
-        .compact-failure-list {{ 
-          display: flex; 
-          flex-direction: column; 
-          gap: 15px; 
-        }}
-.compact-failure-item {{ 
-          background: #1f2937; 
-          border: 1px solid #4b5563; 
-          border-left: 4px solid #ef4444; 
-          border-radius: 8px; 
-          box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4); 
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }}
-        .compact-failure-item:hover {{ 
-          transform: translateY(-2px); 
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4); 
-        }}
-        .failure-header {{ 
-          display: flex; 
-          justify-content: space-between; 
-          align-items: center; 
-          padding: 18px 20px; 
-          gap: 15px;
-        }}
-        .failure-main-info {{ 
-          flex: 1; 
-          min-width: 0; 
-        }}
-        .failure-title {{ 
-          margin: 0 0 8px 0; 
-          font-size: 1.1em; 
-          font-weight: 600; 
-          color: #f9fafb; 
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis;
-        }}
-        .failure-meta {{ 
-          display: flex; 
-          gap: 12px; 
-          align-items: center;
-        }}
-        .browser-indicator, .duration-indicator {{ 
-          font-size: 0.85em; 
-          padding: 3px 8px; 
-          border-radius: 12px; 
-          font-weight: 500;
-        }}
-        .browser-indicator {{ 
-          background: #3b82f6; 
-          color: white; 
-        }}
-        #load-more-tests {{ 
-          font-size: 16px; 
-          padding: 4px; 
-          background-color: #374151; 
-          border-radius: 4px; 
-          color: #f9fafb; 
-        }}
-        .duration-indicator {{ 
-          background: #6b7280; 
-          color: #f9fafb; 
-        }}
-        .ai-buttons-group {{ 
-          display: flex; 
-          gap: 10px; 
-          flex-wrap: wrap; 
-        }}
-        .compact-ai-btn {{ 
-          background: linear-gradient(135deg, #374151 0%, #1f2937 100%); 
-          color: white; 
-          border: none; 
-          padding: 12px 18px; 
-          border-radius: 6px; 
-          cursor: pointer; 
-          font-weight: 600; 
-          display: flex; 
-          align-items: center; 
-          gap: 8px; 
-          transition: all 0.3s ease; 
-          white-space: nowrap;
-        }}
-        .compact-ai-btn:hover {{ 
-          transform: translateY(-2px); 
-          box-shadow: 0 6px 20px rgba(55, 65, 81, 0.4); 
-        }}
-        .ai-text {{ 
-          font-size: 0.95em; 
-        }}
-        .copy-prompt-btn {{ 
-          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
-          color: white; 
-          border: none; 
-          padding: 12px 18px; 
-          border-radius: 6px; 
-          cursor: pointer; 
-          font-weight: 600; 
-          display: flex; 
-          align-items: center; 
-          gap: 8px; 
-          transition: all 0.3s ease; 
-          white-space: nowrap;
-        }}
-        .copy-prompt-btn:hover {{ 
-          transform: translateY(-2px); 
-          box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4); 
-        }}
-        .copy-prompt-btn.copied {{ 
-          background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-        }}
-        .copy-prompt-text {{ 
-          font-size: 0.95em; 
-        }}
-        .failure-error-preview {{ 
-          padding: 0 20px 18px 20px; 
-          border-top: 1px solid #374151;
-        }}
-        .error-snippet {{ 
-          background: rgba(248, 113, 113, 0.1); 
-          border: 1px solid rgba(248, 113, 113, 0.3); 
-          border-radius: 6px; 
-          padding: 12px; 
-          margin-bottom: 12px; 
-          font-family: monospace; 
-          font-size: 0.9em; 
-          color: #ef4444; 
-          line-height: 1.4;
-        }}
-        .expand-error-btn {{ 
-          background: none; 
-          border: 1px solid #4b5563; 
-          color: #d1d5db; 
-          padding: 6px 12px; 
-          border-radius: 4px; 
-          cursor: pointer; 
-          font-size: 0.85em; 
-          display: flex; 
-          align-items: center; 
-          gap: 6px; 
-          transition: all 0.2s ease;
-        }}
-        .expand-error-btn:hover {{ 
-          background: #374151; 
-          border-color: #6b7280; 
-        }}
-        .expand-icon {{ 
-          transition: transform 0.2s ease; 
-          font-size: 0.8em;
-        }}
-        .expand-error-btn.expanded .expand-icon {{ 
-          transform: rotate(180deg); 
-        }}
-        .full-error-details {{ 
-          padding: 0 20px 20px 20px; 
-          border-top: 1px solid #374151; 
-          margin-top: 0;
-        }}
-        .full-error-content {{ 
-          background: rgba(248, 113, 113, 0.1); 
-          border: 1px solid rgba(248, 113, 113, 0.3); 
-          border-radius: 6px; 
-          padding: 15px; 
-          font-family: monospace; 
-          font-size: 0.9em; 
-          color: #ef4444; 
-          line-height: 1.4; 
-          max-height: 300px; 
-          overflow-y: auto;
-        }}
-        @media (max-width: 1200px) {{
-          .trend-charts-row {{ 
-            grid-template-columns: 1fr; 
-          }}
-          .dashboard-bottom-row {{ 
-            grid-template-columns: 1fr; 
-          }}
-        }}
-        @media (max-width: 1024px) {{
-          .header {{ padding: 32px 24px; flex-direction: column; gap: 24px; align-items: flex-start; }}
-          .run-info {{ width: 100%; justify-content: flex-start; gap: 24px; }}
-          .dashboard-grid {{ grid-template-columns: repeat(2, 1fr); }}
-          .summary-card:nth-child(2n) {{ border-right: none; }}
-          .summary-card:nth-child(n+7) {{ border-bottom: none; }}
-          .filters {{ padding: 24px; flex-direction: column; }}
-          .filters input {{ min-width: 100%; }}
-          .filters select {{ min-width: 100%; }}
-          .filters button {{ width: 100%; }}
-          .copy-btn {{ font-size: 0.75em; padding: 8px 16px; margin-left: 0; }}
-          .console-output-section h4 {{ flex-direction: column; align-items: flex-start; gap: 8px; }}
-          .log-wrapper {{ max-height: 300px; }}
-          .tag {{ font-size: 0.65em; padding: 4px 10px; margin-right: 4px; margin-bottom: 4px; letter-spacing: 0.3px; }}
-          .test-case-header {{ grid-template-columns: 1fr; grid-template-rows: auto auto auto; gap: 12px; padding: 16px 20px; }}
-          .test-case-summary {{ grid-column: 1; grid-row: 1; flex-direction: column; align-items: flex-start; gap: 8px; width: 100%; max-width: 100%; overflow: hidden; }}
-          .test-case-title {{ width: 100%; max-width: 100%; }}
-          .test-case-browser {{ width: 100%; max-width: 100%; white-space: normal; }}
-          .test-case-meta {{ grid-column: 1; grid-row: 2; width: 100%; gap: 6px; }}
-          .test-case-status-duration {{ grid-column: 1; grid-row: 3; align-items: flex-start; }}
-          .test-case {{ margin: 0 0 12px 0; border-radius: 8px; }}
-          .test-case-content {{ padding: 20px; }}
-          .pie-chart-wrapper, .suites-widget, .trend-chart {{ padding: 32px 24px; }}
-          .test-history-grid {{ grid-template-columns: 1fr; }}
-          .ai-failure-cards-grid {{ grid-template-columns: 1fr; }}
-        }}
+        
+        /* Responsive adjustments for compact design */
         @media (max-width: 768px) {{
-          .header h1 {{ font-size: 1.8em; }}
-          #report-logo {{ height: 48px; }}
-          .tabs {{ flex-wrap: wrap; gap: 0; }}
-          .tab-button {{ padding: 16px 20px; font-size: 0.7em; flex: 1 1 auto; min-width: 120px; }}
-          .dashboard-grid {{ grid-template-columns: 1fr; }}
-          .summary-card {{ padding: 32px 24px !important; border-right: none !important; }}
-          .summary-card .value {{ font-size: 2.5em !important; }}
-          .dashboard-bottom-row {{ grid-template-columns: 1fr; gap: 0; }}
-          .dashboard-column {{ gap: 0; }}
-          .pie-chart-wrapper, .suites-widget, .trend-chart {{ padding: 28px 20px; }}
-          .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .chart-title-header {{ font-size: 1.2em; margin-bottom: 20px; }}
-          .pie-chart-wrapper div[id^="pieChart-"] {{ width: 100% !important; max-width: 100% !important; min-height: 280px; overflow: visible !important; }}
-          .pie-chart-wrapper {{ overflow: visible !important; }}
-          .trend-chart-container {{ min-height: 280px; }}
-          .suites-grid {{ grid-template-columns: 1fr; }}
-          .test-case-summary {{ flex-direction: column; align-items: flex-start; gap: 8px; }}
-          .test-case-title {{ width: 100%; }}
-          .test-case-browser {{ width: 100%; }}
-          .test-case-meta {{ flex-wrap: wrap; gap: 6px; width: 100%; }}
-          .ai-failure-cards-grid {{ grid-template-columns: 1fr; }}
-          .ai-analyzer-stats {{ flex-direction: column; gap: 15px; text-align: center; }}
-          .failure-header {{ flex-direction: column; align-items: stretch; gap: 15px; }}
-          .failure-main-info {{ text-align: center; }}
-          .failure-meta {{ justify-content: center; }}
-          .ai-buttons-group {{ flex-direction: column; width: 100%; }}
-          .compact-ai-btn, .copy-prompt-btn {{ justify-content: center; padding: 12px 20px; width: 100%; }}
+            .ai-analyzer-stats {{ 
+                flex-direction: column; 
+                gap: 15px; 
+                text-align: center; 
+            }}
+            .failure-header {{ 
+                flex-direction: column; 
+                align-items: stretch; 
+                gap: 15px; 
+            }}
+            .failure-main-info {{ 
+                text-align: center; 
+            }}
+            .failure-meta {{ 
+                justify-content: center; 
+            }}
+            .ai-buttons-group {{ 
+                flex-direction: column; 
+                width: 100%; 
+            }}
+            .compact-ai-btn, .copy-prompt-btn {{ 
+                justify-content: center; 
+                padding: 12px 20px; 
+                width: 100%; 
+            }}
         }}
         @media (max-width: 480px) {{
-          .header {{ padding: 24px 16px; }}
-          .header h1 {{ font-size: 1.5em; }}
-          #report-logo {{ height: 42px; }}
-          .run-info {{ flex-direction: column; gap: 12px; width: 100%; }}
-          .run-info-item {{ padding: 14px 20px; }}
-          .run-info-item:not(:last-child)::after {{ display: none; }}
-          .run-info-item:not(:last-child) {{ border-bottom: 1px solid var(--border-medium); }}
-          .run-info strong {{ font-size: 0.65em; }}
-          .run-info span {{ font-size: 1.1em; }}
-          .tabs {{ flex-wrap: wrap; gap: 4px; padding: 8px; }}
-          .tab-button {{ padding: 14px 10px; font-size: 0.6em; letter-spacing: 0.3px; flex: 1 1 calc(50% - 4px); min-width: 0; text-align: center; }}
-          .dashboard-grid {{ gap: 0; }}
-          .summary-card {{ padding: 28px 16px !important; }}
-          .summary-card h3 {{ font-size: 0.65em; }}
-          .summary-card .value {{ font-size: 2em !important; }}
-          .dashboard-bottom-row {{ gap: 0; }}
-          .dashboard-column {{ gap: 0; }}
-          .pie-chart-wrapper, .suites-widget, .trend-chart {{ padding: 20px 16px; }}
-          .pie-chart-wrapper h3, .suites-header h2, .trend-chart h3, .chart-title-header {{ font-size: 1em; margin-bottom: 16px; font-weight: 800; }}
-          .env-dashboard-title {{ font-size: 1em; margin-bottom: 6px; }}
-          .env-dashboard-subtitle {{ font-size: 0.85em; }}
-          .env-card-header {{ font-size: 0.85em; }}
-          .pie-chart-wrapper div[id^="pieChart-"] {{ width: 100% !important; max-width: 100% !important; min-height: 250px; overflow: visible !important; }}
-          .pie-chart-wrapper {{ overflow: visible !important; padding: 20px 12px; }}
-          .trend-chart-container {{ min-height: 250px; }}
-          .suites-grid {{ grid-template-columns: 1fr; gap: 16px; }}
-          .suite-card {{ padding: 16px; }}
-          .filters {{ padding: 16px; gap: 8px; }}
-          .test-case {{ margin: 0 0 10px 0; border-radius: 6px; }}
-          .test-case-header {{ padding: 14px 16px; }}
-          .test-case-content {{ padding: 16px; }}
-          .stat-item .stat-number {{ font-size: 1.5em; }}
-          .failure-header {{ padding: 15px; }}
-          .failure-error-preview, .full-error-details {{ padding-left: 15px; padding-right: 15px; }}
-          .header h1 {{ word-break: break-word; overflow-wrap: break-word; }}
-          h2, h3, h4 {{ word-break: break-word; overflow-wrap: break-word; }}
-          .environment-dashboard-wrapper {{ padding: 24px 16px; gap: 24px; }}
-          .env-card {{ padding: 20px; }}
+            .stat-item .stat-number {{ 
+                font-size: 1.5em; 
+            }}
+            .failure-header {{ 
+                padding: 15px; 
+            }}
+            .failure-error-preview, .full-error-details {{ 
+                padding-left: 15px; 
+                padding-right: 15px; 
+            }}
         }}
-</style>
+
+
+    </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
             <div class="header-title">
-                <img id="report-logo" src={LOGO_BASE64} alt="Report Logo">
-                <h1>Pulse Static Report</h1>
+                <img id="report-logo" src="{LOGO_BASE64}" alt="Report Logo">
+                <h1>Pulse Report</h1>
             </div>
             <div class="run-info">
                 <div class="run-info-item">
@@ -4056,12 +3826,12 @@ def generate_html(report_data, trend_data=None):
                 <div class="summary-card status-skipped"><h3>Skipped</h3><div class="value">{run_summary.get('skipped', 0)}</div><div class="trend-percentage">{skip_percentage}%</div></div>
                 <div class="summary-card flaky-status"><h3>Flaky</h3><div class="value">{run_summary.get('flaky', 0)}</div>
                 <div class="trend-percentage">{flaky_percentage}%</div></div>
-                <div class="summary-card"><h3>Run Duration</h3><div class="value">{format_duration(run_summary.get('duration', 0))}</div><div class="trend-percentage">Avg. Test Duration {avg_test_duration}</div></div>
-                <div class="summary-card">
-                  <h3>Total Retry Count</h3>
-                  <div class="value">{total_retried}</div>
-                  <div class="trend-percentage">Test Retried {retried_tests_count}</div>
-                </div>
+                 <div class="summary-card"><h3>Run Duration</h3><div class="value">{format_duration(run_summary.get('duration', 0))}</div><div class="trend-percentage">Avg. Test Duration {avg_test_duration}</div></div>
+                 <div class="summary-card">
+                   <h3>Total Retry Count</h3>
+                   <div class="value">{total_retried}</div>
+                   <div class="trend-percentage">Test Retried {retried_tests_count}</div>
+                 </div>
                 <div class="summary-card">
                   <h3>🌐 Browser Distribution <span style="font-size: 0.7em; color: var(--text-color-secondary); font-weight: 400;">({len(browser_breakdown)} total)</span></h3>
                   <div class="browser-breakdown" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
@@ -4070,7 +3840,7 @@ def generate_html(report_data, trend_data=None):
                 </div>
             </div>
             <div class="dashboard-bottom-row">
-              <div style="display: grid; gap: 20px">
+              <div class="dashboard-column">
                 {generate_pie_chart([
                     { "label": "Passed", "value": run_summary.get('passed', 0) },
                     { "label": "Failed", "value": run_summary.get('failed', 0) },
@@ -4079,21 +3849,21 @@ def generate_html(report_data, trend_data=None):
                   ], 400, 390)} 
                 {generate_environment_section(run_summary.get('environment'))}
               </div> 
-                <div style="display: flex; flex-direction: column; gap: 28px;">
-                  {generate_suites_widget(suites_data)}
-                  {generate_severity_distribution_chart(results)}
+              
+              <div class="dashboard-column">
+                {generate_suites_widget(suites_data)}
+                {generate_severity_distribution_chart(results)}
               </div>
             </div>
-        </div>
+          </div>
         <div id="test-runs" class="tab-content">
-            <div class="filters" style="border-color: black; border-style: groove;">
+            <div class="filters">
                 <input type="text" id="filter-name" placeholder="Filter by test name/path..." style="border-color: black; border-style: outset;">
                 <select id="filter-status"><option value="">All Statuses</option><option value="passed">Passed</option><option value="failed">Failed</option><option value="flaky">Flaky</option><option value="skipped">Skipped</option></select>
                 <select id="filter-browser"><option value="">All Browsers</option>{browser_options}</select>
                 <button id="clear-run-summary-filters" class="clear-filters-btn">Clear Filters</button>
             </div>
-            <div class="test-cases-list">{generate_test_cases_html(results[:50], 0)}</div>
-            {f'<div class="load-more-wrapper"><button id="load-more-tests">Load more</button></div><script type="application/json" id="remaining-tests-b64">{base64.b64encode(generate_test_cases_html(results[50:], 50).encode("utf-8")).decode("utf-8")}</script>' if len(results) > 50 else ''}
+            <div class="test-cases-list">{generate_test_cases_html()}</div>
         </div>
         <div id="test-history" class="tab-content">
           <div class="trend-charts-row">
@@ -4102,7 +3872,7 @@ def generate_html(report_data, trend_data=None):
             </div>
             <div class="trend-chart"><h3 class="chart-title-header">Execution Duration Trends</h3>
               {generate_duration_trend_chart(trend_data) if trend_data and trend_data.get('overall') else '<div class="no-data">Overall trend data not available for durations.</div>'}
-              </div>
+            </div>
           </div>
           <div class="trend-charts-row">
              <div class="trend-chart">
@@ -4119,7 +3889,7 @@ def generate_html(report_data, trend_data=None):
             {generate_ai_failure_analyzer_tab(results)}
         </div>
         <footer style="padding: 0.5rem; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05); text-align: center; font-family: 'Segoe UI', system-ui, sans-serif;">
-            <div style="display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
+            <div style="display: inline-flex; align-items: center; gap: 0.5rem; color: #333; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;">
                 <span>Created by</span>
                 <img id="report-logo" src="{LOGO_BASE64}" alt="Pulse Report Logo" style="height: 20px;">
                 <a href="https://www.npmjs.com/package/@arghajit/playwright-pulse-report" target="_blank" rel="noopener noreferrer" style="color: #7737BF; font-weight: 700; font-style: italic; text-decoration: none; transition: all 0.2s ease;" onmouseover="this.style.color='#BF5C37'" onmouseout="this.style.color='#7737BF'">Pulse Report</a>
@@ -4134,163 +3904,162 @@ def generate_html(report_data, trend_data=None):
             return (ms / 1000).toFixed(1) + "s"; 
         }}
     }}
-    function switchRetryTab(event, tabId) {{
-        const container = event.target.closest('.retry-tabs-container');
-        if (!container) return;
-        
-        const buttons = container.querySelectorAll('.retry-tab');
-        buttons.forEach(btn => btn.classList.remove('active'));
-        const activeBtn = event.target.closest('.retry-tab') || event.target;
-        activeBtn.classList.add('active');
-        
-        const contents = container.querySelectorAll('.retry-tab-content');
-        contents.forEach(content => {{
-            content.style.display = 'none';
-            content.classList.remove('active');
-        }});
-        
-        const activeContent = document.getElementById(tabId);
-        if (activeContent) {{
-            activeContent.style.display = 'block';
-            activeContent.classList.add('active');
-        }} else {{
-            console.error('Failed to find retry tab content for id:', tabId);
-        }}
-    }}
-
     function copyLogContent(elementId, button) {{
         const logElement = document.getElementById(elementId);
         if (!logElement) {{
             console.error('Could not find log element with ID:', elementId);
             return;
         }}
+        const originalText = button.textContent;
         navigator.clipboard.writeText(logElement.innerText).then(() => {{
             button.textContent = 'Copied!';
-            setTimeout(() => {{ button.textContent = 'Copy'; }}, 2000);
+            setTimeout(() => {{ button.textContent = originalText; }}, 2000);
         }}).catch(err => {{
             console.error('Failed to copy log content:', err);
             button.textContent = 'Failed';
-             setTimeout(() => {{ button.textContent = 'Copy'; }}, 2000);
+             setTimeout(() => {{ button.textContent = originalText; }}, 2000);
         }});
     }}
+    
+    function switchRetryTab(event, tabId) {{
+      const tabButton = event.currentTarget;
+      const tabsContainer = tabButton.closest('.retry-tabs-container');
+      
+      const allTabContents = tabsContainer.querySelectorAll('.retry-tab-content');
+      allTabContents.forEach(content => {{
+        content.style.display = 'none';
+        content.classList.remove('active');
+      }});
+      
+      const allTabs = tabsContainer.querySelectorAll('.retry-tab');
+      allTabs.forEach(tab => tab.classList.remove('active'));
+      
+      const selectedContent = document.getElementById(tabId);
+      if (selectedContent) {{
+        selectedContent.style.display = 'block';
+        selectedContent.classList.add('active');
+      }}
+      
+      tabButton.classList.add('active');
+    }}
+    
+function getAIFix(button) {{
+    const failureItem = button.closest('.compact-failure-item');
+    const aiContainer = failureItem.querySelector('.ai-suggestion-container');
+    const aiContent = failureItem.querySelector('.ai-suggestion-content');
+    
+    if (aiContainer.style.display === 'block') {{
+        aiContainer.style.display = 'none';
+        button.querySelector('.ai-text').textContent = 'AI Fix';
+        return;
+    }}
+    
+    aiContainer.style.display = 'block';
+    aiContent.innerHTML = '<div class="ai-loader" style="margin: 40px auto;"></div>';
+    button.querySelector('.ai-text').textContent = 'Loading...';
+    button.disabled = true;
 
-    function getAIFix(button) {{
-        const failureItem = button.closest('.compact-failure-item');
-        const aiContainer = failureItem.querySelector('.ai-suggestion-container');
-        const aiContent = failureItem.querySelector('.ai-suggestion-content');
+    try {{
+        const testJson = button.dataset.testJson;
+        const test = JSON.parse(atob(testJson));
+
+        const testName = test.name || 'Unknown Test';
+        const failureLogsAndErrors = [
+            'Error Message:',
+            test.errorMessage || 'Not available.',
+            '\\n\\n--- stdout ---',
+            (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
+            '\\n\\n--- stderr ---',
+            (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
+        ].join('\\n');
+        const codeSnippet = test.snippet || '';
+
+        const shortTestName = testName.split(' > ').pop();
         
-        if (aiContainer.style.display === 'block') {{
-            aiContainer.style.display = 'none';
-            button.querySelector('.ai-text').textContent = 'AI Fix';
-            return;
-        }}
-        
-        aiContainer.style.display = 'block';
-        aiContent.innerHTML = '<div class="ai-loader" style="margin: 40px auto;"></div>';
-        button.querySelector('.ai-text').textContent = 'Loading...';
-        button.disabled = true;
+        const apiUrl = 'https://ai-test-analyser.netlify.app/api/analyze';
+        fetch(apiUrl, {{
+            method: 'POST',
+            headers: {{ 'Content-Type': 'application/json' }},
+            body: JSON.stringify({{
+                testName: testName,
+                failureLogsAndErrors: failureLogsAndErrors,
+                codeSnippet: codeSnippet,
+            }}),
+        }})
+        .then(response => {{
+            if (!response.ok) {{
+                return response.text().then(text => {{ 
+                    throw new Error(`API request failed with status ${{response.status}}: ${{text || response.statusText}}`);
+                }});
+            }}
+            return response.text();
+        }})
+        .then(text => {{
+            if (!text) {{
+                throw new Error("The AI analyzer returned an empty response. This might happen during high load or if the request was blocked. Please try again in a moment.");
+            }}
+            try {{
+                return JSON.parse(text);
+            }} catch (e) {{
+                console.error("Failed to parse JSON:", text);
+                throw new Error(`The AI analyzer returned an invalid response. ${{e.message}}`);
+            }}
+        }})
+        .then(data => {{
+            const escapeHtml = (unsafe) => {{
+                if (typeof unsafe !== 'string') return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }};
 
-        try {{
-            const testJson = button.dataset.testJson;
-            const test = JSON.parse(atob(testJson));
-
-            const testName = test.name || 'Unknown Test';
-            const failureLogsAndErrors = [
-                'Error Message:',
-                test.errorMessage || 'Not available.',
-                '\\n\\n--- stdout ---',
-                (test.stdout && test.stdout.length > 0) ? test.stdout.join('\\n') : 'Not available.',
-                '\\n\\n--- stderr ---',
-                (test.stderr && test.stderr.length > 0) ? test.stderr.join('\\n') : 'Not available.'
-            ].join('\\n');
-            const codeSnippet = test.snippet || '';
-
-            const shortTestName = testName.split(' > ').pop();
+            const analysisHtml = `<h4>Analysis</h4><p>${{escapeHtml(data.rootCause) || 'No analysis provided.'}}</p>`;
             
-            const apiUrl = 'https://ai-test-analyser.netlify.app/api/analyze';
-            fetch(apiUrl, {{
-                method: 'POST',
-                headers: {{ 'Content-Type': 'application/json' }},
-                body: JSON.stringify({{
-                    testName: testName,
-                    failureLogsAndErrors: failureLogsAndErrors,
-                    codeSnippet: codeSnippet,
-                }}),
-            }})
-            .then(response => {{
-                if (!response.ok) {{
-                    return response.text().then(text => {{ 
-                        throw new Error(`API request failed with status ${{response.status}}: ${{text || response.statusText}}`);
-                    }});
-                }}
-                return response.text();
-            }})
-            .then(text => {{
-                if (!text) {{
-                    throw new Error("The AI analyzer returned an empty response. This might happen during high load or if the request was blocked. Please try again in a moment.");
-                }}
-                try {{
-                    return JSON.parse(text);
-                }} catch (e) {{
-                    console.error("Failed to parse JSON:", text);
-                    throw new Error(`The AI analyzer returned an invalid response. ${{e.message}}`);
-                }}
-            }})
-            .then(data => {{
-                const escapeHtml = (unsafe) => {{
-                    if (typeof unsafe !== 'string') return '';
-                    return unsafe
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/"/g, "&quot;")
-                        .replace(/'/g, "&#039;");
-                }};
-
-                const analysisHtml = `<h4>Analysis</h4><p>${{escapeHtml(data.rootCause) || 'No analysis provided.'}}</p>`;
-                
-                let suggestionsHtml = '<h4>Suggestions</h4>';
-                if (data.suggestedFixes && data.suggestedFixes.length > 0) {{
-                    suggestionsHtml += '<div class="suggestions-list" style="margin-top: 15px;">';
-                    data.suggestedFixes.forEach(fix => {{
-                        suggestionsHtml += `
-                            <div class="suggestion-item" style="margin-bottom: 22px; border-left: 3px solid var(--accent-color-alt); padding-left: 15px;">
-                                <p style="margin: 0 0 8px 0; font-weight: 500;">${{escapeHtml(fix.description)}}</p>
-                                ${{fix.codeSnippet ? `<div class="code-section"><pre><code>${{escapeHtml(fix.codeSnippet)}}</code></pre></div>` : ''}}
-                            </div>
-                        `;
-                    }});
-                    suggestionsHtml += '</div>';
-                }} else {{
-                    suggestionsHtml += `<div class="code-section"><pre><code>No suggestion provided.</code></pre></div>`;
-                }}
-                
-                button.querySelector('.ai-text').textContent = 'Hide AI Fix';
-                button.disabled = false;
-                aiContent.innerHTML = `
-                    <div class="ai-suggestion-header">
-                        <h4>🤖 AI Analysis Result</h4>
-                    </div>
-                    <div class="ai-suggestion-body">
-                        ${{analysisHtml}}
-                        ${{suggestionsHtml}}
-                    </div>
-                `;
-            }})
-            .catch(err => {{
-                console.error('AI Fix Error:', err);
-                button.disabled = false;
-                button.querySelector('.ai-text').textContent = 'AI Fix';
-                aiContent.innerHTML = `<div class="test-error-summary"><strong>Error:</strong> Failed to get AI analysis. Please check the console for details. <br><br> ${{err.message}}</div>`;
-            }});
-
-        }} catch (e) {{
-            console.error('Error processing test data for AI Fix:', e);
+            let suggestionsHtml = '<h4>Suggestions</h4>';
+            if (data.suggestedFixes && data.suggestedFixes.length > 0) {{
+                suggestionsHtml += '<div class="suggestions-list" style="margin-top: 15px;">';
+                data.suggestedFixes.forEach(fix => {{
+                    suggestionsHtml += `
+                        <div class="suggestion-item" style="margin-bottom: 22px; border-left: 3px solid var(--accent-color-alt); padding-left: 15px;">
+                            <p style="margin: 0 0 8px 0; font-weight: 500;">${{escapeHtml(fix.description)}}</p>
+                            ${{fix.codeSnippet ? `<div class="code-section"><pre><code>${{escapeHtml(fix.codeSnippet)}}</code></pre></div>` : ''}}
+                        </div>
+                    `;
+                }});
+                suggestionsHtml += '</div>';
+            }} else {{
+                suggestionsHtml += `<div class="code-section"><pre><code>No suggestion provided.</code></pre></div>`;
+            }}
+            
+            button.querySelector('.ai-text').textContent = 'Hide AI Fix';
+            button.disabled = false;
+            aiContent.innerHTML = `
+                <div class="ai-suggestion-header">
+                    <h4>🤖 AI Analysis Result</h4>
+                </div>
+                <div class="ai-suggestion-body">
+                    ${{analysisHtml}}
+                    ${{suggestionsHtml}}
+                </div>
+            `;
+        }})
+        .catch(err => {{
+            console.error('AI Fix Error:', err);
             button.disabled = false;
             button.querySelector('.ai-text').textContent = 'AI Fix';
-            aiContent.innerHTML = `<div class="test-error-summary">Could not process test data. Is it formatted correctly?</div>`;
-        }}
+            aiContent.innerHTML = `<div class="test-error-summary"><strong>Error:</strong> Failed to get AI analysis. Please check the console for details. <br><br> ${{err.message}}</div>`;
+        }});
+
+    }} catch (e) {{
+        console.error('Error processing test data for AI Fix:', e);
+        button.disabled = false;
+        button.querySelector('.ai-text').textContent = 'AI Fix';
+        aiContent.innerHTML = `<div class="test-error-summary">Could not process test data. Is it formatted correctly?</div>`;
     }}
+}}
 
     function copyAIPrompt(button) {{
         try {{
@@ -4376,6 +4145,7 @@ ${{codeSnippet}}`;
     function toggleErrorDetails(button) {{
         const errorDetails = button.closest('.compact-failure-item').querySelector('.full-error-details');
         const expandText = button.querySelector('.expand-text');
+        const expandIcon = button.querySelector('.expand-icon');
         
         if (errorDetails.style.display === 'none' || !errorDetails.style.display) {{
             errorDetails.style.display = 'block';
@@ -4388,39 +4158,6 @@ ${{codeSnippet}}`;
         }}
     }}
 
-    // --- LAZY MEDIA HANDLERS ---
-    window.loadMedia = function(id, type) {{
-        const storage = document.getElementById('data-' + id);
-        const element = document.getElementById(id);
-        const placeholder = element.previousElementSibling; 
-        
-        if (storage && element) {{
-            const data = storage.textContent;
-            element.src = data;
-            element.style.display = 'block';
-            if (placeholder) placeholder.style.display = 'none';
-            
-            if (type === 'video') {{
-                element.play().catch(e => console.log('Autoplay prevented', e));
-            }}
-        }}
-    }};
-
-    window.downloadMedia = function(id, filename) {{
-        const storage = document.getElementById('data-' + id);
-        if (storage) {{
-            const data = storage.textContent;
-            const link = document.createElement('a');
-            link.href = data;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }} else {{
-            alert("Media data not found.");
-        }}
-    }};
-     
     function initializeReportInteractivity() {{
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -4438,45 +4175,10 @@ ${{codeSnippet}}`;
         }});
         
         const nameFilter = document.getElementById('filter-name');
-        function ensureAllTestsAppended() {{
-            const node = document.getElementById('remaining-tests-b64');
-            const loadMoreBtn = document.getElementById('load-more-tests');
-            if (!node) return;
-            const b64 = (node.textContent || '').trim();
-            function b64ToUtf8(b64Str) {{
-                try {{ return decodeURIComponent(escape(window.atob(b64Str))); }}
-                catch (e) {{ return window.atob(b64Str); }}
-            }}
-            const html = b64ToUtf8(b64);
-            const container = document.querySelector('#test-runs .test-cases-list');
-            if (container) container.insertAdjacentHTML('beforeend', html);
-            if (loadMoreBtn) loadMoreBtn.remove();
-            node.remove();
-        }}
-        
-        const loadMoreBtn = document.getElementById('load-more-tests');
-        if (loadMoreBtn) {{
-            loadMoreBtn.addEventListener('click', () => {{
-                const node = document.getElementById('remaining-tests-b64');
-                if (!node) return;
-                const b64 = (node.textContent || '').trim();
-                function b64ToUtf8(b64Str) {{
-                    try {{ return decodeURIComponent(escape(window.atob(b64Str))); }}
-                    catch (e) {{ return window.atob(b64Str); }}
-                }}
-                const html = b64ToUtf8(b64);
-                const container = document.querySelector('#test-runs .test-cases-list');
-                if (container) container.insertAdjacentHTML('beforeend', html);
-                loadMoreBtn.remove();
-                node.remove();
-            }});
-        }}
-
         const statusFilter = document.getElementById('filter-status');
         const browserFilter = document.getElementById('filter-browser');
         const clearRunSummaryFiltersBtn = document.getElementById('clear-run-summary-filters'); 
         function filterTestCases() {{ 
-            ensureAllTestsAppended();
             const nameValue = nameFilter ? nameFilter.value.toLowerCase() : "";
             const statusValue = statusFilter ? statusFilter.value : "";
             const browserValue = browserFilter ? browserFilter.value : "";
@@ -4495,10 +4197,7 @@ ${{codeSnippet}}`;
         if(statusFilter) statusFilter.addEventListener('change', filterTestCases);
         if(browserFilter) browserFilter.addEventListener('change', filterTestCases);
         if(clearRunSummaryFiltersBtn) clearRunSummaryFiltersBtn.addEventListener('click', () => {{
-            ensureAllTestsAppended();
-            if(nameFilter) nameFilter.value = '';
-            if(statusFilter) statusFilter.value = '';
-            if(browserFilter) browserFilter.value = '';
+            if(nameFilter) nameFilter.value = ''; if(statusFilter) statusFilter.value = ''; if(browserFilter) browserFilter.value = '';
             filterTestCases();
         }});
         
@@ -4527,14 +4226,6 @@ ${{codeSnippet}}`;
             let contentElement;
             if (headerElement.classList.contains('test-case-header')) {{
                 contentElement = headerElement.parentElement.querySelector('.test-case-content');
-                if (contentElement && !contentElement.getAttribute('data-loaded')) {{
-                    const testCaseId = contentElement.id.replace('details-', '');
-                    const template = document.getElementById('tmpl-' + testCaseId);
-                    if (template) {{
-                        contentElement.innerHTML = template.textContent; 
-                        contentElement.setAttribute('data-loaded', 'true');
-                    }}
-                }}
             }} else if (headerElement.classList.contains('step-header')) {{
                 contentElement = headerElement.nextElementSibling;
                 if (!contentElement || !contentElement.matches(contentSelector || '.step-details')) {{
@@ -4547,217 +4238,117 @@ ${{codeSnippet}}`;
                  headerElement.setAttribute('aria-expanded', String(!isExpanded));
             }}
         }}
+        document.querySelectorAll('#test-runs .test-case-header').forEach(header => {{
+            header.addEventListener('click', () => toggleElementDetails(header)); 
+        }});
+        document.querySelectorAll('#test-runs .step-header').forEach(header => {{
+            header.addEventListener('click', () => toggleElementDetails(header, '.step-details'));
+        }});
 
-        document.addEventListener('click', (e) => {{
-            const inPlotly = e.target && e.target.closest && e.target.closest('.js-plotly-plot');
-            if (inPlotly) {{
-                return;
-            }}
-            const header = e.target.closest('#test-runs .test-case-header');
-            if (header) {{
-                toggleElementDetails(header);
-                return;
-            }}
-            const stepHeader = e.target.closest('#test-runs .step-header');
-            if (stepHeader) {{
-                let details = stepHeader.nextElementSibling;
-                if (details && details.matches('.step-details')) {{
-                    const isExpanded = details.style.display === 'block';
-                    details.style.display = isExpanded ? 'none' : 'block';
-                    stepHeader.setAttribute('aria-expanded', String(!isExpanded));
-                }}
-                return;
-            }}
-            const annotationLink = e.target.closest('a.annotation-link');
-            if (annotationLink) {{
+        document.querySelectorAll('a.annotation-link').forEach(link => {{
+            link.addEventListener('click', (e) => {{
                 e.preventDefault();
-                const annotationId = annotationLink.dataset.annotation;
+                const annotationId = link.dataset.annotation;
                 if (annotationId) {{
                     const jiraUrl = prompt('Enter your JIRA/Ticket system base URL (e.g., https://your-company.atlassian.net/browse/):', 'https://your-company.atlassian.net/browse/');
                     if (jiraUrl) {{
                         window.open(jiraUrl + annotationId, '_blank');
                     }}
                 }}
-                return;
-            }}
-            const img = e.target.closest('img.lazy-load-image');
-            if (img && img.dataset && img.dataset.src) {{
-                if (e.preventDefault) e.preventDefault();
-                img.src = img.dataset.src;
-                img.removeAttribute('data-src');
-                const parentLink = img.closest('a.lazy-load-attachment');
-                if (parentLink && parentLink.dataset && parentLink.dataset.href) {{
-                    parentLink.href = parentLink.dataset.href;
-                    parentLink.removeAttribute('data-href');
-                }}
-                return;
-            }}
-            const video = e.target.closest('video.lazy-load-video');
-            if (video) {{
-                if (e.preventDefault) e.preventDefault();
-                const s = video.querySelector('source');
-                if (s && s.dataset && s.dataset.src && !s.src) {{
-                    s.src = s.dataset.src;
-                    s.removeAttribute('data-src');
-                    video.load();
-                }} else if (video.dataset && video.dataset.src && !video.src) {{
-                    video.src = video.dataset.src;
-                    video.removeAttribute('data-src');
-                    video.load();
-                }}
-                return;
-            }}
-            const a = e.target.closest('a.lazy-load-attachment');
-            if (a && a.dataset && a.dataset.href) {{
-                e.preventDefault();
-                
-                if (a.classList.contains('view-full')) {{
-                    const dataUri = a.dataset.href;
-                    const [header, base64Data] = dataUri.split(',');
-                    const mimeType = header.match(/data:([^;]+)/)[1];
-                    
-                    try {{
-                        const byteCharacters = atob(base64Data);
-                        const byteNumbers = new Array(byteCharacters.length);
-                        for (let i = 0; i < byteCharacters.length; i++) {{
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
-                        }}
-                        const byteArray = new Uint8Array(byteNumbers);
-                        const blob = new Blob([byteArray], {{ type: mimeType }});
-                        
-                        const blobUrl = URL.createObjectURL(blob);
-                        const newWindow = window.open(blobUrl, '_blank');
-                        
-                        setTimeout(() => {{
-                            URL.revokeObjectURL(blobUrl);
-                        }}, 1000);
-                    }} catch (error) {{
-                        console.error('Failed to open attachment:', error);
-                        a.href = a.dataset.href;
-                        a.removeAttribute('data-href');
-                        a.click();
-                    }}
-                }} else {{
-                    a.href = a.dataset.href;
-                    a.removeAttribute('data-href');
-                    a.click();
-                }}
-                return;
-            }}
+            }});
         }});
         
-        document.addEventListener('play', (e) => {{
-            const video = e.target && e.target.closest ? e.target.closest('video.lazy-load-video') : null;
-            if (video) {{
-                const s = video.querySelector('source');
-                if (s && s.dataset && s.dataset.src && !s.src) {{
-                    s.src = s.dataset.src;
-                    s.removeAttribute('data-src');
-                    video.load();
-                }} else if (video.dataset && video.dataset.src && !video.src) {{
-                    video.src = video.dataset.src;
-                    video.removeAttribute('data-src');
-                    video.load();
-                }}
-            }}
-        }}, true);
-        
-        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart, .lazy-load-iframe');
+        const lazyLoadElements = document.querySelectorAll('.lazy-load-chart');
         if ('IntersectionObserver' in window) {{
-            const observerOptions = {{
-                root: null,
-                rootMargin: '300px 0px 300px 0px',
-                threshold: 0.01
-            }};
-            
             let lazyObserver = new IntersectionObserver((entries, observer) => {{
                 entries.forEach(entry => {{
                     if (entry.isIntersecting) {{
                         const element = entry.target;
-                        
-                        requestIdleCallback(() => {{
-                            if (element.classList.contains('lazy-load-iframe')) {{
-                                if (element.dataset.src) {{
-                                    element.src = element.dataset.src;
-                                    element.removeAttribute('data-src');
-                                }}
-                            }} else if (element.classList.contains('lazy-load-chart')) {{
-                                const renderFunctionName = element.dataset.renderFunctionName;
-                                if (renderFunctionName && typeof window[renderFunctionName] === 'function') {{
-                                    window[renderFunctionName]();
+                        if (element.classList.contains('lazy-load-chart')) {{
+                            const renderFunctionName = element.dataset.renderFunctionName;
+                            if (renderFunctionName && typeof window[renderFunctionName] === 'function') {{
+                                try {{
+                                    window[renderFunctionName](); 
+                                }} catch (e) {{
+                                    console.error(`Error lazy-loading chart ${{element.id}} using ${{renderFunctionName}}:`, e);
+                                    element.innerHTML = '<div class="no-data-chart">Error lazy-loading chart.</div>';
                                 }}
                             }}
-                            observer.unobserve(element);
-                        }}, {{ timeout: 2000 }});
+                        }}
+                        observer.unobserve(element); 
                     }}
                 }});
-            }}, observerOptions);
-            
-            lazyLoadElements.forEach(el => lazyObserver.observe(el));
-        }} else {{
-            lazyLoadElements.forEach(element => {{
-                if (element.classList.contains('lazy-load-iframe') && element.dataset.src) element.src = element.dataset.src;
-                else if (element.classList.contains('lazy-load-chart')) {{ const renderFn = element.dataset.renderFunctionName; if (renderFn && window[renderFn]) window[renderFn](); }}
+            }}, {{ 
+                rootMargin: "0px 0px 200px 0px" 
             }});
-        }}
-        
-        if (!window.requestIdleCallback) {{
-            window.requestIdleCallback = function(cb, options) {{
-                const start = Date.now();
-                return setTimeout(() => {{
-                    cb({{ didTimeout: false, timeRemaining: () => Math.max(0, 50 - (Date.now() - start)) }});
-                }}, 1);
-            }};
+
+            lazyLoadElements.forEach(el => {{
+                lazyObserver.observe(el);
+            }});
+        }} else {{ 
+            lazyLoadElements.forEach(element => {{
+                if (element.classList.contains('lazy-load-chart')) {{
+                    const renderFunctionName = element.dataset.renderFunctionName;
+                    if (renderFunctionName && typeof window[renderFunctionName] === 'function') {{
+                         try {{
+                            window[renderFunctionName]();
+                        }} catch (e) {{
+                            console.error(`Error loading chart (fallback) ${{element.id}} using ${{renderFunctionName}}:`, e);
+                            element.innerHTML = '<div class="no-data-chart">Error loading chart (fallback).</div>';
+                        }}
+                    }}
+                }}
+            }});
         }}
     }}
     document.addEventListener('DOMContentLoaded', initializeReportInteractivity);
 
-    function copyErrorToClipboard(button) {{
-      const errorContainer = button.closest('.test-error-summary');
-      if (!errorContainer) {{
-        console.error("Could not find '.test-error-summary' container.");
-        return;
-      }}
-      let errorText;
-      const stackTraceElement = errorContainer.querySelector('.stack-trace');
-      if (stackTraceElement) {{
-        errorText = stackTraceElement.textContent;
-      }} else {{
-        const clonedContainer = errorContainer.cloneNode(true);
-        const buttonInClone = clonedContainer.querySelector('button');
-        if (buttonInClone) buttonInClone.remove();
-        errorText = clonedContainer.textContent;
-      }}
+function copyErrorToClipboard(button) {{
+  const errorContainer = button.closest('.test-error-summary');
+  if (!errorContainer) return;
 
-      if (!errorText) {{
-        button.textContent = 'Nothing to copy';
-        setTimeout(() => {{ button.textContent = 'Copy Error'; }}, 2000);
-        return;
-      }}
-      navigator.clipboard.writeText(errorText.trim()).then(() => {{
-        const originalText = button.textContent;
-        button.textContent = 'Copied!';
-        setTimeout(() => {{ button.textContent = originalText; }}, 2000);
-      }}).catch(err => {{
-        console.error('Failed to copy: ', err);
-        button.textContent = 'Failed';
-      }});
+  let errorText;
+
+  const stackTraceElement = errorContainer.querySelector('.stack-trace');
+
+  if (stackTraceElement) {{
+    errorText = stackTraceElement.textContent;
+  }} else {{
+    const clonedContainer = errorContainer.cloneNode(true);
+    const buttonInClone = clonedContainer.querySelector('button');
+    if (buttonInClone) {{
+      buttonInClone.remove();
     }}
+    errorText = clonedContainer.textContent;
+  }}
+
+  if (!errorText) {{
+    button.textContent = 'Nothing to copy';
+    setTimeout(() => {{ button.textContent = 'Copy Error'; }}, 2000);
+    return;
+  }}
+
+  const textarea = document.createElement('textarea');
+  textarea.value = errorText.trim(); 
+  textarea.style.position = 'fixed'; 
+  textarea.style.top = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {{
+    const successful = document.execCommand('copy');
+    const originalText = button.textContent;
+    button.textContent = successful ? 'Copied!' : 'Failed';
+    setTimeout(() => {{
+      button.textContent = originalText;
+    }}, 2000);
+  }} catch (err) {{
+    button.textContent = 'Failed';
+  }}  
+
+  document.body.removeChild(textarea);
+}}
 </script>
-
-<!-- AI Fix Modal -->
-<div id="ai-fix-modal" class="ai-modal-overlay" onclick="closeAiModal()">
-  <div class="ai-modal-content" onclick="event.stopPropagation()">
-    <div class="ai-modal-header">
-        <h3 id="ai-fix-modal-title">AI Analysis</h3>
-        <span class="ai-modal-close" onclick="closeAiModal()">×</span>
-    </div>
-    <div class="ai-modal-body" id="ai-fix-modal-content">
-        <!-- Content will be injected by JavaScript -->
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
   """
@@ -4780,6 +4371,9 @@ def main():
     # Simplified config read (In real app, you'd translate getReporterConfig)
     output_dir = custom_output_dir if custom_output_dir else DEFAULT_OUTPUT_DIR
     output_file = "playwright-pulse-report.json"
+    
+    # Python equivalent logic for mergeSequentialReportsIfNeeded would go here
+    # For now we assume the file is ready to be read.
 
     report_json_path = Path(output_dir) / output_file
     report_html_path = Path(output_dir) / DEFAULT_HTML_FILE
@@ -4787,42 +4381,13 @@ def main():
     history_file_prefix = "trend-"
     max_history_files = 15
 
-    print("Starting static HTML report generation...")
+    print("Starting HTML report generation...")
     print(f"Output directory set to: {output_dir}")
 
-    # Step 1: Archive current run data to history (Native Python implementation)
+    # Step 1: Execute generate-trend logic
     try:
-        if not history_dir.exists():
-            history_dir.mkdir(parents=True, exist_ok=True)
-        
-        if report_json_path.exists():
-            with open(report_json_path, "r", encoding="utf-8") as f:
-                current_data = json.load(f)
-            
-            run_ts = current_data.get('run', {}).get('timestamp')
-            if run_ts:
-                try:
-                    # Parse timestamp and convert to ms for filename consistency
-                    dt = datetime.fromisoformat(run_ts.replace('Z', '+00:00'))
-                    ts_ms = int(dt.timestamp() * 1000)
-                    history_file_path = history_dir / f"{history_file_prefix}{ts_ms}.json"
-                    
-                    with open(history_file_path, "w", encoding="utf-8") as f:
-                        json.dump(current_data, f, indent=2)
-                    print(f"Archived current run to: {history_file_path}")
-                    
-                    # Prune old history files
-                    h_files = sorted([f for f in history_dir.iterdir() if f.name.startswith(history_file_prefix) and f.name.endswith(".json")],
-                                   key=lambda x: int(x.name.replace(history_file_prefix, "").replace(".json", "")))
-                    if len(h_files) > max_history_files:
-                        for f_to_del in h_files[:-max_history_files]:
-                            f_to_del.unlink()
-                            # print(f"Pruned old history file: {f_to_del.name}")
-                except Exception as e:
-                    print(f"Warning: Failed to parse timestamp or prune history: {e}")
-        else:
-            print(f"Warning: Report JSON not found at {report_json_path}. Skipping archive.")
-            
+        from pytest_pulse.merge_reports import archive_trend
+        archive_trend(output_dir, output_file, max_history=max_history_files)
         print("Current run data archiving to history completed.")
     except Exception as e:
         print(f"Failed to archive current run data. Report might use stale or incomplete historical trends. {e}")
@@ -4881,11 +4446,13 @@ def main():
     if historical_runs:
         for hist_run in historical_runs:
             if hist_run.get('run'):
+                # Assuming timestamp is ISO format
                 try:
                     run_timestamp = datetime.fromisoformat(hist_run['run']['timestamp'].replace('Z', '+00:00'))
                 except:
                     run_timestamp = datetime.now()
                     
+                # Calculate flaky from results if not present in run
                 flaky_val = hist_run['run'].get('flaky')
                 if flaky_val is None:
                     flaky_val = sum(1 for r in hist_run.get('results', []) if r.get('status') == 'flaky' or r.get('outcome') == 'flaky')
@@ -4907,7 +4474,7 @@ def main():
                         "testName": test.get('name'),
                         "duration": test.get('duration'),
                         "status": test.get('final_status') or test.get('status'),
-                        "timestamp": test.get('startTime')
+                        "timestamp": test.get('startTime') # Passing string through as is
                     } for test in hist_run['results']]
                     
         trend_data['overall'].sort(key=lambda x: x['runId'])
@@ -4917,11 +4484,66 @@ def main():
         html_content = generate_html(current_run_report_data, trend_data)
         with open(report_html_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        print(f"Pulse static report generated successfully at: {report_html_path}")
+        print(f"Pulse report generated successfully at: {report_html_path}")
         print("(You can open this file in your browser)")
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error generating HTML report: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
     main()
+def generate_dynamic_html(json_path, html_path):
+    """Bridge for cli.py: Generate a dynamic HTML report (references attachments)."""
+    import json
+    from pathlib import Path
+    
+    with open(json_path, "r", encoding="utf-8") as f:
+        report_data = json.load(f)
+    
+    output_dir = os.path.dirname(json_path) or "."
+    history_dir = Path(output_dir) / "history"
+    
+    trend_data = {"overall": [], "testRuns": {}}
+    if history_dir.exists():
+        files = [f for f in history_dir.iterdir() if f.name.startswith("trend-") and f.name.endswith(".json")]
+        file_metas = []
+        for f in files:
+            ts_part = f.name.replace("trend-", "").replace(".json", "")
+            try:
+                ts = int(ts_part)
+                file_metas.append({"path": f, "ts": ts})
+            except: pass
+        file_metas.sort(key=lambda x: x["ts"], reverse=True)
+        historical_runs = []
+        for fm in file_metas[:15]:
+            try:
+                with open(fm["path"], "r", encoding="utf-8") as f:
+                    historical_runs.append(json.load(f))
+            except: pass
+        historical_runs.reverse()
+        
+        for hist_run in historical_runs:
+            if hist_run.get('run'):
+                try:
+                    rt = datetime.fromisoformat(hist_run['run']['timestamp'].replace('Z', '+00:00'))
+                except: rt = datetime.now()
+                flaky = hist_run['run'].get('flaky')
+                if flaky is None:
+                    flaky = sum(1 for r in hist_run.get('results', []) if r.get('status') == 'flaky')
+                trend_data['overall'].append({
+                    "runId": int(rt.timestamp() * 1000),
+                    "timestamp": rt.isoformat(),
+                    "duration": hist_run['run'].get('duration'),
+                    "totalTests": hist_run['run'].get('totalTests'),
+                    "passed": hist_run['run'].get('passed'),
+                    "failed": hist_run['run'].get('failed'),
+                    "skipped": hist_run['run'].get('skipped', 0),
+                    "flaky": flaky
+                })
+        trend_data['overall'].sort(key=lambda x: x['runId'])
+
+    html = generate_html(report_data, trend_data)
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html)

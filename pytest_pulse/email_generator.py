@@ -729,3 +729,13 @@ if __name__ == "__main__":
         print(chalk.red(chalk.bold(f"Unhandled error during script execution: {err}")),
               file=sys.stderr)
         sys.exit(1)
+
+def generate_email_html(json_path):
+    """Bridge for cli.py: Generate lightweight email HTML."""
+    import json
+    with open(json_path, "r", encoding="utf-8") as f:
+        report_data = json.load(f)
+    # The logo logic in email_generator.py is inside main, 
+    # but generate_minified_html takes it as an argument.
+    # We'll use the default LOGO constant from the module.
+    return generate_minified_html(report_data, logo=LOGO)
