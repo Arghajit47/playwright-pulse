@@ -64,8 +64,9 @@ def generate_static_report(argv=None) -> None:
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
-    from .merge_reports import merge_sequential_reports
+    from .merge_reports import merge_sequential_reports, archive_trend
     merge_sequential_reports(output_dir)  # no-op if nothing to merge
+    archive_trend(output_dir)
 
     json_path = _find_report_json(output_dir, output_file)
     html_path = os.path.join(output_dir, "playwright-pulse-static-report.html")
@@ -79,6 +80,7 @@ def generate_static_report(argv=None) -> None:
 
     print(f"✓ Static report generated → {html_path}")
     _print_stats(json_path)
+    print("\n💡 Tip: Use 'generate-report' for a dynamic dashboard that supports attachments (screenshots/videos).")
 
 
 # ── generate-report ─────────────────────────────────────────────────────────────
@@ -93,8 +95,9 @@ def generate_report(argv=None) -> None:
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
-    from .merge_reports import merge_sequential_reports
+    from .merge_reports import merge_sequential_reports, archive_trend
     merge_sequential_reports(output_dir)
+    archive_trend(output_dir)
 
     json_path = _find_report_json(output_dir, output_file)
     html_path = os.path.join(output_dir, "playwright-pulse-report.html")
@@ -105,6 +108,7 @@ def generate_report(argv=None) -> None:
 
     print(f"✓ Dynamic report generated → {html_path}")
     _print_stats(json_path)
+    print("\n💡 Tip: Use 'generate-pulse-report' for a self-contained static HTML report (best for sharing via email/Slack).")
 
 
 # ── merge-pulse-report ──────────────────────────────────────────────────────────

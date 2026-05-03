@@ -8,5 +8,5 @@ You can also import the public API directly:
     from pytest_pulse.email_sender import send_report
 """
 
-__version__ = "0.3.5"
+__version__ = "1.0.1"
 __author__ = "Arghajit Singha"

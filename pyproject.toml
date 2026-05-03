@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-pulse-report"
-version = "0.3.5"
+version = "1.0.1"
 description = "A pytest reporter and dashboard for visualizing Playwright (pytest-playwright) test results — Python port of playwright-pulse"
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Arghajit Singha" }]
 keywords = [
     "pytest",
@@ -26,13 +26,13 @@ keywords = [
 classifiers = [
     "Framework :: Pytest",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Testing",
 ]
 dependencies = [
     "pytest>=7.0.0",
     "plotly>=5.0.0",
+    "psutil>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -58,3 +58,6 @@ generate-trend           = "pytest_pulse.cli:generate_trend_cli"
 [tool.setuptools.packages.find]
 where   = ["src"]
 include = ["pytest_pulse*"]
+
+[tool.setuptools.package-data]
+pytest_pulse = ["*.js"]
