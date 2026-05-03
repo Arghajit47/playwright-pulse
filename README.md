@@ -136,7 +136,7 @@ def test_checkout(page, pulse_step):
 | `generate-email-report` | Lightweight email summary HTML |
 | `generate-trend` | Archive current run for trend history |
 
-All commands accept `--outputDir / -o` and `--outputFile` flags.
+All commands accept `--outputDir / -o` flag.
 
 ---
 
