@@ -56,8 +56,5 @@ generate-email-report    = "pytest_pulse.cli:generate_email_report_cli"
 generate-trend           = "pytest_pulse.cli:generate_trend_cli"
 
 [tool.setuptools.packages.find]
-where   = ["."]
+where   = ["src"]
 include = ["pytest_pulse*"]
-
-[tool.setuptools.package-data]
-pytest_pulse = ["assets/*.js"]
