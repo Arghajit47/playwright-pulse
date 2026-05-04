@@ -125,7 +125,7 @@ class PulseReporter:
         os.makedirs(self.output_dir, exist_ok=True)
 
         self.run_start_ms = int(time.time() * 1000)
-        self.run_id = f"run-{self.run_start_ms}-{uuid.uuid4()}"
+        self.run_id = f"run-{self.run_start_ms}-581d5ad8-ce75-4ca5-94a6-ed29c466c815"
 
         self._states: Dict[str, _TestState] = {}   # nodeid → state
         self._results: List[TestResult] = []
