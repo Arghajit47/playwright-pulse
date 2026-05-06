@@ -17,11 +17,15 @@ Supported features:
 from __future__ import annotations
 
 import hashlib
+import inspect
+import linecache
 import os
 import re
+import textwrap
 import time
 import traceback
 import uuid
+import functools
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -41,6 +45,8 @@ from .types import (
     TestRun,
     TestStep,
 )
+from .static_generator import generate_static_html
+from .dynamic_generator import generate_dynamic_html
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 TEMP_SHARD_PREFIX = ".pulse-shard-results-"
@@ -50,44 +56,207 @@ DEFAULT_OUTPUT_FILE = "playwright-pulse-report.json"
 DEFAULT_INDIVIDUAL_SUBDIR = "pulse-results"
 
 
+# ── pulse_step helpers ─────────────────────────────────────────────────────────
+
+def extract_block_snippet(file_path: str, start_line: int) -> str:
+    """Extract the body of the ``with pulse_step(...)`` block via linecache.
+
+    Algorithm
+    ---------
+    1. Fetch the ``with`` statement at *start_line* via ``linecache.getline``.
+    2. Measure its leading whitespace → *base_indent*.
+    3. Walk subsequent lines; collect every line whose indent is strictly
+       greater than *base_indent*.  Empty lines are kept verbatim so the
+       block retains its visual structure.
+    4. Stop at the first non-empty line with indent ≤ *base_indent* — that
+       marks the end of the ``with`` block.
+    5. ``textwrap.dedent`` strips the uniform leading whitespace so the
+       snippet is left-aligned while preserving relative internal indentation.
+
+    Returns ``""`` on any I/O or parsing error so callers never crash.
+    """
+    try:
+        # linecache.getline returns "" for out-of-range / missing files
+        with_line = linecache.getline(file_path, start_line)
+        if not with_line:
+            return ""
+
+        # Number of leading spaces on the ``with pulse_step(...)`` line
+        base_indent = len(with_line) - len(with_line.lstrip())
+
+        body: list[str] = []
+        lineno = start_line + 1  # body begins on the very next line
+        while True:
+            raw = linecache.getline(file_path, lineno)
+            if not raw:  # EOF or past end of file
+                break
+            stripped = raw.rstrip("\n\r")
+            if stripped.strip() == "":
+                # Blank / whitespace-only line — preserve for visual fidelity
+                body.append("")
+                lineno += 1
+                continue
+            # this_indent = number of leading spaces on this source line
+            this_indent = len(stripped) - len(stripped.lstrip())
+            if this_indent <= base_indent:
+                # Indentation returned to (or past) the ``with`` level → done
+                break
+            body.append(stripped)
+            lineno += 1
+
+        # Trim trailing blank lines (they add noise without adding meaning)
+        while body and body[-1] == "":
+            body.pop()
+
+        if not body:
+            return ""
+
+        # Remove uniform leading whitespace; relative indentation is preserved
+        return textwrap.dedent("\n".join(body))
+
+    except Exception:
+        return ""
+
+
+def _get_caller_frame() -> Optional[inspect.FrameInfo]:
+    """Return the first call-stack frame that belongs to user test code.
+
+    Skips frames from:
+    * this plugin file itself
+    * ``contextlib`` (the ``@contextmanager`` machinery)
+
+    Inside a ``@contextmanager`` the call stack looks like:
+        frame 0 → step() generator         (plugin.py)
+        frame 1 → _GeneratorContextManager.__enter__  (contextlib.py)
+        frame 2 → user test function        ← the frame we want
+    """
+    plugin_file = os.path.abspath(__file__)
+    for frame_info in inspect.stack():
+        co_filename = frame_info.frame.f_code.co_filename
+        abs_filename = os.path.abspath(co_filename)
+        if abs_filename == plugin_file:
+            continue
+        if "contextlib" in co_filename:
+            continue
+        return frame_info
+    return None
+
+
 # ── Step recorder (per-test) ───────────────────────────────────────────────────
 @dataclass
 class _StepRecorder:
     test_id: str
     browser: str
     steps: List[TestStep] = field(default_factory=list)
+    current_active_step: Optional[TestStep] = None
 
     def reset_steps(self) -> None:
         self.steps = []
+        self.current_active_step = None
 
     @contextmanager
     def step(self, title: str) -> Generator[None, None, None]:
+        # ── 1. Introspection ───────────────────────────────────────────────────
+        # Walk the call stack past contextlib/__enter__ to the user test line.
+        # Use co_filename (code object's canonical path) and f_lineno (current
+        # execution line — i.e. the "with pulse_step(...):" line itself).
+        caller = _get_caller_frame()
+        caller_file = caller.frame.f_code.co_filename if caller else ""
+        caller_line = caller.frame.f_lineno if caller else 0
+        short_file = os.path.basename(caller_file)
+
+        # ── 2. Static source extraction ────────────────────────────────────────
+        # extract_block_snippet uses linecache to read the source file and
+        # returns the dedented body of the with-block as a clean string.
+        code_snippet = extract_block_snippet(caller_file, caller_line) if caller_file else ""
+        code_location = f"{short_file}:{caller_line}" if caller_file else ""
+
+        # ── 3. Timing & step object setup ──────────────────────────────────────
+        # time.time() gives a high-resolution float; we round to 3 decimal
+        # places (millisecond precision) after computing the elapsed duration.
+        t0 = time.time()
         start = datetime.now(tz=timezone.utc)
         step_status = "passed"
         error_msg: Optional[str] = None
-        stack: Optional[str] = None
+        stack_trace: Optional[str] = None
+
+        new_step = TestStep(
+            id="",           # filled in finally
+            title=title,
+            status=step_status,
+            duration=0.0,
+            startTime=start,
+            endTime=start,
+            browser=self.browser,
+            codeLocation=code_location or None,
+            snippet=code_snippet or None,
+        )
+
+        previous_step = self.current_active_step
+        self.current_active_step = new_step
+
+        # ── 4. Execute the with-block ──────────────────────────────────────────
         try:
             yield
+
+        # Pytest skip — test/step intentionally skipped; must re-raise so
+        # pytest can record the skip outcome on the test node.
+        except pytest.skip.Exception:
+            step_status = "skipped"
+            raise
+
+        # Pytest xfail — expected failure; re-raise so pytest honours the mark.
+        except pytest.xfail.Exception:
+            step_status = "xfailed"
+            raise
+
+        # Any real failure (AssertionError, TimeoutError, PlaywrightError, …).
+        # Capture the message and full traceback, then re-raise so pytest
+        # records the test as failed. Never swallow — the test outcome must
+        # propagate normally through pytest's internal event loop.
         except Exception as exc:
             step_status = "failed"
             error_msg = str(exc)
-            stack = traceback.format_exc()
+            stack_trace = traceback.format_exc()
             raise
+
+        # ── 5. Finalise — always runs regardless of outcome ────────────────────
         finally:
+            # round(t1-t0, 3) → seconds to 3 decimal places (ms precision);
+            # multiply by 1000 so TestStep.duration stays in milliseconds.
+            duration_s = round(time.time() - t0, 3)
+            duration_ms = duration_s * 1000
             end = datetime.now(tz=timezone.utc)
-            duration_ms = (end - start).total_seconds() * 1000
-            sid = f"{self.test_id}_step_{start.isoformat()}-{int(duration_ms)}-{uuid.uuid4().hex[:8]}"
-            self.steps.append(
-                TestStep(
-                    id=sid,
-                    title=title,
-                    status=step_status,
-                    duration=duration_ms,
-                    startTime=start,
-                    endTime=end,
-                    browser=self.browser,
-                    errorMessage=error_msg,
-                    stackTrace=stack,
+            sid = (
+                f"{self.test_id}_step_"
+                f"{start.isoformat()}-{int(duration_ms)}-{uuid.uuid4().hex[:8]}"
+            )
+
+            new_step.id = sid
+            new_step.status = step_status
+            new_step.duration = duration_ms
+            new_step.endTime = end
+            new_step.errorMessage = error_msg
+            new_step.stackTrace = stack_trace
+
+            self.steps.append(new_step)
+            self.current_active_step = previous_step
+
+    def record_action(self, action: str, selector: Optional[str] = None, value: Optional[str] = None, 
+                      start_time: Optional[datetime] = None, end_time: Optional[datetime] = None,
+                      status: str = "passed", error_msg: Optional[str] = None) -> None:
+        if self.current_active_step:
+            from .types import TestAction
+            self.current_active_step.actions.append(
+                TestAction(
+                    action=action,
+                    selector=selector,
+                    value=value,
+                    status=status,
+                    startTime=start_time or datetime.now(tz=timezone.utc),
+                    endTime=end_time or datetime.now(tz=timezone.utc),
+                    duration=((end_time - start_time).total_seconds() * 1000) if (start_time and end_time) else 0.0,
+                    errorMessage=error_msg
                 )
             )
 
@@ -100,6 +269,142 @@ class _TestState:
     phases: Dict[str, Any] = field(default_factory=dict)   # phase → (outcome, longrepr)
     recorder: Optional[_StepRecorder] = None
     pw_artifacts: Optional[dict] = None   # discovered after test
+
+
+def _wrap_playwright_locator(locator: Any, recorder: _StepRecorder) -> None:
+    """Monkey-patch common Playwright locator methods to record granular actions."""
+    methods_to_wrap = [
+        "click", "dblclick", "fill", "press", "type", 
+        "select_option", "check", "uncheck", "hover", 
+        "drag_and_drop", "screenshot", "wait_for", "is_visible"
+    ]
+    
+    # Get the selector from the locator if possible
+    # In python-playwright, locators don't easily expose the selector string,
+    # but we can try to represent the locator.
+    selector_repr = str(locator)
+
+    def make_locator_wrapper(method_name, original_method):
+        @functools.wraps(original_method)
+        def wrapped_method(*args, **kwargs):
+            value = None
+            if method_name == "fill":
+                value = args[0] if args else kwargs.get("value")
+            elif method_name in ["type", "press", "select_option"] and args:
+                value = args[0]
+                
+            start_time = datetime.now(tz=timezone.utc)
+            try:
+                result = original_method(*args, **kwargs)
+                end_time = datetime.now(tz=timezone.utc)
+                recorder.record_action(
+                    action=method_name,
+                    selector=selector_repr,
+                    value=str(value) if value is not None else None,
+                    start_time=start_time,
+                    end_time=end_time,
+                    status="passed"
+                )
+                return result
+            except Exception as e:
+                end_time = datetime.now(tz=timezone.utc)
+                recorder.record_action(
+                    action=method_name,
+                    selector=selector_repr,
+                    value=str(value) if value is not None else None,
+                    start_time=start_time,
+                    end_time=end_time,
+                    status="failed",
+                    error_msg=str(e)
+                )
+                raise
+        return wrapped_method
+
+    for method_name in methods_to_wrap:
+        if not hasattr(locator, method_name):
+            continue
+            
+        original_method = getattr(locator, method_name)
+        setattr(locator, method_name, make_locator_wrapper(method_name, original_method))
+
+
+def _wrap_playwright_page(page: Any, recorder: _StepRecorder) -> None:
+    """Monkey-patch common Playwright page methods to record granular actions."""
+    
+    # First, wrap page.locator so it returns wrapped locators
+    if hasattr(page, "locator"):
+        original_locator = page.locator
+        @functools.wraps(original_locator)
+        def wrapped_locator(*args, **kwargs):
+            loc = original_locator(*args, **kwargs)
+            _wrap_playwright_locator(loc, recorder)
+            return loc
+        page.locator = wrapped_locator
+
+    methods_to_wrap = [
+        "goto", "click", "dblclick", "fill", "press", "type", 
+        "select_option", "check", "uncheck", "hover", 
+        "drag_and_drop", "screenshot", "reload",
+        "wait_for_selector", "wait_for_load_state", "is_visible"
+    ]
+    
+    def make_wrapper(method_name, original_method):
+        @functools.wraps(original_method)
+        def wrapped_method(*args, **kwargs):
+            # Extract common info
+            selector = None
+            value = None
+            
+            # Arguments vary by method
+            # Usually first arg is selector, except for goto/reload/screenshot
+            try:
+                if method_name == "goto":
+                    value = args[0] if args else kwargs.get("url")
+                elif method_name == "fill":
+                    selector = args[0] if args else kwargs.get("selector")
+                    value = args[1] if len(args) > 1 else kwargs.get("value")
+                elif method_name in ["click", "dblclick", "type", "press", "select_option", "check", "uncheck", "hover", "wait_for_selector", "is_visible"]:
+                    selector = args[0] if args else kwargs.get("selector")
+                    if method_name in ["type", "press"] and len(args) > 1:
+                        value = args[1]
+                    elif method_name == "select_option" and len(args) > 1:
+                        value = args[1]
+            except Exception:
+                pass # Safety first
+            
+            start_time = datetime.now(tz=timezone.utc)
+            try:
+                result = original_method(*args, **kwargs)
+                end_time = datetime.now(tz=timezone.utc)
+                recorder.record_action(
+                    action=method_name,
+                    selector=selector,
+                    value=str(value) if value is not None else None,
+                    start_time=start_time,
+                    end_time=end_time,
+                    status="passed"
+                )
+                return result
+            except Exception as e:
+                end_time = datetime.now(tz=timezone.utc)
+                recorder.record_action(
+                    action=method_name,
+                    selector=selector,
+                    value=str(value) if value is not None else None,
+                    start_time=start_time,
+                    end_time=end_time,
+                    status="failed",
+                    error_msg=str(e)
+                )
+                raise
+        return wrapped_method
+
+    for method_name in methods_to_wrap:
+        if not hasattr(page, method_name):
+            continue
+            
+        original_method = getattr(page, method_name)
+        setattr(page, method_name, make_wrapper(method_name, original_method))
 
 
 # ── Reporter singleton attached to pytest config ───────────────────────────────
@@ -412,6 +717,27 @@ class PulseReporter:
             out_path = os.path.join(self.output_dir, self.output_file)
             write_report(report, out_path)
             print(f"\nPulseReport: JSON report written to {out_path}")
+            
+            # Generate HTML reports
+            html_dynamic_path = out_path.replace(".json", ".html")
+            try:
+                generate_dynamic_html(out_path, html_dynamic_path)
+                print(f"PulseReport: Dynamic HTML report generated at {html_dynamic_path}")
+            except Exception as e:
+                print(f"PulseReport: Failed to generate dynamic HTML report: {e}")
+                
+            html_static_path = out_path.replace(".json", "-static.html")
+            if "playwright-pulse-report-static.html" in html_static_path:
+                 # Ensure it matches "playwright-pulse-static-report.html" if using default naming
+                 html_static_path = html_static_path.replace("playwright-pulse-report-static.html", "playwright-pulse-static-report.html")
+            elif "playwright-pulse-report.html" in html_static_path:
+                 html_static_path = html_static_path.replace("playwright-pulse-report.html", "playwright-pulse-static-report.html")
+
+            try:
+                generate_static_html(out_path, html_static_path)
+                print(f"PulseReport: Static HTML report generated at {html_static_path}")
+            except Exception as e:
+                print(f"PulseReport: Failed to generate static HTML report: {e}")
         else:
             sub_dir = os.path.join(self.output_dir, self.individual_sub)
             stem = self.output_file.replace(".json", "")
@@ -716,6 +1042,13 @@ def _encode_logo(path: str) -> str:
 def pytest_addoption(parser: pytest.Parser) -> None:
     group = parser.getgroup("pulse-report", "Pulse Report options")
     group.addoption(
+        "--pulse-report",
+        dest="pulse_report",
+        action="store_true",
+        default=False,
+        help="Enable the pulse report generation",
+    )
+    group.addoption(
         "--pulse-output-dir",
         dest="pulse_output_dir",
         default=None,
@@ -761,6 +1094,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    if not config.option.pulse_report:
+        return
+
     config._pulse_reporter = PulseReporter(config)  # type: ignore[attr-defined]
 
     # Register custom marks so pytest doesn't warn about unknown marks
@@ -773,7 +1109,10 @@ def pytest_configure(config: pytest.Config) -> None:
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: pytest.Item, nextitem=None) -> Generator:  # noqa: ARG001
     """Wrap the entire test lifecycle to reliably start & finish tracking."""
-    reporter: PulseReporter = item.config._pulse_reporter
+    reporter = getattr(item.config, "_pulse_reporter", None)
+    if not reporter:
+        yield
+        return
     reporter.on_test_start(item)
     yield
     reporter.on_test_finish(item)
@@ -783,16 +1122,20 @@ def pytest_runtest_protocol(item: pytest.Item, nextitem=None) -> Generator:  # n
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo) -> Generator:  # noqa: ARG001
     """Capture the report for each phase (setup / call / teardown)."""
     outcome = yield
+    reporter = getattr(item.config, "_pulse_reporter", None)
+    if not reporter:
+        return
     try:
         report: pytest.TestReport = outcome.get_result()
     except Exception:
         return
-    reporter: PulseReporter = item.config._pulse_reporter
     reporter.on_test_report(item, report)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
-    reporter: PulseReporter = session.config._pulse_reporter
+    reporter = getattr(session.config, "_pulse_reporter", None)
+    if not reporter:
+        return
 
     # xdist master — merge shard files instead of writing directly
     if hasattr(session.config, "workercontroller"):
@@ -843,3 +1186,20 @@ def pulse_attach(request: pytest.FixtureRequest):
         request.node._pulse_extras.append(path)
 
     return _attach
+
+
+@pytest.fixture(autouse=True)
+def _pulse_auto_instrument(request):
+    """Automatically instrument Playwright 'page' fixture if it is used."""
+    # Check if 'page' is in fixturenames to avoid unnecessary work
+    if "page" in request.fixturenames:
+        try:
+            # This triggers 'page' fixture creation and returns the object
+            page = request.getfixturevalue("page")
+            recorder = getattr(request.node, "_pulse_recorder", None)
+            if recorder and page:
+                _wrap_playwright_page(page, recorder)
+        except Exception:
+            pass
+    
+    yield

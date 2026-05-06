@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Literal, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 TestStatus = Literal[
     "passed",
@@ -32,6 +32,18 @@ class Annotation:
 
 
 @dataclass
+class TestAction:
+    action: str
+    selector: Optional[str] = None
+    value: Optional[str] = None
+    status: str = "passed"
+    duration: float = 0.0          # milliseconds
+    startTime: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    endTime: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
+    errorMessage: Optional[str] = None
+
+
+@dataclass
 class TestStep:
     id: str
     title: str
@@ -43,10 +55,11 @@ class TestStep:
     errorMessage: Optional[str] = None
     stackTrace: Optional[str] = None
     codeLocation: Optional[str] = None
-    codeSnippet: Optional[str] = None
+    snippet: Optional[str] = None
     isHook: bool = False
     hookType: Optional[str] = None  # "before" | "after"
     steps: List["TestStep"] = field(default_factory=list)
+    actions: List[TestAction] = field(default_factory=list)
 
 
 @dataclass
