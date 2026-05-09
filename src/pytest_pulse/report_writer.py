@@ -91,7 +91,7 @@ def merge_raw_reports(reports: list[dict]) -> dict:
             latest_gen = gen
 
     import time, uuid
-    run_id = f"merged-{int(time.time() * 1000)}-{uuid.uuid4()}"
+    run_id = f"merged-{int(time.time() * 1000)}-581d5ad8-ce75-4ca5-94a6-ed29c466c815"
     combined_run["id"] = run_id
     combined_run["timestamp"] = latest_ts
     if environments:

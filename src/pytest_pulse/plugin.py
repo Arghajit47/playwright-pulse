@@ -49,7 +49,7 @@ from .static_generator import generate_static_html
 from .dynamic_generator import generate_dynamic_html
 
 # ── Constants ──────────────────────────────────────────────────────────────────
-TEMP_SHARD_PREFIX = ".pulse-shard-results-"
+TEMP_SHARD_PREFIX = "pulse-shard-results-"
 ATTACHMENTS_SUBDIR = "attachments"
 DEFAULT_OUTPUT_DIR = "pulse-report"
 DEFAULT_OUTPUT_FILE = "playwright-pulse-report.json"
@@ -471,7 +471,8 @@ class PulseReporter:
         if not os.path.isdir(self.output_dir):
             return
         for fname in os.listdir(self.output_dir):
-            if fname.startswith(TEMP_SHARD_PREFIX):
+            if fname.startswith(TEMP_SHARD_PREFIX) or fname.startswith("." + TEMP_SHARD_PREFIX):
+
                 try:
                     os.unlink(os.path.join(self.output_dir, fname))
                 except OSError:
@@ -758,8 +759,15 @@ class PulseReporter:
         for i in range(total):
             fpath = os.path.join(self.output_dir, f"{TEMP_SHARD_PREFIX}{i}.json")
             if not os.path.exists(fpath):
+                # Try hidden version if regular one not found
+                hidden_path = os.path.join(self.output_dir, f".{TEMP_SHARD_PREFIX}{i}.json")
+                if os.path.exists(hidden_path):
+                    fpath = hidden_path
+
+            if not os.path.exists(fpath):
                 print(f"PulseReport: shard {i} not found at {fpath}, skipping")
                 continue
+
             try:
                 with open(fpath, "r", encoding="utf-8") as fh:
                     data = json.load(fh)

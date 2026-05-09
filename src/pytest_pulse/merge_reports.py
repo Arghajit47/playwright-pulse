@@ -19,6 +19,7 @@ from typing import Optional
 DEFAULT_OUTPUT_FILE = "playwright-pulse-report.json"
 ATTACHMENTS_SUBDIR = "attachments"
 INDIVIDUAL_SUBDIR = "pulse-results"
+TEMP_SHARD_PREFIX = "pulse-shard-results-"
 
 
 # ── Sequential-run merge (resetOnEachRun=False) ────────────────────────────────
@@ -99,8 +100,13 @@ def merge_shard_directories(
     for shard_dir in shard_dirs:
         json_path = os.path.join(shard_dir, output_file)
         if not os.path.exists(json_path):
-            print(f"  Warning: {json_path} not found, skipping")
-            continue
+            # If the main report is missing, try to merge shard files if they exist
+            merged_shard = merge_shard_files(shard_dir, output_file, cleanup=cleanup)
+            if not merged_shard:
+                print(f"  Warning: {json_path} not found and no shard files found in {shard_dir}, skipping")
+                continue
+            json_path = merged_shard
+
         try:
             with open(json_path, "r", encoding="utf-8") as fh:
                 reports.append(json.load(fh))
@@ -131,6 +137,60 @@ def merge_shard_directories(
         for shard_dir in shard_dirs:
             shutil.rmtree(shard_dir, ignore_errors=True)
         print("PulseReport: Cleanup complete.")
+
+    return out_path
+
+
+def merge_shard_files(
+    output_dir: str,
+    output_file: str = DEFAULT_OUTPUT_FILE,
+    cleanup: bool = True,
+) -> Optional[str]:
+    """
+    Scan *output_dir* for individual shard files (pulse-shard-results-*.json),
+    merge them into *output_file*, and optionally clean them up.
+    """
+    if not os.path.isdir(output_dir):
+        return None
+
+    shard_files = sorted([
+        f for f in os.listdir(output_dir)
+        if (f.startswith(TEMP_SHARD_PREFIX) or f.startswith("." + TEMP_SHARD_PREFIX))
+        and f.endswith(".json")
+    ])
+
+    if not shard_files:
+        return None
+
+    print(f"PulseReport: Found {len(shard_files)} shard file(s) in {output_dir}")
+    
+    reports = []
+    for fname in shard_files:
+        fpath = os.path.join(output_dir, fname)
+        try:
+            with open(fpath, "r", encoding="utf-8") as fh:
+                reports.append(json.load(fh))
+        except Exception as exc:
+            print(f"  Warning: failed to read {fpath}: {exc}")
+
+    if not reports:
+        return None
+
+    merged = _merge_report_list(reports)
+    
+    out_path = os.path.join(output_dir, output_file)
+    with open(out_path, "w", encoding="utf-8") as fh:
+        json.dump(merged, fh, indent=2, ensure_ascii=False)
+    print(f"PulseReport: Shard files merged → {out_path}")
+    _print_stats(merged)
+
+    if cleanup:
+        for fname in shard_files:
+            try:
+                os.unlink(os.path.join(output_dir, fname))
+            except OSError:
+                pass
+        print("PulseReport: Shard files cleanup complete.")
 
     return out_path
 
@@ -217,7 +277,7 @@ def _merge_report_list(reports: list) -> dict:
         if gen > latest_gen:
             latest_gen = gen
 
-    run_id = f"merged-{int(time.time()*1000)}-{uuid.uuid4()}"
+    run_id = f"merged-{int(time.time()*1000)}-581d5ad8-ce75-4ca5-94a6-ed29c466c815"
     combined["id"] = run_id
     combined["timestamp"] = latest_ts
     if environments:
@@ -242,9 +302,19 @@ def _get_shard_dirs(output_dir: str, output_file: str, individual_sub: str) -> l
             continue
         has_report = os.path.isfile(os.path.join(entry.path, output_file))
         has_individual = os.path.isdir(os.path.join(entry.path, individual_sub))
-        if has_report or has_individual:
+
+        # Also check if this directory contains any shard files (xdist-style)
+        # which might not have been merged yet by the worker's master process.
+        has_shards = any(
+            (f.startswith(TEMP_SHARD_PREFIX) or f.startswith("." + TEMP_SHARD_PREFIX))
+            and f.endswith(".json")
+            for f in os.listdir(entry.path)
+        )
+
+        if has_report or has_individual or has_shards:
             dirs.append(entry.path)
     return dirs
+
 
 
 def _print_stats(merged: dict) -> None:

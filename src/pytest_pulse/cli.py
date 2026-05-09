@@ -64,7 +64,8 @@ def generate_static_report(argv=None) -> None:
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
-    from .merge_reports import merge_sequential_reports, archive_trend
+    from .merge_reports import merge_sequential_reports, merge_shard_files, archive_trend
+    merge_shard_files(output_dir) # handle xdist shards
     merge_sequential_reports(output_dir)  # no-op if nothing to merge
     archive_trend(output_dir)
 
@@ -95,7 +96,8 @@ def generate_report(argv=None) -> None:
     args = p.parse_args(argv)
     output_dir, output_file = _resolve_dirs(args)
 
-    from .merge_reports import merge_sequential_reports, archive_trend
+    from .merge_reports import merge_sequential_reports, merge_shard_files, archive_trend
+    merge_shard_files(output_dir)
     merge_sequential_reports(output_dir)
     archive_trend(output_dir)
 
@@ -128,12 +130,17 @@ def merge_reports_cli(argv=None) -> None:
     print(f"\n⚡ Pulse Report — Merge Reports\n")
     print(f"  Directory : {output_dir}")
 
-    from .merge_reports import merge_shard_directories, merge_sequential_reports
+    from .merge_reports import merge_shard_directories, merge_shard_files, merge_sequential_reports
 
-    # First try shard merge
+    # First try directory merge (CI-style sharding)
     result = merge_shard_directories(
         output_dir, output_file, cleanup=args.cleanup
     )
+    if result is None:
+        # Try shard file merge (xdist-style sharding)
+        result = merge_shard_files(
+            output_dir, output_file, cleanup=args.cleanup
+        )
     if result is None:
         # Fall back to sequential merge
         result = merge_sequential_reports(output_dir)
@@ -143,6 +150,7 @@ def merge_reports_cli(argv=None) -> None:
 
     print(f"\n✓ Merged report → {result}")
     _print_stats(result)
+
 
 
 # ── generate-email-report ───────────────────────────────────────────────────────
