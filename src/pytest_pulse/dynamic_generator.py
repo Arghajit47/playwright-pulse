@@ -3,6 +3,7 @@ import os
 import json
 import subprocess
 import re
+import random
 from pathlib import Path
 from datetime import datetime
 import sys
@@ -1904,8 +1905,6 @@ def generate_html(report_data, trend_data=None):
                 return f'<span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: {color_var}; margin-left: 6px; vertical-align: middle;" title="{s}"></span>'
 
             def get_test_content_html(test_data, run_suffix):
-                log_id = f"stdout-log-{test.get('id', index)}-{run_suffix}"
-                
                 annotations_html = ""
                 if test_data.get('annotations'):
                     annotations_html = '<div class="annotations-section" style="margin: 12px 0; padding: 12px; background-color: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-left: 4px solid #8b5cf6; border-radius: 4px;"><h4 style="margin-top: 0; margin-bottom: 10px; color: #8b5cf6; font-size: 1.1em;">📌 Annotations</h4>'
@@ -1937,10 +1936,15 @@ def generate_html(report_data, trend_data=None):
                 
                 stdout_html = ""
                 if test_data.get('stdout'):
-                    stdout_html = f"""<div class="console-output-section"><h4>Console Output (stdout)<button class="copy-btn" onclick="copyLogContent('{log_id}', this)">Copy</button></h4>
-                    <div class="log-wrapper"><pre id="{log_id}" class="console-log stdout-log" style="background-color: #2d2d2d; color: wheat; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">{format_playwright_error(chr(10).join(sanitize_html(line) for line in test_data['stdout']))}</pre></div></div>"""
+                    log_id_out = f"log-out-{test_data.get('id', 'unknown')}-{random.randint(1000, 9999)}"
+                    stdout_html = f"""<div class="console-output-section"><h4>Console Output (stdout)<button class="copy-btn" onclick="copyLogContent('{log_id_out}', this)">Copy</button></h4>
+                    <div class="log-wrapper"><pre id="{log_id_out}" class="console-log stdout-log" style="color: wheat; padding: 1.25em; line-height: 1.2;">{format_playwright_error(chr(10).join(test_data['stdout']))}</pre></div></div>"""
 
-                stderr_html = f'<div class="console-output-section"><h4>Console Output (stderr)</h4><pre class="console-log stderr-log" style="background-color: #2d2d2d; color: indianred; padding: 1.25em; border-radius: 0.85em; line-height: 1.2;">{format_playwright_error(chr(10).join(sanitize_html(line) for line in test_data["stderr"]))}</pre></div>' if test_data.get('stderr') else ""
+                stderr_html = ""
+                if test_data.get('stderr'):
+                    log_id_err = f"log-err-{test_data.get('id', 'unknown')}-{random.randint(1000, 9999)}"
+                    stderr_html = f"""<div class="console-output-section"><h4>Console Output (stderr)<button class="copy-btn" onclick="copyLogContent('{log_id_err}', this)">Copy</button></h4>
+                    <div class="log-wrapper"><pre id="{log_id_err}" class="console-log stderr-log" style="color: indianred; padding: 1.25em; line-height: 1.2;">{format_playwright_error(chr(10).join(test_data['stderr']))}</pre></div></div>"""
 
                 screenshots_html = ""
                 if test_data.get('screenshots'):
