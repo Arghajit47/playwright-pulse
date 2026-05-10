@@ -33,6 +33,7 @@ from pathlib import Path
 from typing import Any, Dict, Generator, List, Optional
 
 import pytest
+from contextvars import ContextVar
 
 from .attachment_utils import copy_attachment, find_playwright_artifacts
 from .env_utils import get_env_details
@@ -54,6 +55,12 @@ ATTACHMENTS_SUBDIR = "attachments"
 DEFAULT_OUTPUT_DIR = "pulse-report"
 DEFAULT_OUTPUT_FILE = "playwright-pulse-report.json"
 DEFAULT_INDIVIDUAL_SUBDIR = "pulse-results"
+
+
+# ── Context for decorators ───────────────────────────────────────────────────
+# Storing the callable (recorder.step) in a ContextVar so static decorators
+# can find the active test's step recorder without receiving the fixture.
+pulse_step_context: ContextVar[Optional[Any]] = ContextVar("pulse_step_context", default=None)
 
 
 # ── pulse_step helpers ─────────────────────────────────────────────────────────
@@ -131,10 +138,13 @@ def _get_caller_frame() -> Optional[inspect.FrameInfo]:
         frame 2 → user test function        ← the frame we want
     """
     plugin_file = os.path.abspath(__file__)
+    # Also skip our own decorators file if it exists
+    decorators_file = os.path.join(os.path.dirname(plugin_file), "decorators.py")
+    
     for frame_info in inspect.stack():
         co_filename = frame_info.frame.f_code.co_filename
         abs_filename = os.path.abspath(co_filename)
-        if abs_filename == plugin_file:
+        if abs_filename == plugin_file or abs_filename == decorators_file:
             continue
         if "contextlib" in co_filename:
             continue
@@ -239,7 +249,10 @@ class _StepRecorder:
             new_step.errorMessage = error_msg
             new_step.stackTrace = stack_trace
 
-            self.steps.append(new_step)
+            if previous_step:
+                previous_step.steps.append(new_step)
+            else:
+                self.steps.append(new_step)
             self.current_active_step = previous_step
 
     def record_action(self, action: str, selector: Optional[str] = None, value: Optional[str] = None, 
@@ -897,7 +910,7 @@ def _detect_browser(item: pytest.Item) -> str:
         if marker.args:
             return str(marker.args[0])
 
-    return "python"
+    return "N/A"
 
 
 def _get_tags(item: pytest.Item) -> List[str]:
@@ -1175,6 +1188,8 @@ def pulse_step(request: pytest.FixtureRequest):
         def _noop(title: str):
             yield
         return _noop
+    
+    pulse_step_context.set(recorder.step)
     return recorder.step
 
 
@@ -1205,9 +1220,18 @@ def _pulse_auto_instrument(request):
             # This triggers 'page' fixture creation and returns the object
             page = request.getfixturevalue("page")
             recorder = getattr(request.node, "_pulse_recorder", None)
-            if recorder and page:
-                _wrap_playwright_page(page, recorder)
+            if recorder:
+                pulse_step_context.set(recorder.step)
+                if page:
+                    _wrap_playwright_page(page, recorder)
         except Exception:
             pass
+    else:
+        # Even if page is not used, set the context if recorder is available
+        recorder = getattr(request.node, "_pulse_recorder", None)
+        if recorder:
+            pulse_step_context.set(recorder.step)
     
     yield
+    # Clear context after test
+    pulse_step_context.set(None)
