@@ -15,7 +15,7 @@
 | **Interactive HTML report** | Dark-themed dashboard with Highcharts charts |
 | **Self-contained static report** | All assets embedded — share a single `.html` file |
 | **Email summary** | Lightweight HTML email + optional full-report attachment |
-| **Step recording** | `pulse_step` context-manager fixture |
+| **Step recording** | `@step` decorator and `pulse_step` context manager |
 | **Severity & tags** | `@pytest.mark.pulse_severity` / `@pytest.mark.pulse_tag` |
 | **Artifact collection** | Auto-discovers screenshots / videos / traces from pytest-playwright |
 | **pytest-xdist** | Each worker writes a shard; master merges them |
@@ -73,14 +73,42 @@ addopts = --pulse-output-dir=pulse-report --pulse-description="My CI Suite"
 
 ---
 
-## Implementation
+## Step Recording
 
-### Using `pulse_step`
+### ⚡ Super Easy Mode: The `@step` Decorator
 
-The `pulse_step` fixture allows you to record specific steps within your test cases, making your reports much more readable and professional.
+The most efficient way to record steps, especially within Page Object Models (POM). No fixtures needed.
 
 ```python
-def test_example(page, pulse_step):
+from pytest_pulse import step
+
+class LoginPage:
+    def __init__(self, page):
+        self.page = page
+
+    @step("Login to Application")
+    def login(self, username, password):
+        self.enter_credentials(username, password)
+        self.submit_form()
+
+    @step("Enter Credentials")
+    def enter_credentials(self, username, password):
+        self.page.fill("#user", username)
+        self.page.fill("#pass", password)
+
+    @step("Submit Login Form")
+    def submit_form(self):
+        self.page.click("#login-button")
+```
+
+### The `pulse_step` Context Manager
+
+Ideal for wrapping specific blocks of code directly inside your test functions.
+
+```python
+from pytest_pulse import pulse_step
+
+def test_example(page):
     with pulse_step("Navigate to Home Page"):
         page.goto("https://example.com")
         
