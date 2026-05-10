@@ -11,5 +11,5 @@ You can also import the public API directly:
 
 from .decorators import step, pulse_step
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 __author__ = "Arghajit Singha"
