@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-pulse-report"
-version = "1.0.6"
+version = "1.0.0"
 description = "A pytest reporter and dashboard for visualizing Playwright (pytest-playwright) test results — Python port of playwright-pulse"
 readme = "README.md"
 requires-python = ">=3.8"
