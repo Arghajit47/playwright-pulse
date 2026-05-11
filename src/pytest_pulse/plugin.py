@@ -740,26 +740,6 @@ class PulseReporter:
                 json.dump(report, fh, indent=2, ensure_ascii=False)
             print(f"\nPulseReport: JSON report written to {out_path}")
             
-            # Generate HTML reports
-            html_dynamic_path = out_path.replace(".json", ".html")
-            try:
-                generate_dynamic_html(out_path, html_dynamic_path)
-                print(f"PulseReport: Dynamic HTML report generated at {html_dynamic_path}")
-            except Exception as e:
-                print(f"PulseReport: Failed to generate dynamic HTML report: {e}")
-                
-            html_static_path = out_path.replace(".json", "-static.html")
-            if "playwright-pulse-report-static.html" in html_static_path:
-                 # Ensure it matches "playwright-pulse-static-report.html" if using default naming
-                 html_static_path = html_static_path.replace("playwright-pulse-report-static.html", "playwright-pulse-static-report.html")
-            elif "playwright-pulse-report.html" in html_static_path:
-                 html_static_path = html_static_path.replace("playwright-pulse-report.html", "playwright-pulse-static-report.html")
-
-            try:
-                generate_static_html(out_path, html_static_path)
-                print(f"PulseReport: Static HTML report generated at {html_static_path}")
-            except Exception as e:
-                print(f"PulseReport: Failed to generate static HTML report: {e}")
         else:
             sub_dir = os.path.join(self.output_dir, self.individual_sub)
             stem = self.output_file.replace(".json", "")
@@ -840,18 +820,6 @@ class PulseReporter:
         with open(out_path, "w", encoding="utf-8") as fh:
             _json.dump(merged, fh, indent=2, ensure_ascii=False)
         print(f"\nPulseReport: merged xdist report written to {out_path}")
-        
-        # CRITICAL FIX: Trigger HTML generation after merging shard files on master
-        from .dynamic_generator import generate_dynamic_html
-        from .static_generator import generate_static_html
-        
-        dynamic_html = os.path.join(self.output_dir, "playwright-pulse-report.html")
-        static_html = os.path.join(self.output_dir, "playwright-pulse-static-report.html")
-        
-        print(f"PulseReport: generating reports for merged results...")
-        generate_dynamic_html(out_path, dynamic_html)
-        generate_static_html(out_path, static_html)
-        print(f"PulseReport: reports generated successfully.")
 
         self._cleanup_shard_files()
 
