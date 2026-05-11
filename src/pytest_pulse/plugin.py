@@ -21,6 +21,7 @@ import inspect
 import linecache
 import os
 import re
+import json
 import textwrap
 import time
 import traceback
@@ -682,51 +683,61 @@ class PulseReporter:
 
     # ── Finalise ───────────────────────────────────────────────────────────────
     def finalise(self) -> None:
-        final_results = _dedupe_retries(self._results)
-
-        run_end_ms = int(time.time() * 1000)
-        duration_ms = run_end_ms - self.run_start_ms
+        from .report_writer import calculate_summary, dedupe_results, _to_dict
 
         env = get_env_details()
+        
+        # Convert dataclass results to dicts for summary calculation and de-duplication
+        raw_results = [_to_dict(r) for r in self._results]
+        summary = calculate_summary(raw_results)
+        final_results = dedupe_results(raw_results)
 
         run = TestRun(
             id=self.run_id,
             timestamp=datetime.fromtimestamp(self.run_start_ms / 1000, tz=timezone.utc),
-            totalTests=len(final_results),
-            passed=sum(1 for r in final_results if _final_status(r) == "passed"),
-            failed=sum(1 for r in final_results if _final_status(r) == "failed"),
-            skipped=sum(1 for r in final_results if _final_status(r) == "skipped"),
-            flaky=sum(1 for r in final_results if _final_status(r) == "flaky"),
-            duration=float(duration_ms),
+            totalTests=summary["totalTests"],
+            passed=summary["passed"],
+            failed=summary["failed"],
+            skipped=summary["skipped"],
+            flaky=summary["flaky"],
+            duration=summary["duration"],
             environment=env,
         )
 
         for r in final_results:
-            r.runId = self.run_id
+            r["runId"] = self.run_id
 
         logo_val = self.logo
         if logo_val and os.path.isfile(logo_val):
             logo_val = _encode_logo(logo_val)
 
-        metadata = ReportMetadata(
-            generatedAt=datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
-            reportDescription=self.report_description,
-            logo=logo_val,
-        )
+        metadata = {
+            "generatedAt": datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
+            "reportDescription": self.report_description,
+            "logo": logo_val,
+        }
 
-        report = PulseReport(run=run, results=final_results, metadata=metadata)
+        report = {
+            "run": _to_dict(run),
+            "results": final_results,
+            "metadata": metadata
+        }
 
         if self._is_worker():
             shard_path = os.path.join(
                 self.output_dir,
                 f"{TEMP_SHARD_PREFIX}{self._worker_index()}.json",
             )
-            write_report(report, shard_path)
+            os.makedirs(os.path.dirname(shard_path) or ".", exist_ok=True)
+            with open(shard_path, "w", encoding="utf-8") as fh:
+                json.dump(report, fh, indent=2, ensure_ascii=False)
             return
 
         if self.reset_on_each_run:
             out_path = os.path.join(self.output_dir, self.output_file)
-            write_report(report, out_path)
+            os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
+            with open(out_path, "w", encoding="utf-8") as fh:
+                json.dump(report, fh, indent=2, ensure_ascii=False)
             print(f"\nPulseReport: JSON report written to {out_path}")
             
             # Generate HTML reports
@@ -982,9 +993,12 @@ def _determine_status(setup, call, teardown):
     error_msg = ""
     stack = ""
 
+    # Debug: print outcomes
+    # print(f"DEBUG: setup={setup.outcome if setup else 'None'}, call={call.outcome if call else 'None'}, teardown={teardown.outcome if teardown else 'None'}")
+
     # If call phase exists, it drives the primary status
     if call is not None:
-        if call.outcome == "failed":
+        if call.outcome == "failed" or call.outcome == "rerun":
             error_msg = _extract_error(call)
             stack = _extract_stack(call)
             return "failed", error_msg, stack
@@ -997,7 +1011,7 @@ def _determine_status(setup, call, teardown):
 
     # No call phase (e.g. collected-only / setup failure)
     if setup is not None:
-        if setup.outcome == "failed":
+        if setup.outcome == "failed" or setup.outcome == "rerun":
             return "failed", _extract_error(setup), _extract_stack(setup)
         if setup.outcome == "skipped":
             return "skipped", "", ""
@@ -1022,42 +1036,8 @@ def _extract_stack(report: pytest.TestReport) -> str:
     return str(report.longrepr)
 
 
-def _final_status(r: TestResult) -> str:
-    return r.final_status or r.status
-
-
-def _dedupe_retries(results: List[TestResult]) -> List[TestResult]:
-    """Group by test id, assign retry history, determine final status."""
-    from collections import defaultdict
-    grouped: dict[str, List[TestResult]] = defaultdict(list)
-    for r in results:
-        grouped[r.id].append(r)
-
-    final: List[TestResult] = []
-    for attempts in grouped.values():
-        attempts.sort(key=lambda r: (r.retries, r.startTime))
-        first = attempts[0]
-        retries = attempts[1:]
-
-        has_actual_retries = retries and any(
-            a.status in ("failed", "flaky") or first.status in ("failed", "flaky")
-            for a in retries
-        )
-
-        if has_actual_retries:
-            last = attempts[-1]
-            first.retryHistory = retries
-            first.final_status = last.status
-            if last.status == "flaky" or (first.status == "failed" and last.status == "passed"):
-                first.outcome = "flaky"
-                first.status = "flaky"
-        else:
-            first.final_status = None
-            first.retryHistory = None
-
-        final.append(first)
-
-    return final
+# These are now moved to report_writer.py but kept as aliases or removed if unused
+# We already replaced their usage in PulseReporter.finalise
 
 
 def _encode_logo(path: str) -> str:

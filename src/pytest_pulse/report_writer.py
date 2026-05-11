@@ -52,16 +52,71 @@ def _revive_dates(dct: dict) -> dict:
     return dct
 
 
+def calculate_summary(results: list[dict]) -> dict:
+    """Re-calculate total run statistics (passed, failed, flaky, etc) from a list of results."""
+    # First, dedupe results to correctly handle retries/flaky tests
+    final_results = dedupe_results(results)
+    
+    passed = sum(1 for r in final_results if get_final_status(r) == "passed")
+    failed = sum(1 for r in final_results if get_final_status(r) == "failed")
+    skipped = sum(1 for r in final_results if get_final_status(r) == "skipped")
+    flaky = sum(1 for r in final_results if get_final_status(r) == "flaky")
+    total_duration = sum(r.get("duration", 0) for r in results) # Sum of all attempts
+    
+    return {
+        "totalTests": len(final_results),
+        "passed": passed,
+        "failed": failed,
+        "skipped": skipped,
+        "flaky": flaky,
+        "duration": float(total_duration),
+    }
+
+
+def get_final_status(r: dict) -> str:
+    """Return the final visual status of a test (handles flaky status)."""
+    if r.get("status") == "flaky":
+        return "flaky"
+    return r.get("final_status") or r.get("status") or "unknown"
+
+
+def dedupe_results(results: list[dict]) -> list[dict]:
+    """Group results by ID and determine flaky status."""
+    from collections import defaultdict
+    grouped = defaultdict(list)
+    for r in results:
+        rid = r.get("id")
+        if rid:
+            grouped[rid].append(r)
+    
+    final = []
+    for attempts in grouped.values():
+        # Sort by retries (if available) or startTime
+        attempts.sort(key=lambda x: (x.get("retries", 0), x.get("startTime", "")))
+        first = attempts[0]
+        if len(attempts) > 1:
+            retries = attempts[1:]
+            last = attempts[-1]
+            first["retryHistory"] = retries
+            first["final_status"] = last.get("status")
+            
+            # Flaky logic: if it eventually passed after failing
+            if last.get("status") == "passed" and any(a.get("status") == "failed" for a in attempts[:-1]):
+                first["status"] = "flaky"
+                first["outcome"] = "flaky"
+            elif last.get("status") == "flaky":
+                 first["status"] = "flaky"
+                 first["outcome"] = "flaky"
+        else:
+            first["final_status"] = None
+            first["retryHistory"] = []
+            
+        final.append(first)
+    return final
+
+
 def merge_raw_reports(reports: list[dict]) -> dict:
     """Combine a list of raw report dicts into one — used by merge scripts."""
-    combined_run: dict = {
-        "totalTests": 0,
-        "passed": 0,
-        "failed": 0,
-        "skipped": 0,
-        "flaky": 0,
-        "duration": 0,
-    }
     all_results: list = []
     latest_ts = ""
     latest_gen = ""
@@ -69,13 +124,6 @@ def merge_raw_reports(reports: list[dict]) -> dict:
 
     for rep in reports:
         run = rep.get("run") or {}
-        combined_run["totalTests"] += run.get("totalTests", 0)
-        combined_run["passed"] += run.get("passed", 0)
-        combined_run["failed"] += run.get("failed", 0)
-        combined_run["skipped"] += run.get("skipped", 0)
-        combined_run["flaky"] += run.get("flaky", 0)
-        combined_run["duration"] += run.get("duration", 0)
-
         env = run.get("environment")
         if env:
             environments.append(env)
@@ -90,6 +138,9 @@ def merge_raw_reports(reports: list[dict]) -> dict:
         if gen > latest_gen:
             latest_gen = gen
 
+    # Re-calculate summary from all combined results
+    combined_run = calculate_summary(all_results)
+    
     import time, uuid
     run_id = f"merged-{int(time.time() * 1000)}-581d5ad8-ce75-4ca5-94a6-ed29c466c815"
     combined_run["id"] = run_id
@@ -99,6 +150,6 @@ def merge_raw_reports(reports: list[dict]) -> dict:
 
     return {
         "run": combined_run,
-        "results": all_results,
+        "results": dedupe_results(all_results),
         "metadata": {"generatedAt": latest_gen},
     }

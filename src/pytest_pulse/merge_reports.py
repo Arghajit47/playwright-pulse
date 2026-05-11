@@ -12,6 +12,7 @@ import os
 import shutil
 import time
 import uuid
+from .report_writer import merge_raw_reports
 from pathlib import Path
 from typing import Optional
 
@@ -252,42 +253,7 @@ def _trend_ts(fname: str) -> int:
 # ── Internal helpers ───────────────────────────────────────────────────────────
 
 def _merge_report_list(reports: list) -> dict:
-    combined = {"totalTests": 0, "passed": 0, "failed": 0, "skipped": 0, "flaky": 0, "duration": 0}
-    all_results: list = []
-    latest_ts = ""
-    latest_gen = ""
-    environments: list = []
-
-    for rep in reports:
-        run = rep.get("run") or {}
-        for key in ("totalTests", "passed", "failed", "skipped", "flaky", "duration"):
-            combined[key] = combined.get(key, 0) + (run.get(key) or 0)
-
-        env = run.get("environment")
-        if env:
-            environments.append(env)
-
-        all_results.extend(rep.get("results") or [])
-
-        ts = run.get("timestamp", "")
-        if ts > latest_ts:
-            latest_ts = ts
-
-        gen = (rep.get("metadata") or {}).get("generatedAt", "")
-        if gen > latest_gen:
-            latest_gen = gen
-
-    run_id = f"merged-{int(time.time()*1000)}-581d5ad8-ce75-4ca5-94a6-ed29c466c815"
-    combined["id"] = run_id
-    combined["timestamp"] = latest_ts
-    if environments:
-        combined["environment"] = environments
-
-    return {
-        "run": combined,
-        "results": all_results,
-        "metadata": {"generatedAt": latest_gen},
-    }
+    return merge_raw_reports(reports)
 
 
 def _get_shard_dirs(output_dir: str, output_file: str, individual_sub: str) -> list:

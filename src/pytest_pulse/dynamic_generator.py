@@ -1994,13 +1994,23 @@ def generate_html(report_data, trend_data=None):
                 {other_attachments_html}
                 """
 
-            header_status = test.get('final_status') if (test.get('retryHistory') and test.get('final_status')) else test.get('status')
+            # Prioritize 'flaky' status if it exists, otherwise use final_status or status
+            header_status = test.get('status')
+            if header_status != 'flaky' and test.get('retryHistory') and test.get('final_status'):
+                header_status = test.get('final_status')
             outcome_badge = f'<span class="outcome-badge {test["outcome"]}">{test["outcome"]}</span>' if test.get('outcome') and test.get('outcome') != 'flaky' else ''
             tags_html = "".join([f'<span class="tag">{sanitize_html(t)}</span>' for t in test.get('tags', [])])
             
             retry_tabs_html = ""
             if test.get('retryHistory'):
-                tabs_header = f"""<button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-{test.get('id', index)}')">Base Run {get_small_status_badge(test.get('final_status') or test.get('status'))}</button>"""
+                # For flaky tests, the 'Base Run' is the one that failed. 
+                # We want the badge to reflect the failure (red) or flaky (cyan) status of THAT run.
+                base_badge_status = test.get('status')
+                if base_badge_status == 'flaky':
+                    # If it's flaky, it means the base run failed. Show 'failed' badge for the base run tab.
+                    base_badge_status = 'failed'
+                
+                tabs_header = f"""<button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-{test.get('id', index)}')">Base Run {get_small_status_badge(base_badge_status)}</button>"""
                 for idx, retry in enumerate(test['retryHistory']):
                     tabs_header += f"""<button class="retry-tab" onclick="switchRetryTab(event, 'retry-{idx + 1}-{test.get('id', index)}')">Retry {idx + 1} {get_small_status_badge(retry.get('final_status') or retry.get('status'))}</button>"""
                     
