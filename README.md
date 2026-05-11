@@ -230,6 +230,12 @@ The output JSON is **identical** to the JS playwright-pulse format, so existing 
 
 ---
 
+## Github repository
+
+Learning from the documentation or, the readme file sometimes is a big ask. So I have created this repository to serve as a quick reference for the users. Here is the link to the Github repository:
+
+[pytest-playwright](https://github.com/Arghajit47/pytest-playwright)
+
 ## Author
 
 **Arghajit Singha** — [playwright-pulse](https://github.com/Arghajit47/playwright-pulse)
