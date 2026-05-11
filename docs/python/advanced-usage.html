@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Advanced Usage - Pytest Pulse Report</title>
+  <link rel="icon" href="../asset/logo.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="../asset/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="search.css" />
+</head>
+
+<body data-theme="light">
+  <!-- Enhanced Header with Search and Theme Toggle -->
+  <header class="enhanced-header">
+    <div class="header-left">
+      <a href="../index.html">
+        <img src="../asset/FullLogo.png" alt="Pytest Pulse Report Banner" class="header-logo" />
+      </a>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..."
+            autocomplete="off" />
+          <button class="clear-search" id="clearSearch">×</button>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+          <path d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+    </svg>
+  </button>
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Getting Started</a></li>
+        <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+        <li><a href="report-features.html">Report Features</a></li>
+        <li>
+          <a href="advanced-usage.html" class="active">Advanced Usage</a>
+        </li>
+        <li>
+          <a href="sharding.html">Sharding</a>
+        </li>
+        <li><a href="comparison.html">Comparison</a></li>
+        <li><a href="reference.html">Changelog</a></li>
+        <li><a href="view.html">View Reporter Images</a></li>
+        <li>
+          <a href="demo.html" target="_blank">Live Report Demonstration</a>
+        </li>
+      </ul>
+    </nav>
+    <div class="overlay" id="overlay"></div>
+    <main class="main-content">
+      <h1>Advanced Usage</h1>
+      <section id="advanced-config">
+        <h2>Full Configuration</h2>
+        <p>
+          Configure the reporter via <code>pytest.ini</code> or command line arguments:
+        </p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>CLI Argument</th>
+                <th>pytest.ini Key</th>
+                <th>Default</th>
+                <th>Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>--pulse-output-dir</code></td>
+                <td><code>pulse_output_dir</code></td>
+                <td><code>'pulse-report'</code></td>
+                <td>Root directory for all report assets.</td>
+              </tr>
+              <tr>
+                <td><code>--pulse-logo</code></td>
+                <td><code>pulse_logo</code></td>
+                <td><code>None</code></td>
+                <td>Local path to a custom logo image.</td>
+              </tr>
+              <tr>
+                <td><code>--pulse-description</code></td>
+                <td><code>pulse_description</code></td>
+                <td><code>None</code></td>
+                <td>Custom text to display in the report header.</td>
+              </tr>
+              <tr>
+                <td><code>--pulse-reset-on-each-run</code></td>
+                <td><code>pulse_reset_on_each_run</code></td>
+                <td><code>True</code></td>
+                <td>If False, merges results from multiple <code>pytest</code> calls in the same directory.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="step-recording">
+        <h2>Step Recording Guide</h2>
+        <p>
+          Pytest Pulse Report allows you to break down complex tests into logical, named steps. This significantly
+          improves report readability and helps identify exactly where a test failed.
+        </p>
+        <p>
+          You can implement steps using either a <strong>static decorator</strong> or a <strong>context
+            manager</strong>.
+        </p>
+
+        <h3>1. The <code>@step</code> Decorator</h3>
+        <p>
+          The most efficient way to record steps, especially within Page Object Models (POM). It automatically handles
+          the step lifecycle and supports deep nesting.
+        </p>
+        <ul>
+          <li><strong>Zero Fixture Boilerplate:</strong> No need to pass a <code>pulse_step</code> fixture into your
+            methods.</li>
+          <li><strong>Clean POMs:</strong> Keeps your Page Objects readable and focused on logic.</li>
+        </ul>
+        <pre><code class="language-python">from pytest_pulse import step
+
+class LoginPage:
+    def __init__(self, page):
+        self.page = page
+
+    @step("Login to Application")
+    def login(self, username, password):
+        self.enter_credentials(username, password)
+        self.submit_form()
+
+    @step("Enter Credentials")
+    def enter_credentials(self, username, password):
+        self.page.fill("#user", username)
+        self.page.fill("#pass", password)
+
+    @step("Submit Login Form")
+    def submit_form(self):
+        self.page.click("#login-button")</code><button class="copy-button">Copy</button></pre>
+
+        <h3>2. The <code>pulse_step</code> Context Manager</h3>
+        <p>
+          Ideal for wrapping specific blocks of code directly inside your test functions or for ad-hoc step creation.
+        </p>
+        <pre><code class="language-python">from pytest_pulse import pulse_step
+
+def test_checkout_flow(page):
+    with pulse_step("Search for Product"):
+        page.fill("[placeholder='Search']", "iPhone 15")
+        page.press("[placeholder='Search']", "Enter")
+
+    with pulse_step("Add to Cart"):
+        page.click("text=Add to cart")
+        
+    with pulse_step("Verify Cart"):
+        assert page.is_visible(".cart-count")</code><button class="copy-button">Copy</button></pre>
+
+        <div class="note"
+          style="border-left: 4px solid #4CAF50; padding: 15px; margin: 20px 0; border-radius: 4px; background: rgba(76, 175, 80, 0.05);">
+          <strong>💡 Pro Tip:</strong> You can nest decorators and context managers interchangeably. The reporter will
+          automatically build the correct hierarchy in the dashboard.
+        </div>
+      </section>
+
+      <section id="advanced-ci">
+        <h2>CI/CD Workflow</h2>
+        <div class="ci-buttons">
+          <button onclick="showCode('github', event)" class="active">GitHub Actions</button>
+          <button onclick="showCode('gitlab', event)">GitLab CI/CD</button>
+        </div>
+        <div id="github-code" class="code-container">
+          <pre><code class="language-yaml"># .github/workflows/pytest.yml
+name: Pytest Tests
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.14'
+    - name: Install dependencies
+      run: |
+        pip install pytest-pulse-report playwright
+        playwright install --with-deps
+    - name: Run tests
+      run: pytest
+    - name: Generate Report
+      run: generate-pulse-report
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: pulse-report
+        path: pulse-report/</code><button class="copy-button">Copy</button></pre>
+        </div>
+        <div id="gitlab-code" class="code-container" style="display: none">
+          <pre><code class="language-yaml"># .gitlab-ci.yml
+test:
+  image: python:3.14
+  script:
+    - pip install pytest-pulse-report playwright
+    - playwright install --with-deps
+    - pytest
+    - generate-pulse-report
+  artifacts:
+    when: always
+    paths:
+      - pulse-report/</code><button class="copy-button">Copy</button></pre>
+        </div>
+      </section>
+
+      <section id="sequential-run">
+        <h2>Handling Sequential Test Runs</h2>
+        <p>
+          To accumulate results from multiple <code>pytest</code> commands into a single report, disable
+          <code>reset_on_each_run</code>.
+        </p>
+        <pre><code class="language-ini"># pytest.ini
+[pytest]
+addopts = --pulse-report --pulse-no-reset</code><button class="copy-button">Copy</button></pre>
+        <p>
+          This will store individual run data in <code>pulse-results/</code> and automatically merge them into the
+          master JSON on each run.
+        </p>
+      </section>
+
+      <section id="severity-level">
+        <h2>Test Severity Levels</h2>
+        <p>
+          Categorize your tests using the <code>pulse_severity</code> marker:
+        </p>
+        <pre><code class="language-python">import pytest
+
+@pytest.mark.pulse_severity("Critical")
+def test_payment_gateway():
+    # Critical business logic
+    pass
+
+@pytest.mark.pulse_severity("Minor")
+def test_ui_typo():
+    # Low priority fix
+    pass</code><button class="copy-button">Copy</button></pre>
+        <p>
+          The dashboard will display a breakdown of these levels in the summary charts.
+        </p>
+      </section>
+    </main>
+  </div>
+  <script src="search.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

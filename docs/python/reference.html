@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog - Pytest Pulse Report</title>
+  <link rel="icon" href="../asset/logo.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="../asset/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="search.css" />
+</head>
+
+<body data-theme="light">
+  <!-- Enhanced Header with Search and Theme Toggle -->
+  <header class="enhanced-header">
+    <div class="header-left">
+      <a href="../index.html">
+        <img src="../asset/FullLogo.png" alt="Pytest Pulse Report Banner" class="header-logo" />
+      </a>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..."
+            autocomplete="off" />
+          <button class="clear-search" id="clearSearch">×</button>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+          <path d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+    </svg>
+  </button>
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Getting Started</a></li>
+        <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+        <li><a href="report-features.html">Report Features</a></li>
+        <li><a href="advanced-usage.html">Advanced Usage</a></li>
+        <li>
+          <a href="sharding.html">Sharding</a>
+        </li>
+        <li><a href="comparison.html">Comparison</a></li>
+        <li><a href="reference.html" class="active">Changelog</a></li>
+        <li><a href="view.html">View Reporter Images</a></li>
+        <li>
+          <a href="demo.html" target="_blank">Live Report Demonstration</a>
+        </li>
+      </ul>
+    </nav>
+    <div class="overlay" id="overlay"></div>
+    <main class="main-content">
+      <h1>Changelog</h1>
+      <section id="changelog">
+        <h2>Version 1.0.0</h2>
+        <ul>
+          <li><strong>Fix:</strong> Improved ContextVar propagation to ensure deep-nested steps in Page Objects are
+            correctly captured.</li>
+          <li><strong>Fix:</strong> Resolved xdist merge issue where HTML reports were not generated after merging
+            shards.</li>
+          <li><strong>Fix:</strong> Added generator support to <code>@step</code> decorator, enabling its use on
+            yielding pytest fixtures.</li>
+          <li><strong>Fix:</strong> Implemented defensive path checks for <code>test-results</code> to prevent crashes
+            during attachment collection.</li>
+          <li><strong>Fix:</strong> Corrected hidden shard file discovery (e.g.,
+            <code>.pulse-shard-results-0.json</code>) during the merge process.
+          </li>
+          <li><strong>Fix:</strong> Resolved UI layout issues in <code>stdout</code> and <code>stderr</code> wrappers
+            where long logs would break the container.</li>
+          <li><strong>Fix:</strong> Standardized "Copy" button positioning and behavior in both static and dynamic
+            report generators.</li>
+          <li><strong>Improvement:</strong> Enhanced automatic cleanup of temporary shard files after a successful
+            merge.</li>
+          <li><strong>Initial Release:</strong> Ported the core Pulse reporting engine to Pytest.</li>
+          <li><strong>Feature:</strong> Support for <code>pytest-playwright</code> attachments (screenshots, videos,
+            traces).</li>
+          <li><strong>Feature:</strong> Interactive HTML dashboard with historical trend tracking.</li>
+          <li><strong>Feature:</strong> Standalone static HTML report generation.</li>
+          <li><strong>Feature:</strong> <code>pulse_step</code> context manager for granular test step tracking.</li>
+        </ul>
+      </section>
+
+      <section id="support-credits">
+        <h2>Support & Credits</h2>
+        <p>
+          For any issues or feature requests, please visit the
+          <a href="https://github.com/Arghajit47/playwright-pulse">GitHub Repository</a>.
+        </p>
+      </section>
+    </main>
+  </div>
+  <script src="search.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Report Features - Pytest Pulse Report</title>
+  <link rel="icon" href="../asset/logo.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="../asset/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="search.css" />
+</head>
+
+<body data-theme="light">
+  <!-- Enhanced Header with Search and Theme Toggle -->
+  <header class="enhanced-header">
+    <div class="header-left">
+      <a href="../index.html">
+        <img src="../asset/FullLogo.png" alt="Pytest Pulse Report Banner" class="header-logo" />
+      </a>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..."
+            autocomplete="off" />
+          <button class="clear-search" id="clearSearch">×</button>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+          <path d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+    </svg>
+  </button>
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Getting Started</a></li>
+        <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+        <li>
+          <a href="report-features.html" class="active">Report Features</a>
+        </li>
+        <li><a href="advanced-usage.html">Advanced Usage</a></li>
+        <li>
+          <a href="sharding.html">Sharding</a>
+        </li>
+        <li><a href="comparison.html">Comparison</a></li>
+        <li><a href="reference.html">Changelog</a></li>
+        <li><a href="view.html">View Reporter Images</a></li>
+        <li>
+          <a href="demo.html" target="_blank">Live Report Demonstration</a>
+        </li>
+      </ul>
+    </nav>
+    <div class="overlay" id="overlay"></div>
+    <main class="main-content">
+      <h1>Report Features</h1>
+      <p>
+        The generated HTML report is a comprehensive single-page application that provides a transparent view into your
+        test results.
+      </p>
+
+      <section id="feature-dashboard">
+        <h2>Dashboard View</h2>
+        <p>
+          The default view provides a high-level summary of the entire test session.
+        </p>
+        <h4>Key Components:</h4>
+        <ul>
+          <li>
+            <strong>Summary Cards:</strong> Real-time metrics for Total Tests, Passed, Failed, Skipped, Average
+            Duration, and Environment details.
+          </li>
+          <li>
+            <strong>Result Charts:</strong> Visual breakdown of test outcomes and execution time trends.
+          </li>
+          <li>
+            <strong>System Environment:</strong> Detailed information about the OS, Python version, CPU, and Memory of
+            the test runner.
+          </li>
+          <li>
+            <strong>Test Suites:</strong> A grouped view of all executed test files with their respective pass rates.
+          </li>
+        </ul>
+      </section>
+
+      <section id="feature-test-runs">
+        <h2>Test Run Summary View</h2>
+        <p>
+          This view lists every individual test case with deep inspection capabilities.
+        </p>
+        <h4>Key Components:</h4>
+        <ul>
+          <li>
+            <strong>Global Search & Filter:</strong> Quickly find tests by name, status, or browser type.
+          </li>
+          <li>
+            <strong>Detailed Test Steps:</strong> Expand any test to see a step-by-step breakdown. You can record steps
+            in two ways:
+            <ul>
+              <li><strong>Decorator (New!):</strong> Use the <code>@step("Title")</code> decorator on any function or
+                method. Perfect for Page Objects.
+                <pre><code class="language-python">from pytest_pulse import step
+
+class LoginPage:
+    @step("Login to application")
+    def login(self, user, pwd): ...</code></pre>
+              </li>
+              <li><strong>Context Manager:</strong> Use the <code>pulse_step</code> fixture for blocks of code inside a
+                test.
+                <pre><code class="language-python">with pulse_step("Submit Form"):
+    page.click("#submit")</code></pre>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Error & Stack Trace:</strong> Rich error reporting with color-coded stack traces and a one-click AI
+            prompt copy button for debugging.
+          </li>
+          <li>
+            <strong>Visual Attachments:</strong> Integrated viewer for screenshots, videos, and Playwright traces
+            recorded during the run.
+          </li>
+          <li>
+            <strong>Console Output:</strong> Captured <code>stdout</code> and <code>stderr</code> are presented in a
+            clean, scrollable wrapper within the test details.
+          </li>
+          <li>
+            <strong>Metadata:</strong> View test tags, severity levels, and custom annotations added via markers.
+          </li>
+        </ul>
+      </section>
+      <section id="feature-test-history">
+        <h2>Test History View</h2>
+        <p>
+          Visualize trends across your last 15 local or CI runs.
+        </p>
+        <h4>Charts & Analytics:</h4>
+        <ul>
+          <li><strong>Outcome Trends:</strong> Track how your pass/fail ratio changes over time.</li>
+          <li><strong>Duration Trends:</strong> Identify performance regressions across specific test files or suites.
+          </li>
+          <li><strong>Worker Distribution:</strong> Analyze how tests were distributed across different workers
+            (especially useful for <code>pytest-xdist</code>).</li>
+          <li><strong>Individual Test Stability:</strong> View the stability and duration history of any specific test
+            case over time.</li>
+        </ul>
+      </section>
+
+
+
+      <section id="email-report">
+        <h2>Email Report</h2>
+        <p>
+          Distribute lightweight HTML summaries to stakeholders via SMTP.
+        </p>
+        <h3>1. Setup Recipients</h3>
+        <pre><code class="language-bash"># Set in your .env file
+RECIPIENT_EMAIL_1=dev-leads@company.com
+RECIPIENT_EMAIL_2=qa-team@company.com</code><button class="copy-button">Copy</button></pre>
+
+        <h3>2. Configure SMTP (Optional)</h3>
+        <p>Provide your own credentials for custom delivery:</p>
+        <pre><code class="language-bash">PULSE_MAIL_HOST=gmail
+PULSE_MAIL_USERNAME=reports@yourdomain.com
+PULSE_MAIL_PASSWORD=your_app_password</code><button class="copy-button">Copy</button></pre>
+
+        <h3>3. Send Report</h3>
+        <pre><code class="language-bash">send-email</code><button class="copy-button">Copy</button></pre>
+      </section>
+    </main>
+  </div>
+  <script src="search.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

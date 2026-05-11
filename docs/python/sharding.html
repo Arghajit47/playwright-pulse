@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sharding in CI/CD - Pytest Pulse Report</title>
+  <link rel="icon" href="../asset/logo.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="../asset/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="search.css" />
+</head>
+
+<body data-theme="light">
+  <!-- Enhanced Header with Search and Theme Toggle -->
+  <header class="enhanced-header">
+    <div class="header-left">
+      <a href="../index.html">
+        <img src="../asset/FullLogo.png" alt="Pytest Pulse Report Banner" class="header-logo" />
+      </a>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..."
+            autocomplete="off" />
+          <button class="clear-search" id="clearSearch">×</button>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+          <path d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+    ☰
+  </button>
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Getting Started</a></li>
+        <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
+        <li><a href="report-features.html">Report Features</a></li>
+        <li>
+          <a href="advanced-usage.html">Advanced Usage</a>
+        </li>
+        <li>
+          <a href="sharding.html" class="active">Sharding</a>
+        </li>
+        <li><a href="comparison.html">Comparison</a></li>
+        <li><a href="reference.html">Changelog</a></li>
+        <li><a href="view.html">View Reporter Images</a></li>
+        <li>
+          <a href="demo.html" target="_blank">Live Report Demonstration</a>
+        </li>
+      </ul>
+    </nav>
+    <div class="overlay" id="overlay"></div>
+    <main class="main-content">
+      <h1>Sharding Usage in CI/CD</h1>
+      <section id="sharding">
+        <h2>Why Sharding Matters</h2>
+        <p>The <code>merge-pulse-report</code> utility simplifies the aggregation of test results from multiple parallel
+          CI nodes.</p>
+
+        <h3>The "One-Command" Logic</h3>
+        <p>The complexity of merging distributed reports is hidden behind a single command.</p>
+        <ul>
+          <li><strong>Auto-Discovery:</strong> Just place your shard report folders into a single directory and run
+            <code>merge-pulse-report -o all-reports</code>. The script finds every partial JSON automatically.
+          </li>
+          <li><strong>Attachment Synchronization:</strong> It intelligently collects screenshots, videos, and traces
+            from all shards into one central <code>attachments/</code> folder.</li>
+          <li><strong>Clean Workspace:</strong> After a successful merge, it automatically cleans up temporary shard
+            directories, leaving you with a production-ready report folder.</li>
+        </ul>
+      </section>
+
+      <section id="advanced-ci">
+        <h2>CI/CD Workflow for Sharding</h2>
+        <div class="ci-buttons">
+          <button onclick="showCode('github', event)" class="active">GitHub Actions</button>
+        </div>
+        <div id="github-code" class="code-container">
+          <pre><code class="language-yaml"># .github/workflows/pytest-sharding.yml
+name: Distributed Pytest Runs
+on: [push]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        shard: [1, 2, 3, 4]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - run: pip install pytest-pulse-report playwright
+      - run: playwright install --with-deps
+      # Run a subset of tests on each shard
+      - run: pytest --shard-id=${{ matrix.shard }} --total-shards=4
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pulse-report-shard-${{ matrix.shard }}
+          path: pulse-report/
+
+  merge-report:
+    needs: test
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pytest-pulse-report
+      
+      # Download all artifacts into 'all-reports'
+      - uses: actions/download-artifact@v4
+        with:
+          path: all-reports
+          pattern: pulse-report-shard-*
+
+      # Merge and Generate final report
+      - run: merge-pulse-report -o all-reports
+      - run: generate-pulse-report -o all-reports
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: final-pulse-report
+          path: all-reports/</code><button class="copy-button">Copy</button></pre>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="search.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>

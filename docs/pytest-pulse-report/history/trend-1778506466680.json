@@ -1,0 +1,3404 @@
+{
+  "run": {
+    "totalTests": 10,
+    "passed": 7,
+    "failed": 1,
+    "skipped": 1,
+    "flaky": 1,
+    "duration": 84401.51199999999,
+    "id": "merged-1778506518494-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+    "timestamp": "2026-05-11T13:34:26.680Z",
+    "environment": [
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.4.0",
+        "cpu": {
+          "model": "arm",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "python 3.14.4",
+        "cwd": "/Users/arghajitsingha/playwright-python"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.4.0",
+        "cpu": {
+          "model": "arm",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "python 3.14.4",
+        "cwd": "/Users/arghajitsingha/playwright-python"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.4.0",
+        "cpu": {
+          "model": "arm",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "python 3.14.4",
+        "cwd": "/Users/arghajitsingha/playwright-python"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.4.0",
+        "cpu": {
+          "model": "arm",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "python 3.14.4",
+        "cwd": "/Users/arghajitsingha/playwright-python"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.4.0",
+        "cpu": {
+          "model": "arm",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "python 3.14.4",
+        "cwd": "/Users/arghajitsingha/playwright-python"
+      },
+      {
+        "host": "Arghajits-MacBook-Air.local",
+        "os": "darwin 25.4.0",
+        "cpu": {
+          "model": "arm",
+          "cores": 8
+        },
+        "memory": "8.00GB",
+        "node": "python 3.14.4",
+        "cwd": "/Users/arghajitsingha/playwright-python"
+      }
+    ]
+  },
+  "results": [
+    {
+      "id": "chromium-54440ff7ccb0681d1435",
+      "runId": "run-1778506466177-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_admin_filter.py > test_admin_filter",
+      "status": "passed",
+      "duration": 15243.469,
+      "startTime": "2026-05-11T13:34:26.721Z",
+      "endTime": "2026-05-11T13:34:41.964Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:29.502948+00:00-1729-fa690617",
+          "title": "Fetch cookies from API",
+          "status": "passed",
+          "duration": 1729.0,
+          "startTime": "2026-05-11T13:34:29.502Z",
+          "endTime": "2026-05-11T13:34:31.231Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:78",
+          "snippet": "# Dynamically fetch the authenticated cookie using our Requests utility\napi_auth = OrangeHRMAPI(APIEndpoints.BASE_URL)\ncookie_value = api_auth.login(APIEndpoints.USER_NAME, APIEndpoints.PASSWORD)\nassert cookie_value is not None, \"Failed to authenticate and get cookie\"",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:31.236723+00:00-4-72648554",
+          "title": "Store cookies in browser",
+          "status": "passed",
+          "duration": 4.0,
+          "startTime": "2026-05-11T13:34:31.236Z",
+          "endTime": "2026-05-11T13:34:31.240Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:56",
+          "snippet": "page.context.add_cookies(\n    [\n        {\n            \"name\": Cookies.ORANGEHRM_COOKIE.value,\n            \"value\": login_via_api,\n            \"domain\": Cookies.ORANGEHRM_COOKIE_DOMAIN.value,\n            \"path\": Cookies.ORANGEHRM_COOKIE_PATH.value,\n            \"httpOnly\": Cookies.ORANGEHRM_COOKIE_HTTPONLY.value,\n            \"secure\": Cookies.ORANGEHRM_COOKIE_SECURE.value,\n            \"sameSite\": Cookies.ORANGEHRM_COOKIE_SAMESITE.value,\n        }\n    ]\n)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:31.244495+00:00-6726-01a80abe",
+          "title": "Navigate to the dashboard page",
+          "status": "passed",
+          "duration": 6726.0,
+          "startTime": "2026-05-11T13:34:31.244Z",
+          "endTime": "2026-05-11T13:34:37.970Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:70",
+          "snippet": "base_page = BasePage(page)\nbase_page.navigateToUrl(DashboardPageConstants.DASHBOARD_PAGE_URL)\nbase_page.waitForFullyPageLoad()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:31.248110+00:00-6536-303bff55",
+              "title": "Navigate to the url",
+              "status": "passed",
+              "duration": 6536.0,
+              "startTime": "2026-05-11T13:34:31.248Z",
+              "endTime": "2026-05-11T13:34:37.784Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:17",
+              "snippet": "self.page.goto(url)\nself.waitForFullyPageLoad()",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:34.686683+00:00-3098-dcdaf792",
+                  "title": "Wait for full page load",
+                  "status": "passed",
+                  "duration": 3098.0,
+                  "startTime": "2026-05-11T13:34:34.686Z",
+                  "endTime": "2026-05-11T13:34:37.784Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:11",
+                  "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 8.718,
+                      "startTime": "2026-05-11T13:34:34.689Z",
+                      "endTime": "2026-05-11T13:34:34.698Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 3061.187,
+                      "startTime": "2026-05-11T13:34:34.698Z",
+                      "endTime": "2026-05-11T13:34:37.759Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 24.152,
+                      "startTime": "2026-05-11T13:34:37.760Z",
+                      "endTime": "2026-05-11T13:34:37.784Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": [
+                {
+                  "action": "goto",
+                  "value": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+                  "status": "passed",
+                  "duration": 3425.834,
+                  "startTime": "2026-05-11T13:34:31.248Z",
+                  "endTime": "2026-05-11T13:34:34.673Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:37.809500+00:00-161-de4ca013",
+              "title": "Wait for full page load",
+              "status": "passed",
+              "duration": 161.0,
+              "startTime": "2026-05-11T13:34:37.809Z",
+              "endTime": "2026-05-11T13:34:37.970Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:11",
+              "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 127.54099999999998,
+                  "startTime": "2026-05-11T13:34:37.809Z",
+                  "endTime": "2026-05-11T13:34:37.937Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 22.807000000000002,
+                  "startTime": "2026-05-11T13:34:37.937Z",
+                  "endTime": "2026-05-11T13:34:37.959Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 10.152,
+                  "startTime": "2026-05-11T13:34:37.960Z",
+                  "endTime": "2026-05-11T13:34:37.970Z"
+                }
+              ]
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.018938+00:00-235-46855cd8",
+          "title": "Create request context",
+          "status": "passed",
+          "duration": 235.0,
+          "startTime": "2026-05-11T13:34:38.018Z",
+          "endTime": "2026-05-11T13:34:38.253Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:88",
+          "snippet": "request = playwright.request.new_context()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.265751+00:00-3431-cad042cb",
+          "title": "Verify and test admin filter",
+          "status": "passed",
+          "duration": 3431.0,
+          "startTime": "2026-05-11T13:34:38.265Z",
+          "endTime": "2026-05-11T13:34:41.696Z",
+          "browser": "chromium",
+          "codeLocation": "python.py:157",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.308774+00:00-0-7308cf0b",
+              "title": "Instantiate System User Filter Components",
+              "status": "passed",
+              "duration": 0.0,
+              "startTime": "2026-05-11T13:34:38.308Z",
+              "endTime": "2026-05-11T13:34:38.308Z",
+              "browser": "chromium",
+              "codeLocation": "test_admin_filter.py:18",
+              "snippet": "system_user_filter_component = SystemUserFilterComponents(page)",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            },
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.324707+00:00-2426-3a4c3183",
+              "title": "Verify and click on admin option",
+              "status": "passed",
+              "duration": 2426.0,
+              "startTime": "2026-05-11T13:34:38.324Z",
+              "endTime": "2026-05-11T13:34:40.750Z",
+              "browser": "chromium",
+              "codeLocation": "test_admin_filter.py:20",
+              "snippet": "system_user_filter_component.verify_and_click_on_admin_option()",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.361515+00:00-2389-54baf9cf",
+                  "title": "Verify and click on admin option",
+                  "status": "passed",
+                  "duration": 2389.0,
+                  "startTime": "2026-05-11T13:34:38.361Z",
+                  "endTime": "2026-05-11T13:34:40.750Z",
+                  "browser": "chromium",
+                  "codeLocation": "test_admin_filter.py:21",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.370378+00:00-90-f97230d9",
+                      "title": "Generating Locator from string and verifying it",
+                      "status": "passed",
+                      "duration": 90.0,
+                      "startTime": "2026-05-11T13:34:38.370Z",
+                      "endTime": "2026-05-11T13:34:38.459Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:87",
+                      "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:38.469500+00:00-2281-522ebe3d",
+                      "title": "Generating Locator from string and Clicking on it",
+                      "status": "passed",
+                      "duration": 2281.0,
+                      "startTime": "2026-05-11T13:34:38.469Z",
+                      "endTime": "2026-05-11T13:34:40.750Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:23",
+                      "snippet": "self.page.locator(locator).nth(index).click()\nself.waitForFullyPageLoad()",
+                      "isHook": false,
+                      "steps": [
+                        {
+                          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:39.649636+00:00-1101-7740d061",
+                          "title": "Wait for full page load",
+                          "status": "passed",
+                          "duration": 1101.0,
+                          "startTime": "2026-05-11T13:34:39.649Z",
+                          "endTime": "2026-05-11T13:34:40.750Z",
+                          "browser": "chromium",
+                          "codeLocation": "base_page.py:11",
+                          "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                          "isHook": false,
+                          "steps": [],
+                          "actions": [
+                            {
+                              "action": "wait_for_load_state",
+                              "status": "passed",
+                              "duration": 6.4190000000000005,
+                              "startTime": "2026-05-11T13:34:39.649Z",
+                              "endTime": "2026-05-11T13:34:39.656Z"
+                            },
+                            {
+                              "action": "wait_for_load_state",
+                              "status": "passed",
+                              "duration": 1090.2959999999998,
+                              "startTime": "2026-05-11T13:34:39.656Z",
+                              "endTime": "2026-05-11T13:34:40.746Z"
+                            },
+                            {
+                              "action": "wait_for_load_state",
+                              "status": "passed",
+                              "duration": 4.122,
+                              "startTime": "2026-05-11T13:34:40.746Z",
+                              "endTime": "2026-05-11T13:34:40.750Z"
+                            }
+                          ]
+                        }
+                      ],
+                      "actions": []
+                    }
+                  ],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            },
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:40.756147+00:00-34-62029e57",
+              "title": "Verify admin page url",
+              "status": "passed",
+              "duration": 34.0,
+              "startTime": "2026-05-11T13:34:40.756Z",
+              "endTime": "2026-05-11T13:34:40.790Z",
+              "browser": "chromium",
+              "codeLocation": "test_admin_filter.py:22",
+              "snippet": "system_user_filter_component.verify_admin_page_url()",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:40.761525+00:00-29-ec78dd0a",
+                  "title": "Verify admin page url",
+                  "status": "passed",
+                  "duration": 29.0,
+                  "startTime": "2026-05-11T13:34:40.761Z",
+                  "endTime": "2026-05-11T13:34:40.790Z",
+                  "browser": "chromium",
+                  "codeLocation": "test_admin_filter.py:23",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:40.764925+00:00-26-b77089e8",
+                      "title": "Verify page url",
+                      "status": "passed",
+                      "duration": 26.0,
+                      "startTime": "2026-05-11T13:34:40.764Z",
+                      "endTime": "2026-05-11T13:34:40.790Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:94",
+                      "snippet": "self.waitForFullyPageLoad()\nexpect(self.page).to_have_url(url)",
+                      "isHook": false,
+                      "steps": [
+                        {
+                          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:40.767964+00:00-10-994bac58",
+                          "title": "Wait for full page load",
+                          "status": "passed",
+                          "duration": 10.0,
+                          "startTime": "2026-05-11T13:34:40.767Z",
+                          "endTime": "2026-05-11T13:34:40.777Z",
+                          "browser": "chromium",
+                          "codeLocation": "base_page.py:11",
+                          "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                          "isHook": false,
+                          "steps": [],
+                          "actions": [
+                            {
+                              "action": "wait_for_load_state",
+                              "status": "passed",
+                              "duration": 2.836,
+                              "startTime": "2026-05-11T13:34:40.767Z",
+                              "endTime": "2026-05-11T13:34:40.770Z"
+                            },
+                            {
+                              "action": "wait_for_load_state",
+                              "status": "passed",
+                              "duration": 3.663,
+                              "startTime": "2026-05-11T13:34:40.770Z",
+                              "endTime": "2026-05-11T13:34:40.774Z"
+                            },
+                            {
+                              "action": "wait_for_load_state",
+                              "status": "passed",
+                              "duration": 3.2239999999999998,
+                              "startTime": "2026-05-11T13:34:40.774Z",
+                              "endTime": "2026-05-11T13:34:40.777Z"
+                            }
+                          ]
+                        }
+                      ],
+                      "actions": []
+                    }
+                  ],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            },
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:40.794040+00:00-791-1917ed3e",
+              "title": "Get user list",
+              "status": "passed",
+              "duration": 791.0,
+              "startTime": "2026-05-11T13:34:40.794Z",
+              "endTime": "2026-05-11T13:34:41.585Z",
+              "browser": "chromium",
+              "codeLocation": "test_admin_filter.py:24",
+              "snippet": "response = system_user_filter_component.get_user_list(\n    request_setup, login_via_api\n)",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:40.797021+00:00-788-e6152df8",
+                  "title": "Get user list",
+                  "status": "passed",
+                  "duration": 788.0,
+                  "startTime": "2026-05-11T13:34:40.797Z",
+                  "endTime": "2026-05-11T13:34:41.585Z",
+                  "browser": "chromium",
+                  "codeLocation": "test_admin_filter.py:25",
+                  "snippet": "request_setup, login_via_api",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            },
+            {
+              "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.588774+00:00-108-1933e261",
+              "title": "Verify user list",
+              "status": "passed",
+              "duration": 108.0,
+              "startTime": "2026-05-11T13:34:41.588Z",
+              "endTime": "2026-05-11T13:34:41.696Z",
+              "browser": "chromium",
+              "codeLocation": "test_admin_filter.py:29",
+              "snippet": "system_user_filter_component.verify_user_list(response)",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.591863+00:00-105-d49482df",
+                  "title": "Verify user list",
+                  "status": "passed",
+                  "duration": 105.0,
+                  "startTime": "2026-05-11T13:34:41.591Z",
+                  "endTime": "2026-05-11T13:34:41.696Z",
+                  "browser": "chromium",
+                  "codeLocation": "test_admin_filter.py:30",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.594915+00:00-24-5922ddcc",
+                      "title": "Verify user list count",
+                      "status": "passed",
+                      "duration": 24.0,
+                      "startTime": "2026-05-11T13:34:41.594Z",
+                      "endTime": "2026-05-11T13:34:41.619Z",
+                      "browser": "chromium",
+                      "codeLocation": "system_user_filter_components.py:67",
+                      "isHook": false,
+                      "steps": [
+                        {
+                          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.598048+00:00-11-10f377e8",
+                          "title": "Generating Locator from string and verifying it",
+                          "status": "passed",
+                          "duration": 11.0,
+                          "startTime": "2026-05-11T13:34:41.598Z",
+                          "endTime": "2026-05-11T13:34:41.608Z",
+                          "browser": "chromium",
+                          "codeLocation": "base_page.py:87",
+                          "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                          "isHook": false,
+                          "steps": [],
+                          "actions": []
+                        },
+                        {
+                          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.612275+00:00-7-d5fcf4ae",
+                          "title": "Generating Locator from string and verifying element count",
+                          "status": "passed",
+                          "duration": 7.0,
+                          "startTime": "2026-05-11T13:34:41.612Z",
+                          "endTime": "2026-05-11T13:34:41.619Z",
+                          "browser": "chromium",
+                          "codeLocation": "base_page.py:108",
+                          "snippet": "\"Generating Locator from string and verifying element count\"",
+                          "isHook": false,
+                          "steps": [],
+                          "actions": []
+                        }
+                      ],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.622646+00:00-7-8be97338",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 7.0,
+                      "startTime": "2026-05-11T13:34:41.622Z",
+                      "endTime": "2026-05-11T13:34:41.629Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.632701+00:00-6-d64137b1",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 6.0,
+                      "startTime": "2026-05-11T13:34:41.632Z",
+                      "endTime": "2026-05-11T13:34:41.639Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.642541+00:00-7-c9348428",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 7.0,
+                      "startTime": "2026-05-11T13:34:41.642Z",
+                      "endTime": "2026-05-11T13:34:41.649Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.652853+00:00-6-e2ceb7ec",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 6.0,
+                      "startTime": "2026-05-11T13:34:41.652Z",
+                      "endTime": "2026-05-11T13:34:41.658Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.662390+00:00-6-9d8361a4",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 6.0,
+                      "startTime": "2026-05-11T13:34:41.662Z",
+                      "endTime": "2026-05-11T13:34:41.668Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.671858+00:00-6-e1122c53",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 6.0,
+                      "startTime": "2026-05-11T13:34:41.671Z",
+                      "endTime": "2026-05-11T13:34:41.678Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.681472+00:00-6-6c107664",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 6.0,
+                      "startTime": "2026-05-11T13:34:41.681Z",
+                      "endTime": "2026-05-11T13:34:41.687Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.690843+00:00-6-e5e6be4e",
+                      "title": "Verifying element text ignore case",
+                      "status": "passed",
+                      "duration": 6.0,
+                      "startTime": "2026-05-11T13:34:41.690Z",
+                      "endTime": "2026-05-11T13:34:41.696Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:156",
+                      "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    }
+                  ],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-54440ff7ccb0681d1435_step_2026-05-11T13:34:41.701259+00:00-3-06121979",
+          "title": "Dispose request context",
+          "status": "passed",
+          "duration": 3.0,
+          "startTime": "2026-05-11T13:34:41.701Z",
+          "endTime": "2026-05-11T13:34:41.703Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:91",
+          "snippet": "request.dispose()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_admin_filter.py",
+      "tags": [
+        "Admin",
+        "Regression"
+      ],
+      "severity": "High",
+      "suiteName": "chromium",
+      "screenshots": [
+        "attachments/chromium-54440ff7ccb0681d1435/0-1778506481965-test-finished-1.png"
+      ],
+      "videoPath": [
+        "attachments/chromium-54440ff7ccb0681d1435/100-1778506481965-video.webm"
+      ],
+      "tracePath": "attachments/chromium-54440ff7ccb0681d1435/200-1778506481965-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "Successfully authenticated!",
+        "Successfully authenticated!",
+        "{'data': [{'id': 1, 'userName': 'Admin', 'deleted': False, 'status': True, 'employee': {'empNumber': 7, 'employeeId': 'NickTest', 'firstName': 'Mikheil', 'middleName': '', 'lastName': 'Mezurnishvili', 'terminationId': None}, 'userRole': {'id': 1, 'name': 'Admin', 'displayName': 'Admin'}}, {'id': 170, 'userName': 'ScottSmith ', 'deleted': False, 'status': True, 'employee': {'empNumber': 347, 'employeeId': '0554', 'firstName': 'Scott', 'middleName': '', 'lastName': 'Smith', 'terminationId': None}, 'userRole': {'id': 2, 'name': 'ESS', 'displayName': 'ESS'}}], 'meta': {'total': 2}, 'rels': []}",
+        "Items in user list found!",
+        "Successfully authenticated!",
+        "{'data': [{'id': 1, 'userName': 'Admin', 'deleted': False, 'status': True, 'employee': {'empNumber': 7, 'employeeId': 'NickTest', 'firstName': 'Mikheil', 'middleName': '', 'lastName': 'Mezurnishvili', 'terminationId': None}, 'userRole': {'id': 1, 'name': 'Admin', 'displayName': 'Admin'}}, {'id': 170, 'userName': 'ScottSmith ', 'deleted': False, 'status': True, 'employee': {'empNumber': 347, 'employeeId': '0554', 'firstName': 'Scott', 'middleName': '', 'lastName': 'Smith', 'terminationId': None}, 'userRole': {'id': 2, 'name': 'ESS', 'displayName': 'ESS'}}], 'meta': {'total': 2}, 'rels': []}",
+        "Items in user list found!",
+        "Request is done successfully!"
+      ],
+      "workerId": 1,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "chromium-d9b47db775c4a54c6611",
+      "runId": "run-1778506466177-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_flaky.py > test_flaky_orangehrm_social_link",
+      "status": "flaky",
+      "duration": 5829.713,
+      "startTime": "2026-05-11T13:34:41.968Z",
+      "endTime": "2026-05-11T13:34:47.798Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-d9b47db775c4a54c6611_step_2026-05-11T13:34:42.045822+00:00-4070-20e87758",
+          "title": "Test social media link (Flaky Demo)",
+          "status": "failed",
+          "duration": 4070.9999999999995,
+          "startTime": "2026-05-11T13:34:42.045Z",
+          "endTime": "2026-05-11T13:34:46.116Z",
+          "browser": "chromium",
+          "errorMessage": "Simulated failure on attempt 1. Report should show this as FLAKY.\nassert False",
+          "stackTrace": "Traceback (most recent call last):\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/plugin.py\", line 213, in step\n    yield\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/decorators.py\", line 45, in wrapper\n    return func(*args, **kwargs)\n  File \"/Users/arghajitsingha/playwright-python/tests/test_flaky.py\", line 45, in test_flaky_orangehrm_social_link\n    assert (\n        False\n    ), f\"Simulated failure on attempt {attempt}. Report should show this as FLAKY.\"\nAssertionError: Simulated failure on attempt 1. Report should show this as FLAKY.\nassert False\n",
+          "codeLocation": "python.py:157",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-d9b47db775c4a54c6611_step_2026-05-11T13:34:42.049550+00:00-2581-414ee080",
+              "title": "Navigate to the Login page",
+              "status": "passed",
+              "duration": 2581.0,
+              "startTime": "2026-05-11T13:34:42.049Z",
+              "endTime": "2026-05-11T13:34:44.630Z",
+              "browser": "chromium",
+              "codeLocation": "test_flaky.py:32",
+              "snippet": "page.goto(\"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\")",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "goto",
+                  "value": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+                  "status": "passed",
+                  "duration": 2580.92,
+                  "startTime": "2026-05-11T13:34:42.049Z",
+                  "endTime": "2026-05-11T13:34:44.630Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-d9b47db775c4a54c6611_step_2026-05-11T13:34:44.642464+00:00-313-0230cdbc",
+              "title": "Click on the LinkedIn icon",
+              "status": "passed",
+              "duration": 313.0,
+              "startTime": "2026-05-11T13:34:44.642Z",
+              "endTime": "2026-05-11T13:34:44.955Z",
+              "browser": "chromium",
+              "codeLocation": "test_flaky.py:37",
+              "snippet": "page.locator(\"a[href*='linkedin']\").click()",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "click",
+                  "selector": "<Locator frame=<Frame name= url='https://opensource-demo.orangehrmlive.com/web/index.php/auth/login'> selector=\"a[href*='linkedin']\">",
+                  "status": "passed",
+                  "duration": 313.29400000000004,
+                  "startTime": "2026-05-11T13:34:44.642Z",
+                  "endTime": "2026-05-11T13:34:44.955Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-d9b47db775c4a54c6611_step_2026-05-11T13:34:46.115080+00:00-1-a2e73435",
+              "title": "Assert number of tabs (Attempt: 1)",
+              "status": "failed",
+              "duration": 1.0,
+              "startTime": "2026-05-11T13:34:46.115Z",
+              "endTime": "2026-05-11T13:34:46.116Z",
+              "browser": "chromium",
+              "errorMessage": "Simulated failure on attempt 1. Report should show this as FLAKY.\nassert False",
+              "stackTrace": "Traceback (most recent call last):\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/plugin.py\", line 213, in step\n    yield\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/decorators.py\", line 20, in pulse_step\n    yield\n  File \"/Users/arghajitsingha/playwright-python/tests/test_flaky.py\", line 45, in test_flaky_orangehrm_social_link\n    assert (\n        False\n    ), f\"Simulated failure on attempt {attempt}. Report should show this as FLAKY.\"\nAssertionError: Simulated failure on attempt 1. Report should show this as FLAKY.\nassert False\n",
+              "codeLocation": "test_flaky.py:43",
+              "snippet": "if attempt < 3:\n    assert (\n        False\n    ), f\"Simulated failure on attempt {attempt}. Report should show this as FLAKY.\"\nelse:\n    # Clean up the counter file on success so the next test run starts fresh\n    if os.path.exists(COUNTER_FILE):\n        os.remove(COUNTER_FILE)\n    assert True, \"Successfully reached the pass attempt!\"",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_flaky.py",
+      "errorMessage": "/Users/arghajitsingha/playwright-python/tests/test_flaky.py:45: AssertionError: Simulated failure on attempt 1. Report should show this as FLAKY.\nassert False",
+      "stackTrace": "page = <Page url='https://opensource-demo.orangehrmlive.com/web/index.php/auth/login'>\n\n    @pytest.mark.pulse_tag(\"Regression\")\n    @pytest.mark.pulse_tag(\"Flaky\")\n    @pytest.mark.flaky(reruns=5, reruns_delay=1)  # Automatically rerun up to 5 times\n    @step(\"Test social media link (Flaky Demo)\")\n    def test_flaky_orangehrm_social_link(page: Page):\n        # Get current attempt number\n        attempt = get_and_increment_attempt()\n    \n        with pulse_step(\"Navigate to the Login page\"):\n            page.goto(\"https://opensource-demo.orangehrmlive.com/web/index.php/auth/login\")\n    \n        # Use the expect_page() pattern\n        with page.context.expect_page() as new_page_info:\n            with pulse_step(\"Click on the LinkedIn icon\"):\n                page.locator(\"a[href*='linkedin']\").click()\n    \n        new_page = new_page_info.value\n    \n        # FORCED FLAKINESS: Fail for the first 2 attempts, pass on the 3rd\n        with pulse_step(f\"Assert number of tabs (Attempt: {attempt})\"):\n            if attempt < 3:\n>               assert (\n                    False\n                ), f\"Simulated failure on attempt {attempt}. Report should show this as FLAKY.\"\nE               AssertionError: Simulated failure on attempt 1. Report should show this as FLAKY.\nE               assert False\n\ntests/test_flaky.py:45: AssertionError",
+      "tags": [
+        "Flaky",
+        "Regression"
+      ],
+      "severity": "Medium",
+      "suiteName": "chromium",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 1,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "retryHistory": [],
+      "final_status": null,
+      "outcome": "flaky"
+    },
+    {
+      "id": "chromium-7c3dfcd6e060f6290993",
+      "runId": "run-1778506466298-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_my_actions.py > test_my_actions_component",
+      "status": "passed",
+      "duration": 13249.492999999999,
+      "startTime": "2026-05-11T13:34:26.721Z",
+      "endTime": "2026-05-11T13:34:39.970Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:29.504051+00:00-1698-654567ae",
+          "title": "Fetch cookies from API",
+          "status": "passed",
+          "duration": 1698.0,
+          "startTime": "2026-05-11T13:34:29.504Z",
+          "endTime": "2026-05-11T13:34:31.202Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:78",
+          "snippet": "# Dynamically fetch the authenticated cookie using our Requests utility\napi_auth = OrangeHRMAPI(APIEndpoints.BASE_URL)\ncookie_value = api_auth.login(APIEndpoints.USER_NAME, APIEndpoints.PASSWORD)\nassert cookie_value is not None, \"Failed to authenticate and get cookie\"",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:31.207232+00:00-4-391d8b52",
+          "title": "Store cookies in browser",
+          "status": "passed",
+          "duration": 4.0,
+          "startTime": "2026-05-11T13:34:31.207Z",
+          "endTime": "2026-05-11T13:34:31.211Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:56",
+          "snippet": "page.context.add_cookies(\n    [\n        {\n            \"name\": Cookies.ORANGEHRM_COOKIE.value,\n            \"value\": login_via_api,\n            \"domain\": Cookies.ORANGEHRM_COOKIE_DOMAIN.value,\n            \"path\": Cookies.ORANGEHRM_COOKIE_PATH.value,\n            \"httpOnly\": Cookies.ORANGEHRM_COOKIE_HTTPONLY.value,\n            \"secure\": Cookies.ORANGEHRM_COOKIE_SECURE.value,\n            \"sameSite\": Cookies.ORANGEHRM_COOKIE_SAMESITE.value,\n        }\n    ]\n)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:31.215035+00:00-6657-77cde1a5",
+          "title": "Navigate to the dashboard page",
+          "status": "passed",
+          "duration": 6657.0,
+          "startTime": "2026-05-11T13:34:31.215Z",
+          "endTime": "2026-05-11T13:34:37.872Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:70",
+          "snippet": "base_page = BasePage(page)\nbase_page.navigateToUrl(DashboardPageConstants.DASHBOARD_PAGE_URL)\nbase_page.waitForFullyPageLoad()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:31.218586+00:00-6458-f98cc6da",
+              "title": "Navigate to the url",
+              "status": "passed",
+              "duration": 6458.0,
+              "startTime": "2026-05-11T13:34:31.218Z",
+              "endTime": "2026-05-11T13:34:37.676Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:17",
+              "snippet": "self.page.goto(url)\nself.waitForFullyPageLoad()",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:34.204897+00:00-3472-37887c38",
+                  "title": "Wait for full page load",
+                  "status": "passed",
+                  "duration": 3472.0,
+                  "startTime": "2026-05-11T13:34:34.204Z",
+                  "endTime": "2026-05-11T13:34:37.676Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:11",
+                  "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 4.84,
+                      "startTime": "2026-05-11T13:34:34.204Z",
+                      "endTime": "2026-05-11T13:34:34.209Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 3354.2839999999997,
+                      "startTime": "2026-05-11T13:34:34.209Z",
+                      "endTime": "2026-05-11T13:34:37.564Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 89.694,
+                      "startTime": "2026-05-11T13:34:37.586Z",
+                      "endTime": "2026-05-11T13:34:37.676Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": [
+                {
+                  "action": "goto",
+                  "value": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+                  "status": "passed",
+                  "duration": 2970.2000000000003,
+                  "startTime": "2026-05-11T13:34:31.218Z",
+                  "endTime": "2026-05-11T13:34:34.188Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:37.697477+00:00-175-2552ae9b",
+              "title": "Wait for full page load",
+              "status": "passed",
+              "duration": 175.0,
+              "startTime": "2026-05-11T13:34:37.697Z",
+              "endTime": "2026-05-11T13:34:37.872Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:11",
+              "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 15.566999999999998,
+                  "startTime": "2026-05-11T13:34:37.697Z",
+                  "endTime": "2026-05-11T13:34:37.713Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 37.871,
+                  "startTime": "2026-05-11T13:34:37.713Z",
+                  "endTime": "2026-05-11T13:34:37.751Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 84.355,
+                  "startTime": "2026-05-11T13:34:37.787Z",
+                  "endTime": "2026-05-11T13:34:37.872Z"
+                }
+              ]
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:37.925727+00:00-175-de7f06e3",
+          "title": "Create request context",
+          "status": "passed",
+          "duration": 175.0,
+          "startTime": "2026-05-11T13:34:37.925Z",
+          "endTime": "2026-05-11T13:34:38.101Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:88",
+          "snippet": "request = playwright.request.new_context()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:38.147711+00:00-0-fa856ecf",
+          "title": "Instantiate My Actions Component",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:38.147Z",
+          "endTime": "2026-05-11T13:34:38.147Z",
+          "browser": "chromium",
+          "codeLocation": "test_my_actions.py:16",
+          "snippet": "my_actions_component = MyActionsComponent(page)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:38.203480+00:00-129-4a5e3947",
+          "title": "Verify My Actions widget text",
+          "status": "passed",
+          "duration": 129.0,
+          "startTime": "2026-05-11T13:34:38.203Z",
+          "endTime": "2026-05-11T13:34:38.332Z",
+          "browser": "chromium",
+          "codeLocation": "test_my_actions.py:18",
+          "snippet": "my_actions_component.verify_my_actions_widget_text()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:38.253963+00:00-79-103421a1",
+              "title": "Verify my actions widget text",
+              "status": "passed",
+              "duration": 79.0,
+              "startTime": "2026-05-11T13:34:38.253Z",
+              "endTime": "2026-05-11T13:34:38.332Z",
+              "browser": "chromium",
+              "codeLocation": "test_my_actions.py:19",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:38.264177+00:00-68-53b52281",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 68.0,
+                  "startTime": "2026-05-11T13:34:38.264Z",
+                  "endTime": "2026-05-11T13:34:38.332Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:87",
+                  "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:38.341833+00:00-844-748dc929",
+          "title": "Get My Action Items from API",
+          "status": "passed",
+          "duration": 844.0,
+          "startTime": "2026-05-11T13:34:38.341Z",
+          "endTime": "2026-05-11T13:34:39.185Z",
+          "browser": "chromium",
+          "codeLocation": "test_my_actions.py:20",
+          "snippet": "response = my_actions_component.get_my_action_items_from_api(\n    request_setup, login_via_api\n)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:38.360999+00:00-824-32eadd05",
+              "title": "Get my action items from api",
+              "status": "passed",
+              "duration": 824.0,
+              "startTime": "2026-05-11T13:34:38.360Z",
+              "endTime": "2026-05-11T13:34:39.185Z",
+              "browser": "chromium",
+              "codeLocation": "test_my_actions.py:21",
+              "snippet": "request_setup, login_via_api",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.191517+00:00-92-85e41c3f",
+          "title": "Validate My Action Items",
+          "status": "passed",
+          "duration": 92.0,
+          "startTime": "2026-05-11T13:34:39.191Z",
+          "endTime": "2026-05-11T13:34:39.283Z",
+          "browser": "chromium",
+          "codeLocation": "test_my_actions.py:25",
+          "snippet": "my_actions_component.validate_my_action_items(response)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.196713+00:00-87-75fc1358",
+              "title": "Validate my action items",
+              "status": "passed",
+              "duration": 87.0,
+              "startTime": "2026-05-11T13:34:39.196Z",
+              "endTime": "2026-05-11T13:34:39.283Z",
+              "browser": "chromium",
+              "codeLocation": "test_my_actions.py:26",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.206049+00:00-0-815f3e85",
+                  "title": "Singularize",
+                  "status": "passed",
+                  "duration": 0.0,
+                  "startTime": "2026-05-11T13:34:39.206Z",
+                  "endTime": "2026-05-11T13:34:39.206Z",
+                  "browser": "chromium",
+                  "codeLocation": "my_actions_components.py:48",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.217253+00:00-18-f28f3275",
+                  "title": "Verifying element text ignore case",
+                  "status": "passed",
+                  "duration": 18.0,
+                  "startTime": "2026-05-11T13:34:39.217Z",
+                  "endTime": "2026-05-11T13:34:39.235Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:156",
+                  "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.248198+00:00-0-8e2d5f90",
+                  "title": "Singularize",
+                  "status": "passed",
+                  "duration": 0.0,
+                  "startTime": "2026-05-11T13:34:39.248Z",
+                  "endTime": "2026-05-11T13:34:39.248Z",
+                  "browser": "chromium",
+                  "codeLocation": "my_actions_components.py:48",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.258812+00:00-25-c14c651b",
+                  "title": "Verifying element text ignore case",
+                  "status": "passed",
+                  "duration": 25.0,
+                  "startTime": "2026-05-11T13:34:39.258Z",
+                  "endTime": "2026-05-11T13:34:39.283Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:156",
+                  "snippet": "if isinstance(locator, str):\n    expect(self.page.locator(locator).nth(index)).to_have_text(\n        text, ignore_case=True\n    )\nelse:\n    expect(locator.nth(index)).to_have_text(text, ignore_case=True)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-7c3dfcd6e060f6290993_step_2026-05-11T13:34:39.293466+00:00-24-d2ec9729",
+          "title": "Dispose request context",
+          "status": "passed",
+          "duration": 24.0,
+          "startTime": "2026-05-11T13:34:39.293Z",
+          "endTime": "2026-05-11T13:34:39.317Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:91",
+          "snippet": "request.dispose()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_my_actions.py",
+      "tags": [
+        "My Actions",
+        "Dashboard",
+        "Regression"
+      ],
+      "severity": "Low",
+      "suiteName": "chromium",
+      "screenshots": [
+        "attachments/chromium-7c3dfcd6e060f6290993/0-1778506479971-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/chromium-7c3dfcd6e060f6290993/100-1778506479971-video.webm"
+      ],
+      "tracePath": "attachments/chromium-7c3dfcd6e060f6290993/200-1778506479971-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "Successfully authenticated!",
+        "Successfully authenticated!",
+        "API Response: {'data': [{'id': 4, 'group': 'Pending Self Reviews', 'pendingActionCount': 1}, {'id': 5, 'group': 'Candidates To Interview', 'pendingActionCount': 1}], 'meta': [], 'rels': []}",
+        "Items in my action items found!",
+        "{'id': 4, 'group': 'Pending Self Reviews', 'pendingActionCount': 1}",
+        "{'id': 5, 'group': 'Candidates To Interview', 'pendingActionCount': 1}",
+        "Successfully authenticated!",
+        "API Response: {'data': [{'id': 4, 'group': 'Pending Self Reviews', 'pendingActionCount': 1}, {'id': 5, 'group': 'Candidates To Interview', 'pendingActionCount': 1}], 'meta': [], 'rels': []}",
+        "Items in my action items found!",
+        "{'id': 4, 'group': 'Pending Self Reviews', 'pendingActionCount': 1}",
+        "{'id': 5, 'group': 'Candidates To Interview', 'pendingActionCount': 1}",
+        "Request is done successfully!"
+      ],
+      "workerId": 2,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "chromium-7b9651c3be3a42286d60",
+      "runId": "run-1778506466298-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_pulse_report.py > test_pulse_report_search",
+      "status": "skipped",
+      "duration": 64.485,
+      "startTime": "2026-05-11T13:34:39.975Z",
+      "endTime": "2026-05-11T13:34:40.040Z",
+      "retries": 0,
+      "steps": [],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_pulse_report.py",
+      "tags": [],
+      "severity": "Medium",
+      "suiteName": "chromium",
+      "screenshots": [
+        "attachments/chromium-7b9651c3be3a42286d60/0-1778506480040-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/chromium-7b9651c3be3a42286d60/100-1778506480040-video.webm"
+      ],
+      "tracePath": "attachments/chromium-7b9651c3be3a42286d60/200-1778506480040-trace.zip",
+      "attachments": [],
+      "workerId": 2,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "chromium-bc318391ccf7604dad7e",
+      "runId": "run-1778506466411-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_quick_launch.py > test_quick_launch_component",
+      "status": "passed",
+      "duration": 13741.699999999999,
+      "startTime": "2026-05-11T13:34:26.721Z",
+      "endTime": "2026-05-11T13:34:40.463Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:29.504628+00:00-1805-647b047e",
+          "title": "Fetch cookies from API",
+          "status": "passed",
+          "duration": 1805.0,
+          "startTime": "2026-05-11T13:34:29.504Z",
+          "endTime": "2026-05-11T13:34:31.309Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:78",
+          "snippet": "# Dynamically fetch the authenticated cookie using our Requests utility\napi_auth = OrangeHRMAPI(APIEndpoints.BASE_URL)\ncookie_value = api_auth.login(APIEndpoints.USER_NAME, APIEndpoints.PASSWORD)\nassert cookie_value is not None, \"Failed to authenticate and get cookie\"",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:31.314943+00:00-6-9aa0a803",
+          "title": "Store cookies in browser",
+          "status": "passed",
+          "duration": 6.0,
+          "startTime": "2026-05-11T13:34:31.314Z",
+          "endTime": "2026-05-11T13:34:31.321Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:56",
+          "snippet": "page.context.add_cookies(\n    [\n        {\n            \"name\": Cookies.ORANGEHRM_COOKIE.value,\n            \"value\": login_via_api,\n            \"domain\": Cookies.ORANGEHRM_COOKIE_DOMAIN.value,\n            \"path\": Cookies.ORANGEHRM_COOKIE_PATH.value,\n            \"httpOnly\": Cookies.ORANGEHRM_COOKIE_HTTPONLY.value,\n            \"secure\": Cookies.ORANGEHRM_COOKIE_SECURE.value,\n            \"sameSite\": Cookies.ORANGEHRM_COOKIE_SAMESITE.value,\n        }\n    ]\n)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:31.325570+00:00-7451-29e3286d",
+          "title": "Navigate to the dashboard page",
+          "status": "passed",
+          "duration": 7451.0,
+          "startTime": "2026-05-11T13:34:31.325Z",
+          "endTime": "2026-05-11T13:34:38.776Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:70",
+          "snippet": "base_page = BasePage(page)\nbase_page.navigateToUrl(DashboardPageConstants.DASHBOARD_PAGE_URL)\nbase_page.waitForFullyPageLoad()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:31.329672+00:00-7411-534cb55a",
+              "title": "Navigate to the url",
+              "status": "passed",
+              "duration": 7411.0,
+              "startTime": "2026-05-11T13:34:31.329Z",
+              "endTime": "2026-05-11T13:34:38.741Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:17",
+              "snippet": "self.page.goto(url)\nself.waitForFullyPageLoad()",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.093154+00:00-648-2e3ee7d1",
+                  "title": "Wait for full page load",
+                  "status": "passed",
+                  "duration": 648.0,
+                  "startTime": "2026-05-11T13:34:38.093Z",
+                  "endTime": "2026-05-11T13:34:38.741Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:11",
+                  "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 92.114,
+                      "startTime": "2026-05-11T13:34:38.093Z",
+                      "endTime": "2026-05-11T13:34:38.185Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 546.995,
+                      "startTime": "2026-05-11T13:34:38.185Z",
+                      "endTime": "2026-05-11T13:34:38.732Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 8.42,
+                      "startTime": "2026-05-11T13:34:38.732Z",
+                      "endTime": "2026-05-11T13:34:38.740Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": [
+                {
+                  "action": "goto",
+                  "value": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+                  "status": "passed",
+                  "duration": 6713.148999999999,
+                  "startTime": "2026-05-11T13:34:31.329Z",
+                  "endTime": "2026-05-11T13:34:38.042Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.751045+00:00-26-530048e3",
+              "title": "Wait for full page load",
+              "status": "passed",
+              "duration": 26.0,
+              "startTime": "2026-05-11T13:34:38.751Z",
+              "endTime": "2026-05-11T13:34:38.776Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:11",
+              "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 8.347999999999999,
+                  "startTime": "2026-05-11T13:34:38.751Z",
+                  "endTime": "2026-05-11T13:34:38.759Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 7.794,
+                  "startTime": "2026-05-11T13:34:38.759Z",
+                  "endTime": "2026-05-11T13:34:38.767Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 9.527000000000001,
+                  "startTime": "2026-05-11T13:34:38.767Z",
+                  "endTime": "2026-05-11T13:34:38.776Z"
+                }
+              ]
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.798750+00:00-45-dd2fdc6a",
+          "title": "Create request context",
+          "status": "passed",
+          "duration": 45.0,
+          "startTime": "2026-05-11T13:34:38.798Z",
+          "endTime": "2026-05-11T13:34:38.843Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:88",
+          "snippet": "request = playwright.request.new_context()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.855351+00:00-0-b3aafe56",
+          "title": "Instantiate Quick Launch Component",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:38.855Z",
+          "endTime": "2026-05-11T13:34:38.855Z",
+          "browser": "chromium",
+          "codeLocation": "test_quick_launch.py:16",
+          "snippet": "quick_launch_component = QuickLaunchComponent(page)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.863194+00:00-76-c4ff84f7",
+          "title": "Verify Quick Launch widget text",
+          "status": "passed",
+          "duration": 76.0,
+          "startTime": "2026-05-11T13:34:38.863Z",
+          "endTime": "2026-05-11T13:34:38.938Z",
+          "browser": "chromium",
+          "codeLocation": "test_quick_launch.py:18",
+          "snippet": "quick_launch_component.verify_quick_launch_widget_text()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.870461+00:00-68-a5c226ff",
+              "title": "Verify quick launch widget text",
+              "status": "passed",
+              "duration": 68.0,
+              "startTime": "2026-05-11T13:34:38.870Z",
+              "endTime": "2026-05-11T13:34:38.938Z",
+              "browser": "chromium",
+              "codeLocation": "test_quick_launch.py:19",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.878817+00:00-60-1e024e38",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 60.0,
+                  "startTime": "2026-05-11T13:34:38.878Z",
+                  "endTime": "2026-05-11T13:34:38.938Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:87",
+                  "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.947848+00:00-857-6941b8f3",
+          "title": "Get Quick Launch Items from API",
+          "status": "passed",
+          "duration": 857.0,
+          "startTime": "2026-05-11T13:34:38.947Z",
+          "endTime": "2026-05-11T13:34:39.805Z",
+          "browser": "chromium",
+          "codeLocation": "test_quick_launch.py:20",
+          "snippet": "response = quick_launch_component.get_quick_launch_items(\n    request_setup, login_via_api\n)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:38.962428+00:00-843-6a835bd9",
+              "title": "Get quick launch items from api",
+              "status": "passed",
+              "duration": 843.0,
+              "startTime": "2026-05-11T13:34:38.962Z",
+              "endTime": "2026-05-11T13:34:39.805Z",
+              "browser": "chromium",
+              "codeLocation": "test_quick_launch.py:21",
+              "snippet": "request_setup, login_via_api",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.809611+00:00-88-0cbbd336",
+          "title": "Validate Quick Launch Items",
+          "status": "passed",
+          "duration": 88.0,
+          "startTime": "2026-05-11T13:34:39.809Z",
+          "endTime": "2026-05-11T13:34:39.897Z",
+          "browser": "chromium",
+          "codeLocation": "test_quick_launch.py:25",
+          "snippet": "quick_launch_component.validate_quick_launch_items(response)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.814245+00:00-83-b0cfcf42",
+              "title": "Validate quick launch items",
+              "status": "passed",
+              "duration": 83.0,
+              "startTime": "2026-05-11T13:34:39.814Z",
+              "endTime": "2026-05-11T13:34:39.897Z",
+              "browser": "chromium",
+              "codeLocation": "test_quick_launch.py:26",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.818447+00:00-10-ed9c7071",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 10.0,
+                  "startTime": "2026-05-11T13:34:39.818Z",
+                  "endTime": "2026-05-11T13:34:39.828Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.833289+00:00-9-03839b58",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 9.0,
+                  "startTime": "2026-05-11T13:34:39.833Z",
+                  "endTime": "2026-05-11T13:34:39.841Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.846523+00:00-8-b199c7e1",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 8.0,
+                  "startTime": "2026-05-11T13:34:39.846Z",
+                  "endTime": "2026-05-11T13:34:39.854Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.858105+00:00-8-45ceb32a",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 8.0,
+                  "startTime": "2026-05-11T13:34:39.858Z",
+                  "endTime": "2026-05-11T13:34:39.866Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.871465+00:00-10-d64c5991",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 10.0,
+                  "startTime": "2026-05-11T13:34:39.871Z",
+                  "endTime": "2026-05-11T13:34:39.881Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.887351+00:00-10-b2bd730c",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 10.0,
+                  "startTime": "2026-05-11T13:34:39.887Z",
+                  "endTime": "2026-05-11T13:34:39.897Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-bc318391ccf7604dad7e_step_2026-05-11T13:34:39.904202+00:00-5-c8b4c8a4",
+          "title": "Dispose request context",
+          "status": "passed",
+          "duration": 5.0,
+          "startTime": "2026-05-11T13:34:39.904Z",
+          "endTime": "2026-05-11T13:34:39.909Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:91",
+          "snippet": "request.dispose()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_quick_launch.py",
+      "tags": [
+        "Quick Launch",
+        "Dashboard",
+        "Regression"
+      ],
+      "severity": "Minor",
+      "suiteName": "chromium",
+      "screenshots": [
+        "attachments/chromium-bc318391ccf7604dad7e/0-1778506480464-test-finished-1.png"
+      ],
+      "videoPath": [
+        "attachments/chromium-bc318391ccf7604dad7e/100-1778506480464-video.webm"
+      ],
+      "tracePath": "attachments/chromium-bc318391ccf7604dad7e/200-1778506480464-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "Successfully authenticated!",
+        "Successfully authenticated!",
+        "API Response: {'data': {'leave.assign_leave': True, 'leave.leave_list': True, 'leave.apply_leave': True, 'leave.my_leave': True, 'time.employee_timesheet': True, 'time.my_timesheet': True}, 'meta': [], 'rels': []}",
+        "Items in quick launch found!",
+        "{'leave.assign_leave': True, 'leave.leave_list': True, 'leave.apply_leave': True, 'leave.my_leave': True, 'time.employee_timesheet': True, 'time.my_timesheet': True}",
+        "Successfully authenticated!",
+        "API Response: {'data': {'leave.assign_leave': True, 'leave.leave_list': True, 'leave.apply_leave': True, 'leave.my_leave': True, 'time.employee_timesheet': True, 'time.my_timesheet': True}, 'meta': [], 'rels': []}",
+        "Items in quick launch found!",
+        "{'leave.assign_leave': True, 'leave.leave_list': True, 'leave.apply_leave': True, 'leave.my_leave': True, 'time.employee_timesheet': True, 'time.my_timesheet': True}",
+        "Request is done successfully!"
+      ],
+      "workerId": 3,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "test_api-e6e4117bcd29c0add314",
+      "runId": "run-1778506466411-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "test_api > test_api.py > test_api_orangehrm",
+      "status": "passed",
+      "duration": 2041.4859999999999,
+      "startTime": "2026-05-11T13:34:40.467Z",
+      "endTime": "2026-05-11T13:34:42.509Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:40.473439+00:00-1672-4fd04f8f",
+          "title": "Fetch cookies from API",
+          "status": "passed",
+          "duration": 1672.0,
+          "startTime": "2026-05-11T13:34:40.473Z",
+          "endTime": "2026-05-11T13:34:42.145Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:78",
+          "snippet": "# Dynamically fetch the authenticated cookie using our Requests utility\napi_auth = OrangeHRMAPI(APIEndpoints.BASE_URL)\ncookie_value = api_auth.login(APIEndpoints.USER_NAME, APIEndpoints.PASSWORD)\nassert cookie_value is not None, \"Failed to authenticate and get cookie\"",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:42.149606+00:00-3-5fea37d3",
+          "title": "Create request context",
+          "status": "passed",
+          "duration": 3.0,
+          "startTime": "2026-05-11T13:34:42.149Z",
+          "endTime": "2026-05-11T13:34:42.152Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:88",
+          "snippet": "request = playwright.request.new_context()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:42.155704+00:00-0-5381d9b1",
+          "title": "Create base api setup",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:42.155Z",
+          "endTime": "2026-05-11T13:34:42.155Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:98",
+          "snippet": "base_api = BaseAPI(request_setup)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:42.160384+00:00-299-e4a2c838",
+          "title": "Get response from API",
+          "status": "passed",
+          "duration": 299.0,
+          "startTime": "2026-05-11T13:34:42.160Z",
+          "endTime": "2026-05-11T13:34:42.459Z",
+          "browser": "N/A",
+          "codeLocation": "test_api.py:12",
+          "snippet": "response = base_api_setup.get_response(\n    request_setup,\n    APIEndpoints.USERS_ENDPOINT,\n    headers={\"Cookie\": f\"orangehrm={login_via_api}\"},\n)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:42.163470+00:00-296-5905dbbb",
+              "title": "Get response",
+              "status": "passed",
+              "duration": 296.0,
+              "startTime": "2026-05-11T13:34:42.163Z",
+              "endTime": "2026-05-11T13:34:42.459Z",
+              "browser": "N/A",
+              "codeLocation": "test_api.py:13",
+              "snippet": "request_setup,\nAPIEndpoints.USERS_ENDPOINT,\nheaders={\"Cookie\": f\"orangehrm={login_via_api}\"},",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:42.464372+00:00-0-3bc88018",
+          "title": "Assert API Response",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:42.464Z",
+          "endTime": "2026-05-11T13:34:42.464Z",
+          "browser": "N/A",
+          "codeLocation": "test_api.py:19",
+          "snippet": "assert response[\"meta\"][\"total\"] >= 0",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_api-e6e4117bcd29c0add314_step_2026-05-11T13:34:42.469591+00:00-3-480f04d6",
+          "title": "Dispose request context",
+          "status": "passed",
+          "duration": 3.0,
+          "startTime": "2026-05-11T13:34:42.469Z",
+          "endTime": "2026-05-11T13:34:42.472Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:91",
+          "snippet": "request.dispose()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        }
+      ],
+      "browser": "N/A",
+      "describe": "n/a",
+      "spec_file": "test_api.py",
+      "tags": [
+        "API"
+      ],
+      "severity": "Critical",
+      "suiteName": "test_api",
+      "screenshots": [
+        "attachments/test_api-e6e4117bcd29c0add314/0-1778506482509-test-finished-1.png"
+      ],
+      "videoPath": [
+        "attachments/test_api-e6e4117bcd29c0add314/100-1778506482509-video.webm"
+      ],
+      "tracePath": "attachments/test_api-e6e4117bcd29c0add314/200-1778506482509-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "Successfully authenticated!",
+        "Successfully authenticated!",
+        "API Response: {'data': [{'id': 1, 'userName': 'Admin', 'deleted': False, 'status': True, 'employee': {'empNumber': 7, 'employeeId': 'NickTest', 'firstName': 'Mikheil', 'middleName': '', 'lastName': 'Mezurnishvili', 'terminationId': None}, 'userRole': {'id': 1, 'name': 'Admin', 'displayName': 'Admin'}}, {'id': 170, 'userName': 'ScottSmith ', 'deleted': False, 'status': True, 'employee': {'empNumber': 347, 'employeeId': '0554', 'firstName': 'Scott', 'middleName': '', 'lastName': 'Smith', 'terminationId': None}, 'userRole': {'id': 2, 'name': 'ESS', 'displayName': 'ESS'}}], 'meta': {'total': 2}, 'rels': []}",
+        "Successfully authenticated!",
+        "API Response: {'data': [{'id': 1, 'userName': 'Admin', 'deleted': False, 'status': True, 'employee': {'empNumber': 7, 'employeeId': 'NickTest', 'firstName': 'Mikheil', 'middleName': '', 'lastName': 'Mezurnishvili', 'terminationId': None}, 'userRole': {'id': 1, 'name': 'Admin', 'displayName': 'Admin'}}, {'id': 170, 'userName': 'ScottSmith ', 'deleted': False, 'status': True, 'employee': {'empNumber': 347, 'employeeId': '0554', 'firstName': 'Scott', 'middleName': '', 'lastName': 'Smith', 'terminationId': None}, 'userRole': {'id': 2, 'name': 'ESS', 'displayName': 'ESS'}}], 'meta': {'total': 2}, 'rels': []}",
+        "Request is done successfully!"
+      ],
+      "workerId": 3,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "chromium-903435a62ef718b7b76b",
+      "runId": "run-1778506466521-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_dashboard.py > test_dashboard_page",
+      "status": "passed",
+      "duration": 12890.042,
+      "startTime": "2026-05-11T13:34:26.721Z",
+      "endTime": "2026-05-11T13:34:39.611Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:29.504319+00:00-1652-30b8d7dd",
+          "title": "Fetch cookies from API",
+          "status": "passed",
+          "duration": 1652.0,
+          "startTime": "2026-05-11T13:34:29.504Z",
+          "endTime": "2026-05-11T13:34:31.156Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:78",
+          "snippet": "# Dynamically fetch the authenticated cookie using our Requests utility\napi_auth = OrangeHRMAPI(APIEndpoints.BASE_URL)\ncookie_value = api_auth.login(APIEndpoints.USER_NAME, APIEndpoints.PASSWORD)\nassert cookie_value is not None, \"Failed to authenticate and get cookie\"",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:31.160936+00:00-5-838b8020",
+          "title": "Store cookies in browser",
+          "status": "passed",
+          "duration": 5.0,
+          "startTime": "2026-05-11T13:34:31.160Z",
+          "endTime": "2026-05-11T13:34:31.165Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:56",
+          "snippet": "page.context.add_cookies(\n    [\n        {\n            \"name\": Cookies.ORANGEHRM_COOKIE.value,\n            \"value\": login_via_api,\n            \"domain\": Cookies.ORANGEHRM_COOKIE_DOMAIN.value,\n            \"path\": Cookies.ORANGEHRM_COOKIE_PATH.value,\n            \"httpOnly\": Cookies.ORANGEHRM_COOKIE_HTTPONLY.value,\n            \"secure\": Cookies.ORANGEHRM_COOKIE_SECURE.value,\n            \"sameSite\": Cookies.ORANGEHRM_COOKIE_SAMESITE.value,\n        }\n    ]\n)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:31.169657+00:00-6936-a3a10ddd",
+          "title": "Navigate to the dashboard page",
+          "status": "passed",
+          "duration": 6936.0,
+          "startTime": "2026-05-11T13:34:31.169Z",
+          "endTime": "2026-05-11T13:34:38.105Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:70",
+          "snippet": "base_page = BasePage(page)\nbase_page.navigateToUrl(DashboardPageConstants.DASHBOARD_PAGE_URL)\nbase_page.waitForFullyPageLoad()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:31.173609+00:00-6872-e1869ce2",
+              "title": "Navigate to the url",
+              "status": "passed",
+              "duration": 6872.0,
+              "startTime": "2026-05-11T13:34:31.173Z",
+              "endTime": "2026-05-11T13:34:38.045Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:17",
+              "snippet": "self.page.goto(url)\nself.waitForFullyPageLoad()",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:34.792537+00:00-3253-78c4de68",
+                  "title": "Wait for full page load",
+                  "status": "passed",
+                  "duration": 3253.0,
+                  "startTime": "2026-05-11T13:34:34.792Z",
+                  "endTime": "2026-05-11T13:34:38.045Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:11",
+                  "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 7.442,
+                      "startTime": "2026-05-11T13:34:34.792Z",
+                      "endTime": "2026-05-11T13:34:34.800Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 3204.497,
+                      "startTime": "2026-05-11T13:34:34.800Z",
+                      "endTime": "2026-05-11T13:34:38.004Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 40.56,
+                      "startTime": "2026-05-11T13:34:38.005Z",
+                      "endTime": "2026-05-11T13:34:38.045Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": [
+                {
+                  "action": "goto",
+                  "value": "https://opensource-demo.orangehrmlive.com/web/index.php/dashboard/index",
+                  "status": "passed",
+                  "duration": 3580.248,
+                  "startTime": "2026-05-11T13:34:31.173Z",
+                  "endTime": "2026-05-11T13:34:34.753Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.069250+00:00-36-6471e5ab",
+              "title": "Wait for full page load",
+              "status": "passed",
+              "duration": 36.0,
+              "startTime": "2026-05-11T13:34:38.069Z",
+              "endTime": "2026-05-11T13:34:38.105Z",
+              "browser": "chromium",
+              "codeLocation": "base_page.py:11",
+              "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 12.985999999999999,
+                  "startTime": "2026-05-11T13:34:38.069Z",
+                  "endTime": "2026-05-11T13:34:38.082Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 11.789000000000001,
+                  "startTime": "2026-05-11T13:34:38.082Z",
+                  "endTime": "2026-05-11T13:34:38.094Z"
+                },
+                {
+                  "action": "wait_for_load_state",
+                  "status": "passed",
+                  "duration": 10.648,
+                  "startTime": "2026-05-11T13:34:38.094Z",
+                  "endTime": "2026-05-11T13:34:38.105Z"
+                }
+              ]
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.176397+00:00-0-b28a5bb3",
+          "title": "Instantiate Dashboard Page",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:38.176Z",
+          "endTime": "2026-05-11T13:34:38.176Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:11",
+          "snippet": "dashboard_page = DashboardPage(page)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.321950+00:00-185-ccffaedf",
+          "title": "Verify dashboard page url and title",
+          "status": "passed",
+          "duration": 185.0,
+          "startTime": "2026-05-11T13:34:38.321Z",
+          "endTime": "2026-05-11T13:34:38.506Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:13",
+          "snippet": "dashboard_page.verify_dashboard_page_url_title()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.337143+00:00-170-00068248",
+              "title": "Verify dashboard page url and title",
+              "status": "passed",
+              "duration": 170.0,
+              "startTime": "2026-05-11T13:34:38.337Z",
+              "endTime": "2026-05-11T13:34:38.506Z",
+              "browser": "chromium",
+              "codeLocation": "test_dashboard.py:14",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.345125+00:00-136-3efaf40d",
+                  "title": "Verify page url",
+                  "status": "passed",
+                  "duration": 136.0,
+                  "startTime": "2026-05-11T13:34:38.345Z",
+                  "endTime": "2026-05-11T13:34:38.481Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:94",
+                  "snippet": "self.waitForFullyPageLoad()\nexpect(self.page).to_have_url(url)",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.359234+00:00-46-ecc6aa2f",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 46.0,
+                      "startTime": "2026-05-11T13:34:38.359Z",
+                      "endTime": "2026-05-11T13:34:38.405Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 15.701,
+                          "startTime": "2026-05-11T13:34:38.359Z",
+                          "endTime": "2026-05-11T13:34:38.374Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 8.55,
+                          "startTime": "2026-05-11T13:34:38.374Z",
+                          "endTime": "2026-05-11T13:34:38.383Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 21.352,
+                          "startTime": "2026-05-11T13:34:38.383Z",
+                          "endTime": "2026-05-11T13:34:38.404Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.491515+00:00-15-b84b2be4",
+                  "title": "Verifying page title",
+                  "status": "passed",
+                  "duration": 15.0,
+                  "startTime": "2026-05-11T13:34:38.491Z",
+                  "endTime": "2026-05-11T13:34:38.506Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:42",
+                  "snippet": "expect(self.page).to_have_title(title)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.521591+00:00-75-f4ae4bc1",
+          "title": "Verify dashboard page header",
+          "status": "passed",
+          "duration": 75.0,
+          "startTime": "2026-05-11T13:34:38.521Z",
+          "endTime": "2026-05-11T13:34:38.596Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:15",
+          "snippet": "dashboard_page.verify_dashboard_page_header()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.558151+00:00-39-881f6721",
+              "title": "Verify dashboard page header",
+              "status": "passed",
+              "duration": 39.0,
+              "startTime": "2026-05-11T13:34:38.558Z",
+              "endTime": "2026-05-11T13:34:38.596Z",
+              "browser": "chromium",
+              "codeLocation": "test_dashboard.py:16",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.570667+00:00-26-a810edbd",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 26.0,
+                  "startTime": "2026-05-11T13:34:38.570Z",
+                  "endTime": "2026-05-11T13:34:38.596Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:87",
+                  "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.606838+00:00-62-7f7c4e45",
+          "title": "Verify upgrade button is visible",
+          "status": "passed",
+          "duration": 62.0,
+          "startTime": "2026-05-11T13:34:38.606Z",
+          "endTime": "2026-05-11T13:34:38.669Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:17",
+          "snippet": "dashboard_page.verify_upgrade_button_is_visible()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.615564+00:00-54-16c3741c",
+              "title": "Verify upgrade button is visible",
+              "status": "passed",
+              "duration": 54.0,
+              "startTime": "2026-05-11T13:34:38.615Z",
+              "endTime": "2026-05-11T13:34:38.669Z",
+              "browser": "chromium",
+              "codeLocation": "test_dashboard.py:18",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.623722+00:00-18-c98243c0",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 18.0,
+                  "startTime": "2026-05-11T13:34:38.623Z",
+                  "endTime": "2026-05-11T13:34:38.641Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.652790+00:00-16-6501ca6d",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 16.0,
+                  "startTime": "2026-05-11T13:34:38.652Z",
+                  "endTime": "2026-05-11T13:34:38.669Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:87",
+                  "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.677220+00:00-43-45e70f15",
+          "title": "Verify dashboard widgets count",
+          "status": "passed",
+          "duration": 43.0,
+          "startTime": "2026-05-11T13:34:38.677Z",
+          "endTime": "2026-05-11T13:34:38.720Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:19",
+          "snippet": "dashboard_page.verify_dashboard_widgets_count()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.685917+00:00-34-61cd1cc7",
+              "title": "Verify dashboard widgets count",
+              "status": "passed",
+              "duration": 34.0,
+              "startTime": "2026-05-11T13:34:38.685Z",
+              "endTime": "2026-05-11T13:34:38.720Z",
+              "browser": "chromium",
+              "codeLocation": "test_dashboard.py:20",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.699304+00:00-21-ec653d50",
+                  "title": "Generating Locator from string and verifying element count",
+                  "status": "passed",
+                  "duration": 21.0,
+                  "startTime": "2026-05-11T13:34:38.699Z",
+                  "endTime": "2026-05-11T13:34:38.720Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:108",
+                  "snippet": "\"Generating Locator from string and verifying element count\"",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.728687+00:00-186-9634a658",
+          "title": "Verify dashboard widgets texts",
+          "status": "passed",
+          "duration": 186.0,
+          "startTime": "2026-05-11T13:34:38.728Z",
+          "endTime": "2026-05-11T13:34:38.914Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:21",
+          "snippet": "dashboard_page.verify_dashboard_widgets_texts()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.739001+00:00-176-cee3bb71",
+              "title": "Verify dashboard widgets texts",
+              "status": "passed",
+              "duration": 176.0,
+              "startTime": "2026-05-11T13:34:38.739Z",
+              "endTime": "2026-05-11T13:34:38.914Z",
+              "browser": "chromium",
+              "codeLocation": "test_dashboard.py:22",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.751976+00:00-163-36400355",
+                  "title": "Generating Locator from string and verifying element texts",
+                  "status": "passed",
+                  "duration": 163.0,
+                  "startTime": "2026-05-11T13:34:38.751Z",
+                  "endTime": "2026-05-11T13:34:38.914Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:129",
+                  "snippet": "actual_texts = self.get_all_element_texts(locator)\nself.verify_equal(actual_texts, expected_texts)",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.760418+00:00-147-e9c03058",
+                      "title": "Getting all element texts",
+                      "status": "passed",
+                      "duration": 147.0,
+                      "startTime": "2026-05-11T13:34:38.760Z",
+                      "endTime": "2026-05-11T13:34:38.907Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:117",
+                      "snippet": "count = self.get_element_count(locator)\nif count == 0:\n    raise ValueError(\"No elements found with the given locator\")\ntexts = []\nfor i in range(count):\n    texts.append(self.page.locator(locator).nth(i).inner_text())",
+                      "isHook": false,
+                      "steps": [
+                        {
+                          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.770496+00:00-28-b324d175",
+                          "title": "Generating Locator from string and getting element count",
+                          "status": "passed",
+                          "duration": 28.0,
+                          "startTime": "2026-05-11T13:34:38.770Z",
+                          "endTime": "2026-05-11T13:34:38.798Z",
+                          "browser": "chromium",
+                          "codeLocation": "base_page.py:100",
+                          "snippet": "return self.page.locator(locator).count()",
+                          "isHook": false,
+                          "steps": [],
+                          "actions": []
+                        }
+                      ],
+                      "actions": []
+                    },
+                    {
+                      "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.914797+00:00-0-ed91a1ae",
+                      "title": "Verifying equal",
+                      "status": "passed",
+                      "duration": 0.0,
+                      "startTime": "2026-05-11T13:34:38.914Z",
+                      "endTime": "2026-05-11T13:34:38.914Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:143",
+                      "snippet": "assert actual == expected, f\"{actual} != {expected}\"",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": []
+                    }
+                  ],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.924750+00:00-87-439a82fb",
+          "title": "Verify profile image src",
+          "status": "passed",
+          "duration": 87.0,
+          "startTime": "2026-05-11T13:34:38.924Z",
+          "endTime": "2026-05-11T13:34:39.012Z",
+          "browser": "chromium",
+          "codeLocation": "test_dashboard.py:23",
+          "snippet": "dashboard_page.verify_profile_image_src()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.933474+00:00-79-8037e0b8",
+              "title": "Verify profile image src",
+              "status": "passed",
+              "duration": 79.0,
+              "startTime": "2026-05-11T13:34:38.933Z",
+              "endTime": "2026-05-11T13:34:39.012Z",
+              "browser": "chromium",
+              "codeLocation": "test_dashboard.py:24",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.941789+00:00-27-c770a326",
+                  "title": "Getting attribute",
+                  "status": "passed",
+                  "duration": 27.0,
+                  "startTime": "2026-05-11T13:34:38.941Z",
+                  "endTime": "2026-05-11T13:34:38.968Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:147",
+                  "snippet": "if isinstance(locator, str):\n    return self.page.locator(locator).get_attribute(attribute)\nelse:\n    return locator.get_attribute(attribute)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:38.988932+00:00-16-7dce4f29",
+                  "title": "Getting attribute",
+                  "status": "passed",
+                  "duration": 16.0,
+                  "startTime": "2026-05-11T13:34:38.988Z",
+                  "endTime": "2026-05-11T13:34:39.004Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:147",
+                  "snippet": "if isinstance(locator, str):\n    return self.page.locator(locator).get_attribute(attribute)\nelse:\n    return locator.get_attribute(attribute)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-903435a62ef718b7b76b_step_2026-05-11T13:34:39.012070+00:00-0-a7aa8ab9",
+                  "title": "Verifying equal",
+                  "status": "passed",
+                  "duration": 0.0,
+                  "startTime": "2026-05-11T13:34:39.012Z",
+                  "endTime": "2026-05-11T13:34:39.012Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:143",
+                  "snippet": "assert actual == expected, f\"{actual} != {expected}\"",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_dashboard.py",
+      "tags": [
+        "Regression"
+      ],
+      "severity": "High",
+      "suiteName": "chromium",
+      "screenshots": [
+        "attachments/chromium-903435a62ef718b7b76b/0-1778506479612-test-failed-1.png"
+      ],
+      "videoPath": [
+        "attachments/chromium-903435a62ef718b7b76b/100-1778506479612-video.webm"
+      ],
+      "tracePath": "attachments/chromium-903435a62ef718b7b76b/200-1778506479612-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "Successfully authenticated!",
+        "Successfully authenticated!",
+        "Successfully authenticated!"
+      ],
+      "workerId": 4,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "test_dummyjson_api-116a37d74976f1760985",
+      "runId": "run-1778506466521-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "test_dummyjson_api > test_dummyjson_api.py > test_api_authenticated_user",
+      "status": "passed",
+      "duration": 1489.332,
+      "startTime": "2026-05-11T13:34:39.616Z",
+      "endTime": "2026-05-11T13:34:41.106Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:39.625301+00:00-43-22f27ca8",
+          "title": "Create request context",
+          "status": "passed",
+          "duration": 43.0,
+          "startTime": "2026-05-11T13:34:39.625Z",
+          "endTime": "2026-05-11T13:34:39.668Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:88",
+          "snippet": "request = playwright.request.new_context()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:39.680048+00:00-0-5f507d17",
+          "title": "Create base api setup",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:39.680Z",
+          "endTime": "2026-05-11T13:34:39.680Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:98",
+          "snippet": "base_api = BaseAPI(request_setup)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:39.688786+00:00-1092-3345c8aa",
+          "title": "Fetch authentication token from API",
+          "status": "passed",
+          "duration": 1092.0,
+          "startTime": "2026-05-11T13:34:39.688Z",
+          "endTime": "2026-05-11T13:34:40.781Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:105",
+          "snippet": "response = base_api_setup.post_response(\n    request_setup,\n    APIEndpoints.DUMMYJSON_LOGIN_ENDPOINT,\n    data={\n        \"username\": os.getenv(\"DUMMYJSON_USERNAME\"),\n        \"password\": os.getenv(\"DUMMYJSON_PASSWORD\"),\n    },\n    headers={\"Content-Type\": \"application/json\"},\n)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:39.698441+00:00-1083-44f959e7",
+              "title": "Post response",
+              "status": "passed",
+              "duration": 1083.0,
+              "startTime": "2026-05-11T13:34:39.698Z",
+              "endTime": "2026-05-11T13:34:40.781Z",
+              "browser": "N/A",
+              "codeLocation": "conftest.py:106",
+              "snippet": "request_setup,\nAPIEndpoints.DUMMYJSON_LOGIN_ENDPOINT,\ndata={\n    \"username\": os.getenv(\"DUMMYJSON_USERNAME\"),\n    \"password\": os.getenv(\"DUMMYJSON_PASSWORD\"),\n},\nheaders={\"Content-Type\": \"application/json\"},",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:40.785620+00:00-270-acc80d5d",
+          "title": "Get response from API",
+          "status": "passed",
+          "duration": 270.0,
+          "startTime": "2026-05-11T13:34:40.785Z",
+          "endTime": "2026-05-11T13:34:41.055Z",
+          "browser": "N/A",
+          "codeLocation": "test_dummyjson_api.py:14",
+          "snippet": "response = base_api_setup.get_response(\n    request_setup,\n    APIEndpoints.DUMMYJSON_AUTHENTICATION_ENDPOINT,\n    headers={\"Authorization\": f\"Bearer {authentication_token}\"},\n)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:40.788985+00:00-266-6fc2038a",
+              "title": "Get response",
+              "status": "passed",
+              "duration": 266.0,
+              "startTime": "2026-05-11T13:34:40.788Z",
+              "endTime": "2026-05-11T13:34:41.055Z",
+              "browser": "N/A",
+              "codeLocation": "test_dummyjson_api.py:15",
+              "snippet": "request_setup,\nAPIEndpoints.DUMMYJSON_AUTHENTICATION_ENDPOINT,\nheaders={\"Authorization\": f\"Bearer {authentication_token}\"},",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:41.059145+00:00-0-dc1aa17b",
+          "title": "Assert API Response",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:41.059Z",
+          "endTime": "2026-05-11T13:34:41.059Z",
+          "browser": "N/A",
+          "codeLocation": "test_dummyjson_api.py:21",
+          "snippet": "assert response[\"email\"] == \"emily.johnson@x.dummyjson.com\"",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "test_dummyjson_api-116a37d74976f1760985_step_2026-05-11T13:34:41.064231+00:00-2-0bd6dc10",
+          "title": "Dispose request context",
+          "status": "passed",
+          "duration": 2.0,
+          "startTime": "2026-05-11T13:34:41.064Z",
+          "endTime": "2026-05-11T13:34:41.066Z",
+          "browser": "N/A",
+          "codeLocation": "conftest.py:91",
+          "snippet": "request.dispose()",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        }
+      ],
+      "browser": "N/A",
+      "describe": "n/a",
+      "spec_file": "test_dummyjson_api.py",
+      "tags": [
+        "API"
+      ],
+      "severity": "Medium",
+      "suiteName": "test_dummyjson_api",
+      "screenshots": [
+        "attachments/test_dummyjson_api-116a37d74976f1760985/0-1778506481106-test-finished-1.png"
+      ],
+      "videoPath": [
+        "attachments/test_dummyjson_api-116a37d74976f1760985/100-1778506481106-video.webm"
+      ],
+      "tracePath": "attachments/test_dummyjson_api-116a37d74976f1760985/200-1778506481106-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "API Response: {'id': 1, 'firstName': 'Emily', 'lastName': 'Johnson', 'maidenName': 'Smith', 'age': 29, 'gender': 'female', 'email': 'emily.johnson@x.dummyjson.com', 'phone': '+81 965-431-3024', 'username': 'emilys', 'password': 'emilyspass', 'birthDate': '1996-5-30', 'image': 'https://dummyjson.com/icon/emilys/128', 'bloodGroup': 'O-', 'height': 193.24, 'weight': 63.16, 'eyeColor': 'Green', 'hair': {'color': 'Brown', 'type': 'Curly'}, 'ip': '42.48.100.32', 'address': {'address': '626 Main Street', 'city': 'Phoenix', 'state': 'Mississippi', 'stateCode': 'MS', 'postalCode': '29112', 'coordinates': {'lat': -77.16213, 'lng': -92.084824}, 'country': 'United States'}, 'macAddress': '47:fa:41:18:ec:eb', 'university': 'University of Wisconsin--Madison', 'bank': {'cardExpire': '05/28', 'cardNumber': '3693233511855044', 'cardType': 'Diners Club International', 'currency': 'GBP', 'iban': 'GB74MH2UZLR9TRPHYNU8F8'}, 'company': {'department': 'Engineering', 'name': 'Dooley, Kozey and Cronin', 'title': 'Sales Manager', 'address': {'address': '263 Tenth Street', 'city': 'San Francisco', 'state': 'Wisconsin', 'stateCode': 'WI', 'postalCode': '37657', 'coordinates': {'lat': 71.814525, 'lng': -161.150263}, 'country': 'United States'}}, 'ein': '977-175', 'ssn': '900-590-289', 'userAgent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36', 'crypto': {'coin': 'Bitcoin', 'wallet': '0xb9fc2fe63b2a6c003f1c324c3bfa53259162181a', 'network': 'Ethereum (ERC20)'}, 'role': 'admin'}",
+        "API Response: {'id': 1, 'firstName': 'Emily', 'lastName': 'Johnson', 'maidenName': 'Smith', 'age': 29, 'gender': 'female', 'email': 'emily.johnson@x.dummyjson.com', 'phone': '+81 965-431-3024', 'username': 'emilys', 'password': 'emilyspass', 'birthDate': '1996-5-30', 'image': 'https://dummyjson.com/icon/emilys/128', 'bloodGroup': 'O-', 'height': 193.24, 'weight': 63.16, 'eyeColor': 'Green', 'hair': {'color': 'Brown', 'type': 'Curly'}, 'ip': '42.48.100.32', 'address': {'address': '626 Main Street', 'city': 'Phoenix', 'state': 'Mississippi', 'stateCode': 'MS', 'postalCode': '29112', 'coordinates': {'lat': -77.16213, 'lng': -92.084824}, 'country': 'United States'}, 'macAddress': '47:fa:41:18:ec:eb', 'university': 'University of Wisconsin--Madison', 'bank': {'cardExpire': '05/28', 'cardNumber': '3693233511855044', 'cardType': 'Diners Club International', 'currency': 'GBP', 'iban': 'GB74MH2UZLR9TRPHYNU8F8'}, 'company': {'department': 'Engineering', 'name': 'Dooley, Kozey and Cronin', 'title': 'Sales Manager', 'address': {'address': '263 Tenth Street', 'city': 'San Francisco', 'state': 'Wisconsin', 'stateCode': 'WI', 'postalCode': '37657', 'coordinates': {'lat': 71.814525, 'lng': -161.150263}, 'country': 'United States'}}, 'ein': '977-175', 'ssn': '900-590-289', 'userAgent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.93 Safari/537.36', 'crypto': {'coin': 'Bitcoin', 'wallet': '0xb9fc2fe63b2a6c003f1c324c3bfa53259162181a', 'network': 'Ethereum (ERC20)'}, 'role': 'admin'}",
+        "Request is done successfully!"
+      ],
+      "workerId": 4,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "chromium-919d72aef60c96c7c7b1",
+      "runId": "run-1778506466607-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_login.py > test_login",
+      "status": "passed",
+      "duration": 14616.085,
+      "startTime": "2026-05-11T13:34:26.721Z",
+      "endTime": "2026-05-11T13:34:41.337Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:29.504050+00:00-3512-8b8fd78b",
+          "title": "Navigate to the login page",
+          "status": "passed",
+          "duration": 3512.0,
+          "startTime": "2026-05-11T13:34:29.504Z",
+          "endTime": "2026-05-11T13:34:33.016Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:34",
+          "snippet": "login_page.go_to_login_page()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:29.514596+00:00-3502-c13f8c47",
+              "title": "Go to login page",
+              "status": "passed",
+              "duration": 3502.0,
+              "startTime": "2026-05-11T13:34:29.514Z",
+              "endTime": "2026-05-11T13:34:33.016Z",
+              "browser": "chromium",
+              "codeLocation": "conftest.py:35",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:29.523520+00:00-3493-c5e6ab9e",
+                  "title": "Navigate to the url",
+                  "status": "passed",
+                  "duration": 3493.0,
+                  "startTime": "2026-05-11T13:34:29.523Z",
+                  "endTime": "2026-05-11T13:34:33.016Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:17",
+                  "snippet": "self.page.goto(url)\nself.waitForFullyPageLoad()",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:32.169701+00:00-847-fed84be7",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 847.0,
+                      "startTime": "2026-05-11T13:34:32.169Z",
+                      "endTime": "2026-05-11T13:34:33.016Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 4.328,
+                          "startTime": "2026-05-11T13:34:32.169Z",
+                          "endTime": "2026-05-11T13:34:32.174Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 836.63,
+                          "startTime": "2026-05-11T13:34:32.174Z",
+                          "endTime": "2026-05-11T13:34:33.010Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 5.436,
+                          "startTime": "2026-05-11T13:34:33.010Z",
+                          "endTime": "2026-05-11T13:34:33.016Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": [
+                    {
+                      "action": "goto",
+                      "value": "https://opensource-demo.orangehrmlive.com/web/index.php/auth/login",
+                      "status": "passed",
+                      "duration": 2640.3439999999996,
+                      "startTime": "2026-05-11T13:34:29.523Z",
+                      "endTime": "2026-05-11T13:34:32.163Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.020755+00:00-41-e2b0cc76",
+          "title": "Verify orangehrm logo is visible",
+          "status": "passed",
+          "duration": 41.0,
+          "startTime": "2026-05-11T13:34:33.020Z",
+          "endTime": "2026-05-11T13:34:33.061Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:36",
+          "snippet": "login_page.verify_orangehrm_logo_is_visible()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.024436+00:00-37-cc8f2d7f",
+              "title": "Verify orangehrm logo is visible",
+              "status": "passed",
+              "duration": 37.0,
+              "startTime": "2026-05-11T13:34:33.024Z",
+              "endTime": "2026-05-11T13:34:33.061Z",
+              "browser": "chromium",
+              "codeLocation": "conftest.py:37",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.028254+00:00-33-733117ce",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 33.0,
+                  "startTime": "2026-05-11T13:34:33.028Z",
+                  "endTime": "2026-05-11T13:34:33.061Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:47",
+                  "snippet": "expect(self.page.locator(locator)).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.068200+00:00-50-567cf7c3",
+          "title": "Fetch demo credentials",
+          "status": "passed",
+          "duration": 50.0,
+          "startTime": "2026-05-11T13:34:33.068Z",
+          "endTime": "2026-05-11T13:34:33.117Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:38",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.121731+00:00-5177-8bae3639",
+          "title": "Login",
+          "status": "passed",
+          "duration": 5177.0,
+          "startTime": "2026-05-11T13:34:33.121Z",
+          "endTime": "2026-05-11T13:34:38.298Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:39",
+          "snippet": "login_page.login(creds[0], creds[1])",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.125446+00:00-5173-da97cd15",
+              "title": "Login to OrangeHRM",
+              "status": "passed",
+              "duration": 5173.0,
+              "startTime": "2026-05-11T13:34:33.125Z",
+              "endTime": "2026-05-11T13:34:38.298Z",
+              "browser": "chromium",
+              "codeLocation": "conftest.py:40",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.129391+00:00-234-f318f8cc",
+                  "title": "Got Direct Locator, Filling it",
+                  "status": "passed",
+                  "duration": 234.0,
+                  "startTime": "2026-05-11T13:34:33.129Z",
+                  "endTime": "2026-05-11T13:34:33.363Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:37",
+                  "snippet": "locator.nth(index).fill(text)\nself.waitForFullyPageLoad()",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.353752+00:00-10-77a7cd5a",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 10.0,
+                      "startTime": "2026-05-11T13:34:33.353Z",
+                      "endTime": "2026-05-11T13:34:33.363Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.1710000000000003,
+                          "startTime": "2026-05-11T13:34:33.353Z",
+                          "endTime": "2026-05-11T13:34:33.356Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.3080000000000003,
+                          "startTime": "2026-05-11T13:34:33.356Z",
+                          "endTime": "2026-05-11T13:34:33.360Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.403,
+                          "startTime": "2026-05-11T13:34:33.360Z",
+                          "endTime": "2026-05-11T13:34:33.363Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.368200+00:00-289-eb5a72da",
+                  "title": "Got Direct Locator, Filling it",
+                  "status": "passed",
+                  "duration": 289.0,
+                  "startTime": "2026-05-11T13:34:33.368Z",
+                  "endTime": "2026-05-11T13:34:33.657Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:37",
+                  "snippet": "locator.nth(index).fill(text)\nself.waitForFullyPageLoad()",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.645807+00:00-12-56760d8d",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 12.0,
+                      "startTime": "2026-05-11T13:34:33.645Z",
+                      "endTime": "2026-05-11T13:34:33.657Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.643,
+                          "startTime": "2026-05-11T13:34:33.645Z",
+                          "endTime": "2026-05-11T13:34:33.649Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.5309999999999997,
+                          "startTime": "2026-05-11T13:34:33.649Z",
+                          "endTime": "2026-05-11T13:34:33.653Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 4.428,
+                          "startTime": "2026-05-11T13:34:33.653Z",
+                          "endTime": "2026-05-11T13:34:33.657Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:33.661489+00:00-4477-014b12ed",
+                  "title": "Got Direct Locator, Clicking on it",
+                  "status": "passed",
+                  "duration": 4477.0,
+                  "startTime": "2026-05-11T13:34:33.661Z",
+                  "endTime": "2026-05-11T13:34:38.138Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:27",
+                  "snippet": "locator.nth(index).click()\nself.waitForFullyPageLoad()",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:35.472981+00:00-2665-8ebec419",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 2665.0,
+                      "startTime": "2026-05-11T13:34:35.472Z",
+                      "endTime": "2026-05-11T13:34:38.138Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 11.894,
+                          "startTime": "2026-05-11T13:34:35.473Z",
+                          "endTime": "2026-05-11T13:34:35.485Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 2591.606,
+                          "startTime": "2026-05-11T13:34:35.485Z",
+                          "endTime": "2026-05-11T13:34:38.076Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 60.913000000000004,
+                          "startTime": "2026-05-11T13:34:38.077Z",
+                          "endTime": "2026-05-11T13:34:38.138Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.199627+00:00-99-9eca8d78",
+                  "title": "Wait for full page load",
+                  "status": "passed",
+                  "duration": 99.0,
+                  "startTime": "2026-05-11T13:34:38.199Z",
+                  "endTime": "2026-05-11T13:34:38.298Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:11",
+                  "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 28.451,
+                      "startTime": "2026-05-11T13:34:38.199Z",
+                      "endTime": "2026-05-11T13:34:38.228Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 44.727999999999994,
+                      "startTime": "2026-05-11T13:34:38.228Z",
+                      "endTime": "2026-05-11T13:34:38.273Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 25.63,
+                      "startTime": "2026-05-11T13:34:38.273Z",
+                      "endTime": "2026-05-11T13:34:38.298Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.318558+00:00-0-8db8faaa",
+          "title": "Instantiate Dashboard Page",
+          "status": "passed",
+          "duration": 0.0,
+          "startTime": "2026-05-11T13:34:38.318Z",
+          "endTime": "2026-05-11T13:34:38.318Z",
+          "browser": "chromium",
+          "codeLocation": "test_login.py:12",
+          "snippet": "dashboard_page = DashboardPage(page)",
+          "isHook": false,
+          "steps": [],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.348763+00:00-178-c958a018",
+          "title": "Verify dashboard page URL and title",
+          "status": "passed",
+          "duration": 178.0,
+          "startTime": "2026-05-11T13:34:38.348Z",
+          "endTime": "2026-05-11T13:34:38.527Z",
+          "browser": "chromium",
+          "codeLocation": "test_login.py:14",
+          "snippet": "dashboard_page.verify_dashboard_page_url_title()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.363627+00:00-163-9d1a7cf0",
+              "title": "Verify dashboard page url and title",
+              "status": "passed",
+              "duration": 163.0,
+              "startTime": "2026-05-11T13:34:38.363Z",
+              "endTime": "2026-05-11T13:34:38.527Z",
+              "browser": "chromium",
+              "codeLocation": "test_login.py:15",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.378696+00:00-115-6c1ca4dd",
+                  "title": "Verify page url",
+                  "status": "passed",
+                  "duration": 115.0,
+                  "startTime": "2026-05-11T13:34:38.378Z",
+                  "endTime": "2026-05-11T13:34:38.493Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:94",
+                  "snippet": "self.waitForFullyPageLoad()\nexpect(self.page).to_have_url(url)",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.396732+00:00-52-86959c70",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 52.0,
+                      "startTime": "2026-05-11T13:34:38.396Z",
+                      "endTime": "2026-05-11T13:34:38.448Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 11.054,
+                          "startTime": "2026-05-11T13:34:38.396Z",
+                          "endTime": "2026-05-11T13:34:38.407Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 13.148,
+                          "startTime": "2026-05-11T13:34:38.407Z",
+                          "endTime": "2026-05-11T13:34:38.421Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 27.673,
+                          "startTime": "2026-05-11T13:34:38.421Z",
+                          "endTime": "2026-05-11T13:34:38.448Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.505872+00:00-21-ecaa40f5",
+                  "title": "Verifying page title",
+                  "status": "passed",
+                  "duration": 21.0,
+                  "startTime": "2026-05-11T13:34:38.505Z",
+                  "endTime": "2026-05-11T13:34:38.526Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:42",
+                  "snippet": "expect(self.page).to_have_title(title)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.555913+00:00-37-b9b88520",
+          "title": "Verify dashboard page header",
+          "status": "passed",
+          "duration": 37.0,
+          "startTime": "2026-05-11T13:34:38.555Z",
+          "endTime": "2026-05-11T13:34:38.592Z",
+          "browser": "chromium",
+          "codeLocation": "test_login.py:16",
+          "snippet": "dashboard_page.verify_dashboard_page_header()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.563254+00:00-30-e3e5827b",
+              "title": "Verify dashboard page header",
+              "status": "passed",
+              "duration": 30.0,
+              "startTime": "2026-05-11T13:34:38.563Z",
+              "endTime": "2026-05-11T13:34:38.592Z",
+              "browser": "chromium",
+              "codeLocation": "test_login.py:17",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.571918+00:00-21-4b78ed83",
+                  "title": "Generating Locator from string and verifying it",
+                  "status": "passed",
+                  "duration": 21.0,
+                  "startTime": "2026-05-11T13:34:38.571Z",
+                  "endTime": "2026-05-11T13:34:38.592Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:87",
+                  "snippet": "expect(self.page.locator(locator).nth(index)).to_have_text(text)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.603580+00:00-331-a7445599",
+          "title": "Capture screenshot and Attach screenshot to report",
+          "status": "passed",
+          "duration": 331.0,
+          "startTime": "2026-05-11T13:34:38.603Z",
+          "endTime": "2026-05-11T13:34:38.934Z",
+          "browser": "chromium",
+          "codeLocation": "test_login.py:18",
+          "snippet": "dashboard_page.capture_dashboard_screenshot_and_attach_to_report(pulse_attach)",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.611935+00:00-323-6fd13f71",
+              "title": "Capture dashboard screenshot and attach to report",
+              "status": "passed",
+              "duration": 323.0,
+              "startTime": "2026-05-11T13:34:38.611Z",
+              "endTime": "2026-05-11T13:34:38.934Z",
+              "browser": "chromium",
+              "codeLocation": "test_login.py:19",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.619547+00:00-315-1f3d09ea",
+                  "title": "Capturing full pagescreenshot",
+                  "status": "passed",
+                  "duration": 315.0,
+                  "startTime": "2026-05-11T13:34:38.619Z",
+                  "endTime": "2026-05-11T13:34:38.934Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:165",
+                  "snippet": "self.page.screenshot(path=path, full_page=True)",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "screenshot",
+                      "status": "passed",
+                      "duration": 315.278,
+                      "startTime": "2026-05-11T13:34:38.619Z",
+                      "endTime": "2026-05-11T13:34:38.934Z"
+                    }
+                  ]
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        },
+        {
+          "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.951238+00:00-2017-d91f5876",
+          "title": "Click logout button",
+          "status": "passed",
+          "duration": 2017.0,
+          "startTime": "2026-05-11T13:34:38.951Z",
+          "endTime": "2026-05-11T13:34:40.968Z",
+          "browser": "chromium",
+          "codeLocation": "conftest.py:49",
+          "snippet": "login_page.click_logout_button()",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.963046+00:00-2005-c04fac0b",
+              "title": "Click logout button",
+              "status": "passed",
+              "duration": 2005.0,
+              "startTime": "2026-05-11T13:34:38.963Z",
+              "endTime": "2026-05-11T13:34:40.968Z",
+              "browser": "chromium",
+              "codeLocation": "conftest.py:50",
+              "isHook": false,
+              "steps": [
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:38.981329+00:00-292-286c8d93",
+                  "title": "Generating Locator from string and Clicking on it",
+                  "status": "passed",
+                  "duration": 292.0,
+                  "startTime": "2026-05-11T13:34:38.981Z",
+                  "endTime": "2026-05-11T13:34:39.273Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:23",
+                  "snippet": "self.page.locator(locator).nth(index).click()\nself.waitForFullyPageLoad()",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:39.237975+00:00-35-b7adad8e",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 35.0,
+                      "startTime": "2026-05-11T13:34:39.237Z",
+                      "endTime": "2026-05-11T13:34:39.273Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 8.049000000000001,
+                          "startTime": "2026-05-11T13:34:39.237Z",
+                          "endTime": "2026-05-11T13:34:39.246Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 17.085,
+                          "startTime": "2026-05-11T13:34:39.246Z",
+                          "endTime": "2026-05-11T13:34:39.263Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 10.173,
+                          "startTime": "2026-05-11T13:34:39.263Z",
+                          "endTime": "2026-05-11T13:34:39.273Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:39.306120+00:00-1630-dd6b2df2",
+                  "title": "Generating Locator from string and Clicking on it",
+                  "status": "passed",
+                  "duration": 1630.0,
+                  "startTime": "2026-05-11T13:34:39.306Z",
+                  "endTime": "2026-05-11T13:34:40.936Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:23",
+                  "snippet": "self.page.locator(locator).nth(index).click()\nself.waitForFullyPageLoad()",
+                  "isHook": false,
+                  "steps": [
+                    {
+                      "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:40.538022+00:00-399-38c2cb5c",
+                      "title": "Wait for full page load",
+                      "status": "passed",
+                      "duration": 399.0,
+                      "startTime": "2026-05-11T13:34:40.538Z",
+                      "endTime": "2026-05-11T13:34:40.936Z",
+                      "browser": "chromium",
+                      "codeLocation": "base_page.py:11",
+                      "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                      "isHook": false,
+                      "steps": [],
+                      "actions": [
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.791,
+                          "startTime": "2026-05-11T13:34:40.538Z",
+                          "endTime": "2026-05-11T13:34:40.541Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 390.759,
+                          "startTime": "2026-05-11T13:34:40.541Z",
+                          "endTime": "2026-05-11T13:34:40.932Z"
+                        },
+                        {
+                          "action": "wait_for_load_state",
+                          "status": "passed",
+                          "duration": 3.92,
+                          "startTime": "2026-05-11T13:34:40.932Z",
+                          "endTime": "2026-05-11T13:34:40.936Z"
+                        }
+                      ]
+                    }
+                  ],
+                  "actions": []
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:40.940978+00:00-11-a3da3673",
+                  "title": "Wait for full page load",
+                  "status": "passed",
+                  "duration": 11.0,
+                  "startTime": "2026-05-11T13:34:40.940Z",
+                  "endTime": "2026-05-11T13:34:40.952Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:11",
+                  "snippet": "self.page.wait_for_load_state(\"domcontentloaded\")\nself.page.wait_for_load_state(\"networkidle\")\nself.page.wait_for_load_state(\"load\")",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": [
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 3.9459999999999997,
+                      "startTime": "2026-05-11T13:34:40.941Z",
+                      "endTime": "2026-05-11T13:34:40.944Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 3.8249999999999997,
+                      "startTime": "2026-05-11T13:34:40.944Z",
+                      "endTime": "2026-05-11T13:34:40.948Z"
+                    },
+                    {
+                      "action": "wait_for_load_state",
+                      "status": "passed",
+                      "duration": 3.533,
+                      "startTime": "2026-05-11T13:34:40.948Z",
+                      "endTime": "2026-05-11T13:34:40.952Z"
+                    }
+                  ]
+                },
+                {
+                  "id": "chromium-919d72aef60c96c7c7b1_step_2026-05-11T13:34:40.955793+00:00-13-1cfaa0ad",
+                  "title": "Got Direct Locator, Verifying it",
+                  "status": "passed",
+                  "duration": 13.0,
+                  "startTime": "2026-05-11T13:34:40.955Z",
+                  "endTime": "2026-05-11T13:34:40.968Z",
+                  "browser": "chromium",
+                  "codeLocation": "base_page.py:50",
+                  "snippet": "expect(locator).to_be_visible()",
+                  "isHook": false,
+                  "steps": [],
+                  "actions": []
+                }
+              ],
+              "actions": []
+            }
+          ],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_login.py",
+      "tags": [
+        "Login",
+        "Regression"
+      ],
+      "severity": "Critical",
+      "suiteName": "chromium",
+      "screenshots": [
+        "attachments/chromium-919d72aef60c96c7c7b1/0-1778506481338-test-finished-1.png",
+        "screenshots/dashboard_screenshot.png"
+      ],
+      "videoPath": [
+        "attachments/chromium-919d72aef60c96c7c7b1/100-1778506481338-video.webm"
+      ],
+      "tracePath": "attachments/chromium-919d72aef60c96c7c7b1/200-1778506481338-trace.zip",
+      "attachments": [],
+      "stdout": [
+        "User is logged in to the OrangeHRM Demo page.",
+        "User is logged in to the OrangeHRM Demo page.",
+        "User is logged in to the OrangeHRM Demo page.",
+        "User is logged out of the OrangeHRM Demo page."
+      ],
+      "workerId": 5,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "final_status": null,
+      "retryHistory": []
+    },
+    {
+      "id": "chromium-0de69751765ae8f901e4",
+      "runId": "run-1778506466680-581d5ad8-ce75-4ca5-94a6-ed29c466c815",
+      "name": "chromium > test_fail.py > test_failed_action",
+      "status": "failed",
+      "duration": 5235.706999999999,
+      "startTime": "2026-05-11T13:34:26.721Z",
+      "endTime": "2026-05-11T13:34:31.957Z",
+      "retries": 0,
+      "steps": [
+        {
+          "id": "chromium-0de69751765ae8f901e4_step_2026-05-11T13:34:29.505498+00:00-1174-2ed6b7da",
+          "title": "Navigate to Google",
+          "status": "failed",
+          "duration": 1174.0,
+          "startTime": "2026-05-11T13:34:29.505Z",
+          "endTime": "2026-05-11T13:34:30.679Z",
+          "browser": "chromium",
+          "errorMessage": "assert 'Playwright' in 'Google'\n +  where 'Google' = title()\n +    where title = <Page url='https://www.google.com/'>.title",
+          "stackTrace": "Traceback (most recent call last):\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/plugin.py\", line 213, in step\n    yield\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/decorators.py\", line 45, in wrapper\n    return func(*args, **kwargs)\n  File \"/Users/arghajitsingha/playwright-python/tests/test_fail.py\", line 16, in test_failed_action\n    assert \"Playwright\" in page.title()\nAssertionError: assert 'Playwright' in 'Google'\n +  where 'Google' = title()\n +    where title = <Page url='https://www.google.com/'>.title\n",
+          "codeLocation": "python.py:157",
+          "isHook": false,
+          "steps": [
+            {
+              "id": "chromium-0de69751765ae8f901e4_step_2026-05-11T13:34:29.515853+00:00-1153-728091c5",
+              "title": "Navigate to Google",
+              "status": "passed",
+              "duration": 1153.0,
+              "startTime": "2026-05-11T13:34:29.515Z",
+              "endTime": "2026-05-11T13:34:30.668Z",
+              "browser": "chromium",
+              "codeLocation": "test_fail.py:12",
+              "snippet": "page.goto(\"https://google.com\")",
+              "isHook": false,
+              "steps": [],
+              "actions": [
+                {
+                  "action": "goto",
+                  "value": "https://google.com",
+                  "status": "passed",
+                  "duration": 1152.806,
+                  "startTime": "2026-05-11T13:34:29.515Z",
+                  "endTime": "2026-05-11T13:34:30.668Z"
+                }
+              ]
+            },
+            {
+              "id": "chromium-0de69751765ae8f901e4_step_2026-05-11T13:34:30.672719+00:00-6-7325bf21",
+              "title": "Search for playwright-pulse",
+              "status": "failed",
+              "duration": 6.0,
+              "startTime": "2026-05-11T13:34:30.672Z",
+              "endTime": "2026-05-11T13:34:30.679Z",
+              "browser": "chromium",
+              "errorMessage": "assert 'Playwright' in 'Google'\n +  where 'Google' = title()\n +    where title = <Page url='https://www.google.com/'>.title",
+              "stackTrace": "Traceback (most recent call last):\n  File \"/Users/arghajitsingha/playwright-python/venv/lib/python3.14/site-packages/pytest_pulse/plugin.py\", line 213, in step\n    yield\n  File \"/Users/arghajitsingha/playwright-python/tests/test_fail.py\", line 16, in test_failed_action\n    assert \"Playwright\" in page.title()\nAssertionError: assert 'Playwright' in 'Google'\n +  where 'Google' = title()\n +    where title = <Page url='https://www.google.com/'>.title\n",
+              "codeLocation": "test_fail.py:15",
+              "snippet": "assert \"Playwright\" in page.title()",
+              "isHook": false,
+              "steps": [],
+              "actions": []
+            }
+          ],
+          "actions": []
+        }
+      ],
+      "browser": "chromium",
+      "describe": "n/a",
+      "spec_file": "test_fail.py",
+      "errorMessage": "/Users/arghajitsingha/playwright-python/tests/test_fail.py:16: AssertionError: assert 'Playwright' in 'Google'\n +  where 'Google' = title()\n +    where title = <Page url='https://www.google.com/'>.title",
+      "stackTrace": "page = <Page url='https://www.google.com/'>\npulse_step = <bound method _StepRecorder.step of _StepRecorder(test_id='chromium-0de69751765ae8f901e4', browser='chromium', steps=[...wright\" in page.title()', isHook=False, hookType=None, steps=[], actions=[])], actions=[])], current_active_step=None)>\n\n    @pytest.mark.slow\n    @pytest.mark.pulse_tag(\"Regression\")\n    @pytest.mark.pulse_tag(\"Failed\")\n    @pytest.mark.pulse_annotation(\"Failed test case for report demonstartion\")\n    @pytest.mark.flaky(reruns=2, reruns_delay=1)\n    @step(\"Navigate to Google\")\n    def test_failed_action(page, pulse_step):\n        with pulse_step(\"Navigate to Google\"):\n            page.goto(\"https://google.com\")\n    \n        with pulse_step(\"Search for playwright-pulse\"):\n>           assert \"Playwright\" in page.title()\nE           AssertionError: assert 'Playwright' in 'Google'\nE            +  where 'Google' = title()\nE            +    where title = <Page url='https://www.google.com/'>.title\n\ntests/test_fail.py:16: AssertionError",
+      "tags": [
+        "Failed",
+        "Regression"
+      ],
+      "severity": "Medium",
+      "suiteName": "chromium",
+      "screenshots": [],
+      "videoPath": [],
+      "attachments": [],
+      "workerId": 6,
+      "totalWorkers": 1,
+      "configFile": "/Users/arghajitsingha/playwright-python/pytest.ini",
+      "annotations": [
+        {
+          "type": "Failed test case for report demonstartion"
+        }
+      ],
+      "retryHistory": [],
+      "final_status": null
+    }
+  ],
+  "metadata": {
+    "generatedAt": "2026-05-11T13:35:04.171596Z"
+  }
+}

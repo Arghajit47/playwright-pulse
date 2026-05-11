@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="../asset/logo.png" />
+  <link rel="apple-touch-icon" href="../asset/logo.png" />
+  <title>Pulse Report Demonstration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      padding: 1rem;
+    }
+
+    .iphone-frame {
+      position: relative;
+      width: 430px;
+      height: 932px;
+      border: 16px solid #111;
+      border-radius: 64px;
+      background: #334155;
+      box-sizing: content-box;
+      overflow: hidden;
+      transform-origin: center center;
+      animation: rotateMobile 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      opacity: 0;
+      max-width: 90vw;
+      max-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.5);
+    }
+
+    .notch {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 230px;
+      height: 60px;
+      background: black;
+      border-bottom-left-radius: 30px;
+      border-bottom-right-radius: 30px;
+      z-index: 2;
+    }
+
+    .container {
+      text-align: center;
+      animation: counterRotate 2.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    h1 {
+      margin-bottom: 3rem;
+      font-weight: 600;
+      font-size: 2rem;
+      color: #f8fafc;
+    }
+
+    .report-link {
+      display: block;
+      font-size: 1.1rem;
+      margin: 1.5rem auto;
+      text-decoration: none;
+      color: #ffffff;
+      background: #3b82f6;
+      padding: 1.2rem;
+      border-radius: 16px;
+      font-weight: 600;
+      transition: transform 0.2s, background 0.2s;
+      opacity: 0;
+      animation: smoothOptionAppear 1s cubic-bezier(0.645, 0.045, 0.355, 1) forwards;
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .report-link:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    @keyframes rotateMobile {
+      0% {
+        transform: rotate(0deg);
+        opacity: 0;
+      }
+
+      100% {
+        transform: rotate(90deg);
+        opacity: 1;
+      }
+    }
+
+    @keyframes counterRotate {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(-90deg);
+      }
+    }
+
+    @keyframes smoothOptionAppear {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .report-link:nth-of-type(1) {
+      animation-delay: 2.2s;
+    }
+
+    .report-link:nth-of-type(2) {
+      animation-delay: 2.4s;
+    }
+
+    .report-link:nth-of-type(3) {
+      animation-delay: 2.6s;
+    }
+
+    @media (max-width: 932px) {
+      .iphone-frame {
+        animation: none !important;
+        transform: none !important;
+        width: 85vw;
+        height: auto;
+        aspect-ratio: 430/932;
+        opacity: 1;
+      }
+
+      .container,
+      .report-link {
+        animation: none !important;
+        opacity: 1;
+        transform: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="iphone-frame">
+    <div class="notch"></div>
+    <div class="container">
+      <h1>Live Demonstrations</h1>
+      <a class="report-link" href="../pytest-pulse-report/playwright-pulse-static-report.html" target="_blank">
+        Static HTML Report
+      </a>
+      <a class="report-link" href="../pytest-pulse-report/playwright-pulse-report.html" target="_blank">
+        Dynamic Dashboard
+      </a>
+      <a class="report-link" href="../pytest-pulse-report/pulse-email-summary.html" target="_blank">
+        Email Summary
+      </a>
+    </div>
+  </div>
+</body>
+
+</html>
