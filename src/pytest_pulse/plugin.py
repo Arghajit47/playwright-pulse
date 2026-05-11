@@ -61,6 +61,7 @@ DEFAULT_INDIVIDUAL_SUBDIR = "pulse-results"
 # Storing the callable (recorder.step) in a ContextVar so static decorators
 # can find the active test's step recorder without receiving the fixture.
 pulse_step_context: ContextVar[Optional[Any]] = ContextVar("pulse_step_context", default=None)
+current_active_step_var: ContextVar[Optional[TestStep]] = ContextVar("current_active_step_var", default=None)
 
 
 # ── pulse_step helpers ─────────────────────────────────────────────────────────
@@ -182,8 +183,6 @@ class _StepRecorder:
         code_location = f"{short_file}:{caller_line}" if caller_file else ""
 
         # ── 3. Timing & step object setup ──────────────────────────────────────
-        # time.time() gives a high-resolution float; we round to 3 decimal
-        # places (millisecond precision) after computing the elapsed duration.
         t0 = time.time()
         start = datetime.now(tz=timezone.utc)
         step_status = "passed"
@@ -204,26 +203,22 @@ class _StepRecorder:
 
         previous_step = self.current_active_step
         self.current_active_step = new_step
+        
+        # Also update the ContextVar so nested calls find us correctly
+        token = current_active_step_var.set(new_step)
 
         # ── 4. Execute the with-block ──────────────────────────────────────────
         try:
             yield
 
-        # Pytest skip — test/step intentionally skipped; must re-raise so
-        # pytest can record the skip outcome on the test node.
         except pytest.skip.Exception:
             step_status = "skipped"
             raise
 
-        # Pytest xfail — expected failure; re-raise so pytest honours the mark.
         except pytest.xfail.Exception:
             step_status = "xfailed"
             raise
 
-        # Any real failure (AssertionError, TimeoutError, PlaywrightError, …).
-        # Capture the message and full traceback, then re-raise so pytest
-        # records the test as failed. Never swallow — the test outcome must
-        # propagate normally through pytest's internal event loop.
         except Exception as exc:
             step_status = "failed"
             error_msg = str(exc)
@@ -232,8 +227,8 @@ class _StepRecorder:
 
         # ── 5. Finalise — always runs regardless of outcome ────────────────────
         finally:
-            # round(t1-t0, 3) → seconds to 3 decimal places (ms precision);
-            # multiply by 1000 so TestStep.duration stays in milliseconds.
+            current_active_step_var.reset(token)
+            
             duration_s = round(time.time() - t0, 3)
             duration_ms = duration_s * 1000
             end = datetime.now(tz=timezone.utc)
@@ -258,9 +253,11 @@ class _StepRecorder:
     def record_action(self, action: str, selector: Optional[str] = None, value: Optional[str] = None, 
                       start_time: Optional[datetime] = None, end_time: Optional[datetime] = None,
                       status: str = "passed", error_msg: Optional[str] = None) -> None:
-        if self.current_active_step:
+        # Prioritize the ContextVar for better nesting support in deep code
+        active_step = current_active_step_var.get() or self.current_active_step
+        if active_step:
             from .types import TestAction
-            self.current_active_step.actions.append(
+            active_step.actions.append(
                 TestAction(
                     action=action,
                     selector=selector,
@@ -832,6 +829,19 @@ class PulseReporter:
         with open(out_path, "w", encoding="utf-8") as fh:
             _json.dump(merged, fh, indent=2, ensure_ascii=False)
         print(f"\nPulseReport: merged xdist report written to {out_path}")
+        
+        # CRITICAL FIX: Trigger HTML generation after merging shard files on master
+        from .dynamic_generator import generate_dynamic_html
+        from .static_generator import generate_static_html
+        
+        dynamic_html = os.path.join(self.output_dir, "playwright-pulse-report.html")
+        static_html = os.path.join(self.output_dir, "playwright-pulse-static-report.html")
+        
+        print(f"PulseReport: generating reports for merged results...")
+        generate_dynamic_html(out_path, dynamic_html)
+        generate_static_html(out_path, static_html)
+        print(f"PulseReport: reports generated successfully.")
+
         self._cleanup_shard_files()
 
 
@@ -955,6 +965,7 @@ def _get_pw_output_dir(config: pytest.Config) -> Optional[str]:
     except AttributeError:
         pass
     default = "test-results"
+    # Only return the default if it actually exists as a directory
     if os.path.isdir(default):
         return default
     return None

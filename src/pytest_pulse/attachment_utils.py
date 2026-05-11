@@ -90,20 +90,22 @@ def find_playwright_artifacts(
     """
     result = {"screenshots": [], "videos": [], "trace": None}
 
-    if not os.path.isdir(pw_output_dir):
+    if not pw_output_dir or not os.path.isdir(pw_output_dir):
         return result
 
     # Build candidate folder-name fragments from nodeid
-    # nodeid example: tests/test_login.py::TestLogin::test_valid_credentials[chromium]
     fragments = _nodeid_fragments(node_id, browser_name)
 
-    for entry in os.scandir(pw_output_dir):
-        if not entry.is_dir():
-            continue
-        folder_lower = entry.name.lower()
-        if any(f in folder_lower for f in fragments):
-            _collect_from_folder(entry.path, result)
-            break
+    try:
+        for entry in os.scandir(pw_output_dir):
+            if not entry.is_dir():
+                continue
+            folder_lower = entry.name.lower()
+            if any(f in folder_lower for f in fragments):
+                _collect_from_folder(entry.path, result)
+                break
+    except (FileNotFoundError, PermissionError):
+        pass
 
     return result
 
@@ -123,13 +125,18 @@ def _nodeid_fragments(node_id: str, browser_name: str) -> list:
 
 
 def _collect_from_folder(folder: str, result: dict) -> None:
-    for entry in os.scandir(folder):
-        if not entry.is_file():
-            continue
-        name_lower = entry.name.lower()
-        if name_lower.endswith(".png") or name_lower.endswith(".jpg") or name_lower.endswith(".jpeg"):
-            result["screenshots"].append(entry.path)
-        elif name_lower.endswith(".webm") or name_lower.endswith(".mp4"):
-            result["videos"].append(entry.path)
-        elif name_lower == "trace.zip":
-            result["trace"] = entry.path
+    if not os.path.isdir(folder):
+        return
+    try:
+        for entry in os.scandir(folder):
+            if not entry.is_file():
+                continue
+            name_lower = entry.name.lower()
+            if name_lower.endswith(".png") or name_lower.endswith(".jpg") or name_lower.endswith(".jpeg"):
+                result["screenshots"].append(entry.path)
+            elif name_lower.endswith(".webm") or name_lower.endswith(".mp4"):
+                result["videos"].append(entry.path)
+            elif name_lower == "trace.zip":
+                result["trace"] = entry.path
+    except (FileNotFoundError, PermissionError):
+        pass
