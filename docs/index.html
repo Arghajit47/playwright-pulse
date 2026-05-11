@@ -1,227 +1,314 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Getting Started - Playwright Pulse Report</title>
-    <link rel="icon" href="./asset/logo.png" type="image/png" sizes="32x32" />
-    <link rel="apple-touch-icon" href="./asset/logo.png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="search.css" />
-  </head>
-  <body data-theme="light">
-    <!-- Enhanced Header with Search and Theme Toggle -->
-    <header class="enhanced-header">
-      <div class="header-left">
-        <img
-          src="./asset/FullLogo.png"
-          alt="Playwright Pulse Report Banner"
-          class="header-logo"
-        />
-      </div>
 
-      <div class="header-controls">
-        <div class="search-container">
-          <div class="search-wrapper">
-            <input
-              type="text"
-              class="search-input"
-              id="searchInput"
-              placeholder="Search documentation..."
-              autocomplete="off"
-            />
-            <button class="clear-search" id="clearSearch">×</button>
-            <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
-              <path
-                d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"
-              />
-            </svg>
-          </div>
-          <div class="search-dropdown" id="searchDropdown"></div>
-        </div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playwright-Pulse | The Heartbeat of Testing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/png" href="asset/logo.png" />
+    <link rel="apple-touch-icon" href="asset/logo.png" />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --spotify-black: #0f172a;
+            --pulse-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #2dd4bf 100%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
 
-        <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
-          <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z"
-            />
-            <path
-              d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z"
-            />
-          </svg>
-        </button>
-      </div>
-    </header>
+        body {
+            background-color: var(--spotify-black);
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            overflow-x: hidden;
+        }
 
-    <button
-      class="menu-toggle"
-      id="menu-toggle"
-      aria-label="Open navigation menu"
-    >
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
-      </svg>
-    </button>
+        #lottie-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
 
-    <div class="page-wrapper">
-      <nav class="sidebar" id="sidebar">
-        <ul class="sidebar-nav">
-          <li><a href="index.html" class="active">Getting Started</a></li>
-          <li><a href="reporters-scripts.html">Reporters & Scripts</a></li>
-          <li><a href="report-features.html">Report Features</a></li>
-          <li><a href="advanced-usage.html">Advanced Usage</a></li>
-          <li>
-            <a href="sharding.html">Sharding</a>
-          </li>
-          <li><a href="comparison.html">Comparison</a></li>
-          <li><a href="reference.html">Changelog</a></li>
-          <li><a href="view.html">View Reporter Images</a></li>
-          <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
-          <li>
-            <a
-              href="https://arghajit47.github.io/playwright-pulse-dashboard/"
-              class="external-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Pulse Dashboard
-              <img class="new" src="./asset/new.png" alt="new_icon" />
-            </a>
-          </li>
-        </ul>
-      </nav>
+        #lottie-bg canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
 
-      <div class="overlay" id="overlay"></div>
+        .page-content {
+            position: relative;
+            z-index: 1;
+        }
 
-      <main class="main-content">
-        <section>
-          <h1>Playwright Pulse Report</h1>
-          <a href="https://www.npmjs.com/package/@arghajit/playwright-pulse-report"> <img src="https://img.shields.io/npm/v/@arghajit/playwright-pulse-report.svg" alt="NPM Version"> </a> <a href="https://opensource.org/licenses/MIT"> <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"> </a> <a href="https://www.npmjs.com/package/@arghajit/playwright-pulse-report"> <img src="https://img.shields.io/npm/dm/@arghajit/playwright-pulse-report.svg" alt="NPM Downloads"> </a>
-          <p>
-            The ultimate Playwright reporter — an interactive dashboard with
-            historical trend analytics, CI/CD-ready standalone HTML reports, and
-            full sharding support for scalable test execution.
-          </p>
-        </section>
+        /* Hero Text Gradient */
+        .hero-text {
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            background: var(--pulse-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.3));
+        }
 
-        <section id="features">
-          <h2>Core Features</h2>
-          <img
-            src="./asset/desktop/features.svg"
-            alt="Features Diagram"
-            style="width: 100%; margin-bottom: 1.5rem; border-radius: 8px"
-          />
-          <ul>
-            <li>
-              <strong>Interactive Dashboard:</strong> A rich, single-page
-              application to visualize test results. Filter by status, browser,
-              or test name. Expand test cases to see detailed steps, errors,
-              console logs, and attachments.
-            </li>
-            <li>
-              <strong>Historical Trend Analysis:</strong> Automatically archives
-              test runs to track performance over time. View trends for test
-              volume, pass/fail rates, and execution duration.
-            </li>
-            <li>
-              <strong>Standalone HTML Reports:</strong> Generate fully
-              self-contained HTML reports with embedded attachments
-              (screenshots, videos), perfect for sharing and CI/CD artifacts.
-            </li>
-            <li>
-              <strong>Emailable Summaries:</strong> Automatically generate and
-              send lightweight email reports with key statistics to
-              stakeholders.
-            </li>
-            <li>
-              <strong>Full Sharding Support:</strong> Natively handles
-              Playwright's sharding capabilities and can merge reports from all
-              shards into a single, comprehensive report.
-            </li>
-            <li>
-              <strong>AI-Powered Analysis:</strong> Integrates an AI analysis
-              tool to provide insights on test flakiness, performance
-              bottlenecks, and failure patterns.
-            </li>
-          </ul>
-        </section>
+        /* Glassmorphism Bento Box */
+        .bento-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            transition: all 0.3s ease;
+        }
 
-        <section id="installation">
-          <h2>Installation</h2>
-          <pre><code class="language-bash"># Using npm
-npm install @arghajit/playwright-pulse-report@latest --save-dev</code><button class="copy-button">Copy</button></pre>
-        </section>
+        .bento-card:hover {
+            border-color: rgba(99, 102, 241, 0.5);
+            transform: translateY(-5px);
+        }
 
-        <section id="configuration">
-          <h2>Initial Configuration</h2>
-          <p>
-            Add the reporter to your <code>playwright.config.ts</code> file.
-            This is the minimum configuration needed to get started.
-          </p>
-          
-          <div class="note" style="border-left: 4px solid #2196F3; padding: 15px; margin: 20px 0; border-radius: 4px;">
-            <strong>✨ Available in v0.3.0 and later:</strong> The <code>outputDir</code> you configure here will be automatically detected by all CLI scripts!<br>
-            No need to pass <code>-o</code> or <code>--outputDir</code> arguments anymore - just run <code>npx generate-pulse-report</code> and it works! 🎉
-          </div>
-          
-          <pre><code class="language-typescript">// playwright.config.ts
-import { defineConfig } from "@playwright/test";
-import * as path from "path";
+        /* Pulse Button Animation */
+        .pulse-button {
+            background: var(--pulse-gradient);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: breath 3s infinite ease-in-out;
+        }
 
-export default defineConfig({
-  reporter: [
-    ["list"], // Keep the default 'list' reporter or use any other you prefer
-    [
-      "@arghajit/playwright-pulse-report",
-      {
-        outputDir: path.resolve(__dirname, "pulse-report"), // ✨ Auto-detected!
-      },
-    ],
-  ],
-  
-  // IMPORTANT: For the reporter to capture attachments, you must enable them here.
-  use: {
-    screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
-    trace: 'retain-on-failure',
-  },
-});</code><button class="copy-button">Copy</button></pre>
-        </section>
+        @keyframes breath {
 
-        <section id="first-report">
-          <h2>Generating Your First Report</h2>
-          <ol>
-            <li>
-              <strong>Run your tests:</strong> Execute your Playwright tests as
-              you normally would.
-              <pre><code class="language-bash">npx playwright test</code><button class="copy-button">Copy</button></pre>
-              <p>
-                This command will run your tests and the Playwright Pulse
-                Reporter will automatically collect data in the background,
-                creating a <code>pulse-report</code> directory.
-              </p>
-            </li>
-            <li>
-              <strong>Generate the HTML report:</strong> After the test run is
-              complete, use the provided script to generate the interactive HTML
-              file.
-              <pre><code class="language-bash">npx generate-pulse-report</code><button class="copy-button">Copy</button></pre>
-              <p>
-                This creates a self-contained static file named
-                <code>playwright-pulse-static-report.html</code> inside the
-                <code>pulse-report</code> directory.
-              </p>
-            </li>
-            <li>
-              <strong>View your report:</strong> Open the newly generated HTML
-              file in your browser to explore the dashboard.
-            </li>
-          </ol>
-        </section>
-      </main>
-    </div>
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+            }
 
-    <script src="search.js"></script>
-    <script src="script.js"></script>
-  </body>
+            50% {
+                box-shadow: 0 0 35px rgba(99, 102, 241, 0.7);
+            }
+        }
+
+        /* Background Wave Effect */
+        .wave-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #6366f1 0%, transparent 50%);
+        }
+
+        /* iPhone 14 Plus Mockup */
+        .iphone-14-plus {
+            position: relative;
+            width: 428px;
+            height: 926px;
+            margin: 60px auto;
+            border: 12px solid #1a1a1a;
+            border-radius: 54px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 0 0 2px #333, 0 20px 50px rgba(0, 0, 0, 0.8);
+            transform-origin: top center;
+        }
+
+        @media (max-height: 1000px) {
+            .iphone-14-plus {
+                transform: scale(0.8);
+                margin-bottom: -100px;
+            }
+        }
+
+        .iphone-14-plus iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0a0a0a;
+        }
+
+        .dynamic-island {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110px;
+            height: 30px;
+            background: #000;
+            border-radius: 20px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+        }
+
+        .dynamic-island::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Hardware Details */
+        .iphone-14-plus .volume-buttons {
+            position: absolute;
+            left: -15px;
+            top: 180px;
+            z-index: 5;
+        }
+
+        .iphone-14-plus .volume-buttons::before,
+        .iphone-14-plus .volume-buttons::after {
+            content: '';
+            display: block;
+            width: 3px;
+            height: 60px;
+            background: #222;
+            margin-bottom: 15px;
+            border-radius: 3px 0 0 3px;
+        }
+
+        .iphone-14-plus .power-button {
+            position: absolute;
+            right: -15px;
+            top: 250px;
+            width: 3px;
+            height: 100px;
+            background: #222;
+            border-radius: 0 3px 3px 0;
+            z-index: 5;
+        }
+    </style>
+    </head>
+    
+    <body>
+        <div id="lottie-bg"></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+        <script>
+            const anim = lottie.loadAnimation({
+                container: document.getElementById('lottie-bg'),
+                renderer: 'canvas',
+                loop: true,
+                autoplay: true,
+                path: 'asset/background.mp4.lottie.json',
+                rendererSettings: {
+                    preserveAspectRatio: 'xMidYMid slice',
+                    clearCanvas: true
+                }
+            });
+            anim.setSpeed(5);
+        </script>
+        <div class="page-content">
+            <!-- Sticky Navigation -->
+            <nav
+                class="fixed top-0 w-full z-50 backdrop-blur-md border-b border-white/5 py-4 px-8 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <a href="index.html">
+                        <img src="./asset/FullLogo.png" class="h-20" />
+                    </a>
+            </div>
+            
+            </nav>
+
+        <main class="relative pt-32 pb-20 px-6">
+            <div class="wave-bg"></div>
+
+            <!-- Hero Section -->
+            <section class="max-w-6xl mx-auto text-center mb-32">
+                <h1 class="text-6xl md:text-8xl hero-text mb-6">
+                    The Heartbeat of Your Testing Pipeline.
+                </h1>
+                <p class="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed">
+                    Immersive dashboards, sharded reporting, and AI-driven insights for Playwright. All in one pulse.
+                </p>
+
+                <div class="flex flex-col md:flex-row gap-6 justify-center items-center">
+                    <a href="javascript/index.html" target="_blank"
+                        class="pulse-button px-10 py-4 rounded-full font-bold text-lg hover:scale-105 transition-all">
+                        View JS/TS Docs
+                    </a>
+                    <a href="python/index.html" target="_blank"
+                        class="bg-white/10 hover:bg-white/20 px-10 py-4 rounded-full font-bold text-lg backdrop-blur-md border border-white/10 transition-all">
+                        View Python Docs
+                    </a>
+                </div>
+                </section>
+
+            <!-- Video Showcase Section -->
+            <section class="max-w-5xl mx-auto mb-32 px-4 relative group">
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-teal-500 rounded-[26px] blur-xl opacity-20 group-hover:opacity-40 transition duration-1000">
+                </div>
+                <div class="bento-card overflow-hidden p-2 shadow-2xl relative">
+                    <div class="overflow-hidden rounded-[18px]">
+                        <video class="w-full block" autoplay loop muted playsinline>
+                            <source src="./asset/pulse-report.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                </div>
+                <div class="mt-8 text-center">
+                    <span class="text-slate-500 text-sm font-medium tracking-widest uppercase">Experience the Pulse
+                        Dashboard</span>
+                </div>
+            </section>
+
+            <!-- Features Section -->
+            <section class="max-w-6xl mx-auto py-24 border-t border-white/5">
+                <h2 class="text-3xl font-bold mb-16 text-center">Engineered for Quality</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+                    <div>
+                        <div class="text-indigo-400 mb-6 flex justify-center">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">Immersive HTML Reports</h3>
+                        <p class="text-slate-400 leading-relaxed">Real-time visualization of test runs with sleek charts
+                            and
+                            deep-dive inspection capabilities.</p>
+                    </div>
+                    <div>
+                        <div class="text-teal-400 mb-6 flex justify-center">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path
+                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">Sharded Reporting</h3>
+                        <p class="text-slate-400 leading-relaxed">Native support for CI sharding, merging distributed
+                            results into a single unified pulse.</p>
+                    </div>
+                    <div>
+                        <div class="text-purple-400 mb-6 flex justify-center">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path
+                                    d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0012 18.75c-1.035 0-1.972-.464-2.602-1.196l-.548-.547z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold mb-4">AI Debugging</h3>
+                        <p class="text-slate-400 leading-relaxed">Intelligent failure analysis and automated debugging
+                            prompts for high-speed resolution.</p>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="border-t border-white/5 py-12 text-center opacity-40 text-sm">
+            <p>&copy; 2026 Playwright-Pulse</p>
+        </footer>
+
+    </div> <!-- end page-content -->
+
+</body>
+
 </html>

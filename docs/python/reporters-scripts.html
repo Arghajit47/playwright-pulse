@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporters & Scripts - Pytest Pulse Report</title>
+  <link rel="icon" href="../asset/logo.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="../asset/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="search.css" />
+</head>
+
+<body data-theme="light">
+  <!-- Enhanced Header with Search and Theme Toggle -->
+  <header class="enhanced-header">
+    <div class="header-left">
+      <a href="../index.html">
+        <img src="../asset/FullLogo.png" alt="Pytest Pulse Report Banner" class="header-logo" />
+      </a>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search documentation..."
+            autocomplete="off" />
+          <button class="clear-search" id="clearSearch">×</button>
+          <svg class="search-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+          </svg>
+        </div>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+        <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path
+            d="M12 18c-3.3 0-6-2.7-6-6s2.7-6 6-6 6 2.7 6 6-2.7 6-6 6zm0-10c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4z" />
+          <path d="M12 1l3 3-3 3-3-3 3-3zm0 18l3 3-3 3-3-3 3-3zM6 12l-3-3-3 3 3 3 3-3zm12 0l3-3 3 3-3 3-3-3z" />
+        </svg>
+      </button>
+    </div>
+  </header>
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open navigation menu">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+      <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+    </svg>
+  </button>
+  <div class="page-wrapper">
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-nav">
+        <li><a href="index.html">Getting Started</a></li>
+        <li>
+          <a href="reporters-scripts.html" class="active">Reporters & Scripts</a>
+        </li>
+        <li><a href="report-features.html">Report Features</a></li>
+        <li><a href="advanced-usage.html">Advanced Usage</a></li>
+        <li>
+          <a href="sharding.html">Sharding</a>
+        </li>
+        <li><a href="comparison.html">Comparison</a></li>
+        <li><a href="reference.html">Changelog</a></li>
+        <li><a href="view.html">View Reporter Images</a></li>
+        <li><a href="demo.html" target="_blank">Live Report Demonstration</a></li>
+      </ul>
+    </nav>
+    <div class="overlay" id="overlay"></div>
+    <main class="main-content">
+      <h1>Reporters & Scripts</h1>
+      <p>
+        The package is composed of a core Pytest plugin and a set of CLI scripts
+        for processing and visualizing the collected data.
+      </p>
+
+      <section id="core-reporter">
+        <h2>The Core Plugin</h2>
+        <p>
+          The main logic resides in <code>plugin.py</code>, which integrates with the Pytest lifecycle
+          via standard hooks.
+        </p>
+        <h4>How it Works</h4>
+        <ul>
+          <li>
+            <strong>Hook-Driven:</strong> It uses Pytest hooks like <code>pytest_runtest_makereport</code>,
+            <code>pytest_runtest_protocol</code>, and <code>pytest_sessionfinish</code> to track test execution.
+          </li>
+          <li>
+            <strong>Data Collection:</strong> It captures comprehensive metadata
+            for each test, including status, duration, retries, steps (via <code>pulse_step</code>), errors,
+            console output (stdout/stderr), and tags.
+          </li>
+          <li>
+            <strong>Attachment Handling:</strong> During test execution, the
+            plugin automatically processes attachments from <code>pytest-playwright</code>. It copies
+            screenshots, videos, and traces into the <code>pulse-report/attachments/</code> directory.
+          </li>
+          <li>
+            <strong>xdist Support:</strong> The plugin is fully compatible with <code>pytest-xdist</code>.
+            When running in parallel, workers save partial results to hidden shard files, which the master
+            node automatically merges at the end of the session.
+          </li>
+          <li>
+            <strong>JSON Output:</strong> At the end of the run, it generates a master
+            <code>playwright-pulse-report.json</code> file that serves as the data source for all reports.
+          </li>
+        </ul>
+      </section>
+
+      <section id="cli-scripts">
+        <h2>Command-Line Scripts</h2>
+        <p>
+          These scripts transform the raw JSON data into viewable reports.
+          They are available globally after installing the package via pip.
+        </p>
+
+        <div class="note" style="border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <strong>✨ Automatic Path Detection:</strong> All CLI scripts automatically read
+          configuration from your <code>pytest.ini</code> file if present.
+        </div>
+
+        <h4>generate-pulse-report</h4>
+        <ul>
+          <li>
+            <strong>Purpose:</strong> Creates a fully self-contained static HTML report with embedded attachments.
+          </li>
+          <li>
+            <strong>Basic Command:</strong> <code>generate-pulse-report</code>
+          </li>
+          <li>
+            <strong>Manual Override:</strong> <code>generate-pulse-report --outputDir ./custom-folder</code>
+          </li>
+          <li>
+            <strong>Output:</strong> <code>[outputDir]/playwright-pulse-static-report.html</code>
+          </li>
+        </ul>
+
+        <h4>generate-report</h4>
+        <ul>
+          <li>
+            <strong>Purpose:</strong> Creates a dynamic HTML dashboard that loads attachments from the
+            <code>attachments/</code> folder (best for local debugging).
+          </li>
+          <li>
+            <strong>Basic Command:</strong> <code>generate-report</code>
+          </li>
+          <li>
+            <strong>Output:</strong> <code>[outputDir]/playwright-pulse-report.html</code>
+          </li>
+        </ul>
+
+        <h4>merge-pulse-report</h4>
+        <ul>
+          <li>
+            <strong>Purpose:</strong> Manually merges shard results (from different CI machines) into a single master
+            JSON.
+          </li>
+          <li>
+            <strong>Basic Command:</strong> <code>merge-pulse-report</code>
+          </li>
+        </ul>
+
+        <h4>send-email</h4>
+        <ul>
+          <li>
+            <strong>Purpose:</strong> Generates and distributes a lightweight summary report via email.
+          </li>
+          <li>
+            <strong>Basic Command:</strong> <code>send-email</code>
+          </li>
+        </ul>
+      </section>
+
+      <section id="optional-cli-scripts">
+        <h2>Optional CLI Scripts</h2>
+        <p>
+          These utilities are often called automatically by the main scripts but can be used standalone.
+        </p>
+        <h4>generate-trend</h4>
+        <ul>
+          <li>
+            <strong>Purpose:</strong> Archives the current run's data to enable historical trend analysis.
+          </li>
+          <li>
+            <strong>Basic Command:</strong> <code>generate-trend</code>
+          </li>
+        </ul>
+        <h4>generate-email-report</h4>
+        <ul>
+          <li>
+            <strong>Purpose:</strong> Generates the email summary HTML file without actually sending the email.
+          </li>
+          <li>
+            <strong>Basic Command:</strong> <code>generate-email-report</code>
+          </li>
+        </ul>
+      </section>
+    </main>
+  </div>
+  <script src="search.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
