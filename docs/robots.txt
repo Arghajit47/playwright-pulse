@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://arghajit47.github.io/playwright-pulse/sitemap.xml
