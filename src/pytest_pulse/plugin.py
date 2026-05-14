@@ -749,76 +749,31 @@ class PulseReporter:
 
     def merge_shard_files(self) -> None:
         """Called on xdist master after all workers finish to merge shard files."""
-        from .report_writer import read_report, merge_raw_reports
+        from .report_writer import merge_raw_reports
         import json
+        import glob
 
-        total = self._total_workers
-        all_results: list = []
-        environments: list = []
-        run_start: Optional[str] = None
-
-        for i in range(total):
-            fpath = os.path.join(self.output_dir, f"{TEMP_SHARD_PREFIX}{i}.json")
-            if not os.path.exists(fpath):
-                # Try hidden version if regular one not found
-                hidden_path = os.path.join(self.output_dir, f".{TEMP_SHARD_PREFIX}{i}.json")
-                if os.path.exists(hidden_path):
-                    fpath = hidden_path
-
-            if not os.path.exists(fpath):
-                print(f"PulseReport: shard {i} not found at {fpath}, skipping")
-                continue
-
+        shard_paths = glob.glob(os.path.join(self.output_dir, f"{TEMP_SHARD_PREFIX}*.json"))
+        hidden_paths = glob.glob(os.path.join(self.output_dir, f".{TEMP_SHARD_PREFIX}*.json"))
+        shard_paths.extend(hidden_paths)
+        
+        reports = []
+        for fpath in shard_paths:
             try:
                 with open(fpath, "r", encoding="utf-8") as fh:
-                    data = json.load(fh)
-                all_results.extend(data.get("results") or [])
-                env = (data.get("run") or {}).get("environment")
-                if env:
-                    environments.append(env)
-                ts = (data.get("run") or {}).get("timestamp", "")
-                if run_start is None or ts < run_start:
-                    run_start = ts
+                    reports.append(json.load(fh))
             except Exception as exc:
-                print(f"PulseReport: failed to read shard {i}: {exc}")
+                print(f"PulseReport: failed to read shard at {fpath}: {exc}")
 
-        run_end_ms = int(time.time() * 1000)
-        duration_ms = run_end_ms - self.run_start_ms
+        if not reports:
+            return
 
-        logo_val = self.logo
-        if logo_val and os.path.isfile(logo_val):
-            logo_val = _encode_logo(logo_val)
-
-        passed = sum(1 for r in all_results if (r.get("final_status") or r.get("status")) == "passed")
-        failed = sum(1 for r in all_results if (r.get("final_status") or r.get("status")) == "failed")
-        skipped = sum(1 for r in all_results if (r.get("final_status") or r.get("status")) == "skipped")
-        flaky = sum(1 for r in all_results if (r.get("final_status") or r.get("status")) == "flaky")
-
-        merged = {
-            "run": {
-                "id": self.run_id,
-                "timestamp": run_start or datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
-                "totalTests": len(all_results),
-                "passed": passed,
-                "failed": failed,
-                "skipped": skipped,
-                "flaky": flaky,
-                "duration": float(duration_ms),
-                "environment": environments,
-            },
-            "results": all_results,
-            "metadata": {
-                "generatedAt": datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
-                "reportDescription": self.report_description,
-                "logo": logo_val,
-            },
-        }
+        merged_data = merge_raw_reports(reports)
 
         out_path = os.path.join(self.output_dir, self.output_file)
-        import json as _json
         os.makedirs(self.output_dir, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as fh:
-            _json.dump(merged, fh, indent=2, ensure_ascii=False)
+            json.dump(merged_data, fh, indent=2, ensure_ascii=False)
         print(f"\nPulseReport: merged xdist report written to {out_path}")
 
         self._cleanup_shard_files()
@@ -1117,12 +1072,16 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if not reporter:
         return
 
-    # xdist master — merge shard files instead of writing directly
-    if hasattr(session.config, "workercontroller"):
-        reporter.merge_shard_files()
-        return
+    num_procs = getattr(session.config.option, "numprocesses", None)
+    is_xdist = num_procs not in (None, 0, "0")
+    is_worker = hasattr(session.config, "workerinput")
 
-    reporter.finalise()
+    if is_worker:
+        reporter.finalise() # Worker writes its own shard
+    elif is_xdist:
+        reporter.merge_shard_files() # Master merges all discovered shards
+    else:
+        reporter.finalise() # Standard single-process run
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────────

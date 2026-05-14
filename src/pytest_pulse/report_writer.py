@@ -122,8 +122,10 @@ def dedupe_results(results: list[dict]) -> list[dict]:
         else:
             # Single attempt
             test = attempts[0]
-            test["retryHistory"] = []
-            test["final_status"] = test.get("status")
+            if "retryHistory" not in test:
+                test["retryHistory"] = []
+            if "final_status" not in test:
+                test["final_status"] = test.get("status")
             final.append(test)
     return final
 
