@@ -15,6 +15,8 @@ import os
 import sys
 
 
+from .env_utils import get_reporter_config
+
 # ── Shared helpers ──────────────────────────────────────────────────────────────
 
 def _find_report_json(output_dir: str, output_file: str) -> str:
@@ -29,26 +31,8 @@ def _find_report_json(output_dir: str, output_file: str) -> str:
 
 def _resolve_dirs(args) -> tuple[str, str]:
     """Return (output_dir, output_file)."""
-    output_dir = getattr(args, "output_dir", None) or _cfg_output_dir()
-    output_file = getattr(args, "output_file", None) or "playwright-pulse-report.json"
-    return os.path.abspath(output_dir), output_file
-
-
-def _cfg_output_dir() -> str:
-    """Try to read outputDir from a conftest or pytest.ini; fall back to 'pulse-report'."""
-    # Check pytest.ini / setup.cfg for pulse_output_dir option
-    for ini_name in ("pytest.ini", "setup.cfg", "pyproject.toml"):
-        if os.path.isfile(ini_name):
-            try:
-                with open(ini_name, "r", encoding="utf-8") as fh:
-                    content = fh.read()
-                import re
-                m = re.search(r"pulse[_-]output[_-]dir\s*=\s*(.+)", content)
-                if m:
-                    return m.group(1).strip().strip('"').strip("'")
-            except Exception:
-                pass
-    return "pulse-report"
+    config = get_reporter_config(getattr(args, "output_dir", None))
+    return os.path.abspath(config["outputDir"]), config["outputFile"]
 
 
 # ── generate-pulse-report ───────────────────────────────────────────────────────

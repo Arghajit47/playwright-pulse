@@ -12,204 +12,22 @@ import re
 from pathlib import Path
 from datetime import datetime
 
+from .shared_ui import (
+    LOGO_BASE64, ansi_to_html, sanitize_html, capitalize,
+    format_playwright_error, format_duration, get_status_badge,
+    get_small_status_badge, get_severity_color, get_local_highcharts_js
+)
+
 # --- Constants & Configuration ---
 DEFAULT_OUTPUT_DIR = "pulse-report"
 DEFAULT_HTML_FILE = "playwright-pulse-static-report.html"
-
-# Dummy placeholder for logo as requested
-LOGO_BASE64 = "data:image/png;base64,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"
 
 # --- Highcharts Loading ---
 highcharts_imported = True # Always True now as we use local JS
 
 # --- Helper Functions ---
 
-def get_local_highcharts_js():
-    try:
-        local_path = Path(__file__).parent / "highcharts.min.js"
-        if local_path.exists():
-            with open(local_path, "r", encoding="utf-8") as f:
-                return f.read()
-    except Exception as e:
-        print(f"Warning: Could not read local highcharts.min.js: {e}")
-    return ""
-
-def ansi_to_html(text):
-    if not text:
-        return ""
-
-    codes = {
-        "0": "color:inherit;font-weight:normal;font-style:normal;text-decoration:none;opacity:1;background-color:inherit;",
-        "1": "font-weight:bold",
-        "2": "opacity:0.6",
-        "3": "font-style:italic",
-        "4": "text-decoration:underline",
-        "30": "color:#000",
-        "31": "color:#d00",
-        "32": "color:#0a0",
-        "33": "color:#aa0",
-        "34": "color:#00d",
-        "35": "color:#a0a",
-        "36": "color:#0aa",
-        "37": "color:#aaa",
-        "39": "color:inherit",
-        "40": "background-color:#000",
-        "41": "background-color:#d00",
-        "42": "background-color:#0a0",
-        "43": "background-color:#aa0",
-        "44": "background-color:#00d",
-        "45": "background-color:#a0a",
-        "46": "background-color:#0aa",
-        "47": "background-color:#aaa",
-        "49": "background-color:inherit",
-        "90": "color:#555",
-        "91": "color:#f55",
-        "92": "color:#5f5",
-        "93": "color:#ff5",
-        "94": "color:#55f",
-        "95": "color:#f5f",
-        "96": "color:#5ff",
-        "97": "color:#fff",
-    }
-
-    current_styles_array = []
-    html = ""
-    open_span = False
-
-    def apply_styles():
-        nonlocal html, open_span
-        if open_span:
-            html += "</span>"
-            open_span = False
-        valid_styles = [s for s in current_styles_array if s]
-        if valid_styles:
-            style_string = ";".join(valid_styles)
-            if style_string:
-                html += f'<span style="{style_string}">'
-                open_span = True
-
-    def reset_and_apply_new_codes(new_codes_str):
-        nonlocal current_styles_array
-        new_codes = new_codes_str.split(";")
-        if "0" in new_codes:
-            current_styles_array = []
-            if "0" in codes:
-                current_styles_array.append(codes["0"])
-        for code in new_codes:
-            if code == "0":
-                continue
-            if code in codes:
-                if code == "39":
-                    current_styles_array = [s for s in current_styles_array if not s.startswith("color:")]
-                    current_styles_array.append("color:inherit")
-                elif code == "49":
-                    current_styles_array = [s for s in current_styles_array if not s.startswith("background-color:")]
-                    current_styles_array.append("background-color:inherit")
-                else:
-                    current_styles_array.append(codes[code])
-            elif code.startswith("38;2;") or code.startswith("48;2;"):
-                parts = code.split(";")
-                type_str = "color" if parts[0] == "38" else "background-color"
-                if len(parts) == 5:
-                    current_styles_array = [s for s in current_styles_array if not s.startswith(type_str + ":")]
-                    current_styles_array.append(f"{type_str}:rgb({parts[2]},{parts[3]},{parts[4]})")
-        apply_styles()
-
-    segments = re.split(r'(\x1b\[[0-9;]*m)', text)
-    for segment in segments:
-        if not segment:
-            continue
-        if segment.startswith("\x1b[") and segment.endswith("m"):
-            command = segment[2:-1]
-            reset_and_apply_new_codes(command)
-        else:
-            escaped_content = segment.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&#039;")
-            html += escaped_content
-            
-    if open_span:
-        html += "</span>"
-    return html
-
-def sanitize_html(str_val):
-    if str_val is None:
-        return ""
-    replacements = {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"}
-    pattern = re.compile('|'.join(re.escape(key) for key in replacements.keys()))
-    return pattern.sub(lambda match: replacements[match.group(0)], str(str_val))
-
-def capitalize(str_val):
-    if not str_val:
-        return ""
-    return str_val[0].upper() + str_val[1:].lower()
-
-def convert_playwright_error_to_html(str_val):
-    if not str_val:
-        return ""
-    lines = str_val.split('\n')
-    new_lines = []
-    for line in lines:
-        match = re.match(r'^(\s+)', line)
-        if match:
-            spaces = match.group(1)
-            new_spaces = spaces.replace(' ', ' ').replace('\t', '  ')
-            new_lines.append(new_spaces + line[len(spaces):])
-        else:
-            new_lines.append(line)
-    res = '\n'.join(new_lines)
-    res = res.replace("<red>", '<span style="color: red;">')
-    res = res.replace("<green>", '<span style="color: green;">')
-    res = res.replace("<dim>", '<span style="opacity: 0.6;">')
-    res = res.replace("<intensity>", '<span style="font-weight: bold;">')
-    res = res.replace("</color>", '</span>')
-    res = res.replace("</intensity>", '</span>')
-    res = res.replace("\n", "<br>")
-    return res
-
-def format_playwright_error(error):
-    error_text = error.get('message') if isinstance(error, dict) and 'message' in error else str(error)
-    command_output = ansi_to_html(error_text)
-    return convert_playwright_error_to_html(command_output)
-
-def format_duration(ms, precision=1, invalid_input_return="N/A", default_for_null_undefined_negative=None):
-    valid_precision = max(0, int(precision))
-    zero_with_precision = f"0.{'0' * valid_precision}s" if valid_precision > 0 else "0s"
-    resolved_null_undef_neg_return = zero_with_precision if default_for_null_undefined_negative is None else default_for_null_undefined_negative
-
-    if ms is None:
-        return resolved_null_undef_neg_return
-    try:
-        num_ms = float(ms)
-    except (ValueError, TypeError):
-        return invalid_input_return
-    if math.isnan(num_ms) or math.isinf(num_ms):
-        return invalid_input_return
-    if num_ms < 0:
-        return resolved_null_undef_neg_return
-    if num_ms == 0:
-        return zero_with_precision
-
-    ms_per_second = 1000
-    seconds_per_minute = 60
-    minutes_per_hour = 60
-    seconds_per_hour = seconds_per_minute * minutes_per_hour
-    total_raw_seconds = num_ms / ms_per_second
-
-    if total_raw_seconds < seconds_per_minute and math.ceil(total_raw_seconds) < seconds_per_minute:
-        if valid_precision == 0: return f"{int(round(total_raw_seconds))}s"
-        return f"{total_raw_seconds:.{valid_precision}f}s"
-    else:
-        total_ms_rounded_up_to_second = math.ceil(num_ms / ms_per_second) * ms_per_second
-        remaining_ms = total_ms_rounded_up_to_second
-        h = int(remaining_ms // (ms_per_second * seconds_per_hour))
-        remaining_ms %= (ms_per_second * seconds_per_hour)
-        m = int(remaining_ms // (ms_per_second * seconds_per_minute))
-        remaining_ms %= (ms_per_second * seconds_per_minute)
-        s = int(remaining_ms // ms_per_second)
-        parts = []
-        if h > 0: parts.append(f"{h}h")
-        if h > 0 or m > 0 or num_ms >= ms_per_second * seconds_per_minute: parts.append(f"{m}m")
-        parts.append(f"{s}s")
-        return " ".join(parts)
+# --- Chart & Component Generation Functions ---
 
 
 # --- Chart & Component Generation Functions ---
@@ -1186,7 +1004,7 @@ def get_suites_data(results):
         suite['count'] += 1
         
         current_status = str(test.get('status', '')).lower()
-        if test.get('outcome') == 'flaky':
+        if test.get('outcome') == 'flaky' or test.get('status') == 'flaky':
             current_status = 'flaky'
             
         if current_status in suite:
@@ -1686,21 +1504,25 @@ def generate_html(report_data, trend_data=None):
             
             retry_tabs_html = ""
             if test.get('retryHistory'):
-                # For flaky tests, the 'Base Run' is the one that failed. 
-                # We want the badge to reflect the failure (red) or flaky (cyan) status of THAT run.
-                base_badge_status = test.get('status')
-                if base_badge_status == 'flaky':
-                    # If it's flaky, it means the base run failed. Show 'failed' badge for the base run tab.
-                    base_badge_status = 'failed'
+                # Total attempts = len(history) + 1 (the current primary one)
+                history = test.get('retryHistory', [])
+                total_attempts = len(history) + 1
                 
-                tabs_header = f"""<button class="retry-tab active" onclick="switchRetryTab(event, 'base-run-{test.get('id', test_index)}')">Base Run {get_small_status_badge(base_badge_status)}</button>"""
-                for idx, retry in enumerate(test['retryHistory']):
-                    tabs_header += f"""<button class="retry-tab" onclick="switchRetryTab(event, 'retry-{idx + 1}-{test.get('id', test_index)}')">Retry {idx + 1} {get_small_status_badge(retry.get('final_status') or retry.get('status'))}</button>"""
-                    
-                tabs_content = f"""<div id="base-run-{test.get('id', test_index)}" class="retry-tab-content active">{get_test_content_html(test, 'base')}</div>"""
-                for idx, retry in enumerate(test['retryHistory']):
-                    tabs_content += f"""<div id="retry-{idx + 1}-{test.get('id', test_index)}" class="retry-tab-content" style="display: none;">{get_test_content_html(retry, f"retry-{idx + 1}")}</div>"""
-                    
+                tabs_header = ""
+                tabs_content = ""
+                
+                # Add previous attempts from history
+                for idx, retry in enumerate(history):
+                    attempt_num = idx + 1
+                    status = retry.get('final_status') or retry.get('status')
+                    tabs_header += f"""<button class="retry-tab" onclick="switchRetryTab(event, 'retry-{attempt_num}-{test.get('id', test_index)}')">Attempt {attempt_num} {get_small_status_badge(status)}</button>"""
+                    tabs_content += f"""<div id="retry-{attempt_num}-{test.get('id', test_index)}" class="retry-tab-content" style="display: none;">{get_test_content_html(retry, f"retry-{attempt_num}")}</div>"""
+                
+                # Add the primary (latest) attempt as the active one
+                primary_status = test.get('status')
+                tabs_header += f"""<button class="retry-tab active" onclick="switchRetryTab(event, 'primary-run-{test.get('id', test_index)}')">Attempt {total_attempts} (Latest) {get_small_status_badge(primary_status)}</button>"""
+                tabs_content += f"""<div id="primary-run-{test.get('id', test_index)}" class="retry-tab-content active">{get_test_content_html(test, 'latest')}</div>"""
+                
                 retry_tabs_html = f"""<div class="retry-tabs-container"><div class="retry-tabs-header">{tabs_header}</div>{tabs_content}</div>"""
             else:
                 retry_tabs_html = get_test_content_html(test, 'single')

@@ -91,27 +91,40 @@ def dedupe_results(results: list[dict]) -> list[dict]:
     
     final = []
     for attempts in grouped.values():
-        # Sort by retries (if available) or startTime
+        # Sort by retries (asc) then startTime (asc)
         attempts.sort(key=lambda x: (x.get("retries", 0), x.get("startTime", "")))
-        first = attempts[0]
+        
         if len(attempts) > 1:
-            retries = attempts[1:]
-            last = attempts[-1]
-            first["retryHistory"] = retries
-            first["final_status"] = last.get("status")
+            # The latest attempt (last one in sorted list) should be the primary result
+            # so that users see the most recent execution (e.g. the one that passed) by default.
+            primary = attempts[-1]
+            previous = attempts[:-1]
             
-            # Flaky logic: if it eventually passed after failing
-            if last.get("status") == "passed" and any(a.get("status") == "failed" for a in attempts[:-1]):
-                first["status"] = "flaky"
-                first["outcome"] = "flaky"
-            elif last.get("status") == "flaky":
-                 first["status"] = "flaky"
-                 first["outcome"] = "flaky"
+            # Identify if it's flaky: any previous attempt failed and current is passed/flaky
+            was_failed = any(a.get("status") in ["failed", "timedout", "interrupted"] for a in previous)
+            # Support both 'passed' and 'flaky' as successful retry indicators
+            is_successful = primary.get("status") in ["passed", "flaky"]
+            
+            if was_failed and is_successful:
+                primary["status"] = "flaky"
+                primary["outcome"] = "flaky"
+            elif was_failed:
+                # Still failed after retries
+                primary["outcome"] = "failed"
+            else:
+                # Normal pass or other status
+                primary["outcome"] = primary.get("status")
+            
+            # Ensure final_status reflects the actual last attempt's status
+            primary["final_status"] = primary.get("status")
+            primary["retryHistory"] = previous
+            final.append(primary)
         else:
-            first["final_status"] = None
-            first["retryHistory"] = []
-            
-        final.append(first)
+            # Single attempt
+            test = attempts[0]
+            test["retryHistory"] = []
+            test["final_status"] = test.get("status")
+            final.append(test)
     return final
 
 

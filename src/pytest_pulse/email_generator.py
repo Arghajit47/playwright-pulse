@@ -10,9 +10,11 @@ import os
 import re
 import sys
 from datetime import datetime
-
-# ── Logo ───────────────────────────────────────────────────────────────────────
-LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAABuwAAAbsBOuzj4gAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAtgSURBVHic5Zt7cFTVHcc/597du7tJNhAIkASBAga0CEgTfBXKS0DoiNQZMwpCgortMMxo21FsrbZiaQvUxx9IdcYpCQi1wLQMtiovY9VWUQHt4BN5JIS8CJDNY7Ove0//2M0mm2x29+5u0LbfmfvHOed3fr/z++45v/O7554VUkqSxZHqwDSv7n3LkAin3YrDqiatq78gBH8ozFVX9dWupKJcqv5iQyIALIpIRVW/QcJ3YrWnRMD/Av7vCbCYEW5+dvRAq8/zMmC32cVHucW/uaom745+GloPnD+B+PR1kEYMIYEcNwsKJias1hQBmt+73udjvqKAxSJnOFpOQF6kTEbzP8g59xwArvwVtA1akLD+E343LiOAAK7RsrCJrgkq3itHfPL3+Eoav0SWbErYpikCkMQN8/a2j8hsfgMAb9Y1pgho1H20GgEAOqQRQYC8+WEonBF/BowoStgemCUgSVjr67F/+QUA7munoGdnXw6zCSE2AeXC3q4MHQegqIGLQrE6wPx2l/OX3Qx4LTh9z6/8Ic2LFpvWIQ5uSGwJjJmWviXQrg/61N9hjLbYJI5sA2+WYeBJItnpnmwlmXfJG8ogOy+xIGgCMQkwDDEEQFFDoxbpS3Y+c5/mpKcGgBkDinCqGbE7DLkSOXFRbAKEgJyRpsZhKgZIRNryhn3N73K07XMA8rVcirKujikvXl+H+Gh3XL3yqrnIxRsTHsdlCYJpQeEMZEt9/Bkwfo4ptf81BMix02Hs9LTrFbHeBlteHNJm+MnUMgwyBhh4Gmx4zgsUBbIHQsOYezgx7ucADMzQ2HLaQ407QFekE8FHyq5AKJRgFbKblEAQGR8FMG2Ixvx8W7D83h8R77wQGVB7eSOQRXciZ/04XBUI6Ee/na/1mRz0uaZLSnZpfsNi79taD9uAQxXYVQW7qoYeBbsqsFsU7FY1+FgEdlXgUBUyQk+wn8DR47Gp3YKuNQPsztiPzQlaZsS4GptaC0tKdml9jbvPJXDJ0b7WkIpqZtNbPtphQtocZNGdyKI7Tffz+QLOS472tcAj0dqjzoBZd2+/AsQDpq0lAL+UyaYCKUA8EPSpN6ISYFEDa4GEp78ZVAU6OOC+wLueZr7yu4mV1qQR9pBPvdBrCcwuq5igQmk6rVuazqO2teH91mgADCQuI4DLCFCve5mkOclWuoYiAgGy/vVPlPY2c4aEwD15Cv78/GitpbPLKp56o7z0k4ix9ZRS4Lek4aBE+Hzkbi3H+eYbqC4XrdO/R/3DP+sl12bovO91Mc2egz2UZ2UcO0Lext8lZdddVMy5Xz0ZrUkJ+baoe2UEAfOWbysWgluTstwNtlMnydu4Hq3mbK+2HMVKnmqjUfdhhKJBQEqO+1optg0IOjF5Co2rVqO0t5u0LHAXT+27VXLrvOXbivdvXfZhZ10EAVLIEpMWe0FtbaXgicexXLwYtX2wamWwaqXN0DniddERyuyadD9Nup9c1YrUNDomTkqKAF9BQUyJkI/RCQB5m0mLvTB086YI5w27A9eChbRfd32EXJaiMkFz8qHXFa5zGUECMo4dZfjjjyZlv/36G6j9xS9jSMjbgIc7S2EC5i7fdjWCcUlZDUE7W03WO2+Fy3pODmc3Po1/WF5U+cGqFRWBHloKrtBpkHfslbhuWZhUEGydEfd1eNzc5duuPrB12WfQjQCpGItFihu07asTEeXz967s03kIZo/THTnhpFgJHbbo2dmc/9Eq0HVzAxACabXGFZOKsRiIJECRLE41QbFVnUQ6unJH9+Rr+5QV0g/SIJg7CqTSla3av/yC4Y8+guLxmB6Da8H3aVy1OqaMIllMcEcIEjBrRbndgug7fCYIMaMGpfC9rnKGt0/ZEf9eiL3tGAB++yhOFx0Jt+lOJ75Ro1DaTAZBIfANj5rwRUDC1Fkryu2VW8o8FgBNV/MNYaR83OPJmhxRzrx0CNewpb3kLL4GbO6ufMSTFTlT/PkFnP39s6kOJxaEpqv5wGkLgFSMgnQk6N6sKRHl3DNP0OEswpdxVbhO0dvIO7EKYfjCdZ4e/ax1teQ9tSGpGeC6ZSHNt8U/dJWKUUAnARiyIB3nfT7HGFqGLiG7cQcAauAioz6eTcuQEryZE7B6z+Fs2oPFWxPu47eNwJUXmXmrra1oVVVJxQDtXE18IQj6TGcQFEpB0se1PdA4Zh0O19tYvcEsUBg+BjS81Ie0oKFwE4bqjKj1jBvPqZd399suEJRVCqAz5xcydvpkAobq5NyEXb3WdU/olhzqxr+Ie8B3o7ZLVUVqmrknUech7LMCIA0GJt4zPnyOKzk76XUujFyDzzGG7h9TdOtgWnN/QNWUt2nNTTnxTBqdPlsAhBAN6T6mkMLChREPcWHEQyh6Kzb3Z/i14QRsw5PWaTt1CuH3RVYKgadwnOlvFkKIBggRIIWs689jGkN10uG8LiUdmR+8T8Ha6Dl+070rubT4dlP6pJB10BkEpahNVxD84IKf465AUn1VAbOGaYzI6H0Sqba4ovQItbmazRuTohY6Z4Bi1KYhDwLgWLOf020mo3c3jMxUoxKQbkjF6EaAodSKNM2Ae8dkcNGX3EmfKmCQdnlu7UhD6SLAqB7ZoIys8gK2VBVXteucaA0kRacqYOogKwMTJGHf7EIqi4YRGOQlULeTiZmFfC97SvyO4DWqR3YFwcrKmYG5pVsPgVyYxLgj8Fqdlxp38ksAYG5eYr9DxZx8Tts7gDporeOkpyZBAsShysqZAeh+IiSNPQiRMgFLR9mpdhtJzQCLgEJn9PXfXnwdLXNuRvi6tkGpWYEO84aksSdsM1wXCOwVVuvzfEOvzukDBtDw4E8j6oyqzeBtMavKkIHA3s5CmICDO+5rmFtacRi4MZWBbq/ypLQEZg/TEl4CI2zDqPbWd5W1YYl0O3xwx30NnYXIU2HJHiFSI2BBvi3lIJgo7s+7nXuGdaXTFhF/+5SSPd3LEQQIobwMxpNAn19T42FMlsqYrMtzaVogsApTVxx8QR+7ELHeD1Qsq0awOR2D+0ZCsPlAxbLq7lW9Al7Ap60DEoos6Uqe+hPd7lO0hHyLQK/5U7njrqa5yys2IPh1POW5Z3Zwfsh8PJZB6E1NWDrqUh5wqmj0DuTTtlHh8sfHQ5/nJBsqd9zV1FM+6gJyOLzPdHhsq+l1EzgSiuFlwmHzlxb6E3UXJrH7qyU9q+sdDu8z0eSj7vl7X7jfjWBNugf3tUGwZu8L97ujNfWZ9BwoL93qkdql/hvV5YEUPHegvHRrX+0xs76mSznjDVUNZzUWe/A9X0owLtPVDrOo7hjavXhIrxr1YCz5mNfkAI5vmjLzisz6QwNzPMHzQx0wRPDO6Dfgb0KPvbuS4xdGh8vtup3Q35hO2ALW6/+2fUnMWRw3779m9bE3j7RMWNIRsEkAoYKwSlAlKF//02FotOmO8BNy3qUoclE85xMiAGDOAwf//MrpG5e6vFmpvedeBgioMQxj9r4tZZ8nIp/wm1/JQ3/909u1E25qdOeY/1zTj9BldxfkYb8ipx7atuJoov3jxoCe+Pj5m4afaR/ySpMnsaOX/kSrL4NXz9wYnPaS7QFV3le5pczUD2SagE7MK926RiKfBEx8jukX+AXisf0Vy9cn0zlpAgDmlFWMVaRcB6KEy78nSJA7DSEePVReejJZJSkR0In5ZRVFhmQ9YO6yfvI4pAjW7CsvPRJfNDbSQkAn5pVVzJNS/gTELFI4U+gDPpCVQoin95eX7k+X0rQS0ImFd2/P9qn6AkXIxVKyEEj2f3ItQvCqIcUeTVdfe/WlpaYPAOOhXwjojpKSXVpzhnumhAlICkAUIGUBggKg87N8LZJahKgFWYugVsAnA90Zb+7ceYcvlv5U8R/XZkMbjTXTuAAAAABJRU5ErkJggg=="
+from .shared_ui import (
+    LOGO_BASE64 as LOGO, sanitize_html, capitalize,
+    format_duration, get_status_icon, get_severity_color
+)
+from .env_utils import get_reporter_config
 
 # ── Chalk-like colour helpers ──────────────────────────────────────────────────
 class _Chalk:
@@ -45,78 +47,6 @@ for _i in range(len(_args)):
 
 
 # ── Utility functions ──────────────────────────────────────────────────────────
-def sanitize_html(s):
-    if s is None:
-        return ""
-    return (str(s)
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&#x27;"))
-
-
-def capitalize(s):
-    if not s:
-        return ""
-    return s[0].upper() + s[1:].lower()
-
-
-def format_duration(ms, precision=1, invalid_input_return="N/A",
-                    default_for_null_undefined_negative=None):
-    valid_precision = max(0, int(precision))
-    zero_with_precision = f"{0:.{valid_precision}f}s"
-    resolved_null = (zero_with_precision
-                     if default_for_null_undefined_negative is None
-                     else default_for_null_undefined_negative)
-
-    if ms is None:
-        return resolved_null
-
-    try:
-        num_ms = float(ms)
-    except (TypeError, ValueError):
-        return invalid_input_return
-
-    if math.isnan(num_ms) or not math.isfinite(num_ms):
-        return invalid_input_return
-
-    if num_ms < 0:
-        return resolved_null
-
-    if num_ms == 0:
-        return zero_with_precision
-
-    MS_PER_SECOND = 1000
-    SECONDS_PER_MINUTE = 60
-    MINUTES_PER_HOUR = 60
-    SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR
-
-    total_raw_seconds = num_ms / MS_PER_SECOND
-
-    if (total_raw_seconds < SECONDS_PER_MINUTE
-            and math.ceil(total_raw_seconds) < SECONDS_PER_MINUTE):
-        return f"{total_raw_seconds:.{valid_precision}f}s"
-    else:
-        total_ms_rounded = math.ceil(num_ms / MS_PER_SECOND) * MS_PER_SECOND
-        remaining = total_ms_rounded
-
-        h = math.floor(remaining / (MS_PER_SECOND * SECONDS_PER_HOUR))
-        remaining %= MS_PER_SECOND * SECONDS_PER_HOUR
-
-        m = math.floor(remaining / (MS_PER_SECOND * SECONDS_PER_MINUTE))
-        remaining %= MS_PER_SECOND * SECONDS_PER_MINUTE
-
-        s = math.floor(remaining / MS_PER_SECOND)
-
-        parts = []
-        if h > 0:
-            parts.append(f"{h}h")
-        if h > 0 or m > 0 or num_ms >= MS_PER_SECOND * SECONDS_PER_MINUTE:
-            parts.append(f"{m}m")
-        parts.append(f"{s}s")
-        return " ".join(parts)
-
 
 def format_date(date_str_or_date):
     if not date_str_or_date:
@@ -140,17 +70,6 @@ def get_status_class(status):
         "skipped": "status-skipped",
         "flaky": "status-flaky",
     }.get(s, "status-unknown")
-
-
-def get_status_icon(status):
-    s = str(status).lower()
-    return {
-        "passed": "✅",
-        "failed": "❌",
-        "skipped": "⏭️",
-        "flaky": "⚠",
-    }.get(s, "❓")
-
 
 # ── Static HTML sections ───────────────────────────────────────────────────────
 _STYLE_CSS = """    <style>
