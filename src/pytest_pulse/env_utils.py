@@ -5,6 +5,7 @@ import platform
 import socket
 import sys
 from .types import CpuInfo, EnvDetails
+from .shared_ui import console, error_console
 
 
 def get_env_details() -> EnvDetails:

@@ -15,7 +15,8 @@ from datetime import datetime
 from .shared_ui import (
     LOGO_BASE64, ansi_to_html, sanitize_html, capitalize,
     format_playwright_error, format_duration, get_status_badge,
-    get_small_status_badge, get_severity_color, get_local_highcharts_js
+    get_small_status_badge, get_severity_color, get_local_highcharts_js,
+    console, error_console
 )
 
 # --- Constants & Configuration ---
@@ -4677,8 +4678,8 @@ def main():
     history_file_prefix = "trend-"
     max_history_files = 15
 
-    print("Starting static HTML report generation...")
-    print(f"Output directory set to: {output_dir}")
+    console.print("Starting static HTML report generation...", style="blue")
+    console.print(f"Output directory set to: [cyan]{output_dir}[/cyan]")
 
     # Step 1: Archive current run data to history (Native Python implementation)
     try:
@@ -4699,7 +4700,7 @@ def main():
                     
                     with open(history_file_path, "w", encoding="utf-8") as f:
                         json.dump(current_data, f, indent=2)
-                    print(f"Archived current run to: {history_file_path}")
+                    console.print(f"Archived current run to: {history_file_path}")
                     
                     # Prune old history files
                     h_files = sorted([f for f in history_dir.iterdir() if f.name.startswith(history_file_prefix) and f.name.endswith(".json")],
@@ -4707,15 +4708,15 @@ def main():
                     if len(h_files) > max_history_files:
                         for f_to_del in h_files[:-max_history_files]:
                             f_to_del.unlink()
-                            # print(f"Pruned old history file: {f_to_del.name}")
+                            # console.print(f"Pruned old history file: {f_to_del.name}")
                 except Exception as e:
-                    print(f"Warning: Failed to parse timestamp or prune history: {e}")
+                    console.print(f"Warning: Failed to parse timestamp or prune history: {e}", style="bold yellow")
         else:
-            print(f"Warning: Report JSON not found at {report_json_path}. Skipping archive.")
+            console.print(f"Warning: Report JSON not found at {report_json_path}. Skipping archive.", style="bold yellow")
             
-        print("Current run data archiving to history completed.")
+        console.print("Current run data archiving to history completed.")
     except Exception as e:
-        print(f"Failed to archive current run data. Report might use stale or incomplete historical trends. {e}")
+        console.print(f"Failed to archive current run data. Report might use stale or incomplete historical trends. {e}")
 
     # Step 2: Load current run data
     try:
@@ -4727,10 +4728,10 @@ def main():
             
         if not isinstance(current_run_report_data['results'], list):
             current_run_report_data['results'] = []
-            print("Warning: 'results' field in current run JSON was not an array. Treated as empty.")
+            console.print("Warning: 'results' field in current run JSON was not an array. Treated as empty.", style="bold yellow")
             
     except Exception as e:
-        print(f"Critical Error: Could not read or parse main report JSON at {report_json_path}: {e}")
+        error_console.print(f"Critical Error: Could not read or parse main report JSON at {report_json_path}: {e}", style="bold red")
         sys.exit(1)
 
     # Step 3: Load historical data
@@ -4755,12 +4756,12 @@ def main():
                 with open(file_meta["path"], "r", encoding="utf-8") as f:
                     historical_runs.append(json.load(f))
             except Exception as e:
-                print(f"Could not read/parse history file {file_meta['name']}: {e}")
+                console.print(f"Could not read/parse history file {file_meta['name']}: {e}")
                 
         historical_runs.reverse()
-        print(f"Loaded {len(historical_runs)} historical run(s) for trend analysis.")
+        console.print(f"Loaded {len(historical_runs)} historical run(s) for trend analysis.")
     else:
-        print(f"History directory '{history_dir}' not found. No historical trends will be displayed.")
+        console.print(f"History directory '{history_dir}' not found. No historical trends will be displayed.")
 
     # Step 4: Prepare trend data
     trend_data = {
@@ -4807,10 +4808,10 @@ def main():
         html_content = generate_html(current_run_report_data, trend_data)
         with open(report_html_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        print(f"Pulse static report generated successfully at: {report_html_path}")
-        print("(You can open this file in your browser)")
+        console.print(f"Pulse static report generated successfully at: {report_html_path}")
+        console.print("(You can open this file in your browser)")
     except Exception as e:
-        print(f"Error generating HTML report: {e}")
+        console.print(f"Error generating HTML report: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
@@ -4879,7 +4880,7 @@ def generate_static_html(json_path, html_path):
         f.write(html)
 
 if __name__ == "__main__":
-    print("pytest-pulse: This module is used to generate static reports.")
-    print("Standard usage: 'generate-pulse-report'")
-    print("💡 Tip: Use 'generate-report' for a dynamic dashboard with attachment support.")
+    console.print("pytest-pulse: This module is used to generate static reports.")
+    console.print("Standard usage: 'generate-pulse-report'")
+    console.print("💡 [bold cyan]Tip:[/bold cyan] [dim]Use 'generate-report' for a dynamic dashboard with attachment support.[/dim]")
 

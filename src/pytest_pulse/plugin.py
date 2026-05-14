@@ -49,6 +49,7 @@ from .types import (
 )
 from .static_generator import generate_static_html
 from .dynamic_generator import generate_dynamic_html
+from .shared_ui import console, error_console
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 TEMP_SHARD_PREFIX = "pulse-shard-results-"
@@ -738,14 +739,14 @@ class PulseReporter:
             os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
             with open(out_path, "w", encoding="utf-8") as fh:
                 json.dump(report, fh, indent=2, ensure_ascii=False)
-            print(f"\nPulseReport: JSON report written to {out_path}")
+            console.print(f"\n[bold blue]PulseReport:[/bold blue] JSON report written to {out_path}")
             
         else:
             sub_dir = os.path.join(self.output_dir, self.individual_sub)
             stem = self.output_file.replace(".json", "")
             individual_path = os.path.join(sub_dir, f"{stem}-{self.run_start_ms}.json")
             write_report(report, individual_path)
-            print(f"\nPulseReport: Individual run report written to {individual_path}")
+            console.print(f"\n[bold blue]PulseReport:[/bold blue] Individual run report written to {individual_path}")
 
     def merge_shard_files(self) -> None:
         """Called on xdist master after all workers finish to merge shard files."""
@@ -763,7 +764,7 @@ class PulseReporter:
                 with open(fpath, "r", encoding="utf-8") as fh:
                     reports.append(json.load(fh))
             except Exception as exc:
-                print(f"PulseReport: failed to read shard at {fpath}: {exc}")
+                console.print(f"[bold blue]PulseReport:[/bold blue] failed to read shard at {fpath}: {exc}")
 
         if not reports:
             return
@@ -774,7 +775,7 @@ class PulseReporter:
         os.makedirs(self.output_dir, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as fh:
             json.dump(merged_data, fh, indent=2, ensure_ascii=False)
-        print(f"\nPulseReport: merged xdist report written to {out_path}")
+        console.print(f"\n[bold blue]PulseReport:[/bold blue] merged xdist report written to {out_path}")
 
         self._cleanup_shard_files()
 
@@ -917,7 +918,7 @@ def _determine_status(setup, call, teardown):
     stack = ""
 
     # Debug: print outcomes
-    # print(f"DEBUG: setup={setup.outcome if setup else 'None'}, call={call.outcome if call else 'None'}, teardown={teardown.outcome if teardown else 'None'}")
+    # console.print(f"DEBUG: setup={setup.outcome if setup else 'None'}, call={call.outcome if call else 'None'}, teardown={teardown.outcome if teardown else 'None'}")
 
     # If call phase exists, it drives the primary status
     if call is not None:

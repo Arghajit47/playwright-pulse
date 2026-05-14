@@ -10,6 +10,7 @@ You can also import the public API directly:
 """
 
 from .decorators import step, pulse_step
+from .shared_ui import console, error_console
 
-__version__ = "1.0.7"
+__version__ = "1.0.1"
 __author__ = "Arghajit Singha"

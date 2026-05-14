@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Literal, Union
 from datetime import datetime, timezone
+from .shared_ui import console, error_console
 
 TestStatus = Literal[
     "passed",

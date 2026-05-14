@@ -6,6 +6,7 @@ import re
 import shutil
 from pathlib import Path
 from typing import Optional
+from .shared_ui import console, error_console
 
 
 def sanitize_name(name: str) -> str:
@@ -39,7 +40,7 @@ def copy_attachment(
         _try_compress(dest_path)
         return dest_path
     except Exception as exc:
-        print(f"PulseReport: failed to copy attachment {src!r}: {exc}")
+        console.print(f"[bold blue]PulseReport:[/bold blue] failed to copy attachment {src!r}: {exc}")
         return None
 
 

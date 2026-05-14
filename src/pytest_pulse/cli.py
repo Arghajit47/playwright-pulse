@@ -16,6 +16,8 @@ import sys
 
 
 from .env_utils import get_reporter_config
+from .shared_ui import console, error_console
+from .console_logo import animate
 
 # ── Shared helpers ──────────────────────────────────────────────────────────────
 
@@ -46,6 +48,7 @@ def generate_static_report(argv=None) -> None:
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None,
                    help="Report output directory (default: pulse-report)")
     args = p.parse_args(argv)
+    animate()
     output_dir, output_file = _resolve_dirs(args)
 
     from .merge_reports import merge_sequential_reports, merge_shard_files, archive_trend
@@ -56,16 +59,16 @@ def generate_static_report(argv=None) -> None:
     json_path = _find_report_json(output_dir, output_file)
     html_path = os.path.join(output_dir, "playwright-pulse-static-report.html")
 
-    print(f"\n⚡ Pulse Report — Generating Static HTML\n")
-    print(f"  Source : {json_path}")
-    print(f"  Output : {html_path}\n")
+    console.print(f"\n[bold magenta]⚡ Pulse Report — Generating Static HTML[/bold magenta]\n")
+    console.print(f"  Source : {json_path}")
+    console.print(f"  Output : {html_path}\n")
 
     from .static_generator import generate_static_html
     generate_static_html(json_path, html_path)
 
-    print(f"✓ Static report generated → {html_path}")
+    console.print(f"[bold green]✓ Static report generated[/bold green] → [cyan]{html_path}[/cyan]")
     _print_stats(json_path)
-    print("\n💡 Tip: Use 'generate-report' for a dynamic dashboard that supports attachments (screenshots/videos).")
+    console.print("\n💡 [bold cyan]Tip:[/bold cyan] [dim]Use 'generate-report' for a dynamic dashboard that supports attachments (screenshots/videos).[/dim]")
 
 
 # ── generate-report ─────────────────────────────────────────────────────────────
@@ -78,6 +81,7 @@ def generate_report(argv=None) -> None:
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
     args = p.parse_args(argv)
+    animate()
     output_dir, output_file = _resolve_dirs(args)
 
     from .merge_reports import merge_sequential_reports, merge_shard_files, archive_trend
@@ -88,13 +92,13 @@ def generate_report(argv=None) -> None:
     json_path = _find_report_json(output_dir, output_file)
     html_path = os.path.join(output_dir, "playwright-pulse-report.html")
 
-    print(f"\n⚡ Pulse Report — Generating Dynamic HTML\n")
+    console.print(f"\n[bold magenta]⚡ Pulse Report — Generating Dynamic HTML[/bold magenta]\n")
     from .dynamic_generator import generate_dynamic_html
     generate_dynamic_html(json_path, html_path)
 
-    print(f"✓ Dynamic report generated → {html_path}")
+    console.print(f"[bold green]✓ Dynamic report generated[/bold green] → [cyan]{html_path}[/cyan]")
     _print_stats(json_path)
-    print("\n💡 Tip: Use 'generate-pulse-report' for a self-contained static HTML report (best for sharing via email/Slack).")
+    console.print("\n💡 [bold cyan]Tip:[/bold cyan] [dim]Use 'generate-pulse-report' for a self-contained static HTML report (best for sharing via email/Slack).[/dim]")
 
 
 # ── merge-pulse-report ──────────────────────────────────────────────────────────
@@ -109,10 +113,11 @@ def merge_reports_cli(argv=None) -> None:
     p.add_argument("--no-cleanup", dest="cleanup", action="store_false", default=True,
                    help="Keep shard directories after merging")
     args = p.parse_args(argv)
+    animate()
     output_dir, output_file = _resolve_dirs(args)
 
-    print(f"\n⚡ Pulse Report — Merge Reports\n")
-    print(f"  Directory : {output_dir}")
+    console.print(f"\n[bold magenta]⚡ Pulse Report — Merge Reports[/bold magenta]\n")
+    console.print(f"  Directory : {output_dir}")
 
     from .merge_reports import merge_shard_directories, merge_shard_files, merge_sequential_reports
 
@@ -129,10 +134,10 @@ def merge_reports_cli(argv=None) -> None:
         # Fall back to sequential merge
         result = merge_sequential_reports(output_dir)
     if result is None:
-        print("✗ Nothing to merge.")
+        console.print("✗ Nothing to merge.")
         return
 
-    print(f"\n✓ Merged report → {result}")
+    console.print(f"\n✓ Merged report → {result}")
     _print_stats(result)
 
 
@@ -147,6 +152,7 @@ def generate_email_report_cli(argv=None) -> None:
     )
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
     args = p.parse_args(argv)
+    animate()
     output_dir, output_file = _resolve_dirs(args)
 
     json_path = _find_report_json(output_dir, output_file)
@@ -156,7 +162,7 @@ def generate_email_report_cli(argv=None) -> None:
     html = generate_email_html(json_path)
     with open(email_path, "w", encoding="utf-8") as fh:
         fh.write(html)
-    print(f"✓ Email summary generated → {email_path}")
+    console.print(f"[bold green]✓ Email summary generated[/bold green] → [cyan]{email_path}[/cyan]")
 
 
 # ── send-email ──────────────────────────────────────────────────────────────────
@@ -171,6 +177,7 @@ def send_email_cli(argv=None) -> None:
     p.add_argument("--attach-html", dest="attach_html", action="store_true", default=False,
                    help="Attach the static HTML report file")
     args = p.parse_args(argv)
+    animate()
     output_dir, output_file = _resolve_dirs(args)
 
     json_path = _find_report_json(output_dir, output_file)
@@ -178,7 +185,7 @@ def send_email_cli(argv=None) -> None:
     if args.attach_html:
         html_path = os.path.join(output_dir, "playwright-pulse-static-report.html")
         if not os.path.isfile(html_path):
-            print("  Static HTML not found, generating it first …")
+            console.print("  Static HTML not found, generating it first …")
             from .static_generator import generate_static_html
             generate_static_html(json_path, html_path)
         attachment = html_path
@@ -187,7 +194,7 @@ def send_email_cli(argv=None) -> None:
     try:
         send_report(json_path, attachment_path=attachment)
     except Exception as exc:
-        print(f"✗ Email sending failed: {exc}")
+        console.print(f"✗ Email sending failed: {exc}")
         sys.exit(1)
 
 
@@ -202,6 +209,7 @@ def generate_trend_cli(argv=None) -> None:
     p.add_argument("--outputDir", "-o", dest="output_dir", default=None)
     p.add_argument("--max-history", dest="max_history", type=int, default=15)
     args = p.parse_args(argv)
+    animate()
     output_dir, output_file = _resolve_dirs(args)
 
     from .merge_reports import archive_trend
@@ -216,7 +224,7 @@ def _print_stats(json_path: str) -> None:
         with open(json_path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
         run = data.get("run") or {}
-        print(f"\n  Total: {run.get('totalTests',0)}  "
+        console.print(f"\n  Total: {run.get('totalTests',0)}  "
               f"✓ Passed: {run.get('passed',0)}  "
               f"✗ Failed: {run.get('failed',0)}  "
               f"⊘ Skipped: {run.get('skipped',0)}  "

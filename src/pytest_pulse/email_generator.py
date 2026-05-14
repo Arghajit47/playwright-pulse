@@ -15,6 +15,7 @@ from .shared_ui import (
     format_duration, get_status_icon, get_severity_color
 )
 from .env_utils import get_reporter_config
+from .shared_ui import console, error_console
 
 # ── Chalk-like colour helpers ──────────────────────────────────────────────────
 class _Chalk:
@@ -556,16 +557,14 @@ def merge_sequential_reports_if_needed(output_dir):
         return
 
 
-async def animate():
-    print("\033[35m♦ Playwright Pulse Reporter\033[0m")
-
+from .console_logo import animate
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 async def main():
     logo = LOGO
 
     if os.environ.get("SKIP_LOGO") != "true":
-        await animate()
+        animate()
 
     config = get_reporter_config(custom_output_dir)
     output_dir = config["outputDir"]
@@ -576,22 +575,18 @@ async def main():
     report_json_path = os.path.abspath(os.path.join(output_dir, output_file))
     minified_html_path = os.path.abspath(os.path.join(output_dir, MINIFIED_HTML_FILE))
 
-    print(chalk.blue("Generating email report..."))
-    print(chalk.blue(f"Output directory set to: {output_dir}"))
+    console.print("Generating email report...", style="blue")
+    console.print(f"Output directory set to: [cyan]{output_dir}[/cyan]")
     if custom_output_dir:
-        print(chalk.gray("  (from CLI argument)"))
+        console.print("  (from CLI argument)", style="dim")
     else:
-        print(chalk.gray("  (auto-detected from config or using default)"))
+        console.print("  (auto-detected from config or using default)", style="dim")
 
     try:
         with open(report_json_path, "r", encoding="utf-8") as fh:
             current_run_report_data = json.load(fh)
     except Exception as e:
-        print(
-            chalk.red(f"Critical Error: Could not read or parse main report JSON"
-                      f" at {report_json_path}: {e}"),
-            file=sys.stderr,
-        )
+        error_console.print(f"Critical Error: Could not read or parse main report JSON at {report_json_path}: {e}", style="bold red")
         sys.exit(1)
 
     metadata = current_run_report_data.get("metadata") or {}
@@ -611,33 +606,25 @@ async def main():
                 logo_data = base64.b64encode(fh.read()).decode()
             logo = f"data:{mime_type};base64,{logo_data}"
         except Exception as e:
-            print(
-                chalk.yellow(f"Warning: Could not read custom logo file at"
-                             f" {logo_path}. Falling back to default logo. Error: {e}")
-            )
+            console.print(f"Warning: Could not read custom logo file at {logo_path}. Falling back to default logo. Error: {e}", style="bold yellow")
 
     if not isinstance(current_run_report_data, dict) or "results" not in current_run_report_data:
-        print(
-            chalk.red("Invalid report JSON structure. 'results' field is missing or invalid."),
-            file=sys.stderr,
-        )
+        error_console.print("Invalid report JSON structure. 'results' field is missing or invalid.", style="bold red")
         sys.exit(1)
 
     if not isinstance(current_run_report_data.get("results"), list):
         current_run_report_data["results"] = []
-        print(chalk.yellow("Warning: 'results' field was not an array. Treated as empty."))
+        console.print("Warning: 'results' field was not an array. Treated as empty.", style="bold yellow")
 
     try:
         html_content = generate_minified_html(current_run_report_data, logo)
         os.makedirs(os.path.dirname(minified_html_path) or ".", exist_ok=True)
         with open(minified_html_path, "w", encoding="utf-8") as fh:
             fh.write(html_content)
-        print(chalk.green(chalk.bold(
-            f"Minified Pulse summary report generated successfully at: {minified_html_path}"
-        )))
-        print(chalk.gray("(This HTML file is designed to be lightweight)"))
+        console.print(f"Minified Pulse summary report generated successfully at: {minified_html_path}", style="bold green")
+        console.print("(This HTML file is designed to be lightweight)", style="dim")
     except Exception as e:
-        print(chalk.red(f"Error generating minified HTML report: {e}"), file=sys.stderr)
+        error_console.print(f"Error generating minified HTML report: {e}", style="bold red")
         sys.exit(1)
 
 
@@ -645,8 +632,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except Exception as err:
-        print(chalk.red(chalk.bold(f"Unhandled error during script execution: {err}")),
-              file=sys.stderr)
+        error_console.print(f"Unhandled error during script execution: {err}", style="bold red")
         sys.exit(1)
 
 def generate_email_html(json_path):

@@ -3,6 +3,7 @@ import functools
 import inspect
 from typing import Any, Callable, TypeVar, cast, Generator
 from .plugin import pulse_step_context
+from .shared_ui import console, error_console
 
 F = TypeVar("F", bound=Callable[..., Any])
 

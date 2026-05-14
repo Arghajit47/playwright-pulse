@@ -13,7 +13,8 @@ import base64
 from .shared_ui import (
     LOGO_BASE64, ansi_to_html, sanitize_html, capitalize,
     format_playwright_error, format_duration, get_status_badge,
-    get_small_status_badge, get_severity_color, get_local_highcharts_js
+    get_small_status_badge, get_severity_color, get_local_highcharts_js,
+    console, error_console
 )
 
 # --- Constants & Configuration ---
@@ -4042,16 +4043,16 @@ def main():
     history_file_prefix = "trend-"
     max_history_files = 15
 
-    print("Starting HTML report generation...")
-    print(f"Output directory set to: {output_dir}")
+    console.print("Starting HTML report generation...")
+    console.print(f"Output directory set to: [cyan]{output_dir}[/cyan]")
 
     # Step 1: Execute generate-trend logic
     try:
         from pytest_pulse.merge_reports import archive_trend
         archive_trend(output_dir, output_file, max_history=max_history_files)
-        print("Current run data archiving to history completed.")
+        console.print("Current run data archiving to history completed.")
     except Exception as e:
-        print(f"Failed to archive current run data. Report might use stale or incomplete historical trends. {e}")
+        console.print(f"Failed to archive current run data. Report might use stale or incomplete historical trends. {e}")
 
     # Step 2: Load current run data
     try:
@@ -4063,10 +4064,10 @@ def main():
             
         if not isinstance(current_run_report_data['results'], list):
             current_run_report_data['results'] = []
-            print("Warning: 'results' field in current run JSON was not an array. Treated as empty.")
+            console.print("Warning: 'results' field in current run JSON was not an array. Treated as empty.", style="bold yellow")
             
     except Exception as e:
-        print(f"Critical Error: Could not read or parse main report JSON at {report_json_path}: {e}")
+        error_console.print(f"Critical Error: Could not read or parse main report JSON at {report_json_path}: {e}", style="bold red")
         sys.exit(1)
 
     # Step 3: Load historical data
@@ -4091,12 +4092,12 @@ def main():
                 with open(file_meta["path"], "r", encoding="utf-8") as f:
                     historical_runs.append(json.load(f))
             except Exception as e:
-                print(f"Could not read/parse history file {file_meta['name']}: {e}")
+                console.print(f"Could not read/parse history file {file_meta['name']}: {e}")
                 
         historical_runs.reverse()
-        print(f"Loaded {len(historical_runs)} historical run(s) for trend analysis.")
+        console.print(f"Loaded {len(historical_runs)} historical run(s) for trend analysis.")
     else:
-        print(f"History directory '{history_dir}' not found. No historical trends will be displayed.")
+        console.print(f"History directory '{history_dir}' not found. No historical trends will be displayed.")
 
     # Step 4: Prepare trend data
     trend_data = {
@@ -4145,12 +4146,12 @@ def main():
         html_content = generate_html(current_run_report_data, trend_data)
         with open(report_html_path, "w", encoding="utf-8") as f:
             f.write(html_content)
-        print(f"Pulse report generated successfully at: {report_html_path}")
-        print("(You can open this file in your browser)")
+        console.print(f"Pulse report generated successfully at: {report_html_path}")
+        console.print("(You can open this file in your browser)")
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"Error generating HTML report: {e}")
+        console.print(f"Error generating HTML report: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
@@ -4219,6 +4220,6 @@ def generate_dynamic_html(json_path, html_path):
         f.write(html)
 
 if __name__ == "__main__":
-    print("pytest-pulse: This module is used to generate dynamic reports.")
-    print("Standard usage: 'generate-report'")
-    print("💡 Tip: Use 'generate-pulse-report' for a self-contained static HTML report.")
+    console.print("pytest-pulse: This module is used to generate dynamic reports.")
+    console.print("Standard usage: 'generate-report'")
+    console.print("💡 [bold cyan]Tip:[/bold cyan] [dim]Use 'generate-pulse-report' for a self-contained static HTML report.[/dim]")

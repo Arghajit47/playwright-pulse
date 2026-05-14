@@ -19,7 +19,8 @@ from email.mime.base import MIMEBase
 from email import encoders
 from typing import List, Optional
 
-from .html_generator import generate_email_html
+from .email_generator import generate_email_html
+from .shared_ui import console, error_console
 
 
 _SMTP_CONFIGS = {
@@ -116,7 +117,7 @@ def send_report(
         )
         msg.attach(part)
 
-    print(f"PulseReport: Connecting to {smtp_server}:{smtp_port} as {username} …")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Connecting to {smtp_server}:{smtp_port} as {username} …")
     with smtplib.SMTP(smtp_server, smtp_port) as server:
         server.ehlo()
         server.starttls()
@@ -124,7 +125,7 @@ def send_report(
         server.login(username, password)
         server.sendmail(username, recipients, msg.as_string())
 
-    print(f"PulseReport: Email sent to {', '.join(recipients)}")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Email sent to {', '.join(recipients)}")
 
 
 def _now_str() -> str:

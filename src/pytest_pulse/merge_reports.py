@@ -15,6 +15,7 @@ import uuid
 from .report_writer import merge_raw_reports
 from pathlib import Path
 from typing import Optional
+from .shared_ui import console, error_console
 
 
 DEFAULT_OUTPUT_FILE = "playwright-pulse-report.json"
@@ -34,7 +35,7 @@ def merge_sequential_reports(output_dir: str, individual_sub: str = INDIVIDUAL_S
     """
     sub_dir = os.path.join(output_dir, individual_sub)
     if not os.path.isdir(sub_dir):
-        print(f"PulseReport: No individual reports directory found at {sub_dir}")
+        console.print(f"[bold blue]PulseReport:[/bold blue] No individual reports directory found at {sub_dir}")
         return None
 
     json_files = sorted(
@@ -43,7 +44,7 @@ def merge_sequential_reports(output_dir: str, individual_sub: str = INDIVIDUAL_S
     )
 
     if not json_files:
-        print(f"PulseReport: No individual report files found in {sub_dir}")
+        console.print(f"[bold blue]PulseReport:[/bold blue] No individual report files found in {sub_dir}")
         return None
 
     reports = []
@@ -53,7 +54,7 @@ def merge_sequential_reports(output_dir: str, individual_sub: str = INDIVIDUAL_S
             with open(fpath, "r", encoding="utf-8") as fh:
                 reports.append(json.load(fh))
         except Exception as exc:
-            print(f"PulseReport: Failed to read {fpath}: {exc}")
+            console.print(f"[bold blue]PulseReport:[/bold blue] Failed to read {fpath}: {exc}")
 
     if not reports:
         return None
@@ -62,7 +63,7 @@ def merge_sequential_reports(output_dir: str, individual_sub: str = INDIVIDUAL_S
     out_path = os.path.join(output_dir, DEFAULT_OUTPUT_FILE)
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(merged, fh, indent=2, ensure_ascii=False)
-    print(f"PulseReport: Sequential reports merged → {out_path}")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Sequential reports merged → {out_path}")
     return out_path
 
 
@@ -84,17 +85,17 @@ def merge_shard_directories(
     shard_dirs = _get_shard_dirs(output_dir, output_file, individual_sub)
 
     if not shard_dirs:
-        print(f"PulseReport: No shard directories found in {output_dir}")
+        console.print(f"[bold blue]PulseReport:[/bold blue] No shard directories found in {output_dir}")
         return None
 
-    print(f"PulseReport: Found {len(shard_dirs)} shard(s):")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Found {len(shard_dirs)} shard(s):")
     for d in shard_dirs:
-        print(f"  - {os.path.basename(d)}")
+        console.print(f"  - {os.path.basename(d)}")
 
     # Pre-merge sequential reports within each shard if needed
     for shard_dir in shard_dirs:
         if os.path.isdir(os.path.join(shard_dir, individual_sub)):
-            print(f"  Merging sequential reports in shard {os.path.basename(shard_dir)} …")
+            console.print(f"  Merging sequential reports in shard {os.path.basename(shard_dir)} …")
             merge_sequential_reports(shard_dir, individual_sub)
 
     reports = []
@@ -104,7 +105,7 @@ def merge_shard_directories(
             # If the main report is missing, try to merge shard files if they exist
             merged_shard = merge_shard_files(shard_dir, output_file, cleanup=cleanup)
             if not merged_shard:
-                print(f"  Warning: {json_path} not found and no shard files found in {shard_dir}, skipping")
+                console.print(f"  Warning: {json_path} not found and no shard files found in {shard_dir}, skipping")
                 continue
             json_path = merged_shard
 
@@ -112,7 +113,7 @@ def merge_shard_directories(
             with open(json_path, "r", encoding="utf-8") as fh:
                 reports.append(json.load(fh))
         except Exception as exc:
-            print(f"  Warning: failed to read {json_path}: {exc}")
+            console.print(f"  Warning: failed to read {json_path}: {exc}")
 
     if not reports:
         return None
@@ -130,14 +131,14 @@ def merge_shard_directories(
     out_path = os.path.join(output_dir, output_file)
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(merged, fh, indent=2, ensure_ascii=False)
-    print(f"\nPulseReport: Merged report → {out_path}")
+    console.print(f"\n[bold blue]PulseReport:[/bold blue] Merged report → {out_path}")
     _print_stats(merged)
 
     if cleanup:
-        print("\nPulseReport: Cleaning up shard directories…")
+        console.print("\n[bold blue]PulseReport:[/bold blue] Cleaning up shard directories…")
         for shard_dir in shard_dirs:
             shutil.rmtree(shard_dir, ignore_errors=True)
-        print("PulseReport: Cleanup complete.")
+        console.print("[bold blue]PulseReport:[/bold blue] Cleanup complete.")
 
     return out_path
 
@@ -163,7 +164,7 @@ def merge_shard_files(
     if not shard_files:
         return None
 
-    print(f"PulseReport: Found {len(shard_files)} shard file(s) in {output_dir}")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Found {len(shard_files)} shard file(s) in {output_dir}")
     
     reports = []
     for fname in shard_files:
@@ -172,7 +173,7 @@ def merge_shard_files(
             with open(fpath, "r", encoding="utf-8") as fh:
                 reports.append(json.load(fh))
         except Exception as exc:
-            print(f"  Warning: failed to read {fpath}: {exc}")
+            console.print(f"  Warning: failed to read {fpath}: {exc}")
 
     if not reports:
         return None
@@ -182,7 +183,7 @@ def merge_shard_files(
     out_path = os.path.join(output_dir, output_file)
     with open(out_path, "w", encoding="utf-8") as fh:
         json.dump(merged, fh, indent=2, ensure_ascii=False)
-    print(f"PulseReport: Shard files merged → {out_path}")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Shard files merged → {out_path}")
     _print_stats(merged)
 
     if cleanup:
@@ -191,7 +192,7 @@ def merge_shard_files(
                 os.unlink(os.path.join(output_dir, fname))
             except OSError:
                 pass
-        print("PulseReport: Shard files cleanup complete.")
+        console.print("[bold blue]PulseReport:[/bold blue] Shard files cleanup complete.")
 
     return out_path
 
@@ -202,7 +203,7 @@ def archive_trend(output_dir: str, output_file: str = DEFAULT_OUTPUT_FILE, max_h
     """Copy the current run JSON into a *history/* sub-directory for trend analysis."""
     src = os.path.join(output_dir, output_file)
     if not os.path.isfile(src):
-        print(f"PulseReport: {src} not found, cannot archive trend.")
+        console.print(f"[bold blue]PulseReport:[/bold blue] {src} not found, cannot archive trend.")
         return
 
     history_dir = os.path.join(output_dir, "history")
@@ -221,12 +222,12 @@ def archive_trend(output_dir: str, output_file: str = DEFAULT_OUTPUT_FILE, max_h
             except Exception:
                 pass
     except Exception as exc:
-        print(f"PulseReport: Cannot read {src}: {exc}")
+        console.print(f"[bold blue]PulseReport:[/bold blue] Cannot read {src}: {exc}")
         return
 
     dest = os.path.join(history_dir, f"trend-{ts_ms}.json")
     shutil.copy2(src, dest)
-    print(f"PulseReport: Archived trend → {dest}")
+    console.print(f"[bold blue]PulseReport:[/bold blue] Archived trend → {dest}")
 
     # Prune old history files
     history_files = sorted(
@@ -240,7 +241,7 @@ def archive_trend(output_dir: str, output_file: str = DEFAULT_OUTPUT_FILE, max_h
                 os.unlink(os.path.join(history_dir, fname))
             except OSError:
                 pass
-        print(f"PulseReport: Pruned {len(to_delete)} old history files.")
+        console.print(f"[bold blue]PulseReport:[/bold blue] Pruned {len(to_delete)} old history files.")
 
 
 def _trend_ts(fname: str) -> int:
@@ -285,7 +286,7 @@ def _get_shard_dirs(output_dir: str, output_file: str, individual_sub: str) -> l
 
 def _print_stats(merged: dict) -> None:
     run = merged.get("run") or {}
-    print(f"  Total: {run.get('totalTests', 0)}  "
+    console.print(f"  Total: {run.get('totalTests', 0)}  "
           f"Passed: {run.get('passed', 0)}  "
           f"Failed: {run.get('failed', 0)}  "
           f"Skipped: {run.get('skipped', 0)}  "

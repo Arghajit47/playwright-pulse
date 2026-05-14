@@ -6,6 +6,7 @@ import re
 from dataclasses import asdict, fields, is_dataclass
 from datetime import datetime
 from typing import Any
+from .shared_ui import console, error_console
 
 _ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$")
 
