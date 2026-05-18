@@ -1,4 +1,6 @@
-# Playwright Pluse Report
+# Playwright Pulse Report
+
+> **[Playwright Pulse Documentation](https://arghajit47.github.io/playwright-pulse/)** — Full guides for [Playwright report](https://arghajit47.github.io/playwright-pulse/javascript/) generation, [Pytest reporting](https://arghajit47.github.io/playwright-pulse/python/) generation.
 
 [![NPM Version](https://img.shields.io/npm/v/@arghajit/playwright-pulse-report.svg)](https://www.npmjs.com/package/@arghajit/playwright-pulse-report)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)

@@ -301,7 +301,7 @@
 
             <!-- Features Section -->
             <section class="max-w-6xl mx-auto py-24 border-t border-white/5">
-                <h2 class="text-3xl font-bold mb-16 text-center">Engineered for Quality</h2>
+                <h2 class="text-3xl font-bold mb-16 text-center">Playwright Report Dashboard: Interactive, AI-Powered &amp; CI-Ready</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
                     <div>
                         <div class="text-indigo-400 mb-6 flex justify-center">
@@ -309,10 +309,8 @@
                                 <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-4">Immersive HTML Reports</h3>
-                        <p class="text-slate-400 leading-relaxed">Real-time visualization of test runs with sleek charts
-                            and
-                            deep-dive inspection capabilities.</p>
+                        <h3 class="text-xl font-bold mb-4">Self-Contained Playwright Report with Real-Time Analytics</h3>
+                        <p class="text-slate-400 leading-relaxed">Zero-dependency HTML playwright report — screenshots, traces, and step logs embedded in a single shareable file.</p>
                     </div>
                     <div>
                         <div class="text-teal-400 mb-6 flex justify-center">
@@ -322,9 +320,8 @@
                                 </path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-4">Sharded Reporting</h3>
-                        <p class="text-slate-400 leading-relaxed">Native support for CI sharding, merging distributed
-                            results into a single unified pulse.</p>
+                        <h3 class="text-xl font-bold mb-4">Scalable Pytest Reporting Across Parallel CI/CD Shards</h3>
+                        <p class="text-slate-400 leading-relaxed">Native shard-merge support for both Playwright and Pytest reporting — combine distributed results into one unified pulse.</p>
                     </div>
                     <div>
                         <div class="text-purple-400 mb-6 flex justify-center">
@@ -334,9 +331,27 @@
                                 </path>
                             </svg>
                         </div>
-                        <h3 class="text-xl font-bold mb-4">AI Debugging</h3>
-                        <p class="text-slate-400 leading-relaxed">Intelligent failure analysis and automated debugging
-                            prompts for high-speed resolution.</p>
+                        <h3 class="text-xl font-bold mb-4">AI Test Dashboard for Automated Failure Root-Cause Analysis</h3>
+                        <p class="text-slate-400 leading-relaxed">The AI test dashboard surfaces failure patterns, flaky test trends, and LLM-generated fix suggestions in seconds.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ Section -->
+            <section class="max-w-4xl mx-auto py-24 border-t border-white/5" itemscope itemtype="https://schema.org/FAQPage">
+                <h2 class="text-3xl font-bold mb-12 text-center">Frequently Asked Questions</h2>
+                <div class="space-y-10">
+                    <div class="bento-card p-8" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                        <h3 class="text-lg font-semibold mb-3" itemprop="name">What makes Playwright Pulse better than the default playwright report?</h3>
+                        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                            <p class="text-slate-400 leading-relaxed" itemprop="text">The built-in playwright report requires a local server and loses data between runs. Playwright Pulse generates a fully self-contained playwright report with embedded screenshots, trace viewers, and historical trend charts — shareable as a single HTML file with no server required. It also adds a live playwright test dashboard with per-test AI analysis that the default reporter simply does not offer.</p>
+                        </div>
+                    </div>
+                    <div class="bento-card p-8" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                        <h3 class="text-lg font-semibold mb-3" itemprop="name">Can I use Playwright Pulse as a pytest report generator for Python projects?</h3>
+                        <div itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                            <p class="text-slate-400 leading-relaxed" itemprop="text">Yes. The <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;">pytest-pulse-report</code> plugin brings the same immersive playwright python report experience to Python test suites. Install via pip, add <code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;">--pulse</code> to your pytest run, and get a full-featured pytest report with retry history, flakiness detection, and AI-generated failure summaries — no JavaScript knowledge required.</p>
+                        </div>
                     </div>
                 </div>
             </section>
